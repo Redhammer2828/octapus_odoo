@@ -15,7 +15,7 @@ variables:
   imageRepository: 'aaaerp'
   containerRegistry: 'carhiredev.azurecr.io'
   dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
-  tag: '$(Build.BuildSourceBranch)'
+  tag: '$(Build.SourceBranchName)'
 
   # Agent VM image name
   vmImageName: 'ubuntu-latest'
