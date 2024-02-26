@@ -16,12 +16,15 @@ class ResPartnerCustomer(models.Model):
         return {
             'name': 'Members',
             'type': 'ir.actions.act_window',
-            'res_model': 'res.partner',  # Replace 'your.member.model' with the actual model name
+            'res_model': 'res.partner',
             'view_mode': 'tree,form',
-            'domain': [('parent_customer_id', '=', self.id)],
-            # 'context':{'parent_customer_id','=', self.id}
+            'domain': [('parent_customer_id', '=', self.id), ('is_customer','=',True)],
+            'context': {'from_res_partner_member_form': True},
+            'views': [(self.env.ref('customer.res_partner_member_tree').id, 'tree'),
+                    (self.env.ref('customer.res_partner_member_form').id, 'form')],
             # Add any other action parameters as needed
         }
+
 
     def _compute_members_count(self):
         # Retrieve all children partners and prefetch 'parent_id' on them
