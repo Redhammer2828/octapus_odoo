@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_services_form" model="ir.ui.view">
+        <field name="name">services.management.form</field>
+        <field name="model">services.management</field>
+        <field name="arch" type="xml">
+            <form id="service_creation_form">
+                <group>
+                    <field name="id" />
+                    <field name="name" />
+                    <field name="service_type" />
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_services_tree" model="ir.ui.view">
+        <field name="name">services.management.tree</field>
+        <field name="model">services.management</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="id" />
+                <field name="name" />
+                <field name="service_type" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="product_category_action" model="ir.actions.act_window">
+        <field name="name">Product Category</field>
+        <field name="res_model">product.category</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create the first category</p>
+        </field>
+    </record>
+
+    <record id="product_packages_action" model="ir.ui.view">
+        <field name="name">product.template.form.inherit</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='general_information']//group" position="inside">
+                <field name="uom_id" placeholder="uom" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="product_services_action" model="ir.actions.act_window">
+        <field name="name">Services Management</field>
+        <field name="res_model">services.management</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                Click to create a new Service.
+            </p>
+        </field>
+    </record>
+    <menuitem id="menu_configuration" name="Configuration" parent="menu_membership_root" sequence="15"/>
+    <group name="Products">
+        <menuitem id="menu_product_category" name="Category" parent="menu_configuration" action="product_category_action" sequence="10"/>
+        <menuitem id="menu_product_packages" name="Packages" parent="menu_configuration" action="product_packages_action" sequence="15"/>
+        <menuitem id="menu_product_services" name="Services" parent="menu_configuration" action="product_services_action" sequence="20"/>
+    </group>
+</odoo>

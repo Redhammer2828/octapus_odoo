@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_partner_member_form" model="ir.ui.view">
+        <field name="name">res.partner.member.form</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <form>
+                <!-- <headers>
+                    <field name="membership_state" widget="statusbar"/>
+                </headers> -->
+                <sheet>
+                    <!-- <field name="image" widget="image" class="oe_avatar" options="{&quot;preview_image&quot;: &quot;image_medium&quot;, &quot;size&quot;: [90, 90]}"/> -->
+					<div class="oe_title">
+                        <h4>Name:</h4>
+                        <field name="name" placeholder="Type.." />
+                        <h4>Company:</h4>
+                        <field name="parent_customer_id" placeholder="select.." />
+					</div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="res_partner_member_tree" model="ir.ui.view">
+        <field name="name">res.partner.member.tree</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <tree string="Policy Members">
+                <field name="id" />
+                <field name="name" />
+                <field name="parent_customer_id"/>
+            </tree>
+        </field>
+    </record>
+    
+    <record id="action_res_partner_member" model="ir.actions.act_window">
+        <field name="name">Member</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'from_res_partner_member_form': True}</field>
+        <field name="domain">[('is_customer','=',True)]</field>
+        <field name="view_ids"
+            eval="[
+      (5, 0, 0),
+      (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.res_partner_member_tree')}),
+      (0, 0, {'view_mode': 'form', 'view_id': ref('customer.res_partner_member_form')})
+    ]">
+        </field>
+        <field name="help" type="html">
+            <p>new</p>
+        </field>
+    </record>
+
+    <menuitem
+        id="menu_member"
+        name="Policy Members"
+        parent="menu_membership_root"
+        action="action_res_partner_member" />
+</odoo>

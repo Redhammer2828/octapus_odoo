@@ -1,0 +1,117 @@
+<odoo>
+    <data>
+
+        <!-- Define actions for product packages, services, and category -->
+        <record id="menu_action_product_packages_inh" model="ir.actions.act_window">
+            <field name="name">Product Packages</field>
+            <field name="res_model">product.template</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">Create the first package</p>
+            </field>
+        </record>
+
+        <record id="view_product_packages_form_inherit" model="ir.ui.view">
+            <field name="name">product.template.form.inherit</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_form_view" />
+            <field name="arch" type="xml">
+                <xpath expr="//page[@name='general_information']//group" position="inside">
+                    <field name="uom_id" placeholder="uom" />
+                </xpath>
+            </field>
+        </record>
+
+        <record id="menu_action_product_category_inh" model="ir.actions.act_window">
+            <field name="name">Product Category</field>
+            <field name="res_model">product.category</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">Create the first category</p>
+            </field>
+        </record>
+
+        <record id="view_product_category_form_inherit" model="ir.ui.view">
+            <field name="name">product.category.form.inherit</field>
+            <field name="model">product.category</field>
+            <field name="inherit_id" ref="product.product_category_form_view" />
+            <field name="arch" type="xml">
+                <field name="parent_id" position="after">
+                    <field name="uom_id" placeholder='UoM' />
+                </field>
+            </field>
+        </record>
+
+
+        <record id="view_services_form" model="ir.ui.view">
+            <field name="name">services.management.form</field>
+            <field name="model">services.management</field>
+            <field name="arch" type="xml">
+                <form id="service_creation_form">
+                    <group>
+                        <field name="id" />
+                        <field name="name" />
+                        <field name="service_type" />
+                    </group>
+                </form>
+            </field>
+        </record>
+
+        <record id="view_services_tree" model="ir.ui.view">
+            <field name="name">services.management.tree</field>
+            <field name="model">services.management</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="id" />
+                    <field name="name" />
+                    <field name="service_type" />
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_services" model="ir.actions.act_window">
+            <field name="name">Services Management</field>
+            <field name="res_model">services.management</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">
+                    Click to create a new Service.
+                </p>
+            </field>
+        </record>
+
+
+        <menuitem 
+            id="menu_configuration" 
+            name="Configuration" 
+            parent="menu_membership_root"
+            sequence="15" />
+        
+        <menuitem
+            id="menu_product"
+            name="Products"
+            parent="menu_configuration"
+            sequence="10"/>
+        
+        <menuitem 
+            id="menu_product_packages" 
+            name="Packages" 
+            parent="menu_product"
+            action="menu_action_product_packages_inh" sequence="15" />
+        
+        <menuitem 
+            id="menu_product_category" 
+            name="Category" 
+            parent="menu_product"
+            action="menu_action_product_category_inh" 
+            sequence="10" />
+        
+        <menuitem 
+            id="menu_product_services" 
+            name="Services" 
+            parent="menu_product"
+            action="action_services" 
+            sequence="20" />
+    </data>
+
+</odoo>
