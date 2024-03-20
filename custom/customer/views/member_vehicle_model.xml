@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="member_vehicle_model_view_form" model="ir.ui.view">
+            <field name="name">member.vehicle.model.view.form</field>
+            <field name="model">member.vehicle.model</field>
+            <field name="arch" type="xml">
+                <form string="Vehicle Models">
+                    <sheet>
+                        <group>
+                            <field name="name" placeholder='Vehicle Model Name' required='1' />
+                            <field name="type_id" placeholder='Vehicle type Name' required='1' />
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        
+        <record id="member_vehicle_type_view_tree" model="ir.ui.view">
+            <field name="name">member.vehicle.model.view.tree</field>
+            <field name="model">member.vehicle.model</field>
+            <field name="arch" type="xml">
+                <tree string="Vehicle Models">
+                    <field name="type_id" />
+                    <field name="name" />
+                    <field name="create_date" />
+                </tree>
+            </field>
+        </record>
+        
+        <record id="member_vehicle_model_action" model="ir.actions.act_window">
+            <field name="name">Vehicle Models</field>
+            <field name="res_model">member.vehicle.model</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">
+                    Click to create a new card type.
+                </p>
+            </field>
+        </record>
+        
+        <menuitem id="menu_member_vehicle_model" name="Vehicle Model" parent="menu_configuration" action="member_vehicle_model_action" sequence="41"/>
+
+    </data>
+</odoo>

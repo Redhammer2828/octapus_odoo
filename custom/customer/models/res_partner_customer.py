@@ -1,5 +1,5 @@
 #model/res_partner_customer.py
-from odoo import fields,models,api
+from odoo import fields, models ,api
 
 class ResPartnerCustomer(models.Model):
     _inherit = 'res.partner'
@@ -8,10 +8,16 @@ class ResPartnerCustomer(models.Model):
     customer_code = fields.Char(string='Customer Code')
     function = fields.Char(string='Function')
 
-    members_count = fields.Integer(compute='_compute_members_count', string='Member Count')
+    member_count = fields.Integer(compute='_compute_member_count', string='Member Count')
 
-    customer = fields.Binary('customer')
+    customer = fields.Binary('customer')  #Field (Flag) for Members (is_customer)
+    
+    #Page - Category
+    customer_category_ids = fields.One2many('partner.category', 'partner_id', string='Customer Categories')
 
+    
+          # Set the default value here
+    #Action for Member Button
     def action_view_member(self):
         return {
             'name': 'Members',
@@ -19,24 +25,36 @@ class ResPartnerCustomer(models.Model):
             'res_model': 'res.partner',
             'view_mode': 'tree,form',
             'domain': [('parent_customer_id', '=', self.id), ('is_customer','=',True)],
-            'context': {'from_res_partner_member_form': True},
+            'context': {
+                'from_res_partner_member_form': True,
+                'default_parent_customer_id': self.id,  # Pre-select the parent customer
+            },
             'views': [(self.env.ref('customer.res_partner_member_tree').id, 'tree'),
                     (self.env.ref('customer.res_partner_member_form').id, 'form')],
             # Add any other action parameters as needed
         }
+        
+    #For Calculating Count of Memnbers 
+    @api.depends('parent_customer_id')
+    def _compute_member_count(self):
+        for record in self:
+            if record.id:
+                member_count = self.env['res.partner'].search_count([('parent_customer_id', '=', record.id)])
+                record.member_count = member_count
+            else:
+                record.member_count = 0
 
 
-    def _compute_members_count(self):
-        # Retrieve all children partners and prefetch 'parent_id' on them
-        all_partners = self.with_context(active_test=False).search([('id', 'child_of', self.ids)])
-        
-        # Group partners by parent_id and count members
-        member_groups = all_partners.read_group(
-            domain=[('member_id', 'in', all_partners.ids)],
-            fields=['member_id'],
-            groupby=['member_id']
-        )
-        
-        # Assign member count to each partner
-        for partner in self:
-            partner.member_count = sum(group['member_id_count'] for group in member_groups if group['member_id'][0] == partner.id)
+class PartnerCategory(models.Model):
+    _name = 'partner.category'
+    _description = 'Partner Category'
+
+    partner_id = fields.Many2one('res.partner', string='Partner', inverse_name='customer_category_ids')
+
+    name = fields.Char(string="Code")
+    member_type = fields.Selection([
+        ('policy', 'Policy'),
+        ('credit', 'Credit'),
+        ('adhoc', 'Adhoc')],
+        string='Type')
+    description = fields.Text(string="Description")

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="location_internal_view_form" model="ir.ui.view">
+            <field name="name">location.internal.view.form</field>
+            <field name="model">location.internal</field>
+            <field name="arch" type="xml">
+                <form string="Internal Location">
+                    <sheet>
+                        <group>
+                            <field name="name" required="1" string="Location" />
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="location_external_view_form" model="ir.ui.view">
+            <field name="name">location.external.view.form</field>
+            <field name="model">location.external</field>
+            <field name="arch" type="xml">
+                <form string="">
+                    <sheet>
+                        <group>
+                            <field name="name" string="Location" required="1" />
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Tree -->
+        <record id="location_internal_view_tree" model="ir.ui.view">
+            <field name="name">location.internal.view.tree</field>
+            <field name="model">location.internal</field>
+            <field name="arch" type="xml">
+                <tree string="">
+                    <field name="name" />
+                </tree>
+            </field>
+        </record>
+
+        <record id="location_external_view_tree" model="ir.ui.view">
+            <field name="name">location.external.view.tree</field>
+            <field name="model">location.external</field>
+            <field name="arch" type="xml">
+                <tree string="External Location">
+                    <field name="name" />
+                </tree>
+            </field>
+        </record>
+
+        <!-- Action -->
+        <record id="location_internal_action" model="ir.actions.act_window">
+            <field name="name">Internal</field>
+            <field name="res_model">location.internal</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">
+                    Click to create a new card type.
+                </p>
+            </field>
+        </record>
+
+        <record id="location_external_action" model="ir.actions.act_window">
+            <field name="name">External</field>
+            <field name="res_model">location.external</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">
+                    Click to create a new card type.
+                </p>
+            </field>
+        </record>
+
+        <menuitem
+            id="menu_location_internal"
+            name="Internal"
+            parent="menu_location"
+            action="location_internal_action"
+            sequence="60" />
+
+        <menuitem
+            id="menu_location_external"
+            name="External"
+            parent="menu_location"
+            action="location_external_action"
+            sequence="70" />
+
+    </data>
+
+
+</odoo>

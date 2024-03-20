@@ -1,9 +1,17 @@
 from odoo import models, fields
 
-class ServicesManagement(models.Model):
-    _name = 'services.management'
-    _description = 'Services Management'
+class ProductServices(models.Model):
+    _inherit = 'product.template'
+    _description = 'Services'
 
-    id = fields.Char(string='ID', required=True, readonly=True)
-    name = fields.Char(string='Service Name', required=True)
-    service_type = fields.Char(string='service type')
+    service_type = fields.Selection([
+        ('distance', 'Distance Based'),
+        ('location', 'Location Based'),
+        ('duration', 'Duration Based'),
+        ('location_duration', 'Location and Duration Based'),
+        ('none', 'None')
+    ], string='Service Type')
+    uom_id = fields.Many2one('uom.uom', string='Unit of Measure', default=lambda self: self.env.ref('uom.product_uom_unit', raise_if_not_found=False))
+    uom_po_id = fields.Many2one('uom.uom', string='Purchase Unit of Measure', default=lambda self: self.env.ref('uom.product_uom_unit', raise_if_not_found=False))
+
+    # is_services = fields.Boolean('Is Services')

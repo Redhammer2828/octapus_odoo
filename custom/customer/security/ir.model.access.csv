@@ -1,3 +1,10 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_services_management,services.management,model_services_management,,1,1,1,1
 access_card_type,card.type,model_card_type,,1,1,1,1
+access_member_vehicle_type,member.vehicle.type,model_member_vehicle_type,,1,1,1,1
+access_member_vehicle_model,member.vehicle.model,model_member_vehicle_model,,1,1,1,1
+access_location_internal,location.internal,model_location_internal,,1,1,1,1
+access_location_external,location.external,model_location_external,,1,1,1,1
+access_external_service,external.service,model_external_service,,1,1,1,1
+access_product_package_service,product.package.service,model_product_package_service,,1,1,1,1
+access_product_category_limit,product.category.limit,model_product_category_limit,,1,1,1,1
+access_partner_category,partner.category,model_partner_category,,1,1,1,1
