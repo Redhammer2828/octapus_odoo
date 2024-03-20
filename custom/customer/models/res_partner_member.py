@@ -37,9 +37,6 @@ class ResPartnerMembers(models.Model):
     related_company_customer_code = fields.Char(string='Related Company Customer Code')
     
     
-    member_type = fields.Selection([ ('policy', 'Policy Member'),
-                                    ('credit', 'Credit Member'),
-                                    ('adhoc', 'Ad-hoc Member') ], string='Member Type')   
     # type = fields.Selection([('private', 'Private'), ('public', 'Public')], string='Type')
     
     # many2one fields
@@ -61,6 +58,10 @@ class ResPartnerMembers(models.Model):
     # member_sequence_id = fields.Many2one('member.sequence', string='Member Sequence')
 
 
+    member_type = fields.Selection([ ('policy', 'Policy Member'),
+                                    ('credit', 'Credit Member'),
+                                    ('adhoc', 'Ad-hoc Member') ], string='Member Type')   
+    
     adhoc_member = fields.Boolean(string='Adhoc Member')
     credit_member_ok = fields.Boolean(string='Credit Member OK')
     # active = fields.Boolean(string='Active')
@@ -70,16 +71,30 @@ class ResPartnerMembers(models.Model):
     # service_ids = fields.Many2many('service.model', string='Services')
     # comment = fields.Text(string='Internal Notes')
     # membership_history = fields.One2many('membership.history.model', 'partner_id', string='Membership History')
-    
+    product_template_id = fields.Many2one('product.template', string="Product Template")
+    service_ids = fields.Many2many('product.product', string="Services", widget="many2many_tags", options="{'no_create_edit': True}")
     #-----------------------------------------
     
     @api.model
     def create(self, vals):
-        # Check if the record is being created from 'res_partner_member_form'
         if self.env.context.get('from_res_partner_member_form'):
             vals['is_customer'] = True
+            vals['credit_member_ok'] = False
+            vals['adhoc_member'] = False
+            vals['member_type'] = 'policy'
+            
 
+        if self.env.context.get('from_res_partner_credit_member_form'):
+            vals['is_customer'] = True
+            vals['credit_member_ok'] = True
+            vals['adhoc_member'] = False
+            vals['member_type'] = 'credit'
+
+        if self.env.context.get('from_res_partner_adhoc_member_form'):
+            vals['is_customer'] = True
+            vals['credit_member_ok'] = False
+            vals['adhoc_member'] = True
+            vals['member_type'] = 'adhoc'
+        
         new_partner = super(ResPartnerMembers, self).create(vals)
-
         return new_partner
-    
