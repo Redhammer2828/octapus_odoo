@@ -113,7 +113,7 @@
                                         readonly="type == 'contact' and parent_id" />
                                 </div>
                             </div>
-                            <field name="vat" placeholder="e.g. BE0477472701" readonly="parent_id" />
+                            <!-- <field name="vat" placeholder="e.g. BE0477472701" readonly="parent_id" /> -->
                         </group>
                         <group>
                             <field name="function" placeholder="e.g. Sales Director"
@@ -129,9 +129,9 @@
                                 placeholder="e.g. Mister" invisible="is_company" />
                             <field name="active_lang_count" invisible="1" />
                             <field name="lang" invisible="active_lang_count &lt;= 1" />
-                            <field name="category_id" widget="many2many_tags"
+                            <!-- <field name="category_id" widget="many2many_tags"
                                 options="{'color_field': 'color', 'no_create_edit': True}"
-                                placeholder="e.g. &quot;B2B&quot;, &quot;VIP&quot;, &quot;Consulting&quot;, ..." />
+                                placeholder="e.g. &quot;B2B&quot;, &quot;VIP&quot;, &quot;Consulting&quot;, ..." /> -->
                         </group>
                     </group>
 
@@ -307,14 +307,14 @@
                             <field name="comment" placeholder="Accounting..." />
                         </page>
                         <!-- CATEGORY -->
-                        <page string="Category" name="sequences">
+                        <page string="Category" name="sequences" required="1">
                             <field name="customer_category_ids" widget="one2many_list">
                                 <!-- Define how you want to display the one2many field -->
                                 <!-- For example, using a tree view -->
                                 <tree editable="bottom">
                                     <field name="name" />
                                     <field name="member_type" />
-                                    <field name="description" />
+                                    <field name="description"/>
                                     <!-- Add more fields if needed -->
                                 </tree>
                             </field>

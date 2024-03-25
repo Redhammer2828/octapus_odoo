@@ -11,6 +11,8 @@
         # 'views/view.xml'
         'views/res_partner_customer.xml',
         'views/res_partner_member.xml',
+        'views/res_partner_member_temp.xml',
+        'views/res_partner_member_cancel.xml',
         'views/config_product.xml',
         'views/card_type.xml',
         'views/product_packages.xml',

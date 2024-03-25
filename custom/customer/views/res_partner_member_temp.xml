@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="res_partner_member_temp_tree" model="ir.ui.view">
+            <field name="name">res.partner.member.temp.tree</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <tree string="Temporary Members">
+                    <field name="id"/>
+                    <field name="name" />
+                    <field name="ref_num" />
+                    <field name="parent_customer_id" />
+                    <field name="policy_no" />
+                    <field name="old_membership_number" />
+                    <field name="mobile" />
+                    <field name="email" />
+                    <field name="vehicle_chasis_no" />
+                    <field name="vehicle_type" />
+                    <field name="vehicle_plate" />
+                    <field name="vehicle_model" />
+                    <field name="member_expiry_date" />
+                    <field name="create_date" />
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_res_partner_member_temp" model="ir.actions.act_window">
+            <field name="name">Temporary Members</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">tree,form</field>
+            <field name="context">{'from_res_partner_member_form': True ,
+                'default_member_type': 'policy' }</field>
+            <field name="domain">[('is_customer','=',True),('member_type','=','policy'),
+                ('membership_state','=','temp')]</field>
+            <field name="view_ids"
+                eval="[
+          (5, 0, 0),
+          (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.res_partner_member_temp_tree')}),
+          (0, 0, {'view_mode': 'form', 'view_id': ref('customer.res_partner_member_form')})
+        ]">
+            </field>
+        </record>
+
+        <menuitem
+            id="menu_temp_policy_member"
+            name="Temporary"
+            parent="menu_member"
+            action="action_res_partner_member_temp"
+        />
+    </data>
+</odoo>

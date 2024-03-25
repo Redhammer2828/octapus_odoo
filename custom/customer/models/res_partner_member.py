@@ -1,11 +1,19 @@
 from odoo import models,fields,api
 
+POLICY_MEMBER_STATE = [
+    ('temp', "Temporary"),
+    ('confirm', "Confirmed"),
+    ('cancel', "Cancelled"),
+]
+
 class ResPartnerMembers(models.Model):
     _inherit = 'res.partner'
 
     parent_customer_id = fields.Many2one('res.partner', string='Parent Customer')
     is_customer = fields.Boolean('Is_customer')
     # -----------------------------------------
+    ref_num = fields.Char('Ref Num')
+
     policy_no = fields.Char(string='Policy No')
     vehicle_chasis_no = fields.Char(string='Vehicle Chasis No')
     old_membership_number = fields.Char(string='Old Membership Number')
@@ -73,7 +81,14 @@ class ResPartnerMembers(models.Model):
     # membership_history = fields.One2many('membership.history.model', 'partner_id', string='Membership History')
     product_template_id = fields.Many2one('product.template', string="Product Template")
     service_ids = fields.Many2many('product.product', string="Services", widget="many2many_tags", options="{'no_create_edit': True}")
+    member_partner_category_id = fields.Many2one('partner.category', string='Category')
     #-----------------------------------------
+    membership_state = fields.Selection(
+        selection=POLICY_MEMBER_STATE,
+        string="Status",
+        readonly=True, copy=False, index=True,
+        tracking=3,
+        default='temp')
     
     @api.model
     def create(self, vals):
@@ -98,3 +113,13 @@ class ResPartnerMembers(models.Model):
         
         new_partner = super(ResPartnerMembers, self).create(vals)
         return new_partner
+
+    def action_confirm_membership(self):
+        self.membership_state = 'confirm'
+
+    @api.depends('membership_state')
+    def _compute_is_readonly(self):
+        for record in self:
+            record.is_readonly = record.membership_state == 'confirm'
+        
+    is_readonly = fields.Boolean(string='Read-Only', compute='_compute_is_readonly', store=True)
