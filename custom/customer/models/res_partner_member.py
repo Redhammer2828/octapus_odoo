@@ -82,7 +82,14 @@ class ResPartnerMembers(models.Model):
     product_template_id = fields.Many2one('product.template', string="Product Template")
     service_ids = fields.Many2many('product.product', string="Services", widget="many2many_tags", options="{'no_create_edit': True}")
     member_partner_category_id = fields.Many2one('partner.category', string='Category')
-    #-----------------------------------------
+    #------------------------------------------------------------
+    member_expired = fields.Boolean(
+        string="Member Expired", 
+        compute='_compute_member_expired', 
+        store=True
+    )
+    policy_member_service_count = fields.Integer(string="Policy Services Count", compute='_compute_policy_member_service_count')
+    # ------------------------------------------------------------
     membership_state = fields.Selection(
         selection=POLICY_MEMBER_STATE,
         string="Status",
@@ -97,7 +104,7 @@ class ResPartnerMembers(models.Model):
             vals['credit_member_ok'] = False
             vals['adhoc_member'] = False
             vals['member_type'] = 'policy'
-            
+        
 
         if self.env.context.get('from_res_partner_credit_member_form'):
             vals['is_customer'] = True
@@ -121,5 +128,23 @@ class ResPartnerMembers(models.Model):
     def _compute_is_readonly(self):
         for record in self:
             record.is_readonly = record.membership_state == 'confirm'
+    
         
     is_readonly = fields.Boolean(string='Read-Only', compute='_compute_is_readonly', store=True)
+   
+    @api.depends('member_expiry_date')
+    def _compute_member_expired(self):
+        for partner in self:
+            if partner.member_expiry_date and partner.member_expiry_date < fields.Date.today():
+                partner.member_expired = True
+            else:
+                partner.member_expired = False
+                
+    @api.depends('service_ids')
+    def _compute_policy_member_service_count(self):
+        for partner in self:
+            partner.policy_member_service_count = len(partner.service_ids)
+
+    def action_view_policy_service(self):
+        # Add your action code here
+        pass

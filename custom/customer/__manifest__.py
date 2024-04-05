@@ -24,6 +24,8 @@
         'views/res_partner_adhoc_member.xml',
         'views/res_partner_credit_member.xml',
         'views/product_service.xml',
+        'views/policy_member_search.xml',
+        'wizards/upload_member_wizard.xml',
         # 'views/product_packages.xml',
         # 'static/src/js/partner_form.js',
     ],

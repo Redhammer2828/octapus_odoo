@@ -14,8 +14,9 @@ class ResPartnerCustomer(models.Model):
     
     #Page - Category
     customer_category_ids = fields.One2many('partner.category', 'partner_id', string='Customer Categories')
-
     
+    invoicing_policy = fields.Selection([ ('individual', 'Individual'),
+                                    ('consolidated', 'Consolidated') ], string='Invoicing Policy') 
           # Set the default value here
     #Action for Member Button
     def action_view_member(self):
@@ -43,6 +44,9 @@ class ResPartnerCustomer(models.Model):
                 record.member_count = member_count
             else:
                 record.member_count = 0
+    
+    def waive_off_history(self):
+        pass
 
 
 class PartnerCategory(models.Model):

@@ -38,13 +38,17 @@
                             icon="fa-users" string="Members">
                             <field name="member_count" widget="statinfo" string="Members" />
                         </button>
+                        <button name="action_view_policy_service" type="object" class="oe_stat_button" icon="fa-pencil-square-o">
+                            <field name="policy_member_service_count" widget="statinfo" string="Policy Services" />
+                        </button>
+                        <button string="Waive-off History" name="waive_off_history" type="object" class="oe_stat_button" icon="fa-gift" />
+                        <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive" options="{}">
+                            <field name="active" widget="boolean_button" options="{'terminology': 'archive'}" on_change="1"/>
+                        </button>
                     </div>
-                    <div class="oe_button_box" name="button_box" />
-                    <!-- Members Status Button -->
 
-
-                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
-                        invisible="active" />
+                    <!-- <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
+                        invisible="active" /> -->
                     <field name="avatar_128" invisible="1" />
                     <field name="image_1920" widget="image" class="oe_avatar"
                         options="{&quot;preview_image&quot;: &quot;avatar_128&quot;}" />
@@ -123,6 +127,7 @@
                             <field name="user_ids" invisible="1" />
                             <field name="email" widget="email" context="{'gravatar_image': True}"
                                 required="user_ids" />
+                            <field name="invoicing_policy" widget="radio" string="Credit Service Invoice" required="1"/>
                             <field name="website" string="Website" widget="url"
                                 placeholder="e.g. https://www.odoo.com" />
                             <field name="title" options="{&quot;no_open&quot;: True}"
@@ -311,7 +316,7 @@
                             <field name="customer_category_ids" widget="one2many_list">
                                 <!-- Define how you want to display the one2many field -->
                                 <!-- For example, using a tree view -->
-                                <tree editable="bottom">
+                                <tree editable="bottom" required="1">
                                     <field name="name" />
                                     <field name="member_type" />
                                     <field name="description"/>
@@ -349,12 +354,13 @@
     </record>
 
     <record id="action_res_partner_customer" model="ir.actions.act_window">
-        <field name="name">Customer</field>
+        <field name="name">Customers</field>
         <field name="res_model">res.partner</field>
         <field name="view_mode">tree,form</field>
         <field name="domain">[('is_company','=',True)]</field>
         <field name="context">{'default_is_company': True,
-                'default_country_id': 'AE'}</field>
+                'default_country_id': 'AE',
+            'default_invoicing_policy': 'individual'}</field>
         <field name="view_ids"
             eval="[
       (5, 0, 0),

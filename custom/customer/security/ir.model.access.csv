@@ -8,3 +8,5 @@ access_external_service,external.service,model_external_service,,1,1,1,1
 access_product_package_service,product.package.service,model_product_package_service,,1,1,1,1
 access_product_category_limit,product.category.limit,model_product_category_limit,,1,1,1,1
 access_partner_category,partner.category,model_partner_category,,1,1,1,1
+access_upload_member_wizard,upload.member.wizard,model_upload_member_wizard,,1,1,1,1
+access_member_search,member.search,model_member_search,,1,1,1,1
