@@ -6,6 +6,7 @@
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
             <form string="Customer">
+                
                 <style>
                     .o_form_view:not(.o_field_highlight)
                     .o_field_widget:not(.o_field_invalid):not(.o_field_highlight)
@@ -20,6 +21,7 @@
                     .required_field{
                     background-color: #b9a4ff29;
                     }
+                    <!-- ACTIVE AND ARCHIVE -->
                 </style>
                 <div class="alert alert-warning oe_edit_only" role="alert" name="warning_tax"
                     invisible="not same_vat_partner_id"> A partner with the same <span>
@@ -38,15 +40,17 @@
                             icon="fa-users" string="Members">
                             <field name="member_count" widget="statinfo" string="Members" />
                         </button>
-                        <button name="action_view_policy_service" type="object" class="oe_stat_button" icon="fa-pencil-square-o">
-                            <field name="policy_member_service_count" widget="statinfo" string="Policy Services" />
+                        <button name="action_view_policy_service" type="object"
+                            class="oe_stat_button" icon="fa-pencil-square-o">
+                            <field name="policy_member_service_count" widget="statinfo"
+                                string="Services" />
                         </button>
-                        <button string="Waive-off History" name="waive_off_history" type="object" class="oe_stat_button" icon="fa-gift" />
-                        <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive" options="{}">
-                            <field name="active" widget="boolean_button" options="{'terminology': 'archive'}" on_change="1"/>
-                        </button>
+                        <button string="Waive-off History" name="waive_off_history" type="object"
+                            class="oe_stat_button" icon="fa-gift" />
+                        <button name="toggle_active" type="object" string="Archive" icon="fa-archive" />
+                        <!-- DUPLICATE  -->
+                        <button name="duplicate_record" type="object" string="Duplicate Record" icon="fa-copy" />
                     </div>
-
                     <!-- <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
                         invisible="active" /> -->
                     <field name="avatar_128" invisible="1" />
@@ -59,7 +63,7 @@
                         <field name="company_id" invisible="1" />
                         <field name="country_code" invisible="1" />
                         <field name="company_type" widget="radio" options="{'horizontal': true}"
-                            default="company" />
+                            default="company" invisible="1" />
                         <h1>
                             <field name="customer_code" required="1" placeholder="Customer Code"
                                 style="font-size: 14px;" class="required_field" />
@@ -117,7 +121,8 @@
                                         readonly="type == 'contact' and parent_id" />
                                 </div>
                             </div>
-                            <!-- <field name="vat" placeholder="e.g. BE0477472701" readonly="parent_id" /> -->
+                            <!-- <field name="vat" placeholder="e.g. BE0477472701"
+                            readonly="parent_id" /> -->
                         </group>
                         <group>
                             <field name="function" placeholder="e.g. Sales Director"
@@ -127,7 +132,8 @@
                             <field name="user_ids" invisible="1" />
                             <field name="email" widget="email" context="{'gravatar_image': True}"
                                 required="user_ids" />
-                            <field name="invoicing_policy" widget="radio" string="Credit Service Invoice" required="1"/>
+                            <field name="invoicing_policy" widget="radio"
+                                string="Credit Service Invoice" required="1" />
                             <field name="website" string="Website" widget="url"
                                 placeholder="e.g. https://www.odoo.com" />
                             <field name="title" options="{&quot;no_open&quot;: True}"
@@ -319,7 +325,7 @@
                                 <tree editable="bottom" required="1">
                                     <field name="name" />
                                     <field name="member_type" />
-                                    <field name="description"/>
+                                    <field name="description" />
                                     <!-- Add more fields if needed -->
                                 </tree>
                             </field>
@@ -359,7 +365,7 @@
         <field name="view_mode">tree,form</field>
         <field name="domain">[('is_company','=',True)]</field>
         <field name="context">{'default_is_company': True,
-                'default_country_id': 'AE',
+            'default_country_id': 'AE',
             'default_invoicing_policy': 'individual'}</field>
         <field name="view_ids"
             eval="[

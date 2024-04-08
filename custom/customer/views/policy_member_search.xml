@@ -22,6 +22,9 @@
             .required_field{
                 background-color: #b9a4ff29;
             }
+            .o_control_panel {
+              color: white;
+            }
         </style>
           <group string="POLICY MEMBER SEARCH">
             <!-- Fields for search criteria -->
@@ -102,7 +105,9 @@
       id="menu_policy_member_search"
       name="Policy Members"
       parent="menu_member_search"
-      action="policy_member_search_action" />
+      action="policy_member_search_action"
+      sequence="10" />
+      
   </data>
 
 </odoo>

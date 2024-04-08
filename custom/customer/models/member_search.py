@@ -50,3 +50,7 @@ class MemberSearch(models.Model):
             'domain': [('id', 'in', partner_ids.ids)],
             'views': [(self.env.ref('customer.policy_member_search_view_tree').id, 'tree')],
         }
+    
+    def search_credit_member(self):
+        partner_obj = self.env['res.partner']
+        search_domain = []

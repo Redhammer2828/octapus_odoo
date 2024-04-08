@@ -48,6 +48,24 @@ class ResPartnerCustomer(models.Model):
     def waive_off_history(self):
         pass
 
+     #For Active / Archive in Form view 
+    # def toggle_active(self):
+    #     for rec in self:
+    #         rec.active = not rec.active
+
+    def duplicate_record(self):
+        self.ensure_one()
+        duplicate_record = self.copy()
+        view_id = self.env.ref('customer.res_partner_customer_form').id
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Duplicate Record',
+            'res_model': self._name,
+            'res_id': duplicate_record.id,
+            'view_mode': 'form',
+            'view_id': view_id,
+            'target': 'current',
+        }
 
 class PartnerCategory(models.Model):
     _name = 'partner.category'

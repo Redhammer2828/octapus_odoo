@@ -5,7 +5,7 @@
             <field name="name">res.partner.member.form</field>
             <field name="model">res.partner</field>
             <field name="arch" type="xml">
-                <form>
+                <form decorators="{'readonly': [('membership_state', '=', 'confirm')]}">
                     <style>
                         .o_form_view:not(.o_field_highlight)
                         .o_field_widget:not(.o_field_invalid):not(.o_field_highlight)
@@ -22,14 +22,25 @@
                         }
                     </style>
                     <headers>
+                        <!-- <button name="open_form_edit" type="object" string="Edit" decorators="{'invisible': [('membership_state', '!=', 'confirm')]}" /> -->
                         <!-- <button name="action_confirm_membership" id="action_confirm_membership"
                         string="Confirm" class="btn-primary" type="object"/> -->
                         <div>
                             <button name="action_confirm_membership" string="Confirm" type="object"
                                 invisible="membership_state != 'temp'" />
-                            <field name="membership_state" widget="statusbar"
-                                statusbar_visible="temp,confirm,cancel"/>
-                           <field name="member_expired" invisible="1" readonly='1'/>
+                            <!-- MEMBERSHIP RENUAL -->
+                            <button name="action_membership_renewal" string="Membership Renewal" type="object" class="oe_stat_button" icon="fa-lightbulb-o"
+                             />
+                            <!-- MEMBERSHIP EXTENSION -->
+                            <button name="action_membership_extension" string="Membership Extension" type="object" class="oe_stat_button" icon="fa-lightbulb-o" 
+                            />
+		                    <!-- MEMBERSHIP CANCEL -->
+                            <button name="action_membership_cancel" string="Membership Cancel" type="object" class="oe_stat_button" icon="fa-lightbulb-o" 
+                            />
+                            <!-- MEMBERSHIP STATE -->
+                            <field name="membership_state" widget="statusbar" statusbar_visible="temp,confirm,cancel"/>
+                            <!-- POLICY EXPIRED ALERT FLAG -->
+                            <field name="member_expired" invisible="1" readonly='1'/>
                         </div>
                     </headers>
                     <sheet bgcolor="lightblue">
@@ -207,6 +218,7 @@
         ]">
             </field>
         </record>
+        
         <menuitem
             id="menu_member"
             name="Policy Members"

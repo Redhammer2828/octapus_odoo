@@ -9,7 +9,7 @@ POLICY_MEMBER_STATE = [
 class ResPartnerMembers(models.Model):
     _inherit = 'res.partner'
 
-    parent_customer_id = fields.Many2one('res.partner', string='Parent Customer')
+    parent_customer_id = fields.Many2one('res.partner', string='Customer')
     is_customer = fields.Boolean('Is_customer')
     # -----------------------------------------
     ref_num = fields.Char('Ref Num')
@@ -96,7 +96,10 @@ class ResPartnerMembers(models.Model):
         readonly=True, copy=False, index=True,
         tracking=3,
         default='temp')
-    
+    # ---------------------------------------
+    cancellation_comment = fields.Text('Cancelation Comment')
+    # ----------------------------
+
     @api.model
     def create(self, vals):
         if self.env.context.get('from_res_partner_member_form'):
@@ -148,3 +151,55 @@ class ResPartnerMembers(models.Model):
     def action_view_policy_service(self):
         # Add your action code here
         pass
+
+    def action_membership_renewal(self):
+        view_id = self.env.ref('customer.membership_renewal_wizard_form').id
+        return {
+            'name': 'Membership Renewal',
+            'type': 'ir.actions.act_window',
+            'res_model': 'membership.renewal.wizard',
+            'view_mode': 'form',
+            'view_id': view_id,
+            'target': 'new',
+            'context': {
+                'default_parent_customer_id': self.parent_customer_id.id,
+                'default_activation_date': self.member_activate_date,
+                'default_card_type_id': self.card_type_id.id,
+                'default_vehicle_chasis_no': self.vehicle_chasis_no,
+                'default_product_template_id': self.product_template_id.id,
+                'active_id': self.id,
+                'active_model': self._name,
+            }
+        }
+        
+    def action_membership_extension(self):
+        view_id = self.env.ref('customer.membership_extension_wizard_form').id
+        return {
+            'name': 'Membership Extension',
+            'type': 'ir.actions.act_window',
+            'res_model': 'membership.extension.wizard',
+            'view_mode': 'form',
+            'view_id': view_id,
+            'target': 'new',
+            'context': {
+                'default_expiry_date': self.member_expiry_date,
+                'active_id': self.id,
+                'active_model': self._name,
+            }
+        }
+
+    def action_membership_cancel(self):
+        view_id = self.env.ref('customer.membership_cancel_wizard_form').id
+        return {
+            'name': 'Membership Cancellation',
+            'type': 'ir.actions.act_window',
+            'res_model': 'membership.cancel.wizard',
+            'view_mode': 'form',
+            'view_id': view_id,
+            'target': 'new',
+            'context': {
+                'active_id': self.id,
+                'active_model': self._name,
+                # 'default_membership_cancel_date': self.membership_cancel_date
+            }
+        }

@@ -1,6 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    
+    <data>
+        <record id="credit_member_search_view_form" model="ir.ui.view">
+            <field name="name">credit.member.search.view.form</field>
+            <field name="model">member.search</field>
+            <field name="arch" type="xml">
+                <form string="Credit Member Search" create="false" delete="false" edit="false"
+                    copy="false">
+                    <style>
+                        .o_form_view:not(.o_field_highlight)
+                        .o_field_widget:not(.o_field_invalid):not(.o_field_highlight)
+                        .o_input:not(:hover):not(:focus)
+                        {
+                        border-bottom: 1px solid #71639e2b;
+                        }
+                        .custom_field{
+                        background-color: #d2d2ff8f;
+                        border-radius: 5px;
+                        }
+                        .required_field{
+                        background-color: #b9a4ff29;
+                        }
+                        .o_control_panel {
+                            color: white;
+                        }
+                    </style>
+                    <group string="CREDIT MEMBER SEARCH">
+                        <group>
+                            <field name="policy_no" string="Policy" />
+                            <field name="ref_num" string="Membership" />
+                            <field name="mobile" string="Mobile" />
+                            <field name="email" string="Email" />
+                            <field name="vehicle_chasis_no" string="Chasis Number" />
+                        </group>
+                        <group>
+                            <field name="vehicle_plate" string="Plate Number" />
+                            <field name="member_name" string="Name" />
+                            <field name="customer_id"
+                                domain="[('is_company', '=', True), ('customer', '=', True)]"
+                                can_create="true" can_write="true" />
+                        </group>
+                    </group>
+                    <!-- Buttons -->
+                    <button name="search_credit_member" string="Search" type="object"
+                        class="oe_highlight" />
+                    <button string="Cancel" class="btn-default" special="cancel" />
+                </form>
+            </field>
+        </record>
 
+        <record id="credit_member_search_view_tree" model="ir.ui.view">
+            <field name="name">credit.member.search.view.tree</field>
+            <field name="model">member.search</field>
+            <field name="arch" type="xml">
+                <tree string="">
+                    
+                </tree>
+            </field>
+        </record>
+
+        <record id="credit_member_search_action" model="ir.actions.act_window">
+            <field name="name">Credit Member Search</field>
+            <field name="res_model">member.search</field>
+            <field name="view_mode">form,tree</field>
+            <field name="domain">[]</field>
+            <field name="view_ids"
+                eval="[
+                (5, 0, 0),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('customer.credit_member_search_view_form')}),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.credit_member_search_view_tree')})
+              ]">
+            </field>
+        </record>
+        <!-- Menu Items -->
+        <menuitem
+            id="menu_credit_member_search"
+            name="Credit Members"
+            parent="menu_member_search"
+            action="credit_member_search_action"
+            sequence="11" />
+    </data>
 </odoo>
