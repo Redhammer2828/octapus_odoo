@@ -38,7 +38,7 @@
             <group>
               <field name="vehicle_chasis_no" string="Chasis Number" />
               <field name="vehicle_plate" string="Plate Number" />
-              <field name="member_name" />
+              <field name="name" />
               <field name="customer_id"
                 domain="[('is_company', '=', True), ('customer', '=', True)]"
                 can_create="true" can_write="true" />
