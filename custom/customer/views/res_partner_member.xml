@@ -20,32 +20,29 @@
                         .required_field{
                         background-color: #b9a4ff29;
                         }
+                        
                     </style>
                     <headers>
                         <!-- <button name="open_form_edit" type="object" string="Edit" decorators="{'invisible': [('membership_state', '!=', 'confirm')]}" /> -->
                         <!-- <button name="action_confirm_membership" id="action_confirm_membership"
                         string="Confirm" class="btn-primary" type="object"/> -->
-                        <div>
-                            <button name="action_confirm_membership" string="Confirm" type="object"
-                                invisible="membership_state != 'temp'" />
+                        <div class="button-container">
+                            <button name="action_confirm_membership" string="Confirm" type="object" invisible="membership_state != 'temp'" />
                             <!-- MEMBERSHIP RENUAL -->
-                            <button name="action_membership_renewal" string="Membership Renewal" type="object" class="oe_stat_button" icon="fa-lightbulb-o"
-                             />
+                            <button name="action_membership_renewal" string="Membership Renewal" type="object" icon="fa-lightbulb-o" />
                             <!-- MEMBERSHIP EXTENSION -->
-                            <button name="action_membership_extension" string="Membership Extension" type="object" class="oe_stat_button" icon="fa-lightbulb-o" 
-                            />
+                            <button name="action_membership_extension" string="Membership Extension" type="object" icon="fa-lightbulb-o" />
 		                    <!-- MEMBERSHIP CANCEL -->
-                            <button name="action_membership_cancel" string="Membership Cancel" type="object" class="oe_stat_button" icon="fa-lightbulb-o" 
-                            />
+                            <button name="action_membership_cancel" string="Membership Cancel" type="object" icon="fa-lightbulb-o" />
                             <!-- MEMBERSHIP STATE -->
-                            <field name="membership_state" widget="statusbar" statusbar_visible="temp,confirm,cancel"/>
+                            <field name="membership_state" widget="statusbar" statusbar_visible="temp,confirm,cancel" />
                             <!-- POLICY EXPIRED ALERT FLAG -->
                             <field name="member_expired" invisible="1" readonly='1'/>
                         </div>
                     </headers>
                     <sheet bgcolor="lightblue">
                         <div class="oe_button_box" name="button_box" modifiers="{}">
-                            <label for="ref_num" string="Policy Expired !" invisible="member_expired != True" style="color: red; border: solid blue 1px; padding: 9px;" />
+                            <label for="ref_num" string="Policy Expired !" invisible="member_expired != True" style="color: white;border: solid #71639e 1px;padding: 5px;background-color: #dc3545;/* border-radius: 10px; */border-top-left-radius: 5px;border-bottom-left-radius: 5px;" />
                             <button name="action_view_policy_service" type="object" class="oe_stat_button" icon="fa-pencil-square-o">
                                 <field name="policy_member_service_count" widget="statinfo" string="Policy Services" />
                             </button>
