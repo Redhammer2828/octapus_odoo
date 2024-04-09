@@ -14,8 +14,9 @@ class ResPartnerCustomer(models.Model):
     
     #Page - Category
     customer_category_ids = fields.One2many('partner.category', 'partner_id', string='Customer Categories')
-
     
+    invoicing_policy = fields.Selection([ ('individual', 'Individual'),
+                                    ('consolidated', 'Consolidated') ], string='Invoicing Policy') 
           # Set the default value here
     #Action for Member Button
     def action_view_member(self):
@@ -43,7 +44,28 @@ class ResPartnerCustomer(models.Model):
                 record.member_count = member_count
             else:
                 record.member_count = 0
+    
+    def waive_off_history(self):
+        pass
 
+     #For Active / Archive in Form view 
+    # def toggle_active(self):
+    #     for rec in self:
+    #         rec.active = not rec.active
+
+    def duplicate_record(self):
+        self.ensure_one()
+        duplicate_record = self.copy()
+        view_id = self.env.ref('customer.res_partner_customer_form').id
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Duplicate Record',
+            'res_model': self._name,
+            'res_id': duplicate_record.id,
+            'view_mode': 'form',
+            'view_id': view_id,
+            'target': 'current',
+        }
 
 class PartnerCategory(models.Model):
     _name = 'partner.category'

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+  <data>
+    <!-- Form View for Policy Member Search -->
+    <record id="policy_member_search_view_form" model="ir.ui.view">
+      <field name="name">policy.member.search.view.form</field>
+      <field name="model">member.search</field>
+      <field name="arch" type="xml">
+        <form string="Search Member" create="false" delete="false" edit="false" copy="false">
+          <style>
+            .o_form_view:not(.o_field_highlight)
+            .o_field_widget:not(.o_field_invalid):not(.o_field_highlight)
+            .o_input:not(:hover):not(:focus)
+            {
+            border-bottom: 1px solid #71639e2b;
+            }
+            .custom_field{
+            background-color: #d2d2ff8f;
+            border-radius: 5px;
+            }
+            .required_field{
+                background-color: #b9a4ff29;
+            }
+            .o_control_panel {
+              color: white;
+            }
+        </style>
+          <group string="POLICY MEMBER SEARCH">
+            <!-- Fields for search criteria -->
+            <group>
+              <field name="policy_no" string="Policy" />
+              <field name="ref_num" string="Membership" />
+              <field name="mobile" string="Mobile" />
+              <field name="email" string="Email" />
+              <field name="old_membership_number" />
+            </group>
+            <group>
+              <field name="vehicle_chasis_no" string="Chasis Number" />
+              <field name="vehicle_plate" string="Plate Number" />
+              <field name="member_name" />
+              <field name="customer_id"
+                domain="[('is_company', '=', True), ('customer', '=', True)]"
+                can_create="true" can_write="true" />
+            </group>
+          </group>
+
+          <!-- Buttons -->
+      
+            <button name="search_member" string="Search" type="object" class="oe_highlight" />
+            <button string="Cancel" class="btn-default" special="cancel" />
+
+        </form>
+      </field>
+    </record>
+
+    <!-- Tree View for displaying search results -->
+    <record id="policy_member_search_view_tree" model="ir.ui.view">
+      <field name="name">policy.member.search.view.tree</field>
+      <field name="model">res.partner</field>
+      <field name="arch" type="xml">
+        <tree string="Policy Member Search Results">
+          <!-- Define fields to display in the tree view -->
+          <!-- <field name="id"/> -->
+          <field name="policy_no" />
+          <field name="vehicle_chasis_no" />
+          <field name="ref_num" />
+          <field name="mobile" />
+          <field name="email" />
+          <field name="name" />
+          <field name="old_membership_number" />
+          <field name="vehicle_plate" />
+          <!-- <field name="parent_customer_id" /> -->
+          <!-- <field name="vehicle_type" /> -->
+          <!-- <field name="vehicle_model" /> -->
+          <!-- <field name="member_expiry_date" /> -->
+          <!-- <field name="create_date" /> -->
+        </tree>
+      </field>
+    </record>
+
+    <!-- Action for Policy Member Search -->
+    <record id="policy_member_search_action" model="ir.actions.act_window">
+      <field name="name">Policy Member Search</field>
+      <field name="res_model">member.search</field>
+      <field name="view_mode">form,tree</field>
+      <field name="domain">[]</field>
+      <field name="view_ids"
+        eval="[
+          (5, 0, 0),
+          (0, 0, {'view_mode': 'form', 'view_id': ref('policy_member_search_view_form')}),
+          (0, 0, {'view_mode': 'tree', 'view_id': ref('policy_member_search_view_tree')})
+        ]">
+      </field>
+    </record>
+
+    <!-- Menu Items -->
+    <menuitem
+      id="menu_member_search"
+      name="Member Search"
+      parent="menu_membership_root"
+      sequence="10" />
+
+    <menuitem
+      id="menu_policy_member_search"
+      name="Policy Members"
+      parent="menu_member_search"
+      action="policy_member_search_action"
+      sequence="10" />
+      
+  </data>
+
+</odoo>

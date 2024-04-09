@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="policy_member_upload_form" model="ir.ui.view">
+            <field name="name">policy.member.upload.form</field>
+            <field name="model">upload.member.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Policy Members Upload">
+                    <group>
+                        <field name="file_type" string="File Type" required="1" widget="radio"
+                            options="{'horizontal': True}" />
+                    </group>
+                    <group>
+                        <group>
+                            <field name="name" string="Name" required="1" />
+                            <field name="file" string="File" />
+                        </group>
+                        <group>
+                            <field name="type" invisible="1"/>
+                        </group>
+                    </group>
+                    <footer>
+                        <button name="action_policy_member_upload_excel" class="btn-primary" string="Upload Excel" type="object" domain="[('file_type', '=', 'excel')]">
+                        </button>
+                        <button name="action_policy_member_upload_csv" class="btn-primary" string="Upload CSV" type="object" domain="[('file_type', '!=', 'csv')]">
+                        </button>
+                        <button string="Cancel" class="btn-default" special="cancel" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+        <record id="action_view_policy_member_upload" model="ir.actions.act_window">
+            <field name="name">Upload Policy Members</field>
+            <field name="res_model">upload.member.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+        <menuitem
+            id="menu_new_membership"
+            name="New Membership"
+            parent="menu_member"
+            sequence="50"
+        />
+        <menuitem
+            id="menu_upload_file"
+            name="Upload File"
+            parent="menu_new_membership"
+            action="action_view_policy_member_upload"
+            sequence="51" />
+    </data>
+
+</odoo>

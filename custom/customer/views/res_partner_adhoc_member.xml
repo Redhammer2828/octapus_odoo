@@ -22,23 +22,40 @@
                         }
                     </style>
                     <sheet bgcolor="lightblue">
-                        <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                        <div class="oe_button_box" name="button_box">
+                            <!-- <label for="ref_num" string="Policy Expired !" invisible="member_expired != True" style="color: red; border: solid blue 1px; padding: 9px;" /> -->
+                            <!-- <button name="action_view_policy_service" type="object" class="oe_stat_button" icon="fa-pencil-square-o">
+                                <field name="policy_member_service_count" widget="statinfo" string="Policy Services" />
+                            </button> -->
+                        </div>
+                        <!-- <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/> -->
                         <field name="avatar_128" invisible="1"/>
                         <field name="image_1920" widget="image" class="oe_avatar" options="{&quot;preview_image&quot;: &quot;avatar_128&quot;}"/>
-                            <div class="oe_title">
-                            <h4>Name:</h4>
-                            <field name="name" placeholder="Type.." class="custom-field"/>
-                            <h4>Company:</h4>
-                            <field name="parent_customer_id" placeholder="select.." class="custom-field" />
+                        <div class="oe_title">
+                            <!-- <h4>Name:</h4> -->
+                            <!-- <field name="ref_num" placeholder="Membership Number" readonly="1" style="font-size: 64%;" /> -->
+                            <label for="name" string="Name" />
+                            <div>
+                                <field name="name" placeholder="Type.." class="required_field"
+                                    required="1" />
                             </div>
+                            <!-- <h4>Company:</h4> -->
+                            <label for="parent_customer_id" string="Company" />
+                            <div>
+                                <field name="parent_customer_id" placeholder="select.."
+                                    class="required_field" required="1" />
+                            </div>
+                        </div>
                         <group col="3">
                             <group>
                                 <field name="policy_no" string="Policy No" class="custom-field"/>
-                                <field name="vehicle_chasis_no"  string="Vehicle Chasis No" class="custom-field"/>
+                                <field name="vehicle_chasis_no"  string="Vehicle Chasis No" class="required_field" required="1"/>
                                 <field name="old_membership_number" class="custom-field" />
                                 <field name="member_activate_date" class="custom-field"/>
                                 <field name="member_expiry_date" class="custom-field"/>
                                 <field name="card_type_id" class="custom-field"/>
+                                <!-- <field name="member_partner_category_id" class="required_field"
+                                required="1" readonly="is_readonly" /> -->
                                 <!-- <field name="member_sequence_id" required="1" /> -->
                                 <field name="driving_license" class="custom-field"/>
                                 <field name="member_type" widget="radio" readonly="1"  />
@@ -93,10 +110,18 @@
             <field name="name">res.partner.adhoc.member.tree</field>
             <field name="model">res.partner</field>
             <field name="arch" type="xml">
-                <tree string="Policy Members">
-                    <field name="id" />
+                <tree string="Adhoc Members">
+                    <!-- <field name="id" /> -->
                     <field name="name" />
                     <field name="parent_customer_id"/>
+                    <field name="mobile" />
+                    <field name="email" />
+                    <field name="vehicle_chasis_no" />
+                    <field name="vehicle_type" />
+                    <field name="vehicle_plate" />
+                    <field name="vehicle_model" />
+                    <!-- <field name="member_expiry_date" /> -->
+                    <field name="create_date" />
                 </tree>
             </field>
         </record>

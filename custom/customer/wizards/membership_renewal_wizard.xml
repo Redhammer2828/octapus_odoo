@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="membership_renewal_wizard_form" model="ir.ui.view">
+        <field name="name">membership.renewal.wizard.form</field>
+        <field name="model">membership.renewal.wizard</field>
+        <field name="arch" type="xml">
+            <form string="" >
+                <group >
+                    <group >
+                        <field name="parent_customer_id" readonly="1" required="1" can_create="true" can_write="true" />
+                        <field name="activation_date" />
+                        <field name="expiry_date" />
+                    </group>
+                    <group >
+                        <field name="vehicle_chasis_no" readonly="1" required="1" />
+                        <field name="card_type_id" required="1" widget="selection" can_create="true" can_write="true" />
+                        <field name="product_template_id" domain="[('type','=','service'),('bundle_product','=',True)]" options="{'no_create':1,'no_create_edit':1}" required="1" can_create="true" can_write="true" />
+                    </group>
+                </group>
+                <footer >
+                    <button name="action_renew" string="Renew" type="object" class="btn-primary"  options="{}"/>
+                    <button string="Cancel" class="btn-default" special="cancel"  options="{}"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>
