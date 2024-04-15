@@ -85,7 +85,7 @@ class MemberSearch(models.Model):
 
         # Open the tree view with the search results
         return {
-            'name': 'Policy Member Search Results',
+            'name': 'Credit Member Search Results',
             'view_mode': 'tree,form',
             'res_model': 'res.partner',
             'type': 'ir.actions.act_window',

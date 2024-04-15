@@ -76,7 +76,7 @@
                                 <!-- . -->
                                 <field name="policy_no" string="Policy No" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
-                                    class="required_field" required="1" />
+                                    class="required_field" required="1" readonly="is_readonly"/>
                                 <field name="old_membership_number" readonly="is_readonly" />
                                 <field name="member_activate_date" date_format="%d/%m/%Y"
                                     readonly="is_readonly" />
