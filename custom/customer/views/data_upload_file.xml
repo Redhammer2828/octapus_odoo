@@ -44,6 +44,7 @@
                             <tree string="Data" editable="bottom">
                                 <field name="member_name" />
                                 <field name="mobile" />
+                                
                                 <!-- <field name="vehicle_plate" />
                                 <field name="vehicle_chasis_no" />
                                 <field name="member_activate_date" />
