@@ -8,10 +8,9 @@ class DataUploadFile(models.Model):
     file = fields.Binary(string='File')
     file_type = fields.Char('File Type')
     
-    # date = fields.Date('Uploaded Date')
-    # upload_by = fields.Char('uploaded_by')
-    
-    
+    date = fields.Datetime('Uploaded Date', default=lambda self: fields.Datetime.now())
+    upload_by = fields.Many2one('res.users', string='Uploaded By', default=lambda self: self.env.user)
+
     upload_member_ids = fields.One2many('upload.member.line', 'upload_file_id', string='Members')
     
     state = fields.Selection([
@@ -30,6 +29,12 @@ class DataUploadFile(models.Model):
 
     def action_cancel(self):
         self.state = 'draft'
+    
+    def action_delete_members(self):
+        pass
+    
+    def action_view_rejected_records(self):
+        pass
 
 class UploadMemberLine(models.Model):
     _name = 'upload.member.line'
