@@ -28,8 +28,33 @@ class UploadMemberWizard(models.TransientModel):
         member_lines = []
         for index, row in excel_data.iterrows():
             member_line_data = {
+                'card_type':  row['card_type'],
+                'old_membership_number':  row['old_membership_number'],
                 'member_name': row.get('name'),
                 'mobile': row.get('mobile'),
+                'street': row.get('address'),
+                'state': row.get('emirate'),
+                'country': row.get('country'),
+                'zip': row.get('zip'),
+                'region_code': row.get('region_code'),
+                'vehicle_type': row.get('vehicle_type'),
+                'vehicle_model': row.get('vehicle_model'),
+                'vehicle_mfg_year': row.get('vehicle_mfg_year'),
+                'vehicle_plate': row.get('vehicle_plate'),
+                'mail_ref': row.get('mail_ref'),
+                'vehicle_reg_code': row.get('vehicle_reg_code'),
+                'vehicle_chasis_no': row.get('vehicle_chasis_no'),
+                'policy_no': row.get('policy_no'),
+                'vehicle_reg_country': row.get('vehicle_reg_country'),
+                'vehicle_emirate': row.get('vehicle_emirate'),
+                'delivery_ref_date': row.get('delivery_date'),
+                'invoice_ref_date': row.get('invoice_ref_date'),
+                'member_expiry_date': row.get('member_expiry_date'),
+                'member_activate_date': row.get('member_activate_date'),
+                'comment': row.get('remarks'),
+                'package': row.get('package_id'),
+                'customer_code': row.get('customer_code'),
+                'sequence_code': row.get('category_code'),
                 # Add other fields from the Excel file as needed
             }
             member_lines.append((0, 0, member_line_data))

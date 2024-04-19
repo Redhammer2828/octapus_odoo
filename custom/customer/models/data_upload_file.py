@@ -44,6 +44,7 @@ class UploadMemberLine(models.Model):
     
     member_name = fields.Char(string='Name')
     mobile = fields.Char(string='Mobile')
+    
     vehicle_plate = fields.Char(string='Vehicle Plate')
     vehicle_chasis_no = fields.Char(string='Vehicle Chassis No')
     member_activate_date = fields.Date(string='Member Activate Date')
@@ -59,16 +60,20 @@ class UploadMemberLine(models.Model):
     customer_ref_date = fields.Date(string='Customer Reference Date')
     old_membership_number = fields.Char(string='Old Membership Number')
     policy_no = fields.Char(string='Policy No')
+    
+    vehicle_type = fields.Char('vehicle_type') 
+    vehicle_model = fields.Char('vehicle_model') 
+    mail_ref = fields.Char('mail_ref') 
+
     vehicle_mfg_year = fields.Char(string='Vehicle Manufacturing Year')
-    vehcle_reg_country_id = fields.Many2one('res.country', string='Vehicle Registration Country')
-    vehicle_emirate_id = fields.Many2one('res.country.state', string='Vehicle Emirate')
     vehicle_reg_code = fields.Char(string='Vehicle Registration Code')
+   
     street = fields.Char(string='Street')
-    state_id = fields.Many2one('res.country.state', string='State')
-    region_code_id = fields.Many2one('region.code', string='Region Code')
-    country_id = fields.Many2one('res.country', string='Country')
+    
+    zip = fields.Char('zip') #Created
+    
+    
     delivery_ref_date = fields.Date(string='Delivery Reference Date')
-    card_type_id = fields.Many2one('card.type', string='Card Type')
     comment = fields.Text(string='Comment')
     sequence_code = fields.Char(string='Sequence Code')
     upload_member_status = fields.Selection([
@@ -76,3 +81,17 @@ class UploadMemberLine(models.Model):
         ('renewal', 'Renewal'),
         ('rejection', 'Rejected')
     ], string='Status', default='new')
+
+    # card_type_id = fields.Many2one('card.type', string='Card Type')
+    # country_id = fields.Many2one('res.country', string='Country')
+    # state_id = fields.Many2one('res.country.state', string='Emirate')
+    # region_code_id = fields.Many2one('region.code', string='Region Code')
+    # vehcle_reg_country_id = fields.Many2one('res.country', string='Vehicle Registration Country')
+    # vehicle_emirate_id = fields.Many2one('res.country.state', string='Vehicle Emirate')
+
+    card_type = fields.Char('Card Type')
+    state = fields.Char('State')
+    country = fields.Char('Country')
+    region_code = fields.Char('Region Code')
+    vehicle_reg_country = fields.Char('Vehicle Reg Country')
+    vehicle_emirate = fields.Char('Vehicle Emirate')
