@@ -22,13 +22,14 @@ class DataUploadFile(models.Model):
     
     def action_validate_policy_data(self):
         # Check for duplicates in the dynamically shown data
-        duplicates = self._find_duplicates()
-        if duplicates:
+        duplicate_records, matching_partner_records = self._find_duplicates()
+        
+        # Handle duplicate records
+        if duplicate_records:
             # Print duplicates to console
-            for duplicate in duplicates:
+            for duplicate in duplicate_records:
                 print(f'Duplicate record: {duplicate}')
-            # Handle duplicate records (e.g., raise warning or take appropriate action)
-            # For now, let's raise a warning
+            # Raise a warning
             return {
                 'warning': {
                     'title': 'Duplicate Records',
@@ -36,11 +37,25 @@ class DataUploadFile(models.Model):
                 }
             }
         
+        # Handle matching partner records
+        if matching_partner_records:
+            # Print matching partner records to console
+            for partner_record in matching_partner_records:
+                print(f'Matching partner record: {partner_record}')
+            # Raise a warning or take appropriate action (e.g., update the existing record)
+            # For now, let's raise a warning
+            return {
+                'warning': {
+                    'title': 'Matching Partner Records',
+                    'message': 'Matching partner records found. Check console for details.',
+                }
+            }
+        
         # Implement the validation logic here
         self.state = 'validate'
 
     def _find_duplicates(self):
-        # Extract relevant fields for duplicate check (e.g., member_name, mobile)
+        # Extract relevant fields for duplicate check
         relevant_fields = ['old_membership_number', 'vehicle_chasis_no']  # Adjust as per your requirements
         
         # Create a dictionary to store record IDs based on unique field values
@@ -56,7 +71,18 @@ class DataUploadFile(models.Model):
                 # Duplicate records found
                 duplicate_records.extend(record_ids)
         
-        return duplicate_records
+        # Check for matching partner records
+        matching_partner_records = []
+        for member_line in self.upload_member_ids:
+            matching_partners = self.env['res.partner'].search([
+                ('vehicle_chasis_no', '=', member_line.vehicle_chasis_no),
+                ('member_expiry_date', '=', member_line.member_expiry_date),
+            ])
+            if matching_partners:
+                # Matching partner records found
+                matching_partner_records.extend(matching_partners)
+        
+        return duplicate_records, matching_partner_records
 
     def apply_member_upload_wizard(self):
         # Implement the logic to create/update res.partner records
