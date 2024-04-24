@@ -8,8 +8,7 @@
             <field name="arch" type="xml">
                 <form string="Policy Members Upload">
                     <group>
-                        <field name="file_type" string="File Type" required="1" widget="radio"
-                            options="{'horizontal': True}" />
+                        <field name="file_type" string="File Type" required="1" widget="radio"/>
                     </group>
                     <group>
                         <group>
@@ -34,8 +33,9 @@
             <field name="name">Upload Policy Members</field>
             <field name="res_model">upload.member.wizard</field>
             <field name="view_mode">form</field>
-            <!-- <field name="target">new</field> -->
+            <field name="target">new</field>
         </record>
+        
         <menuitem
             id="menu_new_membership"
             name="New Membership"

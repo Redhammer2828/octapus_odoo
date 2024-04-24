@@ -12,9 +12,9 @@ class ResPartnerMembers(models.Model):
     parent_customer_id = fields.Many2one('res.partner', string='Customer')
     is_customer = fields.Boolean('Is_customer')
     # -----------------------------------------
-    ref_num = fields.Char('Ref Num')
+    ref_num = fields.Char('Membership Number')
 
-    policy_no = fields.Char(string='Policy No')
+    policy_no = fields.Char(string='Policy Number')
     vehicle_chasis_no = fields.Char(string='Vehicle Chasis No')
     old_membership_number = fields.Char(string='Old Membership Number')
     member_activate_date = fields.Date(string='Member Activate Date')

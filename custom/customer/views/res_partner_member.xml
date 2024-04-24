@@ -182,13 +182,13 @@
             <field name="arch" type="xml">
                 <tree string="Policy Members">
                     <field name="id"/>
-                    <field name="name" />
                     <field name="ref_num" />
+                    <field name="name" />
                     <field name="parent_customer_id" />
                     <field name="policy_no" />
                     <field name="old_membership_number" />
                     <field name="mobile" />
-                    <field name="email" />
+                    <!-- <field name="email" /> -->
                     <field name="vehicle_chasis_no" />
                     <field name="vehicle_type" />
                     <field name="vehicle_plate" />
