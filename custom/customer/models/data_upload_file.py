@@ -26,33 +26,29 @@ class DataUploadFile(models.Model):
         
         # Handle duplicate records
         if duplicate_records:
-            # Print duplicates to console
-            for duplicate in duplicate_records:
-                print(f'Duplicate record: {duplicate}')
-            # Raise a warning
-            return {
-                'warning': {
-                    'title': 'Duplicate Records',
-                    'message': 'Duplicate records found. Check console for details.',
-                }
-            }
+            # Update upload_member_status to 'Rejected Members'
+            self.upload_member_ids.filtered(lambda line: line.id in duplicate_records).update({'upload_member_status': 'rejection'})
         
         # Handle matching partner records
         if matching_partner_records:
-            # Print matching partner records to console
+            # Update upload_member_status to 'Rejected Members' for each matching record
             for partner_record in matching_partner_records:
-                print(f'Matching partner record: {partner_record}')
-            # Raise a warning or take appropriate action (e.g., update the existing record)
-            # For now, let's raise a warning
+                self.upload_member_ids.filtered(lambda line: line.vehicle_chasis_no == partner_record.vehicle_chasis_no
+                                                and line.member_expiry_date == partner_record.member_expiry_date).update({'upload_member_status': 'rejection'})
+        
+        # If duplicates or matching partner records are found, return a warning
+        if duplicate_records or matching_partner_records:
             return {
+                'type': 'ir.actions.act_window_close',
                 'warning': {
-                    'title': 'Matching Partner Records',
-                    'message': 'Matching partner records found. Check console for details.',
+                    'title': 'Records Rejected',
+                    'message': 'Duplicate or matching records found. They have been marked as Rejected Members.',
                 }
             }
         
         # Implement the validation logic here
         self.state = 'validate'
+
 
     def _find_duplicates(self):
         # Extract relevant fields for duplicate check
@@ -113,17 +109,27 @@ class UploadMemberLine(models.Model):
     invoice_ref_date = fields.Date(string='Invoice Reference Date')
     customer_code = fields.Char(string='Customer Code')
     package = fields.Char(string='Package ID')
+    # --------------------------------------------------------------------
+    # Created
     member_type = fields.Selection([
-        ('new', 'New'),
-        ('renewal', 'Renewal'),
-        ('other', 'Other')
-    ], string='Member Type', default='new')
+        ('member_customer', 'Company Member'),
+        ('company_customer', 'Company'),
+        ('direct_customer', 'Direct Customer')
+    ], string='Member Type')
+
+    upload_member_status = fields.Selection([
+        ('new', 'New Member'),
+        ('rejection', 'Rejected Member'),
+        ('renewal', 'Renewal Member'),
+        ('update', 'Update Member')
+    ], string='Upload Status')
+    # --------------------------------------------------------------------
     customer_ref_date = fields.Date(string='Customer Reference Date')
     old_membership_number = fields.Char(string='Old Membership Number')
     policy_no = fields.Char(string='Policy No')
     
     vehicle_type = fields.Char('vehicle_type') 
-    vehicle_model = fields.Char('vehicle_model') 
+    vehicle_model = fields.Char('vehicle_model')
     mail_ref = fields.Char('mail_ref') 
 
     vehicle_mfg_year = fields.Char(string='Vehicle Manufacturing Year')
@@ -135,11 +141,6 @@ class UploadMemberLine(models.Model):
     delivery_ref_date = fields.Date(string='Delivery Reference Date')
     comment = fields.Text(string='Comment')
     sequence_code = fields.Char(string='Sequence Code')
-    upload_member_status = fields.Selection([
-        ('new', 'New'),
-        ('renewal', 'Renewal'),
-        ('rejection', 'Rejected')
-    ], string='Status', default='new')
 
 
     card_type = fields.Char('Card Type')
@@ -148,11 +149,3 @@ class UploadMemberLine(models.Model):
     region_code = fields.Char('Region Code')
     vehicle_reg_country = fields.Char('Vehicle Reg Country')
     vehicle_emirate = fields.Char('Vehicle Emirate')
-
-
-    # card_type_id = fields.Many2one('card.type', string='Card Type')
-    # country_id = fields.Many2one('res.country', string='Country')
-    # state_id = fields.Many2one('res.country.state', string='Emirate')
-    # region_code_id = fields.Many2one('region.code', string='Region Code')
-    # vehcle_reg_country_id = fields.Many2one('res.country', string='Vehicle Registration Country')
-    # vehicle_emirate_id = fields.Many2one('res.country.state', string='Vehicle Emirate')

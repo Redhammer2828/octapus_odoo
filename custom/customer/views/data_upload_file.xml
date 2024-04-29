@@ -67,7 +67,7 @@
                                 <field name="card_type" />
                                 <field name="comment" />
                                 <field name="sequence_code" />
-                                <!-- <field name="upload_member_status" /> -->
+                                <field name="upload_member_status" />
                             </tree>
                         </field>
                         <!-- </group> -->
@@ -79,19 +79,40 @@
             </field>
         </record>
 
-        <record id="data_upload_file_policy_tree" model="ir.ui.view">
-            <field name="name">data.upload.file.policy.tree</field>
+        <!-- <record id="rejected_data_members_tree" model="ir.ui.view">
+            <field name="name">rejected.data.members.tree</field>
             <field name="model">data.upload.file</field>
             <field name="arch" type="xml">
-                <tree string="Policy Members Data" edit="false" create="false">
-                    <!-- <field name="name" readonly="1" />
-                    <field name="date" />
-                    <field name="upload_log" />
-                    <field name="upload_by" />
-                    <field name="state" /> -->
+                <tree string="Rejected Records" create="false" edit="false" delete="false" >
+                    <field name="member_name" />
+                    <field name="mobile" />
+                    <field name="vehicle_plate" />
+                    <field name="vehicle_chasis_no" />
+                    <field name="member_activate_date" />
+                    <field name="member_expiry_date" />
+                    <field name="invoice_ref_date" />
+                    <field name="customer_code" />
+                    <field name="package" string="Package ID" />
+                    <field name="member_type" readonly="1"/>
+                    <field name="customer_ref_date" />
+                    <field name="old_membership_number" />
+                    <field name="policy_no" />
+                    <field name="vehicle_mfg_year" />
+                    <field name="vehcle_reg_country_id" can_create="true" can_write="true" />
+                    <field name="vehicle_emirate_id" can_create="true" can_write="true" />
+                    <field name="vehicle_reg_code" />
+                    <field name="street" />
+                    <field name="state_id" can_create="true" can_write="true" />
+                    <field name="region_code_id" can_create="true" can_write="true" />
+                    <field name="country_id" can_create="true" can_write="true" />
+                    <field name="delivery_ref_date" />
+                    <field name="card_type_id" can_create="true" can_write="true" />
+                    <field name="comment" />
+                    <field name="upload_member_status" />
                 </tree>
             </field>
-        </record>
+        </record> -->
+
         <!-- Action -->
         <record id="action_policy_data_upload_file" model="ir.actions.act_window">
             <field name="name">Action Policy Data Upload File</field>
@@ -99,5 +120,13 @@
             <field name="view_mode">tree,form</field>
             <!-- <field name="target">new</field> -->
         </record>
+
+        <!-- <record id="action_rejected_data_members" model="ir.actions.act_window">
+            <field name="name">	Rejected Records</field>
+            <field name="res_model">data.upload.fil</field>
+            <field name="view_mode">tree,form</field>
+            <field name="domain">[]</field>
+            <field name="context">{}</field>
+        </record> -->
     </data>
 </odoo>
