@@ -19,100 +19,77 @@ class DataUploadFile(models.Model):
         ('done', 'Done')
     ], string='Status', default='draft')
 
-    
     def action_validate_policy_data(self):
-        # Check for duplicates in the dynamically shown data
-        duplicate_records, matching_partner_records = self._find_duplicates()
-        
-        # Handle duplicate records
-        if duplicate_records:
-            # Update upload_member_status to 'Rejected Member'
-            self.upload_member_ids.filtered(lambda line: line.id in duplicate_records).update({'upload_member_status': 'rejection'})
-        
-        # Handle matching partner records
-        if matching_partner_records:
-            # Update upload_member_status to 'Rejected Member' for each matching record
-            for partner_record in matching_partner_records:
-                self.upload_member_ids.filtered(lambda line: line.vehicle_chasis_no == partner_record.vehicle_chasis_no
-                                                and line.member_expiry_date == partner_record.member_expiry_date).update({'upload_member_status': 'rejection'})
-        
-#-----------------------------------------------------------------------------------------------------------------------------
         # Check for customer_code matches and update upload_member_status
         for member_line in self.upload_member_ids:
-            matching_partner = self.env['res.partner'].search([
-                ('customer_code', '=', member_line.customer_code),
-            ], limit=1)
-            if matching_partner: # if Customer_code matches , Same insurance company
-                # Customer code matches, move to next checks
-                if matching_partner.vehicle_chasis_no == member_line.vehicle_chasis_no: # If Vehicle Chasis Number Matches , Moves to name check
-                # Check if the name matches
-                    if matching_partner.name == member_line.member_name:
-                        # Name matches, check membership_state
-                        if matching_partner.membership_state == 'temp':            #temp , confirm , cancel 3  statuses are there
-                            member_line.update({'upload_member_status': 'new'})   # If same comp , same member , Exist in temp , save as new Membership.
-                        elif matching_partner.membership_state == 'confirm':
-                            # Calculate difference between member_expiry_date and member_activate_date
-                            expiry_date = fields.Date.from_string(member_line.member_expiry_date)
-                            activate_date = fields.Date.from_string(member_line.member_activate_date)
-                            difference = (expiry_date - activate_date).days
-                            if difference >= 365:  # 12 months or above
-                                member_line.update({'upload_member_status': 'Renewal Member'})
-                            else:
-                                member_line.update({'upload_member_status': 'Update Member'})
-                    else:
-                        # Name doesn't match, update upload_member_status to 'new'
-                        member_line.update({'upload_member_status': 'new'}) # If name  does not match, that is Member does to exist under Same company ,New Membership
-                else:
-                    member_line.update({'upload_member_status': 'new'}) # if Vehicle Chasis Number  does not Match : Need to save as new rec , New membership
+            if not member_line.vehicle_chasis_no or not member_line.member_name or not member_line.country or not member_line.member_expiry_date:
+                # Update upload_member_status to 'rejection' and add a remark
+                member_line.update({'upload_member_status': 'rejection', 'comment': "*empty"})
+
             else:
-                # No matching partner found, update upload_member_status to 'Rejected Member'
-                member_line.update({'upload_member_status': 'rejection'}) #Company Doesnt exist , so Rejection.
- #--------------------------------------------------------------------------------------------------------------------------------       
-        
-        # If duplicates or matching partner records are found, return a warning
-        if duplicate_records or matching_partner_records:
-            return {
-                'type': 'ir.actions.act_window_close',
-                'warning': {
-                    'title': 'Records Rejected',
-                    'message': 'Duplicate or matching records found. They have been marked as Rejected Members.',
-                }
-            }
-        
+                print("MEMBER LINE CUSTOMER CODE------",member_line.customer_code)
+                matching_partner = self.env['res.partner'].search([
+                    ('customer_code', '=', member_line.customer_code),
+                ])
+                member_list = self.env['res.partner'].search([
+                    ('parent_customer_id','=', matching_partner.id)
+                ])
+                print("POICY MEMBER OF SPECIFIC CUSTOMER--------",member_list.id)
+                if matching_partner and member_list: # if Customer_code matches , Same insurance company , Customer code matches, move to next checks
+
+                    print("CHASIS NUMBER MATCH FROM EXCEL---- MEMBER LINE-------",member_line.vehicle_chasis_no)
+                    print("CHASIS NUMBER MATCH FROM -----RES.PARTNER-------",member_list.vehicle_chasis_no)
+                    
+                    if member_list.vehicle_chasis_no == member_line.vehicle_chasis_no:  # If Vehicle Chasis Number Matches , Moves to name check , Check if the name matches
+                        
+                        print("VEHICLE CHAIS CHECK -----PASS-----")
+                        
+                        print("NAME MATCH FROM -----RES.PARTNER------- ",member_list.name)
+                        print("NAME MATCH FROM EXCEL---- MEMBER LINE-------",member_line.member_name)
+                        
+                        if member_list.name == member_line.member_name:    # Name matches, check membership_state
+                            print("NAME CHECK -----PASS-----")
+
+                            print("MEMBERSHIP STATE CHECK : " ,member_list.membership_state)
+                            
+                            if member_list.membership_state == 'temp':            #temp , confirm , cancel 3  statuses are there
+                                member_line.update({'upload_member_status': 'new','comment': "Exist Under Temp,*Overwrite"})   # If same comp , same member , Exist in temp , save as new Membership.
+                            
+                            elif member_list.membership_state == 'confirm':
+                                # Calculate difference between member_expiry_date and member_activate_date
+                                expiry_date = fields.Date.from_string(member_line.member_expiry_date)
+                                activate_date = fields.Date.from_string(member_line.member_activate_date)
+                                difference = (expiry_date - activate_date).days
+
+                                print("EXPIRY DATE----",expiry_date)
+                                print("ACTIVATION DATE------",activate_date)
+                                print("DIFFRENCE CALCULATED---++++++++--",difference)
+                                
+                                print("EXPIRY DATE IN ---res.partner",member_list.member_expiry_date)
+                                print("EXPIRY DATE IN ---excel",member_line.member_expiry_date)
+
+                                if member_list.member_expiry_date != member_line.member_expiry_date:
+                                    if difference >= 365:  # 12 months or above
+                                        print("=-==-==--=-MEMBERSHIP RENEWAL--=-==-=")
+                                        member_line.update({'upload_member_status': 'renewal','comment': "*Membership Renewal"})
+                                    else:
+                                        print("=-==-==--=-MEMBERSHIP EXTENSION--=-==-=")
+                                        member_line.update({'upload_member_status': 'update','comment': "*Membership Extension"})
+                                else :
+                                     member_line.update({'upload_member_status': 'rejection', 'comment': "*Duplicate Record in System!"}) #Company Doesnt exist , so Rejection.          
+                        else:
+                            print("-=-==-==--=--=-==-==--=-NAME CHECK FAIL--=-==-==--=-=-==-==--=-=-==-==--=")  # Name doesn't match, update upload_member_status to 'new'
+                            member_line.update({'upload_member_status': 'new' ,'comment': "Member Not Exist`"}) # If name  does not match, that is Member does to exist under Same company ,New Membership
+                    else:
+                        print("-=-==-==--=-=-==-==--=VEHICLE CHASIS CHECK FAIL-=-==-==--=-=-==-==--=-=-==-==--=")
+                        member_line.update({'upload_member_status': 'new','comment': "*New Member"}) # if Vehicle Chasis Number  does not Match : Need to save as new rec , New membership
+                else:
+                    # No matching partner found, update upload_member_status to 'Rejected Member'
+                    member_line.update({'upload_member_status': 'rejection', 'comment': "Company Not Found!"}) #Company Doesnt exist , so Rejection.
+                    
         # Implement the validation logic here
         self.state = 'validate'
 
-
-
-    def _find_duplicates(self):
-        # Extract relevant fields for duplicate check
-        relevant_fields = ['old_membership_number', 'vehicle_chasis_no']  # Adjust as per your requirements
-        
-        # Create a dictionary to store record IDs based on unique field values
-        field_values_dict = {}
-        for member_line in self.upload_member_ids:
-            key = tuple(member_line[field_name] for field_name in relevant_fields)
-            field_values_dict.setdefault(key, []).append(member_line.id)
-        
-        # Identify duplicate records
-        duplicate_records = []
-        for key, record_ids in field_values_dict.items():
-            if len(record_ids) > 1:
-                # Duplicate records found
-                duplicate_records.extend(record_ids)
-        
-        # Check for matching partner records
-        matching_partner_records = []
-        for member_line in self.upload_member_ids:
-            matching_partners = self.env['res.partner'].search([
-                ('vehicle_chasis_no', '=', member_line.vehicle_chasis_no),
-                ('member_expiry_date', '=', member_line.member_expiry_date),
-            ])
-            if matching_partners:
-                # Matching partner records found
-                matching_partner_records.extend(matching_partners)
-        
-        return duplicate_records, matching_partner_records
 
     def apply_member_upload_wizard(self):
         # Implement the logic to create/update res.partner records
