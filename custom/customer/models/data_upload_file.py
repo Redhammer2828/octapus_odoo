@@ -71,7 +71,12 @@ class DataUploadFile(models.Model):
                 if member.membership_state == 'temp':
                     print("MEMBERSHIP STATE CHECK: [PASS]")
                     member_line.update({'upload_member_status': 'exist_temp', 'comment': "Exist Under Temp,*Overwrite"})
+                    member_line.if_temp_match = member.id
                 elif member.membership_state == 'confirm':
+                    print("MEMBER ID+_+_+__+_+_+_+__++_+_+_+",member.id)
+                    member_line.if_conf_match = member.id
+                    print("IF CONF()())(()()()((()())))",member_line.if_conf_match)
+
                     expiry_date = fields.Date.from_string(member_line.member_expiry_date)
                     activate_date = fields.Date.from_string(member_line.member_activate_date)
                     difference = (expiry_date - activate_date).days
@@ -137,14 +142,20 @@ class DataUploadFile(models.Model):
                     # Add more fields to create as needed
                 })
             elif member_line.upload_member_status in ['renewal', 'update']:
-                pass
-                matching_partner = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)])
-                member_list = self.env['res.partner'].search([('parent_customer_id','=', matching_partner.id)])
-                if member_list:
-
+                # Search and get the record based on member_line.if_conf_match
+                matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
+                print("MATCHING PARTNER ID&&&&&&&&&&&&&&&", matching_partner.id)
+                # Check if matching_partner is not empty
+                if matching_partner:
                     matching_partner.write({
                         'member_expiry_date': member_line.member_expiry_date,
-                        
+                    })
+            elif member_line.upload_member_status in ['exist_temp']:
+                matching_partner = self.env['res.partner'].browse(member_line.if_temp_match)
+                if matching_partner:
+                    matching_partner.write({
+                        'membership_state': 'confirm',
+                        'member_expiry_date': member_line.member_expiry_date,
                     })
                 
         self.state = 'done'
@@ -213,3 +224,7 @@ class UploadMemberLine(models.Model):
     region_code = fields.Char('Region Code')
     vehicle_reg_country = fields.Char('Vehicle Reg Country')
     vehicle_emirate = fields.Char('Vehicle Emirate')
+
+    # Custom- Jkc logic
+    if_temp_match = fields.Integer('Temp Match ID')
+    if_conf_match = fields.Integer('If COnf Match')
