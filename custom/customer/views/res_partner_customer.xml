@@ -347,7 +347,7 @@
                 <field name="display_name" string="Name" />
                 <!-- <field name="function" invisible="1" /> -->
                 <field name="phone" />
-                <field name="email" />
+                <!-- <field name="email" /> -->
                 <field name="street" />
                 <field name="create_date" />
                 <!-- <field name="user_id" invisible="1" /> -->

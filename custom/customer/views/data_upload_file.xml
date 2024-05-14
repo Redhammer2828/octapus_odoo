@@ -68,6 +68,12 @@
                                 <field name="comment" />
                                 <field name="sequence_code" />
                                 <field name="upload_member_status" />
+                                <field name="upload_member_status" 
+                                    style="color: red;" 
+                                    invisible= "upload_member_status != 'rejection'"/>
+                                <field name="upload_member_status" 
+                                    style="color: green;" 
+                                    invisible= "upload_member_status != 'new'"/>
                             </tree>`
                         </field>
                         <!-- </group> -->
