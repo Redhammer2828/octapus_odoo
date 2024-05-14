@@ -19,8 +19,9 @@
             <field name="model">card.type</field>
             <field name="arch" type="xml">
                 <tree>
-                    <field name="name" />
                     <field name="code" />
+                    <field name="name" />
+                    <field name="create_date"/>
                 </tree>
             </field>
         </record>

@@ -9,8 +9,12 @@
                     <sheet>
                         <group>
                             <field name="name" placeholder='Vehicle Name' required='1' />
-                            <field name="vehicle_model_ids" />
                         </group>
+                            <field name="vehicle_model_ids"  widget="one2many_list" >
+                                <tree editable="bottom" string="Models">
+                                    <field name="name"/>
+                                </tree>
+                            </field>
                     </sheet>
                 </form>
             </field>

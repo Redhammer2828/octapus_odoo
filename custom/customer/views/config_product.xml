@@ -13,18 +13,12 @@
             parent="menu_configuration"
             sequence="10" />
 
-
-
-
         <!-- Menu Location -->
         <menuitem
             id="menu_location"
             name="Location"
             parent="menu_configuration"
             sequence="50" />
-
-
-
 
     </data>
 

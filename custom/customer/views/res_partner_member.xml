@@ -76,7 +76,7 @@
                                 <!-- . -->
                                 <field name="policy_no" string="Policy No" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
-                                    class="required_field" required="1" />
+                                    class="required_field" required="1" readonly="is_readonly"/>
                                 <field name="old_membership_number" readonly="is_readonly" />
                                 <field name="member_activate_date" date_format="%d/%m/%Y"
                                     readonly="is_readonly" />
@@ -143,12 +143,12 @@
                             <notebook colspan="4">
                                 <page name="package" string="Package">
                                     <group>
-                                        <field name="product_template_id" />
+                                        <field name="product_template_id" class="required_field" required="1" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" domain="[('bundle_product', '=', True)]"/>
                                     </group>
                                     <group>
                                         <field name="service_ids" widget="many2many_tags"
                                             options="{'no_create_edit': True}"
-                                            domain="[('type', '=', 'service')]"
+                                            domain="[('bundle_product', '=', False)]"
                                             readonly="is_readonly" />
                                     </group>
                                 </page>
@@ -182,13 +182,13 @@
             <field name="arch" type="xml">
                 <tree string="Policy Members">
                     <field name="id"/>
-                    <field name="name" />
                     <field name="ref_num" />
+                    <field name="name" />
                     <field name="parent_customer_id" />
                     <field name="policy_no" />
                     <field name="old_membership_number" />
                     <field name="mobile" />
-                    <field name="email" />
+                    <!-- <field name="email" /> -->
                     <field name="vehicle_chasis_no" />
                     <field name="vehicle_type" />
                     <field name="vehicle_plate" />

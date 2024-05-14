@@ -12,9 +12,9 @@ class ResPartnerMembers(models.Model):
     parent_customer_id = fields.Many2one('res.partner', string='Customer')
     is_customer = fields.Boolean('Is_customer')
     # -----------------------------------------
-    ref_num = fields.Char('Ref Num')
+    ref_num = fields.Char('Membership Number')
 
-    policy_no = fields.Char(string='Policy No')
+    policy_no = fields.Char(string='Policy Number')
     vehicle_chasis_no = fields.Char(string='Vehicle Chasis No')
     old_membership_number = fields.Char(string='Old Membership Number')
     member_activate_date = fields.Date(string='Member Activate Date')
@@ -79,7 +79,7 @@ class ResPartnerMembers(models.Model):
     # service_ids = fields.Many2many('service.model', string='Services')
     # comment = fields.Text(string='Internal Notes')
     # membership_history = fields.One2many('membership.history.model', 'partner_id', string='Membership History')
-    product_template_id = fields.Many2one('product.template', string="Product Template")
+    product_template_id = fields.Many2one('product.template', string="Package")
     service_ids = fields.Many2many('product.product', string="Services", widget="many2many_tags", options="{'no_create_edit': True}")
     member_partner_category_id = fields.Many2one('partner.category', string='Category')
     #------------------------------------------------------------
@@ -203,3 +203,17 @@ class ResPartnerMembers(models.Model):
                 # 'default_membership_cancel_date': self.membership_cancel_date
             }
         }
+    
+    @api.onchange('product_template_id')
+    def _onchange_product_template_id(self):
+        if self.product_template_id:
+            print("=========",self.product_template_id)
+            services = self.env['product.package.service'].search([('product_template_id', '=', self.product_template_id.id)])
+
+            print("SERVICE LIST",services)
+            product_ids = services.mapped('product_id').ids
+            print("Product IDs:", product_ids)
+            if product_ids:
+                related_products = self.env['product.template'].search([('id', 'in', product_ids)])
+                print("Related Products:", related_products)
+                self.service_ids = [(6, 0, related_products.ids)]

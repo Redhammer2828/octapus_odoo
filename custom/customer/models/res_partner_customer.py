@@ -5,7 +5,7 @@ class ResPartnerCustomer(models.Model):
     _inherit = 'res.partner'
     _description = 'Customer Information'
 
-    customer_code = fields.Char(string='Customer Code')
+    customer_code = fields.Char(string='Code')
     function = fields.Char(string='Function')
 
     member_count = fields.Integer(compute='_compute_member_count', string='Member Count')

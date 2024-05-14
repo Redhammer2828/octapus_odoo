@@ -9,3 +9,4 @@ from . import member_vehicle_model
 from . import location
 from . import external_service
 from . import member_search
+from . import data_upload_file

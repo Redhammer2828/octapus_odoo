@@ -26,6 +26,7 @@
         'views/product_service.xml',
         'views/policy_member_search.xml',
         'views/credit_member_search.xml',
+        'views/data_upload_file.xml',
         'wizards/upload_member_wizard.xml',
         'wizards/membership_extension_wizard.xml',
         'wizards/membership_renewal_wizard.xml',
