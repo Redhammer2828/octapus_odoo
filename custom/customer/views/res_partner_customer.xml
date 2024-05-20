@@ -342,19 +342,11 @@
         <field name="arch" type="xml">
             <tree string="Customers">
                 <field name="id" />
-                <!-- <field name="customer_code" string="Customer Code" invisible="1" /> -->
                 <field name="customer_code" />
                 <field name="display_name" string="Name" />
-                <!-- <field name="function" invisible="1" /> -->
                 <field name="phone" />
-                <!-- <field name="email" /> -->
                 <field name="street" />
                 <field name="create_date" />
-                <!-- <field name="user_id" invisible="1" /> -->
-                <!-- <field name="is_company" invisible="1" /> -->
-                <!-- <field name="country_id" invisible="1" /> -->
-                <!-- <field name="parent_customer_id" invisible="1" /> -->
-                <!-- <field name="active" invisible="1" /> -->
             </tree>
         </field>
     </record>
@@ -388,7 +380,6 @@
         name="Customers"
         parent="menu_membership_root"
         action="action_res_partner_customer" />
-
 
     <menuitem
         id="menu_configuration"

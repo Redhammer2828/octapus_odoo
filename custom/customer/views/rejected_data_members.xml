@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
+<!-- Upload History - Bulk Upload -->
     <data>
         <record id="rejected_data_members_view_form" model="ir.ui.view">
             <field name="name">rejected.data.members.view.form</field>

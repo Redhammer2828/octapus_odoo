@@ -1,4 +1,7 @@
 from odoo import models, fields, api
+from odoo.exceptions import ValidationError
+from collections import Counter
+import time
 
 class DataUploadFile(models.Model):
     _name = 'data.upload.file'
@@ -10,7 +13,7 @@ class DataUploadFile(models.Model):
     
     date = fields.Datetime('Uploaded Date', default=lambda self: fields.Datetime.now())
     upload_by = fields.Many2one('res.users', string='Uploaded By', default=lambda self: self.env.user)
-
+    upload_log = fields.Text( string='Log')
     upload_member_ids = fields.One2many('upload.member.line', 'upload_file_id', string='Members')
     
     state = fields.Selection([
@@ -20,7 +23,10 @@ class DataUploadFile(models.Model):
     ], string='Status', default='draft')
     
     def action_validate_policy_data(self):
+        start_time = time.time()
+        
         print("Upload Member IDs:", self.upload_member_ids)
+        
         for member_line in self.upload_member_ids:
             print("---------------------------------------------------------------------------")
             print("Processing member_line:", member_line)
@@ -51,6 +57,20 @@ class DataUploadFile(models.Model):
             # If no match is found for the current member_line, update its status
             if not match_found:
                 member_line.update({'upload_member_status': 'new', 'comment': "*New Member"})
+        
+        end_time = time.time()
+        processing_time = end_time - start_time  # Calculate the processing time
+        
+        # Calculate counts
+        total_count = len(self.upload_member_ids)
+        rejected_count = Counter(member.upload_member_status for member in self.upload_member_ids)['rejection']
+        new_member_count = Counter(member.upload_member_status for member in self.upload_member_ids)['new']
+        updated_member_count = Counter(member.upload_member_status for member in self.upload_member_ids)['update']
+        renewal_member_count = Counter(member.upload_member_status for member in self.upload_member_ids)['renewal']
+        added_member_count = total_count - rejected_count  # Calculate the count of added records
+
+        # Update the upload_log field with counts and processing time
+        self.upload_log = f"Total Records: {total_count} | Rejected Records: {rejected_count} | Added Records: {added_member_count} | New Records: {new_member_count} | Updated Records: {updated_member_count} | Renewal Records: {renewal_member_count} | Time to Process: {processing_time} seconds"  
         
         self.state = 'validate'
        
@@ -167,7 +187,15 @@ class DataUploadFile(models.Model):
         pass
     
     def action_view_rejected_records(self):
-        pass
+        return {
+            'name': 'Rejected Members',
+            'type': 'ir.actions.act_window',
+            'res_model': 'upload.member.line',
+            'view_mode': 'tree',
+            'view_id': self.env.ref('customer.view_upload_member_line_tree').id,
+            'domain': [('upload_file_id', '=', self.id), ('upload_member_status', '=', 'rejection')],
+            'context': {'default_upload_file_id': self.id},
+        }
 
 class UploadMemberLine(models.Model):
     _name = 'upload.member.line'

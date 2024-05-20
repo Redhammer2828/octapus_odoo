@@ -42,12 +42,14 @@
             parent="menu_member"
             sequence="50"
         />
+        
         <menuitem
             id="menu_upload_file"
             name="Upload File"
             parent="menu_new_membership"
             action="action_view_policy_member_upload"
             sequence="51" />
+        
     </data>
 
 </odoo>

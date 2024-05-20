@@ -11,40 +11,62 @@
                         .o_field_widget:not(.o_field_invalid):not(.o_field_highlight)
                         .o_input:not(:hover):not(:focus)
                         {
-                        border-bottom: 1px solid #71639e2b;
+                            border-bottom: 1px solid #71639e2b;
                         }
                         .custom_field{
-                        background-color: #d2d2ff8f;
-                        border-radius: 5px;
+                            background-color: #d2d2ff8f;
+                            border-radius: 5px;
                         }
                         .required_field{
-                        background-color: #b9a4ff29;
+                            background-color: #b9a4ff29;
                         }
-                        
+                        .o_field_statusbar {
+                            display: flex;
+                            justify-content: flex-end;
+                        }
+                        .o_field_statusbar > .o_statusbar_status, 
+                        .o_field_statusbar_duration > .o_statusbar_status {
+                            display: flex;
+                            align-items: center;
+                            margin-right: 20px; /* Adjust this value to control the right margin */
+                        }
+                        button.btn-secondary{
+                            margin-left: 5px;
+                        }
                     </style>
                     <headers>
-                        <!-- <button name="open_form_edit" type="object" string="Edit" decorators="{'invisible': [('membership_state', '!=', 'confirm')]}" /> -->
+                        <!-- <button name="open_form_edit" type="object" string="Edit"
+                        decorators="{'invisible': [('membership_state', '!=', 'confirm')]}" /> -->
                         <!-- <button name="action_confirm_membership" id="action_confirm_membership"
                         string="Confirm" class="btn-primary" type="object"/> -->
                         <div class="button-container">
-                            <button name="action_confirm_membership" string="Confirm" type="object" invisible="membership_state != 'temp'" />
+                            <button name="action_confirm_membership" string="Confirm" type="object"
+                                invisible="membership_state != 'temp'" />
                             <!-- MEMBERSHIP RENUAL -->
-                            <button name="action_membership_renewal" string="Membership Renewal" type="object" icon="fa-lightbulb-o" />
+                            <button name="action_membership_renewal" string="Membership Renewal"
+                                type="object" icon="fa-lightbulb-o" />
                             <!-- MEMBERSHIP EXTENSION -->
-                            <button name="action_membership_extension" string="Membership Extension" type="object" icon="fa-lightbulb-o" />
-		                    <!-- MEMBERSHIP CANCEL -->
-                            <button name="action_membership_cancel" string="Membership Cancel" type="object" icon="fa-lightbulb-o" />
+                            <button name="action_membership_extension" string="Membership Extension"
+                                type="object" icon="fa-lightbulb-o" />
+                            <!-- MEMBERSHIP CANCEL -->
+                            <button name="action_membership_cancel" string="Membership Cancel"
+                                type="object" icon="fa-lightbulb-o" />
                             <!-- MEMBERSHIP STATE -->
-                            <field name="membership_state" widget="statusbar" statusbar_visible="temp,confirm,cancel" />
+                            <field name="membership_state" widget="statusbar"
+                                statusbar_visible="temp,confirm,cancel" />
                             <!-- POLICY EXPIRED ALERT FLAG -->
-                            <field name="member_expired" invisible="1" readonly='1'/>
+                            <field name="member_expired" invisible="1" readonly='1' />
                         </div>
                     </headers>
                     <sheet bgcolor="lightblue">
                         <div class="oe_button_box" name="button_box" modifiers="{}">
-                            <label for="ref_num" string="Policy Expired !" invisible="member_expired != True" style="color: white;border: solid #71639e 1px;padding: 5px;background-color: #dc3545;/* border-radius: 10px; */border-top-left-radius: 5px;border-bottom-left-radius: 5px;" />
-                            <button name="action_view_policy_service" type="object" class="oe_stat_button" icon="fa-pencil-square-o">
-                                <field name="policy_member_service_count" widget="statinfo" string="Policy Services" />
+                            <label for="ref_num" string="Policy Expired !"
+                                invisible="member_expired != True"
+                                style="color: white;border: solid #71639e 1px;padding: 5px;background-color: #dc3545;/* border-radius: 10px; */border-top-left-radius: 5px;border-bottom-left-radius: 5px;" />
+                            <button name="action_view_policy_service" type="object"
+                                class="oe_stat_button" icon="fa-pencil-square-o">
+                                <field name="policy_member_service_count" widget="statinfo"
+                                    string="Policy Services" />
                             </button>
                         </div>
                         <!-- <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
@@ -54,7 +76,8 @@
                             options="{&quot;preview_image&quot;: &quot;avatar_128&quot;}" />
                         <div class="oe_title">
                             <!-- <h4>Name:</h4> -->
-                            <field name="ref_num" placeholder="Membership Number" readonly="1" style="font-size: 64%;" modifiers="{'readonly':true}"/>
+                            <field name="ref_num" placeholder="Membership Number" readonly="1"
+                                style="font-size: 64%;" modifiers="{'readonly':true}" />
                             <label for="name" string="Name" />
                             <div>
                                 <field name="name" placeholder="Type.." class="required_field"
@@ -64,7 +87,8 @@
                             <label for="parent_customer_id" string="Company" />
                             <div>
                                 <field name="parent_customer_id" placeholder="select.."
-                                    class="required_field" required="1" style="width: 700px;" />
+                                    class="required_field" required="1" style="width: 700px;"
+                                    options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
                             </div>
                         </div>
                         <br></br>
@@ -76,16 +100,18 @@
                                 <!-- . -->
                                 <field name="policy_no" string="Policy No" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
-                                    class="required_field" required="1" readonly="is_readonly"/>
+                                    class="required_field" required="1" readonly="is_readonly" />
                                 <field name="old_membership_number" readonly="is_readonly" />
                                 <field name="member_activate_date" date_format="%d/%m/%Y"
                                     readonly="is_readonly" />
                                 <field name="member_expiry_date" class="required_field" required="1"
                                     date_format="%d/%m/%Y" widget="date" readonly="is_readonly" />
                                 <field name="card_type_id" class="required_field" required="1"
-                                    readonly="is_readonly" />
+                                    readonly="is_readonly"
+                                    options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
                                 <field name="member_partner_category_id" class="required_field"
-                                    required="1" readonly="is_readonly" />
+                                    required="1" readonly="is_readonly"
+                                    options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
                                 <field name="driving_license" />
                                 <field name="member_type" widget="radio" readonly="1" />
                                 <field name="membership_cancel_date" readonly="1" />
@@ -143,11 +169,14 @@
                             <notebook colspan="4">
                                 <page name="package" string="Package">
                                     <group>
-                                        <field name="product_template_id" class="required_field" required="1" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" domain="[('bundle_product', '=', True)]"/>
+                                        <field name="product_template_id" class="required_field"
+                                            required="1"
+                                            options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
+                                            domain="[('bundle_product', '=', True)]" />
                                     </group>
                                     <group>
                                         <field name="service_ids" widget="many2many_tags"
-                                            options="{'no_create_edit': True}"
+                                            options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
                                             domain="[('bundle_product', '=', False)]"
                                             readonly="is_readonly" />
                                     </group>
@@ -181,7 +210,7 @@
             <field name="model">res.partner</field>
             <field name="arch" type="xml">
                 <tree string="Policy Members">
-                    <field name="id"/>
+                    <field name="id" />
                     <field name="ref_num" />
                     <field name="name" />
                     <field name="parent_customer_id" />
@@ -199,10 +228,34 @@
             </field>
         </record>
 
+        <record id="view_res_partner_member_search" model="ir.ui.view">
+            <field name="name">res.partner.member.search</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="id" />
+                    <field name="name" />
+                    <field name="ref_num" />
+                    <field name="parent_customer_id" />
+                    <field name="policy_no" />
+                    <field name="old_membership_number" />
+                    <field name="mobile" />
+                    <field name="email" />
+                    <field name="vehicle_chasis_no" />
+                    <field name="vehicle_type" />
+                    <field name="vehicle_plate" />
+                    <field name="vehicle_model" />
+                    <field name="member_expiry_date" />
+                    <field name="create_date" />
+                </search>
+            </field>
+        </record>
+
         <record id="action_res_partner_member" model="ir.actions.act_window">
             <field name="name">Policy Members</field>
             <field name="res_model">res.partner</field>
             <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="view_res_partner_member_search" />
             <field name="context">{'from_res_partner_member_form': True ,
                 'default_member_type': 'policy' }</field>
             <field name="domain">[('is_customer','=',True),('member_type','=','policy'),
@@ -215,7 +268,7 @@
         ]">
             </field>
         </record>
-        
+
         <menuitem
             id="menu_member"
             name="Policy Members"
