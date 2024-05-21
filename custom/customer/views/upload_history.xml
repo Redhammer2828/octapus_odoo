@@ -29,11 +29,6 @@
             </field>
         </record>
 
-        <menuitem
-            id="menu_upload_history"
-            name="Upload History"
-            parent="menu_new_membership"
-            action="upload_history_action"
-            sequence="52" />
+
     </data>
 </odoo>

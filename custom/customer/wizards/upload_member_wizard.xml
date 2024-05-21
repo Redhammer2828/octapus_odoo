@@ -8,7 +8,7 @@
             <field name="arch" type="xml">
                 <form string="Policy Members Upload">
                     <group>
-                        <field name="file_type" string="File Type" required="1" widget="radio"/>
+                        <field name="file_type" string="File Type" required="1" widget="radio" />
                     </group>
                     <group>
                         <group>
@@ -16,13 +16,16 @@
                             <field name="file" string="File" />
                         </group>
                         <group>
-                            <field name="type" invisible="1"/>
+                            <field name="type" invisible="1" />
                         </group>
                     </group>
                     <footer>
-                        <button name="action_policy_member_upload_excel" class="btn-primary" string="Upload Excel" type="object" domain="[('file_type', '=', 'excel')]">
+                        <button name="action_policy_member_upload_excel" class="btn-primary"
+                            string="Upload Excel" type="object"
+                            domain="[('file_type', '=', 'excel')]">
                         </button>
-                        <button name="action_policy_member_upload_csv" class="btn-primary" string="Upload CSV" type="object" domain="[('file_type', '!=', 'csv')]">
+                        <button name="action_policy_member_upload_csv" class="btn-primary"
+                            string="Upload CSV" type="object" domain="[('file_type', '!=', 'csv')]">
                         </button>
                         <button string="Cancel" class="btn-default" special="cancel" />
                     </footer>
@@ -35,21 +38,28 @@
             <field name="view_mode">form</field>
             <field name="target">new</field>
         </record>
-        
+
         <menuitem
             id="menu_new_membership"
             name="New Membership"
             parent="menu_member"
             sequence="50"
         />
-        
+
         <menuitem
             id="menu_upload_file"
             name="Upload File"
             parent="menu_new_membership"
             action="action_view_policy_member_upload"
             sequence="51" />
-        
+
+        <menuitem
+            id="menu_upload_history"
+            name="Upload History"
+            parent="menu_new_membership"
+            action="upload_history_action"
+            sequence="52" />
+
     </data>
 
 </odoo>
