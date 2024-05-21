@@ -91,11 +91,11 @@ class MemberUploadCancel(models.Model):
     def action_cancel(self):
         self.state = 'draft'
     
-    def action_delete_members(self):
-        pass
+    # def action_delete_members(self):
+    #     pass
     
-    def action_view_rejected_records(self):
-        pass
+    # def action_view_rejected_records(self):
+    #     pass
 
     def apply_member_upload_wizard(self):
         temp_dict = eval(self.temp_store)
@@ -107,7 +107,7 @@ class MemberUploadCancel(models.Model):
                     'membership_cancel_date': member_line.cancellation_date,
                     'membership_state': 'cancel'
                 })
-                
+        self.state = 'done'  
 # ------------------------------------------------------------------------------------
 class MemberUploadCancelLine(models.Model):
     _name = 'member.upload.cancel.line'

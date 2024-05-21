@@ -30,6 +30,7 @@
         'views/upload_history.xml',
         'views/member_upload_cancel.xml',
         'views/rejected_upload_members.xml',
+        'views/cancellation_history.xml',
         'wizards/upload_member_wizard.xml',
         'wizards/membership_extension_wizard.xml',
         'wizards/membership_renewal_wizard.xml',

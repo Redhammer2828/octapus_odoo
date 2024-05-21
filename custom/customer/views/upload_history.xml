@@ -16,15 +16,16 @@
         </record>
 
         <record id="upload_history_action" model="ir.actions.act_window">
-            <field name="name">Action Upload History</field>
+            <field name="name">Upload History</field>
             <field name="res_model">data.upload.file</field>
-            <field name="view_mode">tree</field>
+            <field name="view_mode">tree,form</field>
             <field name="domain">[('state','=','done')]</field>
             <field name="view_ids"
                 eval="[
           (5, 0, 0),
-          (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.policy_member_upload_history_view_tree')})
-        ]">
+          (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.policy_member_upload_history_view_tree')}),
+          (0, 0, {'view_mode': 'form', 'view_id': ref('customer.data_upload_file_policy_form')})
+          ]">
             </field>
         </record>
 
