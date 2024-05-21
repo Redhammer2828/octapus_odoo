@@ -29,12 +29,7 @@
           ]">
             </field>
         </record>
-        <menuitem
-            id="menu_cancel_history"
-            name="Cancellation History"
-            parent="menu_membership_cancellation"
-            action="cancellation_history_action"
-            sequence="72" />
+
     </data>
 
 
