@@ -6,22 +6,12 @@
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
             <form string="Customer">
-                
-                <style>
-                    .o_form_view:not(.o_field_highlight)
+
+                <style> .o_form_view:not(.o_field_highlight)
                     .o_field_widget:not(.o_field_invalid):not(.o_field_highlight)
-                    .o_input:not(:hover):not(:focus)
-                    {
-                    border-bottom: 1px solid #71639e2b;
-                    }
-                    .custom_field{
-                    background-color: #d2d2ff8f;
-                    border-radius: 5px;
-                    }
-                    .required_field{
-                    background-color: #b9a4ff29;
-                    }
-                    <!-- ACTIVE AND ARCHIVE -->
+                    .o_input:not(:hover):not(:focus) { border-bottom: 1px solid #71639e2b; }
+                    .custom_field{ background-color: #d2d2ff8f; border-radius: 5px; }
+                    .required_field{ background-color: #b9a4ff29; } <!-- ACTIVE AND ARCHIVE -->
                 </style>
                 <div class="alert alert-warning oe_edit_only" role="alert" name="warning_tax"
                     invisible="not same_vat_partner_id"> A partner with the same <span>
@@ -47,9 +37,11 @@
                         </button>
                         <button string="Waive-off History" name="waive_off_history" type="object"
                             class="oe_stat_button" icon="fa-gift" />
-                        <button name="toggle_active" type="object" string="Archive" icon="fa-archive" />
+                        <button name="toggle_active" type="object" string="Archive"
+                            icon="fa-archive" />
                         <!-- DUPLICATE  -->
-                        <button name="duplicate_record" type="object" string="Duplicate Record" icon="fa-copy" />
+                        <button name="duplicate_record" type="object" string="Duplicate Record"
+                            icon="fa-copy" />
                     </div>
                     <!-- <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
                         invisible="active" /> -->
@@ -350,11 +342,28 @@
             </tree>
         </field>
     </record>
+    <record id="res_partner_customer_search" model="ir.ui.view">
+        <field name="name">res.partner.customer.search</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <search>
+                <!-- <field name="id" /> -->
+                <field name="display_name" string="Name" />
+                <field name="customer_code" />
+                <field name="phone" />
+                <field name="email" />
+                <field name="mobile" />
+                <field name="street" string="Address" />
+                <field name="create_date" />
+            </search>
+        </field>
+    </record>
 
     <record id="action_res_partner_customer" model="ir.actions.act_window">
         <field name="name">Customers</field>
         <field name="res_model">res.partner</field>
         <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="res_partner_customer_search" />
         <field name="domain">[('is_company','=',True)]</field>
         <field name="context">{'default_is_company': True,
             'default_country_id': 'AE',

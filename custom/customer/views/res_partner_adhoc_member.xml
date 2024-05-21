@@ -43,7 +43,7 @@
                             <label for="parent_customer_id" string="Company" />
                             <div>
                                 <field name="parent_customer_id" placeholder="select.."
-                                    class="required_field" required="1" />
+                                    class="required_field" required="1" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
                             </div>
                         </div>
                         <group col="3">
@@ -53,7 +53,7 @@
                                 <field name="old_membership_number" class="custom-field" />
                                 <field name="member_activate_date" class="custom-field"/>
                                 <field name="member_expiry_date" class="custom-field"/>
-                                <field name="card_type_id" class="custom-field"/>
+                                <field name="card_type_id" class="custom-field" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
                                 <!-- <field name="member_partner_category_id" class="required_field"
                                 required="1" readonly="is_readonly" /> -->
                                 <!-- <field name="member_sequence_id" required="1" /> -->

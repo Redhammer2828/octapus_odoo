@@ -114,7 +114,7 @@
                                     options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
                                 <field name="driving_license" />
                                 <field name="member_type" widget="radio" readonly="1" />
-                                <field name="membership_cancel_date" readonly="1" />
+                                <!-- <field name="membership_cancel_date" readonly="1" /> -->
                                 <field name="create_uid" string="Created By" readonly="1" />
                             </group>
                             <group>
@@ -233,19 +233,21 @@
             <field name="model">res.partner</field>
             <field name="arch" type="xml">
                 <search>
-                    <field name="id" />
+                    <!-- <field name="id" /> -->
                     <field name="name" />
-                    <field name="ref_num" />
-                    <field name="parent_customer_id" />
+                    <field name="ref_num" string="Reference Number" />
                     <field name="policy_no" />
                     <field name="old_membership_number" />
-                    <field name="mobile" />
+                    <field name="mobile" string="Mobile Number" />
                     <field name="email" />
-                    <field name="vehicle_chasis_no" />
                     <field name="vehicle_type" />
                     <field name="vehicle_plate" />
                     <field name="vehicle_model" />
-                    <field name="member_expiry_date" />
+                    <field name="vehicle_chasis_no" />
+                    <field name="driving_license" />
+                    <field name="parent_customer_id" />
+                    <field name="member_partner_category_id" />
+                    <!-- <field name="member_expiry_date" /> -->
                     <field name="create_date" />
                 </search>
             </field>
