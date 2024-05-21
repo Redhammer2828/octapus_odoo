@@ -15,3 +15,6 @@ access_memership_renewal_wizard,membership.renewal.wizard,model_membership_renew
 access_memership_cancel_wizard,membership.cancel.wizard,model_membership_cancel_wizard,,1,1,1,1
 access_data_upload_file,data.upload.file,model_data_upload_file,,1,1,1,1
 access_upload_member_line,upload.member.line,model_upload_member_line,,1,1,1,1
+access_member_cancel_upload_wizard,member.cancel.upload.wizard,model_member_cancel_upload_wizard,,1,1,1,1
+access_member_upload_cancel,member.upload.cancel,model_member_upload_cancel,,1,1,1,1
+access_member_upload_cancel_line,member.upload.cancel.line,model_member_upload_cancel_line,,1,1,1,1

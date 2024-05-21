@@ -2,9 +2,9 @@
 <odoo>
 
     <data>
-        <record id="data_upload_file_policy_form" model="ir.ui.view">
-            <field name="name">data.upload.file.policy.form</field>
-            <field name="model">data.upload.file</field>
+        <record id="policy_member_upload_cancel_form" model="ir.ui.view">
+            <field name="name">member.upload.cancel.form</field>
+            <field name="model">member.upload.cancel</field>
             <field name="arch" type="xml">
                 <form string="Policy Members Data" create="false" edit="false" copy="false">
                     <header>
@@ -12,12 +12,12 @@
                             invisible="state not in ['draft']" class="btn-primary" />
                         <button name="apply_member_upload_wizard" string="Apply" type="object"
                             invisible="state not in ['validate']" class="btn-primary" />
-                        <button name="action_view_rejected_records" string="Rejected Records"
+                        <!-- <button name="action_view_rejected_records" string="Rejected Records"
                             type="object" class="btn-default"
-                            invisible="state not in ['validate','done']" />
-                        <button name="action_delete_members" string="Delete Members" type="object"
+                            invisible="state not in ['validate','done']" /> -->
+                        <!-- <button name="action_delete_members" string="Delete Members" type="object"
                             class="btn-default" confirm="Are you sure you want to delete members?"
-                            invisible="state not in ['done']" />
+                            invisible="state not in ['done']" /> -->
                         <button name="action_cancel" string="Cancel" type="object"
                             class="btn-default" invisible="state not in ['validate']" />
                         <field name="state" widget="statusbar"
@@ -42,42 +42,15 @@
                         <!-- <group string="Members"> -->
                         <field name="upload_member_ids" nolabel="1">
                             <tree string="Data" editable="bottom" col="1">
-                                <field name="member_name" />
-                                <field name="mobile" />
-                                <field name="vehicle_plate" />
-                                <field name="vehicle_chasis_no" />
-                                <field name="member_activate_date" />
-                                <field name="member_expiry_date" />
-                                <field name="invoice_ref_date" />
+
                                 <field name="customer_code" />
-                                <field name="package" string="Package ID" />
-                                <field name="member_type" readonly="1" />
-                                <field name="customer_ref_date" />
-                                <field name="old_membership_number" />
-                                <field name="policy_no" />
-                                <field name="vehicle_mfg_year" />
-                                <field name="vehicle_reg_country" />
-                                <field name="vehicle_emirate" />
-                                <field name="vehicle_reg_code" />
-                                <field name="street" />
-                                <field name="state" />
-                                <field name="region_code" />
-                                <field name="country" />
-                                <field name="delivery_ref_date" />
-                                <field name="card_type" />
+                                <field name="vehicle_chasis_no" />
+                                <field name="cancellation_date" />
                                 <field name="comment" />
-                                <field name="sequence_code" />
-                                <field name="upload_member_status" />
-                                <field name="upload_member_status"
-                                    style="color: red;"
-                                    invisible="upload_member_status != 'rejection'" />
-                                <field name="upload_member_status"
-                                    style="color: green;"
-                                    invisible="upload_member_status != 'new'" />
+                                <field name="upload_status"/>
                             </tree>
-                            `
+                             
                         </field>
-                        <!-- </group> -->
                         <group string="Status">
                             <field name="upload_log" readonly="1" />
                         </group>
@@ -86,9 +59,22 @@
             </field>
         </record>
 
+        <!-- <record id="member_cancel_history_tree" model="ir.ui.view">
+            <field name="name">member.cancel.history.tree</field>
+            <field name="model">member.upload.cancel</field>
+            <field name="arch" type="xml">
+                <tree string="">
+                    <field name="date" />
+                    <field name="upload_log" />
+                    <field name="upload_by" />
+                    <field name="state" />
+                </tree>s
+            </field>
+        </record> -->
+        
         <!-- Action -->
-        <record id="action_policy_data_upload_file" model="ir.actions.act_window">
-            <field name="name">Action Policy Data Upload File</field>
+        <record id="action_policy_member_upload_cancel" model="ir.actions.act_window">
+            <field name="name">Action Policy Member Upload Cancel File</field>
             <field name="res_model">data.upload.file</field>
             <field name="view_mode">form</field>
             <!-- <field name="domain">[('status','=','done')]</field> -->
