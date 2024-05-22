@@ -55,7 +55,6 @@ class UploadMemberWizard(models.TransientModel):
                 'package': row.get('package_id'),
                 'customer_code': row.get('customer_code'),
                 'sequence_code': row.get('category_code'),
-                
                 # Add other fields from the Excel file as needed
             }
             member_lines.append((0, 0, member_line_data))
