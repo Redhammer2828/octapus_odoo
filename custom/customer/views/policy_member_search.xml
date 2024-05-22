@@ -59,7 +59,7 @@
       <field name="name">policy.member.search.view.tree</field>
       <field name="model">res.partner</field>
       <field name="arch" type="xml">
-        <tree string="Policy Member Search Results" >
+        <tree string="Policy Member Search Results">
           <!-- Define fields to display in the tree view -->
           <!-- <field name="id"/> -->
           <field name="policy_no" />
