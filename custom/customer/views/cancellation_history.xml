@@ -6,7 +6,7 @@
             <field name="name">policy.member.upload.history.view.tree</field>
             <field name="model">data.upload.file</field>
             <field name="arch" type="xml">
-                <tree string="" create="false" edit="false" delete="true">
+                <tree string="" >
                     <!-- <field name="name" /> -->
                     <field name="date" />
                     <field name="upload_log" />
