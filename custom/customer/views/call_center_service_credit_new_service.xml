@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="service_credit_new_serivice_view_form" model="ir.ui.view">
+        <field name="name">credit.new.service.view.form</field>
+        <field name="model">aaa.service</field>
+        <field name="arch" type="xml">
+            <form string="">
+                <sheet>
+                    <group>
+                        
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>

@@ -182,7 +182,16 @@
         <menuitem
             id="menu_credit_member"
             name="Credit Members"
-            parent="menu_membership_root"
+            parent="menu_membership_root" />
+        <menuitem
+            id="sub_menu_credit_member"
+            name="Credit Members"
+            parent="menu_credit_member"
             action="action_res_partner_credit_member" />
+        <menuitem 
+            id="sub_menu_credit_member_upload"
+            name="Upload Members"
+            parent="menu_credit_member"
+            action=""/>
     </data>
 </odoo>
