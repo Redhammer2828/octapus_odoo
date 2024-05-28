@@ -13,6 +13,7 @@
                     <group>
                         <group>
                             <field name="name" string="Name" required="1" />
+                            <field name="file_name" />
                             <field name="file" string="File" />
                         </group>
                         <group>

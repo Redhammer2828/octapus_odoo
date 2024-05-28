@@ -1,6 +1,7 @@
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
 from collections import Counter
+from datetime import datetime
 import time
 
 class DataUploadFile(models.Model):
@@ -21,6 +22,37 @@ class DataUploadFile(models.Model):
         ('validate', 'Validated'),
         ('done', 'Done')
     ], string='Status', default='draft')
+   
+
+    def validate_member_line(self, member_line):
+        required_fields = ['customer_code','member_name','vehicle_chasis_no', 'mobile', 'member_expiry_date', 'member_activate_date']
+        
+        for field in required_fields:
+            value = getattr(member_line, field)
+            if not value or str(value).lower() == 'nan':
+                if field == 'member_name':
+                    raise ValidationError("Name not exist in Uploaded Sheet")
+                else:
+                    raise ValidationError(f"{field.replace('_', ' ').title()} is required for member {member_line.member_name}")
+        
+        # Validate date format dd/mm/yyyy or dd-mm-yyyy
+        date_fields = ['member_expiry_date', 'member_activate_date']
+        # for date_field in date_fields:
+        #     date_value = getattr(member_line, date_field)
+        #     if isinstance(date_value, datetime):
+        #         date_value = date_value.strftime('%d/%m/%Y')
+        #     date_formats = ['%d/%m/%Y', '%d-%m/%Y']
+        #     valid_date = False
+        #     for date_format in date_formats:
+        #         try:
+        #             datetime.strptime(date_value, date_format)
+        #             valid_date = True
+        #             break
+        #         except ValueError:
+        #             continue
+        #     if not valid_date:
+        #         raise ValidationError(f"Invalid date format for {date_field.replace('_', ' ').title()} for member {member_line.member_name}. Expected formats: dd/mm/yyyy or dd-mm-yyyy")
+
     
     def action_validate_policy_data(self):
         start_time = time.time()
@@ -29,6 +61,10 @@ class DataUploadFile(models.Model):
         
         for member_line in self.upload_member_ids:
             print("---------------------------------------------------------------------------")
+            
+            # Validate required fields and date format
+            self.validate_member_line(member_line)
+
             print("Processing member_line:", member_line)
             matching_partners = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)])
 
@@ -44,20 +80,25 @@ class DataUploadFile(models.Model):
                 for member in member_list:
                     excel_chassis_no = member_line.vehicle_chasis_no.strip().upper()
                     db_chassis_no = member.vehicle_chasis_no.strip().upper()
-
+                    if excel_chassis_no in ['nan', '']:  # Corrected condition
+                        member_line.update({'upload_member_status': 'rejection', 'comment': "*Vehicle Chasis Number Does Not Exist!"})
+                        print("[FAIL]")
                     if excel_chassis_no == db_chassis_no:
                         print("Match found for member ID:", member.id)
                         self.check_member_details(member, member_line)
                         match_found = True
                         break  # Exit the loop once a match is found
-            
+                    else:
+                        print("[FAIL]")
                 if match_found:
                     break  # Exit the outer loop if a match is found
             
             # If no match is found for the current member_line, update its status
             if not match_found:
-                member_line.update({'upload_member_status': 'new', 'comment': "*New Member"})
-        
+                    # if not excel_chassis_no :
+                        # print("[FAIL]")
+                    member_line.update({'upload_member_status': 'new', 'comment': "*New Member"})
+                    print("dwdqwdwdwddddddddddddddddddddddddd")
         end_time = time.time()
         processing_time = end_time - start_time  # Calculate the processing time
         
@@ -122,8 +163,11 @@ class DataUploadFile(models.Model):
                 print("NAME CHECK: [FAIL]")
                 member_line.update({'upload_member_status': 'new', 'comment': "Member Not Exist"})
         else:
-            print("[FAIL]")
-            member_line.update({'upload_member_status': 'new', 'comment': "*New Member"})
+            if excel_chassis_no == 'nan' or '':
+                member_line.update({'upload_member_status': 'rejection', 'comment': "*Vehicle Chasis Number Does Not Exist!"})
+                print("[FAIL]")
+            else:
+                member_line.update({'upload_member_status': 'new', 'comment': "*New Member"})
 
     def apply_member_upload_wizard(self):
         # Get the dynamically imported data after validation
@@ -136,6 +180,7 @@ class DataUploadFile(models.Model):
                 
                 matching_partner = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)])
 
+                # matching_category_code = self.env[]
                 # Create a new partner record
                 new_partner = self.env['res.partner'].create({
                     # 'customer_code': member_line.customer_code,

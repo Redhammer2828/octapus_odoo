@@ -41,7 +41,10 @@
                         </group>
                         <!-- <group string="Members"> -->
                         <field name="upload_member_ids" nolabel="1">
-                            <tree string="Data" editable="bottom" col="1">
+                            <tree string="Data" editable="bottom" col="1" decoration-success="upload_member_status == 'new'"
+                            decoration-danger="upload_member_status == 'rejection'" decoration-warning="upload_member_status == 'exist_temp'"
+                            decoration-primary="upload_member_status == 'renewal' or upload_member_status == 'update'">
+                      
                                 <field name="member_name" />
                                 <field name="mobile" />
                                 <field name="vehicle_plate" />
@@ -68,14 +71,17 @@
                                 <field name="comment" />
                                 <field name="sequence_code" />
                                 <field name="upload_member_status" />
-                                <field name="upload_member_status"
+                                <!-- <field name="upload_member_status"
+                                decoration-success="upload_member_status == 'new'"
+                                decoration-danger="upload_member_status == 'rejection'"/> -->
+                               
+                                <!-- <field name="upload_member_status"
                                     style="color: red;"
                                     invisible="upload_member_status != 'rejection'" />
                                 <field name="upload_member_status"
                                     style="color: green;"
-                                    invisible="upload_member_status != 'new'" />
+                                    invisible="upload_member_status != 'new'" /> -->
                             </tree>
-                            `
                         </field>
                         <!-- </group> -->
                         <group string="Status">
