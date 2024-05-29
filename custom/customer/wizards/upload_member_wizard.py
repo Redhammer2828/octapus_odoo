@@ -10,7 +10,7 @@ class UploadMemberWizard(models.TransientModel):
     name = fields.Char(string="Name", required=True)
     file_type = fields.Selection([('excel', 'Excel'), ('csv', 'CSV')], string="File Type",default='excel', required=True)
     file = fields.Binary(string="File")
-    file_name = fields.Char(string="File Name")  # New field to store the original file name
+    # file_name = fields.Char(string="File Name")  # New field to store the original file name
     type = fields.Char(string="Type", invisible=True)  # Assuming you need this field for processing
 
     def action_policy_member_upload_excel(self):
@@ -19,7 +19,7 @@ class UploadMemberWizard(models.TransientModel):
             return {'warning': {'title': 'Warning', 'message': 'Please select a file to upload.'}}
         
         # Extract original file name
-        original_file_name = self.file_name or "uploaded_file"
+        # original_file_name = self.file_name or "uploaded_file"
 
         # Decode the file data and create a pandas DataFrame
         file_content = base64.b64decode(self.file)
@@ -68,7 +68,7 @@ class UploadMemberWizard(models.TransientModel):
             'name': self.name,
             'file_type': self.file_type,
             'file': self.file,
-            'file_name': original_file_name,  # Store original file name
+            # 'file_name': original_file_name,  # Store original file name
             'state': 'draft',  # Default state
             'upload_member_ids': member_lines  # Assign member lines to the One2many field
         })
