@@ -23,7 +23,6 @@ class DataUploadFile(models.Model):
         ('done', 'Done')
     ], string='Status', default='draft')
    
-
     def validate_member_line(self, member_line):
         required_fields = ['customer_code','member_name','vehicle_chasis_no', 'mobile', 'member_expiry_date', 'member_activate_date']
         
@@ -34,26 +33,7 @@ class DataUploadFile(models.Model):
                     raise ValidationError("Name not exist in Uploaded Sheet")
                 else:
                     raise ValidationError(f"{field.replace('_', ' ').title()} is required for member {member_line.member_name}")
-        
-        # Validate date format dd/mm/yyyy or dd-mm-yyyy
-        date_fields = ['member_expiry_date', 'member_activate_date']
-        # for date_field in date_fields:
-        #     date_value = getattr(member_line, date_field)
-        #     if isinstance(date_value, datetime):
-        #         date_value = date_value.strftime('%d/%m/%Y')
-        #     date_formats = ['%d/%m/%Y', '%d-%m/%Y']
-        #     valid_date = False
-        #     for date_format in date_formats:
-        #         try:
-        #             datetime.strptime(date_value, date_format)
-        #             valid_date = True
-        #             break
-        #         except ValueError:
-        #             continue
-        #     if not valid_date:
-        #         raise ValidationError(f"Invalid date format for {date_field.replace('_', ' ').title()} for member {member_line.member_name}. Expected formats: dd/mm/yyyy or dd-mm-yyyy")
-
-    
+            
     def action_validate_policy_data(self):
         start_time = time.time()
         
@@ -97,7 +77,7 @@ class DataUploadFile(models.Model):
             if not match_found:
                     # if not excel_chassis_no :
                         # print("[FAIL]")
-                    member_line.update({'upload_member_status': 'new', 'comment': "*New Member"})
+                    member_line.update({'upload_member_status': 'new', 'comment': "**Not exist in System *New Member"})
                     print("dwdqwdwdwddddddddddddddddddddddddd")
         end_time = time.time()
         processing_time = end_time - start_time  # Calculate the processing time

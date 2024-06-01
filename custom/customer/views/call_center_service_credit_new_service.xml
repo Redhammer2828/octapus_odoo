@@ -1,18 +1,369 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="service_credit_new_serivice_view_form" model="ir.ui.view">
-        <field name="name">credit.new.service.view.form</field>
-        <field name="model">aaa.service</field>
-        <field name="arch" type="xml">
-            <form string="">
-                <sheet>
-                    <group>
-                        
-                    </group>
-                </sheet>
-            </form>
-        </field>
-    </record>
-
+    <data>
+        <record id="service_credit_new_serivice_view_form" model="ir.ui.view">
+            <field name="name">credit.new.service.view.form</field>
+            <field name="model">aaa.service</field>
+            <field name="arch" type="xml">
+                <form string="Service" create="false" delete="false">
+                    <header>
+                        <button name="action_initiate_service" string="Initiate" type="object"
+                            class="btn-primary" odoo_button="{'state': 'draft'}" />
+                        <button name="action_dispatch_service" string="To Dispatch" type="object"
+                            class="oe_highlight" odoo_button="{'state': 'initiate'}" />
+                        <button name="action_schedule_service_check" string="Schedule Service"
+                            type="object" class="btn-default"
+                            expressions="{'invisible': [('state', 'not in', ['initiate', 'dispatch'])]}" />
+                        <button name="action_inprogress_service" string="In Progress" type="object"
+                            groups="aaa_membership.group_dispatcher" class="oe_highlight"
+                            odoo_button="{'state': 'dispatch'}" />
+                        <button name="action_start_service" string="Start" type="object"
+                            class="btn-primary" groups="aaa_membership.group_dispatcher"
+                            odoo_button="{'state': 'inprogress'}" />
+                        <button name="action_reach_service" string="Reach" type="object"
+                            class="btn-primary" groups="aaa_membership.group_dispatcher"
+                            odoo_button="{'state': 'start'}" />
+                        <button name="action_done_service" string="Completed" type="object"
+                            groups="aaa_membership.group_dispatcher"
+                            confirm="Complete this service, do you want to proceed?" class="btn-primary"
+                            odoo_button="{'state': 'reach'}" />
+                        <button string="Convert To Cash" type="object" class="oe_highlight"
+                            name="cash_service" groups="aaa_membership.group_dispatcher"
+                            expressions="{'invisible': [('type', '=', 'cash'), ('state', '!=', 'initiate')]}" />
+                        <button string="Convert To Non-cash" type="object" class="oe_highlight"
+                            groups="aaa_membership.group_dispatcher"
+                            expressions="{'invisible': [('type', '=', 'non_cash'), ('state', '!=', 'initiate')]}"
+                            name="convert_to_non_cash" />
+                        <button name="540" string="Select Provider"
+                            groups="aaa_membership.group_dispatcher" type="action"
+                            odoo_button="{'state': 'dispatch'}"
+                            context="{'default_from_location_id':provider_from_location_id,'default_to_location_id':provider_to_location_id}" />
+                        <button name="action_cancel_service" type="object" string="Cancel"
+                            groups="aaa_membership.group_dispatcher"
+                            confirm="Cancel this service, do you want to proceed?"
+                            odoo_button="{'state': ['initiate', 'dispatch', 'inprogress', 'start', 'reach']}" />
+                        <button name="action_discard" type="object" string="Change"
+                            groups="aaa_membership.group_dispatcher"
+                            confirm="Change this service, do you want to proceed?"
+                            odoo_button="{'state': ['initiate', 'dispatch', 'inprogress', 'start', 'reach']}" />
+                        <button name="action_create_enquiry" string="Enquiry" type="object"
+                            class="btn-default"
+                            odoo_button="{'state': ['initiate', 'dispatch', 'inprogress', 'start', 'reach']}" />
+                        <button name="action_waive_off" string="Waive Off"
+                            groups="aaa_membership.group_admin"
+                            expressions="{'invisible': [('type', '!=', 'cash'), ('state', 'not in', ['initiate', 'dispatch'])]}"
+                            type="object" />
+                        <button name="action_new" string="New Service" type="object"
+                            expressions="{'invisible': [('state', '!=', 'discard'), ('new_service_id', '!=', False)]}" />
+                        <button name="714" string="History" type="action"
+                            context="{'default_member_id': member_id}"
+                            expressions="{'invisible': [('member_type', '!=', 'policy')]}" />
+                        <field name="state" widget="statusbar" nolabel="1"
+                            statusbar_visible="initiate,dispatch,inprogress,start,reach,done" />
+                    </header>
+                    <sheet>
+                        <div class="row"
+                            style="font-weight: bold; color: #7c7bad; border: solid 1px #8080805c; margin-left: 1%; margin-right: 1%; background-color: #eee; padding-top: .7%;margin-bottom: -.5%;border-radius: 10px;">
+                            <div class="col-md-3"> Number: <field name="name" readonly="1"
+                                    style="color:green;" />
+                            </div>
+                            <div class="col-md-2"> Service Type: <field name="type" required="1"
+                                    readonly="1" style="color:green;" />
+                            </div>
+                            <div class="col-md-2"> Member Type: <field name="member_type" readonly="1"
+                                    style="color:green;" />
+                            </div>
+                            <div class="col-md-2"> Card Type: <field name="card_type" readonly="1"
+                                    style="color:green;" />
+                            </div>
+                            <div class="col-md-3"> Agent: <field name="created_by" widget="selection"
+                                    readonly="1" style="color:green !important;" />
+                            </div>
+                        </div>
+                        <group col="3">
+                            <group string="GENERAL INFORMATION" name="general_information">
+                                <field name="customer_id" string="Customer"
+                                    options="{'no_create': 1, 'no_create_edit': 1, 'no_open': 1}"
+                                    domain="[('is_company', '=', True)]"
+                                    context="{'form_view_ref': 'aaa_membership.view_res_partner_customer_form'}"
+                                    expressions="{'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                                <field name="sequence_id" string="Customer Category"
+                                    expressions="{'invisible': [('member_type', '!=', 'adhoc')], 'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}"
+                                    options="{'no_create': 1, 'no_create_edit': 1, 'no_open': 1}"
+                                    required="1" />
+                                <field name="member_id" string="Member" required="1"
+                                    options="{'no_create': 1, 'no_create_edit': 1, 'no_open': 1}"
+                                    domain="[('parent_customer_id', '=', customer_id), ('member_sequence_id', '=', sequence_id)]"
+                                    expressions="{'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                                <field name="member_contact_no" string="Mobile Number"
+                                    expressions="{'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                                <field name="email" string="Email" readonly="0"
+                                    expressions="{'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                                <field name="claim_membership"
+                                    expressions="{'invisible': [('type', '!=', 'cash'), ('member_type', '=', 'policy')], 'readonly': [('state', 'not in', ['initiate', 'dispatch'])]}" />
+                                <field name="deposit_amount"
+                                    expressions="{'invisible': [('claim_membership', '!=', True)]}"
+                                    invisible="1" />
+                                <field name="schedule_service_check" readonly="1" invisible="1" />
+                                <field name="schedule_date_time" readonly="1"
+                                    expressions="{'invisible': [('schedule_service_check', '=', False)], 'required': [('schedule_service_check', '=', True)], 'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                                <field name="requested_date" required="1" readonly="1"
+                                    expressions="{'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                                <field name="driving_license" string="Driving License"
+                                    expressions="{'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                                <field name="claim_number"
+                                    expressions="{'readonly': [('state', '=', 'done')]}" />
+                                <field name="smarto"
+                                    expressions="{'readonly': [('state', 'in', ['cancel', 'discard'])]}" />
+                                <field name="smarto_id"
+                                    expressions="{'readonly': [('state', 'in', ['cancel', 'discard'])], 'invisible': [('smarto', '!=', True)], 'required': [('smarto', '=', True)]}" />
+                                <field name="comments" string="Comments" />
+                            </group>
+                            <group string="VEHICLE DETAILS" name="vehicle_details">
+                                <field name="vehicle_type_ok" invisible="1" />
+                                <field name="vehicle_model_ok" invisible="1" />
+                                <field name="vehicle_type_id" string="Vehicle Type"
+                                    options="{'no_create': 1, 'no_create_edit': 1, 'no_open': 1}"
+                                    expressions="{'invisible': [('vehicle_type_ok', '=', True)], 'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                                <field name="vehicle_type" string="Vehicle Type"
+                                    expressions="{'invisible': [('vehicle_type_ok', '=', False)], 'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                                <field name="vehicle_model_id" string="Vehicle Model"
+                                    options="{'no_create': 1, 'no_create_edit': 1, 'no_open': 1}"
+                                    domain="[('type_id', '=', vehicle_type_id)]"
+                                    expressions="{'invisible': [('vehicle_model_ok', '=', True)], 'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                                <field name="vehicle_model" string="Vehicle Model"
+                                    expressions="{'invisible': [('vehicle_model_ok', '=', False)], 'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                                <field name="vehicle_plate" string="Vehicle Plate"
+                                    expressions="{'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                                <field name="vehicle_chasis_no" string="Vehicle Chasis No"
+                                    expressions="{'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                                <field name="vehicle_emirate_id"
+                                    options="{'no_create': 1, 'no_create_edit': 1, 'no_open': 1}"
+                                    expressions="{'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                                <field name="policy_no" string="Policy No"
+                                    expressions="{'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                            </group>
+                            <group string="SERVICE DETAILS"
+                                expressions="{'readonly': [('state', '=', 'done')]}"
+                                name="service_details">
+                                <field name="product_id" string="Service"
+                                    context="{'tree_view_ref': 'aaa_membership.product_product_tree_view'}"
+                                    expressions="{'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}"
+                                    required="1"
+                                    options="{'no_create': 1, 'no_create_edit': 1, 'no_open': 1}"
+                                    domain="[('bundle_product', '=', False), ('type', '=', 'service')]" />
+                                <field name="product_type" required="1" invisible="1" />
+                                <field name="provider_from_location_id"
+                                    domain="[('type', '=', 'internal')]"
+                                    expressions="{'invisible': [('product_type', '!=', 'distance')], 'readonly': [('state', 'not in', ['draft', 'initiate'])], 'required': [('product_type', '=', 'distance')]}"
+                                    options="{'no_create': 1, 'no_create_edit': 1, 'no_open': 1}"
+                                    string="From Location" />
+                                <field name="provider_to_location_id"
+                                    domain="[('type', '=', 'internal')]"
+                                    expressions="{'invisible': [('product_type', 'not in', ['distance', 'location', 'location_duration'])], 'readonly': [('state', 'not in', ['draft', 'initiate'])], 'required': [('product_type', 'in', ['distance', 'location', 'location_duration'])]}"
+                                    options="{'no_create': 1, 'no_create_edit': 1, 'no_open': 1}"
+                                    string="To Location" />
+                                <field name="datetime_from"
+                                    expressions="{'invisible': [('product_type', 'not in', ['duration', 'location_duration'])], 'required': [('product_type', 'in', ['duration', 'location_duration'])]}" />
+                                <field name="datetime_to"
+                                    expressions="{'invisible': [('product_type', 'not in', ['duration', 'location_duration'])], 'required': [('product_type', 'in', ['duration', 'location_duration'])]}" />
+                                <label for="quantity"
+                                    expressions="{'invisible': [('product_type', 'not in', ['duration', 'location_duration'])]}" />
+                                <div class="o_row"
+                                    expressions="{'invisible': [('product_type', 'not in', ['duration', 'location_duration'])]}">
+                                    <field name="quantity" />
+                                    <field name="uom_id" options="{'no_open': True, 'no_create': True}"
+                                        readonly="1" />
+                                </div>
+                                <field name="addon_ok" invisible="1" />
+                                <field name="main_product_ids" widget="many2many_tags" invisible="1" />
+                                <field name="service_time"
+                                    expressions="{'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}"
+                                    required="1" readonly="1" invisible="1" />
+                                <field name="cash_collected_hidden" invisible="1" />
+                                <field name="cash_collected"
+                                    expressions="{'required': [('type', '=', 'cash')], 'readonly': [('state', 'not in', ['draft', 'initiate', 'dispatch'])]}" />
+                                <field name="acc_payment_id" invisible="1" />
+                                <field name="waive_off" readonly="1"
+                                    expressions="{'invisible': [('type', '!=', 'cash')], 'readonly': [('state', 'not in', ['initiate', 'dispatch'])]}" />
+                                <separator string="ADDON SERVICES" colspan="4" />
+                                <div>
+                                    <field name="addon_service_ids" nolabel="1" colspan="4"
+                                        context="{'default_from_location_id': provider_from_location_id, 'default_to_location_id': provider_to_location_id}"
+                                        style="width:150%;"
+                                        expressions="{'readonly': [('addon_ok', '=', False), ('state', 'in', ['done', 'cancel', 'discard'])]}">
+                                        <tree string="ADDON SERVICES">
+                                            <field name="product_id" />
+                                            <field name="description" />
+                                            <field name="price_subtotal" />
+                                        </tree>
+                                        <form>
+                                            <group>
+                                                <field name="provider_id" invisible="1" />
+                                                <field name="product_id"
+                                                    context="{'tree_view_ref': 'aaa_membership.product_product_tree_view'}"
+                                                    required="1"
+                                                    options="{'no_create': 1, 'no_create_edit': 1, 'no_open': 1}"
+                                                    domain="[('bundle_product', '=', False), ('type', '=', 'service'), ('id', 'not in', parent.main_product_ids)]" />
+                                                <field name="product_type" required="1" invisible="1" />
+                                                <field name="from_location_id"
+                                                    domain="[('type', '=', 'internal')]"
+                                                    options="{'no_create': 1, 'no_create_edit': 1, 'no_open': 1}"
+                                                    expressions="{'invisible': [('product_type', '!=', 'distance')], 'required': [('product_type', '=', 'distance')]}" />
+                                                <field name="to_location_id"
+                                                    domain="[('type', '=', 'internal')]"
+                                                    options="{'no_create': 1, 'no_create_edit': 1, 'no_open': 1}"
+                                                    expressions="{'invisible': [('product_type', 'not in', ['distance', 'location'])], 'required': [('product_type', 'in', ['distance', 'location'])]}" />
+                                                <field name="datetime_from"
+                                                    expressions="{'invisible': [('product_type', '!=', 'duration')], 'required': [('product_type', '=', 'duration')]}" />
+                                                <field name="datetime_to"
+                                                    expressions="{'invisible': [('product_type', '!=', 'duration')], 'required': [('product_type', '=', 'duration')]}" />
+                                                <field name="description" invisible="1" />
+                                                <field name="uom_id" readonly="1"
+                                                    expressions="{'invisible': [('product_type', '!=', 'duration')]}" />
+                                                <field name="quantity" required="1"
+                                                    expressions="{'invisible': [('product_type', '!=', 'duration')]}" />
+                                                <field name="price_unit" invisible="1" />
+                                                <field name="price_subtotal" invisible="1" />
+                                            </group>
+                                        </form>
+                                    </field>
+                                </div>
+                            </group>
+                        </group>
+                        <group col="3">
+                            <group string="PROVIDER DETAILS"
+                                expressions="{'invisible': [('state', 'in', ['draft', 'initiate'])]}">
+                                <field name="provider_id" domain="[('supplier', '=', True)]"
+                                    expressions="{'invisible': [('state', 'in', ['draft', 'initiate'])], 'readonly': [('state', 'in', ['done', 'cancel'])]}"
+                                    options="{'no_create': 1, 'no_create_edit': 1, 'no_open': 1}"
+                                    context="{'form_view_ref': 'aaa_membership.view_res_partner_vendor_form'}" />
+                                <field name="provider_contact"
+                                    expressions="{'invisible': [('state', 'in', ['draft', 'initiate'])], 'readonly': [('state', 'in', ['done', 'inprogress', 'start', 'reach'])]}"
+                                    string="Contact Number" />
+                                <field name="provider_rate"
+                                    expressions="{'invisible': [('state', 'in', ['draft', 'initiate'])]}"
+                                    string="Route Rate" readonly="1" />
+                                <field name="provider_rate_invisible" invisible="1" />
+                                <field name="avg_vendor_rating" readonly="1" widget="priority" />
+                                <field name="company_vehicle" invisible="1" />
+                                <!-- <field name="driver_job_id" invisible="1" /> -->
+                                <!-- <field name="driver_id"
+                                    options="{'no_create': 1, 'no_create_edit': 1, 'no_open': 1}"
+                                    expressions="{'invisible': [('company_vehicle', '=', False)], 'readonly': [('state', 'in', ['done', 'cancel'])]}"
+                                    domain="[('job_id', '=', driver_job_id)]" /> -->
+                                <field name="vehicle_id"
+                                    options="{'no_create': 1, 'no_create_edit': 1, 'no_open': 1}"
+                                    expressions="{'invisible': [('company_vehicle', '=', False)], 'readonly': [('state', 'in', ['done', 'inprogress', 'start', 'reach'])]}" />
+                                <field name="vehicle"
+                                    expressions="{'invisible': [('company_vehicle', '=', True)], 'readonly': [('state', 'in', ['done', 'inprogress', 'start', 'reach'])]}" />
+                                <field name="driver_name"
+                                    expressions="{'invisible': [('company_vehicle', '=', True)], 'readonly': [('state', 'in', ['done', 'cancel'])]}" />
+                                <field name="driver_num"
+                                    expressions="{'invisible': [('state', 'in', ['draft', 'initiate'])], 'readonly': [('state', 'in', ['done', 'inprogress', 'start', 'reach'])]}"
+                                    string="Contact Number" />
+                            </group>
+                            <group string="SUMMARY"
+                                expressions="{'invisible': [('state', 'in', ['draft', 'initiate', 'dispatch'])], 'readonly': [('state', 'in', ['done'])]}">
+                                <field name="credit_proforma_number"
+                                    expressions="{'readonly': [('state', '=', 'done')]}" />
+                                <field name="vendor_rating" string="Rate this service" widget="priority" />
+                                <field name="rating_user_id" readonly="1" />
+                                <field name="completion_time"
+                                    expressions="{'readonly': [('state', '=', 'done')], 'invisible': [('state', 'not in', ['reach', 'done'])]}" />
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Comments">
+                                <field name="comment_history_ids" readonly="1">
+                                    <tree>
+                                        <field name="comment" />
+                                        <field name="comment_date_and_time" />
+                                        <field name="comment_user" />
+                                        <field name="comment_status" />
+                                    </tree>
+                                    <form>
+                                        <group>
+                                            <field name="comment" />
+                                            <field name="comment_date_and_time" />
+                                            <field name="comment_user" />
+                                            <field name="comment_status" />
+                                        </group>
+                                    </form>
+                                </field>
+                            </page>
+                            <page string="Timeline">
+                                <field name="service_history_ids" readonly="1">
+                                    <tree>
+                                        <field name="user" />
+                                        <field name="time" />
+                                        <field name="status" />
+                                    </tree>
+                                    <form>
+                                        <group>
+                                            <field name="user" />
+                                            <field name="time" />
+                                            <field name="status" />
+                                        </group>
+                                    </form>
+                                </field>
+                                <group>
+                                    <field name="new_service_id" invisible="1" />
+                                    <field name="cancelled_service_id" readonly="1" string="Origin" />
+                                </group>
+                            </page>
+                            <page name="enquiry" string="Enquiries">
+                                <field name="enquiry_ids" nolabel="1" readonly="1">
+                                    <tree>
+                                        <field name="name" />
+                                        <field name="date" />
+                                        <field name="mobile" />
+                                        <field name="email" />
+                                        <field name="enquiry" />
+                                        <field name="created_by" />
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <div class="oe_chatter">
+                        <field name="message_follower_ids" widget="mail_followers" />
+                        <field name="activity_ids" widget="mail_activity" />
+                        <field name="message_ids" widget="mail_thread" />
+                    </div>
+                </form>
+            </field>
+        </record>
+        <record id="service_credit_new_service_action" model="ir.actions.act_window">
+            <field name="name">New Service</field>
+            <field name="res_model">aaa.service</field>
+            <field name="view_mode">form</field>
+            <!-- <field name="domain">[]</field> -->
+            <!-- <field name="context">{}</field> -->
+        </record>
+        <record id="action_service_credit_new_service" model="ir.actions.act_window">
+            <field name="name">Policy Members</field>
+            <field name="res_model">aaa.service</field>
+            <field name="view_mode">form</field>
+            <!-- <field name="search_view_id" ref="view_res_partner_member_search" /> -->
+            <!-- <field name="context">{'from_res_partner_member_form': True ,
+                'default_member_type': 'policy' }</field>
+            <field name="domain">[('is_customer','=',True),('member_type','=','policy'),
+                ('membership_state','=','confirm')]</field> -->
+            <field name="view_ids"
+                eval="[
+          (5, 0, 0),
+          (0, 0, {'view_mode': 'form', 'view_id': ref('customer.service_credit_new_serivice_view_form')})
+        ]">
+            </field>
+        </record>
+        <menuitem
+            id="sub_menu_service_credit_new_member"
+            name="New Member"
+            parent="menu_service_credit"
+            action="action_service_credit_new_service"
+            sequence="1"
+        />
+    </data>
 </odoo>

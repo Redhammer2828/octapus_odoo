@@ -5,12 +5,12 @@
             <field name="name">policy.member.upload.history.view.tree</field>
             <field name="model">data.upload.file</field>
             <field name="arch" type="xml">
-                <tree string="">
-                    <field name="name" />
-                    <field name="date" />
-                    <field name="upload_by" />
-                    <field name="upload_log" />
-                    <field name="state" />
+                <tree string="Upload History">
+                    <field name="name" decoration-primary="state == 'validate'" decoration-danger="state == 'draft'" decoration-success="state == 'done'"/>
+                    <field name="date"  decoration-primary="state == 'validate'" decoration-danger="state == 'draft'" decoration-success="state == 'done'"/>
+                    <field name="upload_by"  decoration-primary="state == 'validate'" decoration-danger="state == 'draft'" decoration-success="state == 'done'"/>
+                    <field name="upload_log"  decoration-primary="state == 'validate'" decoration-danger="state == 'draft'" decoration-success="state == 'done'"/>
+                    <field name="state" decoration-primary="state == 'validate'" decoration-danger="state == 'draft'" decoration-success="state == 'done'"/>
                 </tree>
             </field>
         </record>
@@ -19,7 +19,6 @@
             <field name="name">Upload History</field>
             <field name="res_model">data.upload.file</field>
             <field name="view_mode">tree,form</field>
-            <field name="domain">[('state','=','done')]</field>
             <field name="view_ids"
                 eval="[
           (5, 0, 0),

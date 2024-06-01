@@ -18,13 +18,7 @@
             action="policy_member_search_action"
             sequence="1"
         />
-        <menuitem
-            id="sub_menu_service_credit_new_member"
-            name="New Member"
-            parent="menu_service_credit"
-            action="credit_member_search_action"
-            sequence="1"
-        />
+
         <menuitem
             id="sub_menu_service_credit_member_search"
             name="Member Search"
