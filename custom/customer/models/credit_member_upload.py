@@ -1,29 +1,31 @@
-from odoo import models, fields, api
+from odoo import models, fields ,api
 from odoo.exceptions import ValidationError
 from collections import Counter
-from datetime import datetime
 import time
 
-class DataUploadFile(models.Model):
-    _name = 'data.upload.file'
-    _description = 'Data Upload File'
-    
+class CreditMemberUpload(models.Model):
+    _name = 'credit.member.upload'
+    _description = 'Member Upload Cancel'
+
     name = fields.Char(string='Name', required=True)
     file = fields.Binary(string='File')
     file_type = fields.Char('File Type')
     file_name = fields.Char(string="File Name")
-    
+
     date = fields.Datetime('Uploaded Date', default=lambda self: fields.Datetime.now())
     upload_by = fields.Many2one('res.users', string='Uploaded By', default=lambda self: self.env.user)
     upload_log = fields.Text( string='Log')
-    upload_member_ids = fields.One2many('upload.member.line', 'upload_file_id', string='Members')
-    
+    upload_member_ids = fields.One2many('credit.member.upload.line', 'upload_file_id', string='Members')
+
     state = fields.Selection([
         ('draft', 'Draft'),
         ('validate', 'Validated'),
-        ('done', 'Done')
+        ('done', 'Done'),
+        ('cancel', 'Cancelled')
     ], string='Status', default='draft')
-   
+
+    temp_store = fields.Text(string='Temporary Store', default='{}')
+
     def validate_member_line(self, member_line):
         required_fields = ['customer_code','member_name','vehicle_chasis_no', 'mobile', 'member_expiry_date', 'member_activate_date']
         
@@ -55,7 +57,7 @@ class DataUploadFile(models.Model):
             match_found = False  # Flag to indicate if a match is found for the current member_line
             
             for matching_partner in matching_partners:
-                member_list = self.env['res.partner'].search([('parent_customer_id', '=', matching_partner.id),('member_type', '=', 'policy')])
+                member_list = self.env['res.partner'].search([('parent_customer_id', '=', matching_partner.id),('member_type', '=', 'credit')])
 
                 print("MEMBERs LIST------", member_list)
                 
@@ -184,7 +186,7 @@ class DataUploadFile(models.Model):
                     'is_customer':True,
                     'adhoc_member': False,
                     'credit_member_ok': False,
-                    'member_type': 'policy',
+                    'member_type': 'credit',
                     'membership_state': 'confirm',
                     # Add more fields to create as needed
                 })
@@ -217,19 +219,19 @@ class DataUploadFile(models.Model):
         return {
             'name': 'Rejected Members',
             'type': 'ir.actions.act_window',
-            'res_model': 'upload.member.line',
+            'res_model': 'credit.member.upload.line',
             'view_mode': 'tree',
-            'view_id': self.env.ref('customer.view_upload_member_line_tree').id,
+            'view_id': self.env.ref('customer.view_credit_member_upload_line_tree').id,
             'domain': [('upload_file_id', '=', self.id), ('upload_member_status', '=', 'rejection')],
             'context': {'default_upload_file_id': self.id},
         }
+        
+# ------------------------------------------------------------------------------------
+class CreditMemberUploadLine(models.Model):
+    _name = 'credit.member.upload.line'
+    _description = 'Credit Member upload Line'
 
-class UploadMemberLine(models.Model):
-    _name = 'upload.member.line'
-    _description = 'Upload Member Line'
-
-    upload_file_id = fields.Many2one('data.upload.file', string='Upload File')
-    upload_credit_file_id = fields.Many2one('credit.member.upload', string='Upload File')
+    upload_file_id = fields.Many2one('credit.member.upload', string='Upload File')
     
     member_name = fields.Char(string='Name')
     mobile = fields.Char(string='Mobile')

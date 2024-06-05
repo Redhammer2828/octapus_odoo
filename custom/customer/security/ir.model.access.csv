@@ -18,4 +18,7 @@ access_upload_member_line,upload.member.line,model_upload_member_line,,1,1,1,1
 access_member_cancel_upload_wizard,member.cancel.upload.wizard,model_member_cancel_upload_wizard,,1,1,1,1
 access_member_upload_cancel,member.upload.cancel,model_member_upload_cancel,,1,1,1,1
 access_member_upload_cancel_line,member.upload.cancel.line,model_member_upload_cancel_line,,1,1,1,1
+access_credit_member_upload_wizard,credit.member.upload.wizard,model_credit_member_upload_wizard,,1,1,1,1
+access_credit_member_upload,credit.member.upload,model_credit_member_upload,,1,1,1,1
+access_credit_member_upload_line,credit.member.upload.line,model_credit_member_upload_line,,1,1,1,1
 access_aaa_service,aaa.service,model_aaa_service,,1,1,1,1

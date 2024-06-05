@@ -8,8 +8,9 @@ class MemberCancelUploadWizard(models.TransientModel):
     _description = "Policy Member Cancellation Wizard"
 
     name = fields.Char(string="Name", required=True)
-    file_type = fields.Selection([('excel', 'Excel'), ('csv', 'CSV')], string="File Type", required=True)
+    file_type = fields.Selection([('excel', 'Excel'), ('csv', 'CSV')], string="File Type",default='excel', required=True)
     file = fields.Binary(string="File")
+    file_name = fields.Char(string="File Name", readonly=True)
     type = fields.Char(string="Type", invisible=True) 
 
     def action_policy_member_upload_excel(self):

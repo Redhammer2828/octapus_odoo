@@ -1,0 +1,27 @@
+<odoo>
+    <!-- Bulk Upload Rejected records -->
+    <record id="view_credit_member_upload_line_tree" model="ir.ui.view">
+        <field name="name">credit.member.upload.rejected.form</field>
+        <field name="model">credit.member.upload.line</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="member_name"/>
+                <field name="customer_code"/>
+                <field name="vehicle_plate"/>
+                <field name="vehicle_chasis_no"/>
+                <field name="member_activate_date"/>
+                <field name="member_expiry_date"/>
+                <field name="upload_member_status"/>
+                <field name="comment" decoration-danger="upload_member_status == 'rejection'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_credit_member_upload_rejected" model="ir.actions.act_window">
+        <field name="name">Rejected Credit Members</field>
+        <field name="res_model">credit.member.upload.line</field>
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="view_credit_member_upload_line_tree"/>
+        <field name="domain">[('upload_member_status', '=', 'rejection')]</field>
+    </record>
+</odoo>

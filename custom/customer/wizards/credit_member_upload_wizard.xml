@@ -2,11 +2,11 @@
 <odoo>
 
     <data>
-        <record id="policy_member_cancel_upload_form" model="ir.ui.view">
-            <field name="name">policy.member.cancel.upload.form</field>
-            <field name="model">member.cancel.upload.wizard</field>
+        <record id="credit_member_upload_wizard_form" model="ir.ui.view">
+            <field name="name">credit.member.upload.wizard.form</field>
+            <field name="model">credit.member.upload.wizard</field>
             <field name="arch" type="xml">
-                <form string="Policy Members Cancel Upload">
+                <form string="Credit Member Upload Wizard" >
                     <group>
                         <field name="file_type" string="File Type" required="1" widget="radio" />
                     </group>
@@ -21,10 +21,10 @@
                         </group>
                     </group>
                     <footer>
-                        <button name="action_policy_member_upload_excel" class="btn-primary"
+                        <button name="action_credit_member_upload_excel" class="btn-primary"
                                 string="Upload Excel" type="object"
                                 invisible="file_type != 'excel'"/>
-                        <button name="action_policy_member_upload_csv" class="btn-primary"
+                        <button name="action_credit_member_upload_csv" class="btn-primary"
                                 string="Upload CSV" type="object"
                                 invisible="file_type != 'csv'"/>
                         <button string="Cancel" class="btn-default" special="cancel"/>
@@ -33,32 +33,25 @@
             </field>
         </record>
 
-        <record id="action_view_policy_member_cancel_upload" model="ir.actions.act_window">
-            <field name="name">Upload Policy Members</field>
-            <field name="res_model">member.cancel.upload.wizard</field>
+        <record id="action_credit_member_upload_wizard" model="ir.actions.act_window">
+            <field name="name">Upload Credit Member</field>
+            <field name="res_model">credit.member.upload.wizard</field>
             <field name="view_mode">form</field>
             <field name="target">new</field>
         </record>
 
         <menuitem
-            id="menu_membership_cancellation"
-            name="Membership Cancellation"
-            parent="menu_member"
-            sequence="70"
-        />
-        <menuitem
-            id="menu_cancel_upload_file"
+            id="sub_menu_credit_member_upload"
             name="Upload File"
-            parent="menu_membership_cancellation"
-            action="action_view_policy_member_cancel_upload"
-            sequence="71" />
-
-        <menuitem
-            id="menu_cancel_history"
-            name="Cancellation History"
-            parent="menu_membership_cancellation"
-            action="cancellation_history_action"
-            sequence="72" />
+            parent="menu_credit_member"
+            sequence="2"
+            action="action_credit_member_upload_wizard"/>
+        <menuitem 
+            id="sub_menu_credit_member_upload_history" 
+            name="Uploaded Members" 
+            parent="menu_credit_member"
+            action="action_credit_member_upload_history" 
+            sequence="3"/>
     </data>
 
 </odoo>
