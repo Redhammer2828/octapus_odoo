@@ -6,34 +6,37 @@ from datetime import datetime
 from odoo import models, fields, api
 from odoo.exceptions import UserError
 
-class UploadMemberWizard(models.TransientModel):
-    _name = 'upload.member.wizard'
-    _description = 'Policy Member Upload Wizard'
+class MemberCancelUploadWizard(models.TransientModel):
+    _name = "credit.member.upload.wizard"
+    _description = "Credit Member Upload Wizard"
 
     name = fields.Char(string="Name", required=True)
-    file_type = fields.Selection([('excel', 'Excel'), ('csv', 'CSV')], string="File Type", default='excel', required=True)
-    file = fields.Binary(string="File", required=True)
+    file_type = fields.Selection([('excel', 'Excel'), ('csv', 'CSV')], string="File Type",default='excel', required=True)
+    file = fields.Binary(string="File")
     file_name = fields.Char(string="File Name", readonly=True)
-    type = fields.Char(string="Type", invisible=True)
+    type = fields.Char(string="Type", invisible=True) 
 
-    def action_policy_member_upload_excel(self):
+    def action_credit_member_upload_excel(self):
+        # Ensure the file is provided
         if not self.file:
-            raise UserError('Please select a file to upload.')
+            return {'warning': {'title': 'Warning', 'message': 'Please select a file to upload.'}}
 
+        # Decode the file data and create a pandas DataFrame
         file_content = base64.b64decode(self.file)
         try:
             excel_data = pd.read_excel(io.BytesIO(file_content))
         except Exception as e:
-            raise UserError(f'Error reading Excel file: {e}')
+            return {'warning': {'title': 'Error', 'message': f'Error reading Excel file: {e}'}}
 
-        # Excel validation Check 
+                # Excel validation Check 
         required_fields = ['vehicle_chasis_no', 'name', 'customer_code', 'member_expiry_date', 'member_activate_date', 'mobile']
         seen_vehicle_chasis_no = set()
         errors = []
         date_format_regex = re.compile(r'^\d{2}/\d{2}/\d{4}$')
-        
-        # Data Upload Function 
-        member_lines = []
+
+
+        # Prepare data for creating upload.member.line records
+        credit_member_lines = []
         for index, row in excel_data.iterrows():
             row_errors = []
 
@@ -88,30 +91,32 @@ class UploadMemberWizard(models.TransientModel):
                 'package': row.get('package_id'),
                 'customer_code': row.get('customer_code'),
                 'sequence_code': row.get('category_code'),
+                # Add other fields from the Excel file as needed
             }
-            member_lines.append((0, 0, member_line_data))
-
+            credit_member_lines.append((0, 0, member_line_data))
+        
         if errors:
             error_message = "\n".join(errors)
             raise UserError(f'Errors found in the uploaded file:\n{error_message}')
 
-        data_upload_file = self.env['data.upload.file'].create({
+        # Create member.upload.cancel record
+        credit_member_upload = self.env['credit.member.upload'].create({
             'name': self.name,
             'file_type': self.file_type,
             'file': self.file,
-            'file_name': self.file_name,
-            'state': 'draft',
-            'upload_member_ids': member_lines
+            'state': 'draft',  # Default state
+            'upload_member_ids': credit_member_lines  # Assign member lines to the One2many field
         })
 
+        # Return action to open form view of the newly created record
         return {
-            'name': 'Data Upload File',
+            'name': 'Credit Member Upload',
             'type': 'ir.actions.act_window',
-            'res_model': 'data.upload.file',
+            'res_model': 'credit.member.upload',
             'view_mode': 'form',
-            'res_id': data_upload_file.id,
-            'target': 'current',
+            'res_id': credit_member_upload.id,  # Assuming data_upload_file is the created record
+            'target': 'current',  # Open in the same window
         }
-
-    def action_policy_member_upload_csv(self):
+    
+    def action_credit_member_upload_csv(self):
         pass

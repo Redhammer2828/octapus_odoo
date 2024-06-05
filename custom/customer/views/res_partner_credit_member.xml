@@ -187,11 +187,14 @@
             id="sub_menu_credit_member"
             name="Credit Members"
             parent="menu_credit_member"
+            sequence='1'
             action="action_res_partner_credit_member" />
+
         <menuitem 
-            id="sub_menu_credit_member_upload"
-            name="Upload Members"
+            id="sub_menu_credit_member_upload_history"
+            name="Upload History"
             parent="menu_credit_member"
+            sequence='3'
             action=""/>
     </data>
 </odoo>
