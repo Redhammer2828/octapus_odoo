@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="call_center_enquiry_view_form" model="ir.ui.view">
+        <field name="name">aaa.enquiry.view.form</field>
+        <field name="model">aaa.enquiry</field>
+        <field name="arch" type="xml">
+            <form string="Enquiry" >
+                <sheet >
+                    <div class="oe_title" >
+                        <h1 >
+                            <field name="name" style="font-size: 14px;" default_focus="1" placeholder="Name" readonly="1" />
+                        </h1>
+                    </div>
+                    <group string="Enquiry" col="3" >
+                        <group >
+                            <field name="customer_id" can_create="true" can_write="true" />
+                            <field name="member_id" invisible = "customer_id == False" on_change="1" can_create="true" can_write="true"/>
+                            <field name="service_id" invisible = "member_id == False" can_create="true" can_write="true"/>
+                        </group>
+                        <group >
+                            <field name="mem_name" />
+                            <field name="membership" />
+                            <field name="mobile" />
+                            <field name="enquiry" />
+                            <field name="create_date" readonly="1"/>
+                        </group>
+                        <group >
+                            <field name="vehicle_chasis_no" />
+                            <field name="vehicle_plate_no" />
+                            <field name="policy_no" />
+                            <field name="email" />
+                            <field name="created_by" readonly="1" can_create="true" can_write="true"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="model_name_view_tree" model="ir.ui.view">
+        <field name="name">aaa.enquiry.view.tree</field>
+        <field name="model">aaa.enquiry</field>
+        <field name="arch" type="xml">
+            <tree string="Enquiry">
+                <field name="name"/>
+                <field name="customer_id" can_create="true" can_write="true" />
+                <field name="member_id" on_change="1" can_create="true" can_write="true" />
+                <field name="service_id" can_create="true" can_write="true" />
+                <field name="mem_name"/>
+                <field name="membership" />
+                <field name="create_date"/>
+                <field name="mobile" />
+                <field name="email" />
+                <field name="enquiry" />
+                <field name="vehicle_chasis_no" />
+                <field name="vehicle_plate_no" />
+                <field name="policy_no" />
+                <field name="created_by" readonly="1" can_create="true" can_write="true"/>
+            </tree>
+        </field>
+    </record>
+</odoo>

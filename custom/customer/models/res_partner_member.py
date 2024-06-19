@@ -217,3 +217,24 @@ class ResPartnerMembers(models.Model):
                 related_products = self.env['product.template'].search([('id', 'in', product_ids)])
                 print("Related Products:", related_products)
                 self.service_ids = [(6, 0, related_products.ids)]
+
+    @api.onchange('parent_customer_id')
+    def _onchange_parent_customer_id(self):
+        if self.parent_customer_id:
+            partner_categories = self.env['partner.category'].search([
+                ('partner_id', '=', self.parent_customer_id.id),
+                ('member_type', '=', 'policy')
+            ])
+            print("Parent Customer ID",self.parent_customer_id)
+            print("PARTNER CATEGORIES",partner_categories)
+            domain = [('id', 'in', partner_categories.ids)]
+            return {'domain': {'member_partner_category_id': domain}}
+        else:
+            return {'domain': {'member_partner_category_id': []}}
+
+    # def search_partner_categories(self):
+    #     if self.parent_customer_id:
+    #         partner_categories = self.env['partner.category'].search([('partner_id', '=', self.parent_customer_id.id)])
+    #         return partner_categories
+    #     else:
+    #         return self.env['partner.category'].browse([])  # Return an empty recordset if no parent_customer_id
