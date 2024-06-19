@@ -35,7 +35,7 @@
         'views/credit_member_upload_history.xml',
         'views/credit_member_upload_rejected.xml',
         'views/call_center_menu.xml',
-        # 'views/call_center_service_credit_new_service.xml',
+        'views/call_center_service_credit_new_service.xml',
         'wizards/upload_member_wizard.xml',
         'wizards/membership_extension_wizard.xml',
         'wizards/membership_renewal_wizard.xml',

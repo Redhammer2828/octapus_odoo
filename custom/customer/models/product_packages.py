@@ -21,6 +21,7 @@ class ProductPackagesService(models.Model):
 
     product_template_id = fields.Many2one('product.template', string='Product Services', domain="[('type', '=', 'service'), ('detailed_type', '=', 'service')]")
 
+    is_intercity = fields.Boolean('Intercity')
     product_id = fields.Many2one('product.product', string='Product')
     quantity = fields.Float('quantity')
 

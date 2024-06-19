@@ -98,6 +98,7 @@
                                 <field name="service_ids" widget="one2many_list">
                                     <tree editable="bottom">
                                         <field name="product_id" domain="[('service_type', '=', 'none')]" />
+                                        <field name="is_intercity"/>
                                         <field name="quantity" />
                                     </tree>
                                 </field>
