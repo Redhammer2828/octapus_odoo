@@ -28,8 +28,8 @@ class MemberCancelUploadWizard(models.TransientModel):
         except Exception as e:
             return {'warning': {'title': 'Error', 'message': f'Error reading Excel file: {e}'}}
 
-                # Excel validation Check 
-        required_fields = ['vehicle_chasis_no', 'name', 'customer_code', 'member_expiry_date', 'member_activate_date', 'mobile']
+        # Excel validation Check 
+        required_fields = ['vehicle_chasis_no', 'name', 'customer_code', 'member_expiry_date','card_type','country','invoice_ref_date','package_id','category_code']
         seen_vehicle_chasis_no = set()
         errors = []
         date_format_regex = re.compile(r'^\d{2}/\d{2}/\d{4}$')
@@ -58,7 +58,11 @@ class MemberCancelUploadWizard(models.TransientModel):
                 row_errors.append(f'Duplicate value "{vehicle_chasis_no}" found in "vehicle_chasis_no". Row: {index + 1}.')
             else:
                 seen_vehicle_chasis_no.add(vehicle_chasis_no)
-
+            
+            mobile = row.get('mobile')
+            if pd.notna(mobile) and not re.match(r'^\d+$', str(mobile)):
+                row_errors.append(f'Field "mobile" must contain only numbers. Row: {index + 1}.')
+           
             if row_errors:
                 errors.extend(row_errors)
                 continue

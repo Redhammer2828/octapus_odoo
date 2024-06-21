@@ -27,7 +27,7 @@ class UploadMemberWizard(models.TransientModel):
             raise UserError(f'Error reading Excel file: {e}')
 
         # Excel validation Check 
-        required_fields = ['vehicle_chasis_no', 'name', 'customer_code', 'member_expiry_date', 'member_activate_date', 'mobile','card_type','country','invoice_ref_date','package_id','category_code']
+        required_fields = ['vehicle_chasis_no', 'name', 'customer_code', 'member_expiry_date','card_type','country','invoice_ref_date','package_id','category_code']
         seen_vehicle_chasis_no = set()
         errors = []
         date_format_regex = re.compile(r'^\d{2}/\d{2}/\d{4}$')
