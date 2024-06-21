@@ -82,6 +82,7 @@ class ResPartnerMembers(models.Model):
     product_template_id = fields.Many2one('product.template', string="Package")
     service_ids = fields.Many2many('product.product', string="Services", widget="many2many_tags", options="{'no_create_edit': True}")
     member_partner_category_id = fields.Many2one('partner.category', string='Category')
+
     #------------------------------------------------------------
     member_expired = fields.Boolean(
         string="Member Expired", 
@@ -218,19 +219,23 @@ class ResPartnerMembers(models.Model):
                 print("Related Products:", related_products)
                 self.service_ids = [(6, 0, related_products.ids)]
 
+    # @api.onchange('parent_customer_id')
+    # def _onchange_parent_customer_id(self):
+    #     if self.parent_customer_id:
+    #         partner_categories = self.env['partner.category'].search([
+    #             ('partner_id', '=', self.parent_customer_id.id),
+    #             ('member_type', '=', 'policy')
+    #         ])
+    #         print("Parent Customer ID",self.parent_customer_id)
+    #         print("PARTNER CATEGORIES",partner_categories)
+
     @api.onchange('parent_customer_id')
     def _onchange_parent_customer_id(self):
         if self.parent_customer_id:
-            partner_categories = self.env['partner.category'].search([
-                ('partner_id', '=', self.parent_customer_id.id),
-                ('member_type', '=', 'policy')
-            ])
-            print("Parent Customer ID",self.parent_customer_id)
-            print("PARTNER CATEGORIES",partner_categories)
-            domain = [('id', 'in', partner_categories.ids)]
-            return {'domain': {'member_partner_category_id': domain}}
+            product_categories = self.env['partner.category'].search([('partner_id', '=', self.parent_customer_id.id)])
+            return {'domain': {'member_partner_category_id': [('id', 'in', product_categories.ids)]}}
         else:
-            return {'domain': {'member_partner_category_id': []}}
+            return {'domain': {'member_partner_category_id': [('id', 'in', [])]}}
 
     # def search_partner_categories(self):
     #     if self.parent_customer_id:
@@ -238,3 +243,22 @@ class ResPartnerMembers(models.Model):
     #         return partner_categories
     #     else:
     #         return self.env['partner.category'].browse([])  # Return an empty recordset if no parent_customer_id
+
+    # @api.onchange('parent_customer_id') 
+    # def _onchange_parent_customer_id(self):
+    #     if self.parent_customer_id:
+    #         partner_categories = self.env['partner.category'].search([
+    #             ('partner_id', '=', self.parent_customer_id.id),
+    #             ('member_type', '=', 'policy')
+    #         ])
+    #         domain = [('id', 'in', partner_categories.ids)]
+    #     else:
+    #         domain = [('id', '=', 0)]
+    #     return {'domain': {'member_partner_category_id': domain}}
+
+    # @api.model
+    # def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
+    #     args = args or []
+    #     if name:
+    #         args = [('name', operator, name)] + args
+    #     return self.search(args, limit=limit).name_get()

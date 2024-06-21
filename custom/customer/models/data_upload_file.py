@@ -24,23 +24,23 @@ class DataUploadFile(models.Model):
         ('done', 'Done')
     ], string='Status', default='draft')
    
-    def validate_member_line(self, member_line):
-        required_fields = ['customer_code', 'member_name', 'vehicle_chasis_no', 'mobile', 'member_expiry_date', 'member_activate_date']
+    # def validate_member_line(self, member_line):
+    #     required_fields = ['customer_code', 'member_name', 'vehicle_chasis_no', 'mobile', 'member_expiry_date', 'member_activate_date']
+    #     # Check that member_expiry_date is greater than member_activate_date
         
-        for field in required_fields:
-            value = getattr(member_line, field)
-            if not value or str(value).lower() == 'nan':
-                if field == 'member_name':
-                    raise ValidationError("Name not exist in Uploaded Sheet")
-                else:
-                    raise ValidationError(f"{field.replace('_', ' ').title()} is required for member {member_line.member_name}")
-        
-        # Check that member_expiry_date is greater than member_activate_date
-        expiry_date = fields.Date.from_string(member_line.member_expiry_date)
-        activate_date = fields.Date.from_string(member_line.member_activate_date)
-        
-        if expiry_date < activate_date:
-            raise ValidationError(f"Expiry Date {member_line.member_expiry_date} cannot be earlier than Activation Date {member_line.member_activate_date} for member {member_line.member_name}")
+    #     for field in required_fields:
+    #         value = getattr(member_line, field)
+    #         if not value or str(value).lower() == 'nan':
+    #             if field == 'member_name':
+    #                 raise ValidationError("Name not exist in Uploaded Sheet")
+    #             else:
+    #                 raise ValidationError(f"{field.replace('_', ' ').title()} is required for member {member_line.member_name}")
+                
+    #     expiry_date = fields.Date.from_string(member_line.member_expiry_date)
+    #     activate_date = fields.Date.from_string(member_line.member_activate_date)
+    #     if expiry_date < activate_date:
+    #         member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date cannot be earlier than Activation Date!"})
+            # raise ValidationError(f"Expiry Date {member_line.member_expiry_date} cannot be earlier than Activation Date {member_line.member_activate_date} for member {member_line.member_name}")
             
     def action_validate_policy_data(self):
         start_time = time.time()
@@ -50,7 +50,7 @@ class DataUploadFile(models.Model):
         for member_line in self.upload_member_ids:
             print("---------------------------------------------------------------------------")
             # Validate required fields and date format
-            self.validate_member_line(member_line)
+            # self.validate_member_line(member_line)
 
             print("Processing member_line:", member_line)
             matching_partners = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)])
@@ -83,10 +83,14 @@ class DataUploadFile(models.Model):
             
             # If no match is found for the current member_line, update its status
             if not match_found:
-                    # if not excel_chassis_no :
-                        # print("[FAIL]")
-                    member_line.update({'upload_member_status': 'new', 'comment': "**Not exist in System*New Member"})
-                    print("dwdqwdwdwddddddddddddddddddddddddd")
+                    expiry_date = fields.Date.from_string(member_line.member_expiry_date)
+                    activate_date = fields.Date.from_string(member_line.member_activate_date)
+                    
+                    if expiry_date < activate_date:
+                        member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date cannot be earlier than Activation Date!"})
+                    else:
+                        member_line.update({'upload_member_status': 'new', 'comment': "**Not exist in System*New Member"})
+                        
         end_time = time.time()
         processing_time = end_time - start_time  # Calculate the processing time
         
@@ -230,7 +234,7 @@ class DataUploadFile(models.Model):
                 card_type_record = self.env['card.type'].search([('code', '=', member_line.card_type)])
                 
                 matching_partner = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)])
-                #CARWGORY CODE UPLOAD----------------------
+                #------------CARTGORY CODE UPLOAD----------------------
                 matching_category=self.env['partner.category'].search([('name','=', member_line.sequence_code),('partner_id','=', matching_partner.id)],limit=1)
                 # matching_category_code = self.env[]
                 # Create a new partner record

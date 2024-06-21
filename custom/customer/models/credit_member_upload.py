@@ -26,16 +26,16 @@ class CreditMemberUpload(models.Model):
 
     temp_store = fields.Text(string='Temporary Store', default='{}')
 
-    def validate_member_line(self, member_line):
-        required_fields = ['customer_code','member_name','vehicle_chasis_no', 'mobile', 'member_expiry_date', 'member_activate_date']
+    # def validate_member_line(self, member_line):
+    #     required_fields = ['customer_code','member_name','vehicle_chasis_no', 'mobile', 'member_expiry_date', 'member_activate_date']
         
-        for field in required_fields:
-            value = getattr(member_line, field)
-            if not value or str(value).lower() == 'nan':
-                if field == 'member_name':
-                    raise ValidationError("Name not exist in Uploaded Sheet")
-                else:
-                    raise ValidationError(f"{field.replace('_', ' ').title()} is required for member {member_line.member_name}")
+    #     for field in required_fields:
+    #         value = getattr(member_line, field)
+    #         if not value or str(value).lower() == 'nan':
+    #             if field == 'member_name':
+    #                 raise ValidationError("Name not exist in Uploaded Sheet")
+    #             else:
+    #                 raise ValidationError(f"{field.replace('_', ' ').title()} is required for member {member_line.member_name}")
             
     def action_validate_policy_data(self):
         start_time = time.time()
@@ -46,7 +46,7 @@ class CreditMemberUpload(models.Model):
             print("---------------------------------------------------------------------------")
             
             # Validate required fields and date format
-            self.validate_member_line(member_line)
+            # self.validate_member_line(member_line)
 
             print("Processing member_line:", member_line)
             matching_partners = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)])
@@ -79,10 +79,15 @@ class CreditMemberUpload(models.Model):
             
             # If no match is found for the current member_line, update its status
             if not match_found:
-                    # if not excel_chassis_no :
-                        # print("[FAIL]")
+                    expiry_date = fields.Date.from_string(member_line.member_expiry_date)
+                    activate_date = fields.Date.from_string(member_line.member_activate_date)
+                    
+                    if expiry_date < activate_date:
+                        member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date cannot be earlier than Activation Date!"})
+                    else:
+                        member_line.update({'upload_member_status': 'new', 'comment': "**Not exist in System*New Member"})
                     member_line.update({'upload_member_status': 'new', 'comment': "**Not exist in System*New Member"})
-                    print("dwdqwdwdwddddddddddddddddddddddddd")
+                    
         end_time = time.time()
         processing_time = end_time - start_time  # Calculate the processing time
         
@@ -118,9 +123,9 @@ class CreditMemberUpload(models.Model):
                     member_line.update({'upload_member_status': 'exist_temp', 'comment': "Exist Under Temp,*Overwrite"})
                     member_line.if_temp_match = member.id
                 elif member.membership_state == 'confirm':
-                    print("MEMBER ID+_+_+__+_+_+_+__++_+_+_+",member.id)
+                    print("MEMBER ID---:",member.id)
                     member_line.if_conf_match = member.id
-                    print("IF CONF()())(()()()((()())))",member_line.if_conf_match)
+                    print("IF CONF----",member_line.if_conf_match)
 
                     expiry_date = fields.Date.from_string(member_line.member_expiry_date)
                     activate_date = fields.Date.from_string(member_line.member_activate_date)
@@ -130,16 +135,22 @@ class CreditMemberUpload(models.Model):
                     print("DIFFERENCE CALCULATED:", difference)
                     print("EXPIRY DATE IN RES.PARTNER:", member.member_expiry_date)
                     print("EXPIRY DATE IN EXCEL:", member_line.member_expiry_date)
-                    if member.member_expiry_date != member_line.member_expiry_date:
-                        if difference >= 365:
-                            print("MEMBERSHIP RENEWAL")
-                            member_line.update({'upload_member_status': 'renewal', 'comment': "*Membership Renewal"})
-                        else:
-                            print("MEMBERSHIP EXTENSION")
-                            member_line.update({'upload_member_status': 'update', 'comment': "*Membership Extension"})
+                    
+                    # New check: if member_line.member_expiry_date is less than member_line.member_activate_date
+                    if expiry_date < activate_date:
+                        print("EXPIRY DATE IS LESS THAN ACTIVATION DATE: [FAIL]")
+                        member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date is less than Activation Date"})
                     else:
-                        print("DUPLICATE RECORD FOUND")
-                        member_line.update({'upload_member_status': 'rejection', 'comment': "*Duplicate Record in System!"})
+                        if member.member_expiry_date != member_line.member_expiry_date:
+                            if difference >= 365:
+                                print("MEMBERSHIP RENEWAL")
+                                member_line.update({'upload_member_status': 'renewal', 'comment': "*Membership Renewal"})
+                            else:
+                                print("MEMBERSHIP EXTENSION")
+                                member_line.update({'upload_member_status': 'update', 'comment': "*Membership Extension"})
+                        else:
+                            print("DUPLICATE RECORD FOUND")
+                            member_line.update({'upload_member_status': 'rejection', 'comment': "*Duplicate Record in System!"})
                 else:
                     print("MEMBERSHIP STATE CHECK: [FAIL]")
                     member_line.update({'upload_member_status': 'new', 'comment': "Member Not Exist"})
@@ -147,7 +158,7 @@ class CreditMemberUpload(models.Model):
                 print("NAME CHECK: [FAIL]")
                 member_line.update({'upload_member_status': 'new', 'comment': "Member Not Exist"})
         else:
-            if excel_chassis_no == 'nan' or '':
+            if excel_chassis_no == 'nan' or excel_chassis_no == '':
                 member_line.update({'upload_member_status': 'rejection', 'comment': "*Vehicle Chasis Number Does Not Exist!"})
                 print("[FAIL]")
             else:
@@ -163,7 +174,8 @@ class CreditMemberUpload(models.Model):
                 card_type_record = self.env['card.type'].search([('code', '=', member_line.card_type)])
                 
                 matching_partner = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)])
-
+                #------------CARTGORY CODE UPLOAD----------------------
+                matching_category=self.env['partner.category'].search([('name','=', member_line.sequence_code),('partner_id','=', matching_partner.id)],limit=1)
                 # matching_category_code = self.env[]
                 # Create a new partner record
                 new_partner = self.env['res.partner'].create({
@@ -188,6 +200,7 @@ class CreditMemberUpload(models.Model):
                     'credit_member_ok': False,
                     'member_type': 'credit',
                     'membership_state': 'confirm',
+                    'member_partner_category_id': matching_category.id
                     # Add more fields to create as needed
                 })
             elif member_line.upload_member_status in ['renewal', 'update']:
