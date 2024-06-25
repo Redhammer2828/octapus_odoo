@@ -58,9 +58,9 @@ platformdirs==4.1.0
 pycparser==2.21
 pyparsing==3.1.1
 python-barcode==0.15.1
-PyPDF2==1.26.0 ; python_version <= '3.10'
-PyPDF2==2.12.1 ; python_version > '3.10'
-pypiwin32 ; sys_platform == 'win32'
+# PyPDF2==1.26.0 ; python_version <= '3.10'
+# PyPDF2==2.12.1 ; python_version > '3.10'
+# pypiwin32 ; sys_platform == 'win32'
 requests-file==1.5.1
 requests-toolbelt==1.0.0
 setuptools==69.0.3
