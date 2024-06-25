@@ -4,14 +4,16 @@
 
 trigger:
 - development
-- beta
+- qa
+- UAT
 - gama
+
 resources:
 - repo: self
 
 variables:
   # Container registry service connection established during pipeline creation
-  dockerRegistryServiceConnection: '3cebb094-f6b4-4009-bfb1-9e05bca63dc3'
+  dockerRegistryServiceConnection: '6bda621f-ec6b-497b-b30e-8f2511dfdeaa'
   imageRepository: 'aaaerp'
   containerRegistry: 'carhiredev.azurecr.io'
   dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
@@ -27,7 +29,7 @@ stages:
   - job: Build
     displayName: Build
     pool:
-      vmImage: $(vmImageName)
+      # vmImage: $(vmImageName)
       name: alpha
     steps:
     - task: Docker@2
