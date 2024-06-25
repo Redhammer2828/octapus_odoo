@@ -9,9 +9,10 @@ geoip2==2.9.0
 gevent==21.8.0
 attrs==23.2.0
 greenlet==1.1.2
-idna==2.10
+idna==2.10 # requests 2.25.1 depends on idna<3 and >=2.5
 Jinja2==3.0.3
 libsass==0.20.1
+lxml==4.8.0
 MarkupSafe==2.0.1
 num2words==0.5.10
 ofxparse==0.21
@@ -21,9 +22,9 @@ polib==1.1.1
 psutil==5.9.0
 psycopg2==2.9.5
 pydot==1.4.2
-pyOpenSSL==21.0.0
+pyopenssl==21.0.0
 PyPDF2==1.26.0
-pypiwin32==223
+# pypiwin32==223
 pyserial==3.5
 python-dateutil==2.8.2
 python-stdnum==1.17
