@@ -22,7 +22,7 @@ access_credit_member_upload_wizard,credit.member.upload.wizard,model_credit_memb
 access_credit_member_upload,credit.member.upload,model_credit_member_upload,,1,1,1,1
 access_credit_member_upload_line,credit.member.upload.line,model_credit_member_upload_line,,1,1,1,1
 access_aaa_service,aaa.service,model_aaa_service,,1,1,1,1
+access_aaa_enquiry,aaa.enquiry,model_aaa_enquiry,,1,1,1,1
 access_service_comment,service.comment,model_service_comment,,1,1,1,1
 access_service_history,service.history,model_service_history,,1,1,1,1
-access_service_enquiry,service.enquiry,model_service_enquiry,,1,1,1,1
 

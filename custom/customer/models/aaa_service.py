@@ -6,8 +6,8 @@ class AAAService(models.Model):
     _inherit = ['mail.thread', 'mail.activity.mixin']
 
     name = fields.Char(string="Number", readonly=True, default=lambda self:('New'))
-    type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type", readonly=True, default='non_cash')
-    member_type = fields.Selection([('adhoc', 'Adhoc'), ('policy', 'Policy')], string="Member Type", readonly=True, default='adhoc')
+    type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type", readonly=True)
+    member_type = fields.Selection([('adhoc', 'AD-HOC'), ('policy', 'POLICY'),('credit', 'CREDIT')], string="Member Type", readonly=True)
     card_type = fields.Char(string="Card Type", readonly=True)
     state = fields.Selection([
         ('draft', 'Draft'),
@@ -22,8 +22,9 @@ class AAAService(models.Model):
     ], string="Status", readonly=True, default='initiate', tracking=True)
     
     #MANY2ONE-------------------------------------------------------------------------------------------------------
-    customer_id = fields.Many2one('res.partner', string="Customer")
-    sequence_id = fields.Many2one('partner.category', string="Customer Category")
+    customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
+    credit_customer_co = fields.Char('Customer C/O')
+    sequence_id = fields.Many2one('partner.category', string="Customer Category", domain="[('partner_id','=', customer_id)]")
     member_id = fields.Many2one('res.partner', string="Member")
     created_by = fields.Many2one('res.users', string="Agent", default=lambda self: self.env.user, readonly=True)
     
@@ -94,7 +95,7 @@ class AAAService(models.Model):
     # One to Many -------------------------------------------------------------------------------------------
     comment_history_ids = fields.One2many('service.comment', 'service_id', string="Comment History")
     service_history_ids = fields.One2many('service.history', 'service_id', string="Service History")
-    enquiry_ids = fields.One2many('service.enquiry', 'service_id', string="Enquiries")
+    enquiry_ids = fields.One2many('aaa.enquiry', 'service_id', string="Enquiries")
     addon_service_ids = fields.One2many('product.template', 'service_credit_addon_id', string='addon_service')
   
     # =========================================================================================================
@@ -120,7 +121,27 @@ class AAAService(models.Model):
     completion_time = fields.Datetime(string="Completion Time")
     
     
-
+    @api.onchange('customer_id')
+    def _onchange_customer_id(self):
+        for record in self:
+            if record.customer_id:
+                # Search for the sequence that matches the criteria
+                sequence = self.env['partner.category'].search([
+                    ('partner_id', '=', record.customer_id.id),
+                    ('member_type', '=', 'credit')
+                ], limit=1)
+                
+                # Set the sequence_id to the found sequence
+                record.sequence_id = sequence.id if sequence else False
+                
+                # Search for the member that matches the criteria
+                member = self.env['res.partner'].search([
+                    ('parent_customer_id', '=', record.customer_id.id),
+                    ('member_type', '=', 'credit')
+                ], limit=1)
+                print("MEMBERRRR",member)
+                # Set the member_id to the found member
+                record.member_id = member.id if member else False
     @api.model
     def create(self, vals):
         if vals.get('name', _('New')) == _('New'):
@@ -162,46 +183,28 @@ class AAAService(models.Model):
         self.state = 'discard'
 
     def action_create_enquiry(self):
-        # self.ensure_one()
-        # return {
-        #     'type': 'ir.actions.act_window',
-        #     'res_model': 'service.enquiry',
-        #     'view_mode': 'form',
-        #     'target': 'new',
-        #     'context': {
-        #         'default_service_id': self.id,
-        #     }
-        # }
-        pass
-
+        view_id = self.env.ref('customer.call_center_enquiry_view_form').id
+        return{
+            'name': 'Service Policy',
+            'type': 'ir.actions.act_window',
+            'res_model':'aaa.enquiry',
+            'view_mode':'form',
+            'view_id': view_id,
+            #'target': 'new',
+            'context': {
+                'default_customer_id': self.customer_id.id,
+                'default_member_id': self.member_id.id,
+            }
+           
+        }
     def action_waive_off(self):
         # self.waive_off = True
         pass
 
     def action_new(self):
-        # self.ensure_one()
-        # new_service = self.copy({
-        #     'new_service_id': self.id,
-        # })
-        # self.state = 'discard'
-        # return {
-        #     'type': 'ir.actions.act_window',
-        #     'res_model': 'aaa.service',
-        #     'view_mode': 'form',
-        #     'res_id': new_service.id,
-        #     'target': 'current',
-        # }
         pass
 
     def history(self):
-        # self.ensure_one()
-        # return {
-        #     'type': 'ir.actions.act_window',
-        #     'res_model': 'service.history',
-        #     'view_mode': 'tree,form',
-        #     'domain': [('service_id', '=', self.id)],
-        #     'context': {'default_service_id': self.id},
-        # }
         pass
 
 class ServiceComment(models.Model):
@@ -223,29 +226,3 @@ class ServiceHistory(models.Model):
     status = fields.Char(string="Status")
     service_id = fields.Many2one('aaa.service', string="Service")
 
-class ServiceEnquiry(models.Model):
-    _name = 'service.enquiry'
-    _description = 'Service Enquiry'
-
-    name = fields.Char(string="Name")
-    # date = fields.Datetime(string="Date")
-    mobile = fields.Char(string="Mobile")
-    email = fields.Char(string="Email")
-    # enquiry = fields.Text(string="Enquiry")
-    # created_by = fields.Many2one('res.users', string="Created By")
-    service_id = fields.Many2one('aaa.service', string="Service")
-
-    name = fields.Char(string='Name', readonly=True)
-    customer_id = fields.Many2one('res.partner', string='Customer')
-    member_id = fields.Many2one('res.partner', string='Member')
-    # service_id = fields.Many2one('product.template', string='Service')
-    mem_name = fields.Char(string='Member Name')
-    membership = fields.Char(string='Membership')
-    # mobile = fields.Char(string='Mobile')
-    enquiry = fields.Text(string='Enquiry')
-    date = fields.Datetime(string='Create Date', readonly=True, default=fields.Datetime.now)
-    vehicle_chasis_no = fields.Char(string='Vehicle Chasis No')
-    vehicle_plate_no = fields.Char(string='Vehicle Plate No')
-    policy_no = fields.Char(string='Policy No')
-    # email = fields.Char(string='Email')
-    created_by = fields.Many2one('res.users', string='Created By', readonly=True, default=lambda self: self.env.user)

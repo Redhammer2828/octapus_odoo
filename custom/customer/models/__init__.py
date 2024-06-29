@@ -13,3 +13,4 @@ from . import data_upload_file
 from . import member_upload_cancel
 from . import credit_member_upload
 from . import aaa_service
+from . import aaa_enquiry

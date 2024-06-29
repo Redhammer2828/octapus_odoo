@@ -11,52 +11,43 @@
                         .o_field_widget:not(.o_field_invalid):not(.o_field_highlight)
                         .o_input:not(:hover):not(:focus)
                         {
-                            border-bottom: 1px solid #71639e2b;
+                        border-bottom: 1px solid #71639e2b;
                         }
                         .custom_field{
-                            background-color: #d2d2ff8f;
-                            border-radius: 5px;
+                        background-color: #d2d2ff8f;
+                        border-radius: 5px;
                         }
                         .required_field{
-                            background-color: #b9a4ff29;
-                        }
-                        .o_field_statusbar {
-                            display: flex;
-                            justify-content: flex-end;
-                        }
-                        .o_field_statusbar > .o_statusbar_status, 
-                        .o_field_statusbar_duration > .o_statusbar_status {
-                            display: flex;
-                            align-items: center;
-                            margin-right: 20px; /* Adjust this value to control the right margin */
-                        }
-                        button.btn-secondary{
-                            margin-left: 5px;
+                        background-color: #b9a4ff29;
                         }
                     </style>
                     <headers>
-                        <!-- <button name="open_form_edit" type="object" string="Edit"
-                        decorators="{'invisible': [('membership_state', '!=', 'confirm')]}" /> -->
-                        <!-- <button name="action_confirm_membership" id="action_confirm_membership"
-                        string="Confirm" class="btn-primary" type="object"/> -->
-                        <div class="button-container">
-                            <button name="action_confirm_membership" string="Confirm" type="object"
-                                invisible="membership_state != 'temp'" />
-                            <!-- MEMBERSHIP RENUAL -->
-                            <button name="action_membership_renewal" string="Membership Renewal"
-                                type="object" icon="fa-lightbulb-o" />
-                            <!-- MEMBERSHIP EXTENSION -->
-                            <button name="action_membership_extension" string="Membership Extension"
-                                type="object" icon="fa-lightbulb-o" />
-                            <!-- MEMBERSHIP CANCEL -->
-                            <button name="action_membership_cancel" string="Membership Cancel"
-                                type="object" icon="fa-lightbulb-o" />
-                            <!-- MEMBERSHIP STATE -->
-                            <field name="membership_state" widget="statusbar"
-                                statusbar_visible="temp,confirm,cancel" />
-                            <!-- POLICY EXPIRED ALERT FLAG -->
-                            <field name="member_expired" invisible="1" readonly='1' />
-                        </div>
+                        <button name="action_confirm_membership" string="Confirm" type="object" 
+                            class="oe_highlight" invisible="membership_state != 'temp'" />
+                        <!-- CREATE SERVICE -->
+                        <button name="action_create_service" string="Create Service"
+                            type="object" icon="fa-wrench o_button_icon" 
+                            invisible="membership_state != 'temp'" />
+                        <!-- CREATE SERVICE -->
+                        <button name="action_create_enquiry" string="Enquiry"
+                            type="object" icon="fa-pencil" invisible="membership_state == 'cancel'" />
+                        <!-- MEMBERSHIP RENUAL -->
+                        <button name="action_membership_renewal" string="Membership Renewal"
+                            type="object" icon="fa-lightbulb-o"
+                            invisible="membership_state == 'temp'" />
+                        <!-- MEMBERSHIP EXTENSION -->
+                        <button name="action_membership_extension" string="Membership Extension" 
+                            type="object" icon="fa-lightbulb-o"
+                            invisible="membership_state == 'temp'" />
+                        <!-- MEMBERSHIP CANCEL -->
+                        <button name="action_membership_cancel" string="Membership Cancel"
+                            type="object" icon="fa-lightbulb-o"
+                            invisible="membership_state == 'temp'" />
+                        <!-- MEMBERSHIP STATE -->
+                        <field name="member_expired" invisible="1" readonly='1' />
+                        <field name="membership_state" widget="statusbar" nolabel="1" 
+                            statusbar_visible="temp,confirm,cancel"/>
+                        <!-- POLICY EXPIRED ALERT FLAG -->
                     </headers>
                     <sheet bgcolor="lightblue">
                         <div class="oe_button_box" name="button_box" modifiers="{}">

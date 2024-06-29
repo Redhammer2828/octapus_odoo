@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="call_center_service_form" model="ir.ui.view">
+            <field name="name">call.center.service.form</field>
+            <field name="model">aaa.service</field>
+            <field name="arch" type="xml">
+                <form string="Service" create="false" delete="false">
+                    <style>
+
+                        .o_form_view:not(.o_field_highlight)
+                        .o_field_widget:not(.o_field_invalid):not(.o_field_highlight)
+                        .o_input:not(:hover):not(:focus)
+                        {
+                        border-bottom: 1px solid #71639e2b;
+                        }
+                    </style>
+                    <header>
+                        <button name="action_initiate_service" string="Initiate" type="object"
+                            class="btn-primary" invisible="state != 'draft'" />
+                        <button name="action_dispatch_service" string="To Dispatch" type="object"
+                            class="oe_highlight" invisible="state != 'initiate'" />
+                        <button name="action_schedule_service_check" string="Schedule Service"
+                            type="object" class="btn-default"
+                            invisible="state not in ('initiate', 'dispatch')" />
+                        <button name="action_inprogress_service" string="In Progress" type="object"
+                            class="oe_highlight" invisible="state != 'dispatch'" />
+                        <button name="action_start_service" string="Start" type="object"
+                            class="btn-primary" invisible="state != 'inprogress'" />
+                        <button name="action_reach_service" string="Reach" type="object"
+                            class="btn-primary" invisible="state != 'start'" />
+                        <button name="action_done_service" string="Completed" type="object"
+                            class="btn-primary"
+                            confirm="Complete this service, do you want to proceed?"
+                            invisible="state != 'reach'" />
+                        <button name="action_cancel_service" type="object" string="Cancel"
+                            confirm="Cancel this service, do you want to proceed?"
+                            invisible="state not in ('initiate', 'dispatch', 'inprogress', 'start', 'reach')" />
+                        <button name="action_discard" type="object" string="Change"
+                            confirm="Change this service, do you want to proceed?"
+                            invisible="state not in ('initiate', 'dispatch', 'inprogress', 'start', 'reach')" />
+                        <button name="action_create_enquiry" string="Enquiry" type="object"
+                            class="btn-default"
+                            invisible="state not in ('initiate', 'dispatch', 'inprogress', 'start', 'reach')" />
+                        <button name="action_new" string="New Service" type="object"
+                            invisible="state != 'discard'" />
+                        <field name="state" widget="statusbar" nolabel="1"
+                            statusbar_visible="initiate,dispatch,inprogress,start,reach,done" />
+                    </header>
+                    <sheet>
+                        <div class="row"
+                            style="font-weight: bold; color: #7c7bad; border: solid 1px #8080805c; margin-left: 1%; margin-right: 1%; background-color: #eee; padding-top: .7%;margin-bottom: -.5%;border-radius: 10px;">
+                            <div class="col-md-3"> Number: <field name="name" readonly="1"
+                                    style="color:green;" />
+                            </div>
+                            <div class="col-md-2"> Service Type: <field name="type" required="1"
+                                    readonly="1" style="color:green;" />
+                            </div>
+                            <div class="col-md-2"> Member Type: <field name="member_type"
+                                    readonly="1"
+                                    style="color:green;" />
+                            </div>
+                            <div class="col-md-2"> Card Type: <field name="card_type" readonly="1"
+                                    style="color:green;" />
+                            </div>
+                            <div class="col-md-3"> Agent: <field name="created_by"
+                                    widget="selection"
+                                    readonly="1" style="color:green !important;" />
+                            </div>
+                        </div>
+                        <group col="3">
+                            <group string="GENERAL INFORMATION" name="general_information">
+                                <field name="customer_id" string="Customer"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                <field name="credit_customer_co" string="Customer C/O" />
+                                <field name="sequence_id" string="Customer Category"
+                                    invisible="member_type != 'adhoc'" required="1" />
+                                <field name="member_id" string="Member" required="1"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                <field name="member_contact_no" string="Mobile Number"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                <field name="email" string="Email"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                <field name="claim_membership" invisible="type != 'cash'"
+                                    readonly="state not in ['initiate', 'dispatch']" />
+
+                                <field name="deposit_amount" invisible="1" />
+                                <field name="schedule_service_check" readonly="1" invisible="1" />
+                                <field name="schedule_date_time"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']"
+                                    invisible="schedule_service_check == False"
+                                    required="schedule_service_check == True" />
+                                <field name="requested_date" required="1"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                <field name="driving_license" string="Driving License"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                <field name="claim_number" readonly="state == 'done'" />
+                                <field name="smarto" readonly="state in ['cancel', 'discard']" />
+                                <field name="smarto_id" readonly="state in ['cancel', 'discard']"
+                                    invisible="smarto != True" required="smarto == True" />
+                                <field name="comments" string="Comments" />
+                            </group>
+                            <group string="VEHICLE DETAILS" name="vehicle_details">
+                                <!-- <field name="vehicle_type_ok" invisible="1" /> -->
+                                <!-- <field name="vehicle_model_ok" invisible="1" /> -->
+                                <field name="vehicle_type_id" string="Vehicle Type"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                <field name="vehicle_model_id" string="Vehicle Model"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                <!-- <field name="vehicle_model" string="Vehicle Model"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']" /> -->
+                                <field name="vehicle_plate" string="Vehicle Plate"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                <field name="vehicle_chasis_no" string="Vehicle Chasis No"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                <!-- <field name="vehicle_emirate_id"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']" /> -->
+                                <field name="policy_no" string="Policy No"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                            </group>
+                            <group string="SERVICE DETAILS" name="service_details">
+                                <field name="product_id" string="Service" required="1" />
+                                <field name="provider_from_location_id" string="From Location" />
+                                <field name="provider_to_location_id" string="To Location" />
+                            </group>
+                            <separator string="ADDON SERVICES" colspan="4" />
+                            <field name="addon_service_ids" nolabel="1" colspan="4">
+                                <tree string="ADDON SERVICES">
+                                    <field name="name" />
+                                </tree>
+                                <form>
+                                    <group>
+                                        <!-- <field name="product_id" string="Service" required="1" /> -->
+                                        <field name="name" />
+
+                                        <field name="provider_from_location_id" />
+                                        <field name="provider_to_location_id" />
+                                    </group>
+                                </form>
+                            </field>
+                            <!-- <div> -->
+                            <!-- </div> -->
+                            <!-- </group> -->
+                        </group>
+                        <!-- <group col="3">
+                            <group string="PROVIDER DETAILS"
+                                invisible="state in ['draft', 'initiate']">
+                                <field name="product_type" invisible="1" />
+                                <field name="provider_id"
+                                    invisible="state in ['draft', 'initiate']"
+                                    readonly="state in ['done', 'cancel']"
+                                />
+                                <field name="provider_contact"
+                                    invisible="state in ['draft', 'initiate']"
+                                    readonly="state in ['done', 'inprogress', 'start', 'reach']"
+                                    string="Contact Number" />
+                                <field name="provider_rate"
+                                    invisible="state in ['draft', 'initiate']"
+                                    string="Route Rate" readonly="1" />
+                                <field name="provider_rate_invisible" invisible="1" />
+                                <field name="avg_vendor_rating" readonly="1" widget="priority" />
+                                <field name="company_vehicle" invisible="1" />
+                                <field name="vehicle"
+                                    invisible="company_vehicle == True"
+                                    readonly="state in ['done', 'inprogress', 'start', 'reach']" />
+                                <field name="driver_name"
+                                    invisible="company_vehicle == True"
+                                    readonly="state in ['done', 'cancel']" />
+                                <field name="driver_num"
+                                    invisible="state in ['draft', 'initiate']"
+                                    readonly="state in ['done', 'inprogress', 'start', 'reach']"
+                                    string="Contact Number" />
+                            </group>
+                            <group string="SUMMARY"
+                                invisible="state in ['draft', 'initiate', 'dispatch']"
+                                readonly="state in ['done']">
+                                <field name="credit_proforma_number"
+                                    readonly="state == 'done'" />
+                                <field name="vendor_rating" string="Rate this service"
+                                    widget="priority" />
+                                <field name="rating_user_id" readonly="1" />
+                                <field name="completion_time"
+                                    readonly="state == 'done'"
+                                    invisible="state not in ['reach', 'done']" />
+                            </group>
+                        </group> -->
+                        <notebook>
+                            <page string="Comments">
+                                <field name="comment_history_ids" readonly="1">
+                                    <tree>
+                                        <field name="comment" />
+                                        <field name="comment_date_and_time" />
+                                        <field name="comment_user" />
+                                        <field name="comment_status" />
+                                    </tree>
+                                    <form>
+                                        <group>
+                                            <field name="comment" />
+                                            <field name="comment_date_and_time" />
+                                            <field name="comment_user" />
+                                            <field name="comment_status" />
+                                        </group>
+                                    </form>
+                                </field>
+                            </page>
+                            <page string="Timeline">
+                                <field name="service_history_ids" readonly="1">
+                                    <tree>
+                                        <field name="user" />
+                                        <field name="time" />
+                                        <field name="status" />
+                                    </tree>
+                                    <form>
+                                        <group>
+                                            <field name="user" />
+                                            <field name="time" />
+                                            <field name="status" />
+                                        </group>
+                                    </form>
+                                </field>
+                                <group>
+                                    <field name="new_service_id" invisible="1" />
+                                    <field name="cancelled_service_id" readonly="1" string="Origin" />
+                                </group>
+                            </page>
+                            <page name="enquiry" string="Enquiries">
+                                <field name="enquiry_ids" nolabel="1" readonly="1">
+                                    <tree>
+                                        <field name="name" />
+                                        <field name="date" />
+                                        <field name="mobile" />
+                                        <field name="email" />
+                                        <field name="enquiry" />
+                                        <field name="created_by" />
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <div class="oe_chatter">
+                        <field name="message_follower_ids" widget="mail_followers" />
+                        <field name="activity_ids" widget="mail_activity" />
+                        <field name="message_ids" widget="mail_thread" />
+                    </div>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_call_center_credit_service_credit_new" model="ir.actions.act_window">
+            <field name="name">New Members</field>
+            <field name="res_model">aaa.service</field>
+            <field name="view_mode">form</field>
+            <field name="context">{'default_member_type': 'credit', 'default_type': 'non_cash'}</field>
+            <field name="view_ids"
+                eval="[
+          (5, 0, 0),
+          (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
+        ]">
+            </field>
+        </record>
+
+        <menuitem
+            id="sub_menu_service_credit_new_member"
+            name="New Member"
+            parent="menu_service_credit"
+            action="action_call_center_credit_service_credit_new"
+            sequence="1"
+        />
+    </data>
+</odoo>

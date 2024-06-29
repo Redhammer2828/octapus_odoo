@@ -5,19 +5,21 @@ class Enquiry(models.Model):
     _description = 'Enquiry'
 
     name = fields.Char(string='Name', readonly=True)
+    mem_name = fields.Char(string='Member Name')
+    mobile = fields.Char(string='Mobile')
+    email = fields.Char(string='Email')
+    enquiry = fields.Text(string='Enquiry')
+    vehicle_chasis_no = fields.Char(string='Vehicle Chasis No')
+    vehicle_plate_no = fields.Char(string='Vehicle Plate No')
+    membership = fields.Char(string='Membership')
+    create_date = fields.Datetime(string='Create Date', readonly=True, default=fields.Datetime.now)
+    created_by = fields.Many2one('res.users', string='Created By', readonly=True, default=lambda self: self.env.user)
+    policy_no = fields.Char(string='Policy No')
+    date = fields.Datetime(string='Create Date', readonly=True, default=fields.Datetime.now)
+    
     customer_id = fields.Many2one('res.partner', string='Customer')
     member_id = fields.Many2one('res.partner', string='Member')
     service_id = fields.Many2one('product.template', string='Service')
-    mem_name = fields.Char(string='Member Name')
-    membership = fields.Char(string='Membership')
-    mobile = fields.Char(string='Mobile')
-    enquiry = fields.Text(string='Enquiry')
-    create_date = fields.Datetime(string='Create Date', readonly=True, default=fields.Datetime.now)
-    vehicle_chasis_no = fields.Char(string='Vehicle Chasis No')
-    vehicle_plate_no = fields.Char(string='Vehicle Plate No')
-    policy_no = fields.Char(string='Policy No')
-    email = fields.Char(string='Email')
-    created_by = fields.Many2one('res.users', string='Created By', readonly=True, default=lambda self: self.env.user)
 
     @api.onchange('customer_id')
     def _onchange_customer_id(self):

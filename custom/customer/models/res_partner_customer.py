@@ -80,3 +80,11 @@ class PartnerCategory(models.Model):
         ('adhoc', 'Adhoc')],
         string='Type')
     description = fields.Text(string="Description")
+
+    # Not Working
+    def name_get(self):  
+        result = []
+        for record in self:
+            name = record.description or record.name
+            result.append((record.id, name))
+        return result
