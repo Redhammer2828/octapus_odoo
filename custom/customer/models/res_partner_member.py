@@ -1,10 +1,10 @@
 from odoo import models,fields,api
 
-POLICY_MEMBER_STATE = [
-    ('temp', "Temporary"),
-    ('confirm', "Confirmed"),
-    ('cancel', "Cancelled"),
-]
+# POLICY_MEMBER_STATE = [
+#     ('temp', "Temporary"),
+#     ('confirm', "Confirmed"),
+#     ('cancel', "Cancelled"),
+# ]
 
 class ResPartnerMembers(models.Model):
     _inherit = 'res.partner'
@@ -91,12 +91,18 @@ class ResPartnerMembers(models.Model):
     )
     policy_member_service_count = fields.Integer(string="Policy Services Count", compute='_compute_policy_member_service_count')
     # ------------------------------------------------------------
-    membership_state = fields.Selection(
-        selection=POLICY_MEMBER_STATE,
-        string="Status",
-        readonly=True, copy=False, index=True,
-        tracking=3,
-        default='temp')
+    # membership_state = fields.Selection(
+    #     selection=POLICY_MEMBER_STATE,
+    #     string="Status",
+    #     readonly=True, copy=False, index=True,
+    #     tracking=3,
+    #     default='temp')
+    
+    membership_state = fields.Selection([
+    ('temp', "Temporary"),
+    ('confirm', "Confirmed"),
+    ('cancel', "Cancelled")
+    ], string="Status", readonly=True, default='temp', tracking=True)
     # ---------------------------------------
     cancellation_comment = fields.Text('Cancelation Comment')
     # ----------------------------
@@ -165,8 +171,9 @@ class ResPartnerMembers(models.Model):
             'context': {
                 'default_parent_customer_id': self.parent_customer_id.id,
                 'default_activation_date': self.member_activate_date,
-                'default_card_type_id': self.card_type_id.id,
+                'default_card_type_id': self.card_type_id.name,
                 'default_vehicle_chasis_no': self.vehicle_chasis_no,
+                ''
                 'default_product_template_id': self.product_template_id.id,
                 'active_id': self.id,
                 'active_model': self._name,
@@ -204,6 +211,34 @@ class ResPartnerMembers(models.Model):
                 # 'default_membership_cancel_date': self.membership_cancel_date
             }
         }
+
+    def action_create_service(self):
+        self.membership_state = 'temp'
+        view_id = self.env.ref('customer.call_center_credit_service_credit_new_view_form').id
+        return{
+            'name': 'Service Policy',
+            'type': 'ir.actions.act_window',
+            'res_model':'aaa.service',
+            'view_mode':'form',
+            'view_id': view_id,
+            #'target': 'new',
+            'context': {
+                'default_customer_id': self.parent_customer_id.id,
+                'default_sequence_id': self.member_partner_category_id.id,
+                'default_card_type': self.card_type_id.id,
+                'default_vehicle_chasis_no': self.vehicle_chasis_no,
+                'default_vehicle_type_id': self.vehicle_type,
+                'default_product_id': self.product_template_id.id,
+                'default_member_type' : self.member_type,
+                #'default_member_id' : self.policy_no,
+                'active_id': self.id,
+                'active_model': self._name,
+            }
+           
+        }
+    
+    def action_create_enquiry(self):
+        pass
     
     @api.onchange('product_template_id')
     def _onchange_product_template_id(self):
@@ -229,13 +264,13 @@ class ResPartnerMembers(models.Model):
     #         print("Parent Customer ID",self.parent_customer_id)
     #         print("PARTNER CATEGORIES",partner_categories)
 
-    @api.onchange('parent_customer_id')
-    def _onchange_parent_customer_id(self):
-        if self.parent_customer_id:
-            product_categories = self.env['partner.category'].search([('partner_id', '=', self.parent_customer_id.id)])
-            return {'domain': {'member_partner_category_id': [('id', 'in', product_categories.ids)]}}
-        else:
-            return {'domain': {'member_partner_category_id': [('id', 'in', [])]}}
+    # @api.onchange('parent_customer_id')
+    # def _onchange_parent_customer_id(self):
+    #     if self.parent_customer_id:
+    #         product_categories = self.env['partner.category'].search([('partner_id', '=', self.parent_customer_id.id)])
+    #         return {'domain': {'member_partner_category_id': [('id', 'in', product_categories.ids)]}}
+    #     else:
+    #         return {'domain': {'member_partner_category_id': [('id', 'in', [])]}}
 
     # def search_partner_categories(self):
     #     if self.parent_customer_id:
