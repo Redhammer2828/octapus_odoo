@@ -121,27 +121,24 @@
                             </group>
                             <group string="SERVICE DETAILS" name="service_details">
                                 <field name="product_id" string="Service" required="1" />
-                                <field name="provider_from_location_id" string="From Location" />
-                                <field name="provider_to_location_id" string="To Location" />
+                                <field name="provider_from_location_id" string="From Location" invisible="product_id == False"/>
+                                <field name="provider_to_location_id" string="To Location" invisible="product_id == False"/>
+                                <separator string="ADDON SERVICES" colspan="4"/>
+                                <field name="addon_service_ids" nolabel="1">
+                                    <tree string="Additional Services" >
+                                        <field name="product_id"/>
+                                        <field name="description"/>
+                                        <field name="price_subtotal"/>
+                                    </tree>
+                                    <form string="Additional Service">
+                                        <group>
+                                            <field name="product_id" />
+                                            <field name="provider_from_location_id" string="From Location" invisible="product_id == False"/>
+                                            <field name="provider_to_location_id" string="To Location" invisible="product_id == False"/>
+                                        </group>
+                                    </form>
+                                </field>
                             </group>
-                            <separator string="ADDON SERVICES" colspan="4" />
-                            <field name="addon_service_ids" nolabel="1" colspan="4">
-                                <tree string="ADDON SERVICES">
-                                    <field name="name" />
-                                </tree>
-                                <form>
-                                    <group>
-                                        <!-- <field name="product_id" string="Service" required="1" /> -->
-                                        <field name="name" />
-
-                                        <field name="provider_from_location_id" />
-                                        <field name="provider_to_location_id" />
-                                    </group>
-                                </form>
-                            </field>
-                            <!-- <div> -->
-                            <!-- </div> -->
-                            <!-- </group> -->
                         </group>
                         <!-- <group col="3">
                             <group string="PROVIDER DETAILS"
@@ -259,6 +256,18 @@
         ]">
             </field>
         </record>
+        <record id="action_call_center_adhoc_service_new" model="ir.actions.act_window">
+            <field name="name">New Members</field>
+            <field name="res_model">aaa.service</field>
+            <field name="view_mode">form</field>
+            <field name="context">{'default_member_type': 'adhoc', 'default_type': 'cash'}</field>
+            <field name="view_ids"
+                eval="[
+          (5, 0, 0),
+          (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
+        ]">
+            </field>
+        </record>
 
         <menuitem
             id="sub_menu_service_credit_new_member"
@@ -266,6 +275,13 @@
             parent="menu_service_credit"
             action="action_call_center_credit_service_credit_new"
             sequence="1"
+        />
+        <menuitem
+            id="menu_service_cash_adhoc_new"
+            name="Service - Cash"
+            parent="menu_call_center_root"
+            action="action_call_center_adhoc_service_new"
+            sequence="3"
         />
     </data>
 </odoo>

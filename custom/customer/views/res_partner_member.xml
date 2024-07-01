@@ -27,7 +27,7 @@
                         <!-- CREATE SERVICE -->
                         <button name="action_create_service" string="Create Service"
                             type="object" icon="fa-wrench o_button_icon" 
-                            invisible="membership_state != 'temp'" />
+                            invisible="member_expired == True" />
                         <!-- CREATE SERVICE -->
                         <button name="action_create_enquiry" string="Enquiry"
                             type="object" icon="fa-pencil" invisible="membership_state == 'cancel'" />
