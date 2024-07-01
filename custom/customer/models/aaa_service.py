@@ -96,7 +96,11 @@ class AAAService(models.Model):
     comment_history_ids = fields.One2many('service.comment', 'service_id', string="Comment History")
     service_history_ids = fields.One2many('service.history', 'service_id', string="Service History")
     enquiry_ids = fields.One2many('aaa.enquiry', 'service_id', string="Enquiries")
-    addon_service_ids = fields.One2many('product.template', 'service_credit_addon_id', string='addon_service')
+    addon_service_ids = fields.One2many(
+        'aaa.service.addon',
+        'service_id',
+        string='Additional Services'
+    )
   
     # =========================================================================================================
     provider_contact = fields.Char(string="Provider Contact")
@@ -226,3 +230,13 @@ class ServiceHistory(models.Model):
     status = fields.Char(string="Status")
     service_id = fields.Many2one('aaa.service', string="Service")
 
+class AaaServiceAddon(models.Model):
+    _name = 'aaa.service.addon'
+    _description = 'Additional Service'
+
+    service_id = fields.Many2one('aaa.service', string='Service')
+    product_id = fields.Many2one('product.template', string="Service")
+    provider_from_location_id = fields.Many2one('location.internal', string="From Location")
+    provider_to_location_id = fields.Many2one('location.internal', string="To Location")
+    description = fields.Char(' Description')
+    price_subtotal = fields.Float('Price Subtotal')
