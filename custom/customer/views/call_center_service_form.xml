@@ -15,6 +15,17 @@
                         {
                         border-bottom: 1px solid #71639e2b;
                         }
+                        .addon_tree{
+                        height:100%;
+                        width:320px !important;
+                        }
+                        .product_field{
+                        width: 100%;
+                        }
+                        .required_field{
+                        background-color: #b9a4ff29;
+                        }
+
                     </style>
                     <header>
                         <button name="action_initiate_service" string="Initiate" type="object"
@@ -54,7 +65,7 @@
                             <div class="col-md-3"> Number: <field name="name" readonly="1"
                                     style="color:green;" />
                             </div>
-                            <div class="col-md-2"> Service Type: <field name="type" required="1"
+                            <div class="col-md-2"> Service Type: <field name="type"
                                     readonly="1" style="color:green;" />
                             </div>
                             <div class="col-md-2"> Member Type: <field name="member_type"
@@ -72,12 +83,12 @@
                         <group col="3">
                             <group string="GENERAL INFORMATION" name="general_information">
                                 <field name="customer_id" string="Customer"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']" class="required_field" required="1"/>
                                 <field name="credit_customer_co" string="Customer C/O" />
                                 <field name="sequence_id" string="Customer Category"
-                                    invisible="member_type != 'adhoc'" required="1" />
-                                <field name="member_id" string="Member" required="1"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                    invisible="member_type != 'adhoc'" class="required_field" required="1" />
+                                <field name="member_id" string="Member"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']" class="required_field" required="1"/>
                                 <field name="member_contact_no" string="Mobile Number"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="email" string="Email"
@@ -91,7 +102,7 @@
                                     readonly="state not in ['draft', 'initiate', 'dispatch']"
                                     invisible="schedule_service_check == False"
                                     required="schedule_service_check == True" />
-                                <field name="requested_date" required="1"
+                                <field name="requested_date"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="driving_license" string="Driving License"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
@@ -120,21 +131,28 @@
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                             </group>
                             <group string="SERVICE DETAILS" name="service_details">
-                                <field name="product_id" string="Service" required="1" />
-                                <field name="provider_from_location_id" string="From Location" invisible="product_id == False"/>
-                                <field name="provider_to_location_id" string="To Location" invisible="product_id == False"/>
-                                <separator string="ADDON SERVICES" colspan="4"/>
+                                <group class="product_field">
+                                    <field name="product_id" string="Service" class="required_field" required="1" />
+                                    <field name="provider_from_location_id" string="From Location"
+                                        invisible="product_id == False" class="required_field" required="1"/>
+                                    <field name="provider_to_location_id" string="To Location"
+                                        invisible="product_id == False" class="required_field" required="1"/>
+                                </group>
+                                <separator string="ADDON SERVICES" colspan="4" />
                                 <field name="addon_service_ids" nolabel="1">
-                                    <tree string="Additional Services" >
-                                        <field name="product_id"/>
-                                        <field name="description"/>
-                                        <field name="price_subtotal"/>
+                                    <tree string="Additional Services" class="addon_tree">
+                                        <field name="product_id" string="Service" />
+                                        <field name="description" string="Description" />
+                                        <field name="price_subtotal" string="Rate" />
                                     </tree>
                                     <form string="Additional Service">
                                         <group>
                                             <field name="product_id" />
-                                            <field name="provider_from_location_id" string="From Location" invisible="product_id == False"/>
-                                            <field name="provider_to_location_id" string="To Location" invisible="product_id == False"/>
+                                            <field name="provider_from_location_id"
+                                                string="From Location"
+                                                invisible="product_id == False" />
+                                            <field name="provider_to_location_id"
+                                                string="To Location" invisible="product_id == False" />
                                         </group>
                                     </form>
                                 </field>
@@ -218,7 +236,7 @@
                                 </field>
                                 <group>
                                     <field name="new_service_id" invisible="1" />
-                                    <field name="cancelled_service_id" readonly="1" string="Origin" />
+                                    <field name="cancelled_service_id" string="Origin" />
                                 </group>
                             </page>
                             <page name="enquiry" string="Enquiries">

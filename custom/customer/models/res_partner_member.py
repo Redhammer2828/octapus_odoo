@@ -1,10 +1,7 @@
 from odoo import models,fields,api
+import logging
 
-# POLICY_MEMBER_STATE = [
-#     ('temp', "Temporary"),
-#     ('confirm', "Confirmed"),
-#     ('cancel', "Cancelled"),
-# ]
+_logger = logging.getLogger(__name__)
 
 class ResPartnerMembers(models.Model):
     _inherit = 'res.partner'
@@ -154,6 +151,7 @@ class ResPartnerMembers(models.Model):
     def _compute_policy_member_service_count(self):
         for partner in self:
             partner.policy_member_service_count = len(partner.service_ids)
+    
 
     def action_view_policy_service(self):
         # Add your action code here
@@ -173,7 +171,6 @@ class ResPartnerMembers(models.Model):
                 'default_activation_date': self.member_activate_date,
                 'default_card_type_id': self.card_type_id.name,
                 'default_vehicle_chasis_no': self.vehicle_chasis_no,
-                ''
                 'default_product_template_id': self.product_template_id.id,
                 'active_id': self.id,
                 'active_model': self._name,
@@ -214,27 +211,31 @@ class ResPartnerMembers(models.Model):
 
     def action_create_service(self):
         self.membership_state = 'temp'
-        view_id = self.env.ref('customer.call_center_credit_service_credit_new_view_form').id
-        return{
+        view_id = self.env.ref('customer.call_center_service_form').id
+        vehicle_model = self.env['member.vehicle.type'].search([('name', '=', self.vehicle_model)], limit=1)
+        print("VEHICLE",self.vehicle_model)
+        print("VEHICLE",vehicle_model)
+        context = {
+            'default_customer_id': self.parent_customer_id.id,
+            'default_sequence_id': self.member_partner_category_id.id,
+            'default_card_type': self.card_type_id.id,
+            'default_vehicle_chasis_no': self.vehicle_chasis_no,
+            'default_vehicle_type_id': vehicle_model.id if vehicle_model else False,
+            'default_product_id': self.service_ids,
+            'default_member_type': self.member_type,
+            'default_member_id': self.id,  # Pass the current record ID to member_id
+            'active_id': self.id,
+            'active_model': self._name,
+        }
+        _logger.debug('Context: %s', context)
+
+        return {
             'name': 'Service Policy',
             'type': 'ir.actions.act_window',
-            'res_model':'aaa.service',
-            'view_mode':'form',
+            'res_model': 'aaa.service',
+            'view_mode': 'form',
             'view_id': view_id,
-            #'target': 'new',
-            'context': {
-                'default_customer_id': self.parent_customer_id.id,
-                'default_sequence_id': self.member_partner_category_id.id,
-                'default_card_type': self.card_type_id.id,
-                'default_vehicle_chasis_no': self.vehicle_chasis_no,
-                'default_vehicle_type_id': self.vehicle_type,
-                'default_product_id': self.product_template_id.id,
-                'default_member_type' : self.member_type,
-                #'default_member_id' : self.policy_no,
-                'active_id': self.id,
-                'active_model': self._name,
-            }
-           
+            'context': context,
         }
     
     def action_create_enquiry(self):
@@ -254,15 +255,15 @@ class ResPartnerMembers(models.Model):
                 print("Related Products:", related_products)
                 self.service_ids = [(6, 0, related_products.ids)]
 
-    # @api.onchange('parent_customer_id')
-    # def _onchange_parent_customer_id(self):
-    #     if self.parent_customer_id:
-    #         partner_categories = self.env['partner.category'].search([
-    #             ('partner_id', '=', self.parent_customer_id.id),
-    #             ('member_type', '=', 'policy')
-    #         ])
-    #         print("Parent Customer ID",self.parent_customer_id)
-    #         print("PARTNER CATEGORIES",partner_categories)
+    @api.onchange('parent_customer_id')
+    def _onchange_parent_customer_id(self):
+        if self.parent_customer_id:
+            partner_categories = self.env['partner.category'].search([
+                ('partner_id', '=', self.parent_customer_id.id),
+                ('member_type', '=', 'policy')
+            ])
+            print("Parent Customer ID",self.parent_customer_id)
+            print("PARTNER CATEGORIES",partner_categories)
 
     # @api.onchange('parent_customer_id')
     # def _onchange_parent_customer_id(self):
