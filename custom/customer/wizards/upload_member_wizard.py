@@ -39,27 +39,45 @@ class UploadMemberWizard(models.TransientModel):
 
             for field in required_fields:
                 if pd.isna(row.get(field)) or row.get(field) == '':
-                    row_errors.append(f'Field "{field}" is required and cannot be empty. Row: {index + 1}.')
+                    row_errors.append(f'Field "{field}" is required and cannot be empty. Row: {index + 2}.')
 
-            for date_field in ['member_expiry_date', 'member_activate_date']:
+            for date_field in ['member_expiry_date', 'member_activate_date' , 'invoice_ref_date']:
                 date_value = row.get(date_field)
                 if pd.notna(date_value):
                     if isinstance(date_value, (pd.Timestamp, datetime)):
                         date_value = date_value.strftime('%d/%m/%Y')
                     if not isinstance(date_value, str) or not date_format_regex.match(date_value):
-                        row_errors.append(f'Field "{date_field}" must be in dd/mm/yyyy format. Row: {index + 1}.')
+                        row_errors.append(f'Field "{date_field}" must be in dd/mm/yyyy format. Row: {index + 2}.')
 
             vehicle_chasis_no = row.get('vehicle_chasis_no')
 
             if vehicle_chasis_no in seen_vehicle_chasis_no:
-                row_errors.append(f'Duplicate value "{vehicle_chasis_no}" found in "vehicle_chasis_no". Row: {index + 1}.')
+                row_errors.append(f'Duplicate value "{vehicle_chasis_no}" found in "vehicle_chasis_no". Row: {index + 2}.')
             else:
                 seen_vehicle_chasis_no.add(vehicle_chasis_no)
-
+            #----------------------------------------------------ERROR--------------------------------- 
+            # mobile = row.get('mobile')
+            # if pd.notna(mobile) and not re.match(r'^\d+$', str(mobile)):
+            #     row_errors.append(f'Field "mobile" must contain only numbers. Row: {index + 1}.')
+            #----------------------------------------------------ERROR--------------------------------- 
             mobile = row.get('mobile')
-            if pd.notna(mobile) and not re.match(r'^\d+$', str(mobile)):
-                row_errors.append(f'Field "mobile" must contain only numbers. Row: {index + 1}.')
+            # if not pd.notna(mobile):
+            #     row_errors.append(f'Field "mobile" Empty. Row: {index + 2}.')
+            if mobile and pd.notna(mobile):
+                mobile_str = str(mobile).strip()
+                mobile_str = mobile_str.split(".")[0]
+                # print(f"Row {index + 1}: mobile_str='{mobile_str}'")
+                if not mobile_str:
+                    row_errors.append(f'Field "mobile" must contain only numbers. Row: {index + 2}.')
+                if mobile_str:
+                    if not mobile_str.isdigit():
+                        row_errors.append(f'Field "mobile" must contain only numbers. Row: {index + 2}.')
+                # Additional check for single digit or only zeros
+            if len(mobile_str) == 1 or set(mobile_str) == {'0'}:
+                row_errors.append(f'Field "mobile" must not be a single digit or only zeros. Row: {index + 2}.')
 
+            
+            #------------------------------------------------------------------------------------ 
             if row_errors:
                 errors.extend(row_errors)
                 continue

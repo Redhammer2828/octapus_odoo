@@ -1,4 +1,5 @@
 from odoo import api, fields, models, _
+from odoo.exceptions import ValidationError
 
 class AAAService(models.Model):
     _name = 'aaa.service'
@@ -25,13 +26,17 @@ class AAAService(models.Model):
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
     credit_customer_co = fields.Char('Customer C/O')
     sequence_id = fields.Many2one('partner.category', string="Customer Category", domain="[('partner_id','=', customer_id)]")
-    member_id = fields.Many2one('res.partner', string="Member")
+    member_id = fields.Many2one(
+        'res.partner', 
+        string="Member", 
+        domain=[('is_company', '=', False)]
+    )
     created_by = fields.Many2one('res.users', string="Agent", default=lambda self: self.env.user, readonly=True)
     
     vehicle_type_id = fields.Many2one('member.vehicle.type', string="Vehicle Type")
     vehicle_model_id = fields.Many2one('member.vehicle.model', string="Vehicle Model")
     
-    product_id = fields.Many2one('product.template', string="Service")
+    product_id = fields.Many2one('product.template', string="Service",domain=[('bundle_product', '=', False)])
     # vehicle_emirate_id = fields.Many2one('emirate', string="Vehicle Emirate ID")
     provider_from_location_id = fields.Many2one('location.internal', string="From Location")
     provider_to_location_id = fields.Many2one('location.internal', string="To Location")
@@ -125,27 +130,53 @@ class AAAService(models.Model):
     completion_time = fields.Datetime(string="Completion Time")
     
     
+    # @api.onchange('customer_id')
+    # def _onchange_customer_id(self):
+    #     for record in self:
+    #         if record.customer_id:
+    #             # Search for the sequence that matches the criteria
+    #             sequence = self.env['partner.category'].search([
+    #                 ('partner_id', '=', record.customer_id.id),
+    #                 ('member_type', '=', 'credit')
+    #             ], limit=1)
+                
+    #             # Set the sequence_id to the found sequence
+    #             record.sequence_id = sequence.id if sequence else False
+                
+    #             # Search for the member that matches the criteria
+    #             member = self.env['res.partner'].search([
+    #                 ('parent_customer_id', '=', record.customer_id.id),
+    #                 ('member_type', '=', 'credit')
+    #             ], limit=1)
+    #             print("MEMBERRRR",member)
+    #             # Set the member_id to the found member
+    #             record.member_id = member.id if member else False
+
     @api.onchange('customer_id')
     def _onchange_customer_id(self):
-        for record in self:
-            if record.customer_id:
-                # Search for the sequence that matches the criteria
-                sequence = self.env['partner.category'].search([
-                    ('partner_id', '=', record.customer_id.id),
-                    ('member_type', '=', 'credit')
-                ], limit=1)
-                
-                # Set the sequence_id to the found sequence
-                record.sequence_id = sequence.id if sequence else False
-                
-                # Search for the member that matches the criteria
-                member = self.env['res.partner'].search([
-                    ('parent_customer_id', '=', record.customer_id.id),
-                    ('member_type', '=', 'credit')
-                ], limit=1)
-                print("MEMBERRRR",member)
-                # Set the member_id to the found member
-                record.member_id = member.id if member else False
+        context = self.env.context
+        # Check if the specific context keys match the expected values
+        if context.get('default_member_type') == 'credit' and context.get('default_type') == 'non_cash':
+            for record in self:
+                if record.customer_id:
+                    # Search for the sequence that matches the criteria
+                    sequence = self.env['partner.category'].search([
+                        ('partner_id', '=', record.customer_id.id),
+                        ('member_type', '=', 'credit')
+                    ], limit=1)
+                    
+                    # Set the sequence_id to the found sequence
+                    record.sequence_id = sequence.id if sequence else False
+                    
+                    # Search for the member that matches the criteria
+                    member = self.env['res.partner'].search([
+                        ('parent_customer_id', '=', record.customer_id.id),
+                        ('member_type', '=', 'credit')
+                    ], limit=1)
+                    print("MEMBERRRR", member)
+                    # Set the member_id to the found member
+                    record.member_id = member.id if member else False
+
     @api.model
     def create(self, vals):
         if vals.get('name', _('New')) == _('New'):
@@ -157,7 +188,22 @@ class AAAService(models.Model):
         self.state = 'initiate'
 
     def action_dispatch_service(self):
-        self.state = 'dispatch'
+        # Search for the member in res.partner
+        member = self.env['res.partner'].search([('id', '=', self.member_id.id)], limit=1)
+        print("Member:",member)
+        print("Services:",member.service_ids)
+        if not member:
+            raise ValidationError(_("Member not found."))
+
+        # Get the service_ids from the member
+        service_ids = member.service_ids
+
+        # Check if the selected product_id is present in the service_ids
+        if self.product_id.id not in service_ids.ids:
+            raise ValidationError(_("This selected service is not listed in selected package"))
+
+        # If validation passes, update the state to 'dispatch'
+        # self.state = 'dispatch'
 
     def action_schedule_service_check(self):
         self.schedule_service_check = True
@@ -235,7 +281,7 @@ class AaaServiceAddon(models.Model):
     _description = 'Additional Service'
 
     service_id = fields.Many2one('aaa.service', string='Service')
-    product_id = fields.Many2one('product.template', string="Service")
+    product_id = fields.Many2one('product.template', string="Service",domain=[('bundle_product', '=', False)])
     provider_from_location_id = fields.Many2one('location.internal', string="From Location")
     provider_to_location_id = fields.Many2one('location.internal', string="To Location")
     description = fields.Char(' Description')
