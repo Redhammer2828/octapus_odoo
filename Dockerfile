@@ -33,10 +33,7 @@ RUN pip install -r requirements.txt
 # Expose Odoo port
 EXPOSE 8070
 
-# Define environment variables if needed
-ENV ODOO_DB=AAA-odoo
-ENV ODOO_UPDATE=customer
 
 # Run odoo-bin with the specified arguments
-CMD ["python", "odoo-bin", "-c", "odoo.conf", "-d", "$ODOO_DB", "-u", "$ODOO_UPDATE"]
+CMD ["python", "odoo-bin", "-c", "odoo.conf", "-d", "AAA-odoo", "-u", "customer"]
 
