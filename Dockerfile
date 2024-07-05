@@ -38,5 +38,5 @@ ENV ODOO_DB=AAA-odoo
 ENV ODOO_UPDATE=customer
 
 # Run odoo-bin with the specified arguments
-CMD ["python", "odoo-bin", "-d", "$ODOO_DB", "-u", "$ODOO_UPDATE"]
+CMD ["python", "odoo-bin", "-c", "odoo.conf", "-d", "$ODOO_DB", "-u", "$ODOO_UPDATE"]
 
