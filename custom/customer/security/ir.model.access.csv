@@ -26,4 +26,6 @@ access_aaa_service_addon,aaa.service.addon,model_aaa_service_addon,,1,1,1,1
 access_aaa_enquiry,aaa.enquiry,model_aaa_enquiry,,1,1,1,1
 access_service_comment,service.comment,model_service_comment,,1,1,1,1
 access_service_history,service.history,model_service_history,,1,1,1,1
-
+access_policy_service_history,policy.service.history,model_policy_service_history,,1,1,1,1
+access_policy_service_history_lines,policy.service.history.lines,model_policy_service_history_lines,,1,1,1,1
+access_category_lines,category.lines,model_category_lines,,1,1,1,1
