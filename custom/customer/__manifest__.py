@@ -38,6 +38,7 @@
         'views/call_center_service_form.xml',
         'views/call_center_enquiry.xml',
         'views/call_center_all_service_view.xml',
+        'views/policy_member_service_history.xml',
         'wizards/upload_member_wizard.xml',
         'wizards/membership_extension_wizard.xml',
         'wizards/membership_renewal_wizard.xml',

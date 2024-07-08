@@ -14,3 +14,4 @@ from . import member_upload_cancel
 from . import credit_member_upload
 from . import aaa_service
 from . import aaa_enquiry
+from . import policy_service_history

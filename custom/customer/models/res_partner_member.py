@@ -1,7 +1,7 @@
 from odoo import models,fields,api
 import logging
 
-_logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 class ResPartnerMembers(models.Model):
     _inherit = 'res.partner'
@@ -227,7 +227,7 @@ class ResPartnerMembers(models.Model):
             'active_id': self.id,
             'active_model': self._name,
         }
-        _logger.debug('Context: %s', context)
+        # _logger.debug('Context: %s', context)
 
         return {
             'name': 'Service Policy',
@@ -241,6 +241,58 @@ class ResPartnerMembers(models.Model):
     def action_create_enquiry(self):
         pass
     
+    def action_policy_service_history(self):
+        # Retrieve services taken by the member
+        service_partners = self.env['aaa.service'].search([('member_id', '=', self.id)])
+        print("PARTNER SERVICE ID:", service_partners)
+
+        # Initialize a set to store unique product IDs
+        product_ids = set()
+
+        # Loop through each service partner and gather related product IDs
+        for service in service_partners:
+            product_ids.add(service.product_id.id)
+            
+            # Retrieve addon services related to the current service
+            addon_services = self.env['aaa.service.addon'].search([('service_id', '=', service.id)])
+            # Loop through each addon service and gather related product IDs
+            for addon in addon_services:
+                product_ids.add(addon.product_id.id)
+        
+        # Convert set to list for searching in product.template model
+        product_ids = list(product_ids)
+        
+        # Log the gathered product IDs for debugging
+        print("PRODUCT IDS:", product_ids)
+        
+        # Search these product IDs in the product.template model
+        products = self.env['product.template'].search([('id', 'in', product_ids)])
+        print("PRODUCTS:", products)
+        
+        # Log the gathered information for debugging
+        service_dict = {
+            'product_ids': product_ids,
+            'products': products.read(['name', 'default_code'])  # Assuming you want to read these fields
+        }
+        print("SERVICES", service_dict)
+
+        view_id = self.env.ref('customer.policy_service_history_view_form').id
+        context = {
+            'default_member_id': self.id,
+            'active_id': self.id,
+            'active_model': self._name,
+        }
+
+        return {
+            'name': 'Service Policy',
+            'type': 'ir.actions.act_window',
+            'res_model': 'policy.service.history',
+            'view_mode': 'form',
+            'view_id': view_id,
+            'target': 'new',
+            'context': context,
+        }
+
     @api.onchange('product_template_id')
     def _onchange_product_template_id(self):
         if self.product_template_id:
