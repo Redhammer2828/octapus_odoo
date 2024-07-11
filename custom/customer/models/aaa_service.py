@@ -179,37 +179,111 @@ class AAAService(models.Model):
 
     @api.model
     def create(self, vals):
+        # Ensure the name field is set using a sequence if not provided
         if vals.get('name', _('New')) == _('New'):
             vals['name'] = self.env['ir.sequence'].next_by_code('aaa.service') or _('New')
-        result = super(AAAService, self).create(vals)
-        return result
+       
+        # Create the aaa.service record
+        service = super(AAAService, self).create(vals)
+       
+        # Create the service.history record
+        self.env['service.history'].create({
+            'service_id': service.id,
+            'user': self.env.user.id,
+            'time': fields.Datetime.now(),
+            'status': service.state,
+        })
+       
+        return service
 
     def action_initiate_service(self):
         self.state = 'initiate'
 
     def action_dispatch_service(self):
         # Search for the member in res.partner
-        member = self.env['res.partner'].search([('id', '=', self.member_id.id)], limit=1)
-        print("Member:",member)
-        print("Services:",member.service_ids)
-        if not member:
-            raise ValidationError(_("Member not found."))
+        # member = self.env['res.partner'].search([('id', '=', self.member_id.id)], limit=1)
+        
+        # print("Services:",member.service_ids)
+        # if not member:
+        #     raise ValidationError(_("Member not found."))
 
-        # Get the service_ids from the member
-        service_ids = member.service_ids
+        # # Get the service_ids from the member
+        # service_ids = member.service_ids
 
-        # Check if the selected product_id is present in the service_ids
-        if self.product_id.id not in service_ids.ids:
-            raise ValidationError(_("This selected service is not listed in selected package"))
-
+        # # Check if the selected product_id is present in the service_ids
+        # if self.product_id.id not in service_ids.ids:
+        #     raise ValidationError(_("This selected service is not listed in selected package"))
+        # ------------------------------------------------------------------------------
         # If validation passes, update the state to 'dispatch'
         # self.state = 'dispatch'
+        # ---------------------------------------------------------------------
+        # Fetch member_id from aaa.service
+        service_record = self.env['aaa.service'].search([('id', '=', self.id)], limit=1)
+        print("Member:",service_record)
+        member_id = service_record.member_id.id
+        print("Member ID:",member_id)
+        if not member_id:
+            raise ValidationError(_("Member not found in the service record."))
+        
+        # Get all service lines for the member
+        if self.member_type == 'policy':
+            service_lines = self.env['aaa.service'].search([('member_id', '=', member_id)])
+            print("Service Lines:",service_lines)
+            service_lines_info = [(line.product_id.id, line.create_date) for line in service_lines]
+            print("Service Lines Info:",service_lines_info)
+
+            # Get product_template_id from res.partner
+            member = self.env['res.partner'].browse(member_id)
+            product_template_id = member.product_template_id.id
+            if not product_template_id:
+                raise ValidationError(_("Package not found for the member."))
+            
+            # Match product_template_id with product_template_id in product.package.service
+            package_services = self.env['product.package.service'].search([('product_template_id', '=', product_template_id)])
+            print("Packages Services:",package_services)
+
+            # Check each service line against the package service validity
+            for package_service in package_services:
+                product_id = package_service.product_id.id
+                validity_days = package_service.quantity
+
+                for service_product_id, create_date in service_lines_info:
+                    if service_product_id == product_id:
+                        service_date = fields.Datetime.from_string(create_date)
+                        current_date = fields.Datetime.now()
+                        days_difference = (current_date - service_date).days
+
+                        if validity_days == 1 and days_difference < 1:
+                            raise ValidationError(_("This service can only be used once per day."))
+                        elif days_difference < validity_days:
+                            raise ValidationError(_("Service limit reached for this period."))
+        else:
+        # If validation passes, update the state to 'dispatch'
+            self.state = 'dispatch'
+            self.message_post(body=_("Service dispatched successfully."))
+            for service in self:
+                self.env['service.history'].create({
+                        'service_id': service.id,
+                        'user': self.env.user.id,
+                        'time': fields.Datetime.now(),
+                        'status': service.state,  
+                    })
+                return True
 
     def action_schedule_service_check(self):
         self.schedule_service_check = True
 
     def action_inprogress_service(self):
-        self.state = 'inprogress'
+            self.state = 'inprogress'
+            for service in self:
+            
+                self.env['service.history'].create({
+                    'service_id': service.id,
+                    'user': self.env.user.id,
+                    'time': fields.Datetime.now(),
+                    'status': service.state,  
+                })
+            return True
 
     def action_start_service(self):
         self.state = 'start'

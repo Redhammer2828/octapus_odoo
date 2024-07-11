@@ -8,7 +8,6 @@
     'description': 'Customers Management',
     'data': [
         'security/ir.model.access.csv',
-        # 'views/view.xml'
         'views/res_partner_customer.xml',
         'views/res_partner_member.xml',
         'views/res_partner_member_temp.xml',
@@ -39,6 +38,7 @@
         'views/call_center_enquiry.xml',
         'views/call_center_all_service_view.xml',
         'views/policy_member_service_history.xml',
+        'views/res_partner_vendor.xml',
         'wizards/upload_member_wizard.xml',
         'wizards/membership_extension_wizard.xml',
         'wizards/membership_renewal_wizard.xml',

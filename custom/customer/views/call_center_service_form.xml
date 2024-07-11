@@ -158,14 +158,13 @@
                                 </field>
                             </group>
                         </group>
-                        <!-- <group col="3">
+                        <group col="3">
                             <group string="PROVIDER DETAILS"
                                 invisible="state in ['draft', 'initiate']">
                                 <field name="product_type" invisible="1" />
                                 <field name="provider_id"
                                     invisible="state in ['draft', 'initiate']"
-                                    readonly="state in ['done', 'cancel']"
-                                />
+                                    readonly="state in ['done', 'cancel']"/>
                                 <field name="provider_contact"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'inprogress', 'start', 'reach']"
@@ -199,7 +198,7 @@
                                     readonly="state == 'done'"
                                     invisible="state not in ['reach', 'done']" />
                             </group>
-                        </group> -->
+                        </group>
                         <notebook>
                             <page string="Comments">
                                 <field name="comment_history_ids" readonly="1">

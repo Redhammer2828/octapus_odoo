@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="res_partner_vendor_view_form" model="ir.ui.view">
+            <field name="name">res.partner.vendor.view.form</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <form string="">
+
+                    <style> .o_form_view:not(.o_field_highlight)
+                        .o_field_widget:not(.o_field_invalid):not(.o_field_highlight)
+                        .o_input:not(:hover):not(:focus) { border-bottom: 1px solid #71639e2b; }
+                        .custom_field{ background-color: #d2d2ff8f; border-radius: 5px; }
+                        .required_field{ background-color: #b9a4ff29; } <!-- ACTIVE AND ARCHIVE -->
+                    </style>
+                    <sheet>
+                        <field name="avatar_128" invisible="1" />
+                        <field name="image_1920" widget="image" class="oe_avatar"
+                            options="{&quot;preview_image&quot;: &quot;avatar_128&quot;}" />
+
+                        <group>
+                            <field name="is_company" />
+                            <field name="name" string="Name" class=""/>
+                            <field name="parent_customer_id" string="Company" />
+                        </group>
+
+                        <group col="2">
+                            <group>
+                                <label for="street" string="Address" />
+                                <div class="o_address_format">
+                                    <field name="street" placeholder="Street..."
+                                        class="o_address_street"
+                                    />
+                                    <field name="street2" placeholder="Street 2..."
+                                        class="o_address_street"
+                                    />
+                                    <field name="city" placeholder="City" class="o_address_city"
+                                    />
+                                    <field name="state_id" class="o_address_state"
+                                        placeholder="State"
+                                        options="{'no_open': True, 'no_quick_create': True}"
+                                        context="{'country_id': country_id, 'default_country_id': country_id, 'zip': zip}" />
+                                    <field name="zip" placeholder="ZIP" class="o_address_zip"
+                                    />
+                                    <div name="partner_address_country"
+                                        class="d-flex justify-content-between">
+                                        <field name="country_id" placeholder="Country"
+                                            class="o_address_country"
+                                            options="{&quot;no_open&quot;: True, &quot;no_create&quot;: True}"
+                                        />
+                                    </div>
+                                </div>
+                                <field name="website" string="Website" />
+                            </group>
+
+                            <group>
+                                <field name="vendor_function" string="Job Position"
+                                    invisible="is_company == True" />
+                                <field name="phone" string="Phone" />
+                                <field name="mobile" string="Mobile Number" />
+                                <field name="email" widget="email" string="email" />
+                                <field name="title" string="Title" invisible="is_company == True" />
+                                <field name="lang" string="Language" />
+                                <field name="vendor_rating" widget="priority" />
+                            </group>
+                        </group>
+
+                        <notebook colspan="4">
+                            <page string="Contacts &amp; Addresses"></page>
+                            <page string="Service Rates"></page>
+                            <page string="Internal Notes"></page>
+                            <page string="Sales &amp; Purchases"></page>
+                            <page string="Accounting"></page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="res_partner_vendor_view_tree" model="ir.ui.view">
+            <field name="name">res.partner.vendor.view.tree</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <tree string="Vendors">
+                    <field name="id" />
+                    <field name="display_name" string="Name" />
+                    <field name="phone" />
+                    <field name="email" />
+                    <field name="street" />
+                    <field name="vendor_rating" />
+                    <field name="create_date" />
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_res_partner_vendor" model="ir.actions.act_window">
+            <field name="name">Vendors</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">tree,form</field>
+            <field name="domain">[('is_company','=',True)]</field>
+            <field name="context">{'default_is_company': True,
+                'default_country_id': 'AE'}</field>
+            <field name="view_ids"
+                eval="[(5, 0, 0),
+                        (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.res_partner_vendor_view_tree')}),
+                        (0, 0, {'view_mode': 'form', 'view_id': ref('customer.res_partner_vendor_view_form')})]">
+            </field>
+        </record>
+
+        <menuitem
+            id="vendor_root_menu"
+            name="Vendors"
+            sequence="10" />
+        <menuitem
+            id="vendor_menu"
+            name="Vendors"
+            action="action_res_partner_vendor"
+            parent="vendor_root_menu"
+            sequence="10" />
+    </data>
+</odoo>

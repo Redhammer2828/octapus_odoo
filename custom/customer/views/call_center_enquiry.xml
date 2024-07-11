@@ -6,6 +6,26 @@
         <field name="model">aaa.enquiry</field>
         <field name="arch" type="xml">
             <form string="Enquiry">
+                <style>
+
+                    .o_form_view:not(.o_field_highlight)
+                    .o_field_widget:not(.o_field_invalid):not(.o_field_highlight)
+                    .o_input:not(:hover):not(:focus)
+                    {
+                    border-bottom: 1px solid #71639e2b;
+                    }
+                    .addon_tree{
+                    height:100%;
+                    width:320px !important;
+                    }
+                    .product_field{
+                    width: 100%;
+                    }
+                    .required_field{
+                    background-color: #b9a4ff29;
+                    }
+
+                </style>
                 <sheet>
                     <group string="Enquiry" col="3">
                         <group>
