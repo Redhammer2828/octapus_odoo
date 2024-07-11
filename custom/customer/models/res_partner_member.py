@@ -239,59 +239,93 @@ class ResPartnerMembers(models.Model):
         }
     
     def action_create_enquiry(self):
-        pass
+        view_id = self.env.ref('customer.call_center_enquiry_view_form').id
+
+        # Fetch the service IDs from res.partner
+        member = self.env['res.partner'].browse(self.id)
+        service_ids = member.service_ids.ids  # Assuming 'service_ids' is a One2many or Many2many field in res.partner
+
+        return {
+            'name': 'Service Enquiry',
+            'type': 'ir.actions.act_window',
+            'res_model': 'aaa.enquiry',
+            'view_mode': 'form',
+            'view_id': view_id,
+            'context': {
+                'default_member_id': self.id,
+                'default_customer_id': self.parent_customer_id.id,
+                'default_policy_no': self.policy_no,
+                'default_email': self.email,
+                'default_mobile': self.mobile,
+                'default_vehicle_chasis_no': self.vehicle_chasis_no,
+                'default_vehicle_plate_no': self.vehicle_plate,
+                'active_id': self.id,
+                'active_model': self._name,
+                'default_service_id': service_ids[0] if service_ids else False,  # Set a default if needed
+                'domain_service_id': [('id', 'in', service_ids)],
+            },
+        }
     
+
     def action_policy_service_history(self):
         # Retrieve services taken by the member
         service_partners = self.env['aaa.service'].search([('member_id', '=', self.id)])
-        print("PARTNER SERVICE ID:", service_partners)
 
-        # Initialize a set to store unique product IDs
-        product_ids = set()
+        # Initialize a dictionary to store product_id counts
+        product_count_dict = {}
 
         # Loop through each service partner and gather related product IDs
         for service in service_partners:
-            product_ids.add(service.product_id.id)
+            product_id = service.product_id.id
+            print("PRODUCT ID", product_id)
+            
+            # Increment the count for this product_id
+            if product_id in product_count_dict:
+                product_count_dict[product_id] += 1
+            else:
+                product_count_dict[product_id] = 1
             
             # Retrieve addon services related to the current service
             addon_services = self.env['aaa.service.addon'].search([('service_id', '=', service.id)])
-            # Loop through each addon service and gather related product IDs
+            
+            # Loop through each addon service and add related product IDs to the dictionary
             for addon in addon_services:
-                product_ids.add(addon.product_id.id)
+                addon_product_id = addon.product_id.id
+                if addon_product_id in product_count_dict:
+                    product_count_dict[addon_product_id] += 1
+                else:
+                    product_count_dict[addon_product_id] = 1
         
-        # Convert set to list for searching in product.template model
-        product_ids = list(product_ids)
-        
-        # Log the gathered product IDs for debugging
-        print("PRODUCT IDS:", product_ids)
-        
-        # Search these product IDs in the product.template model
-        products = self.env['product.template'].search([('id', 'in', product_ids)])
-        print("PRODUCTS:", products)
-        
-        # Log the gathered information for debugging
-        service_dict = {
-            'product_ids': product_ids,
-            'products': products.read(['name', 'default_code'])  # Assuming you want to read these fields
-        }
-        print("SERVICES", service_dict)
+        # Convert the dictionary to the format required for line_ids
+        service_lines = [(0, 0, {'product_id': product_id, 'count': count}) for product_id, count in product_count_dict.items()]
+        print("SERVICE LINES", service_lines)
 
+        # Create or update the record with the service history lines
+        history_record = self.env['policy.service.history'].create({
+            'member_id': self.id,
+            'line_ids': service_lines,
+        })
+
+        # Return the action to open the form view of the created record
         view_id = self.env.ref('customer.policy_service_history_view_form').id
         context = {
             'default_member_id': self.id,
-            'active_id': self.id,
-            'active_model': self._name,
+            'default_member_activate_date': self.member_activate_date,
+            'default_member_expiry_date': self.member_expiry_date,
+            'active_id': history_record.id,
+            'active_model': 'policy.service.history',
         }
-
         return {
-            'name': 'Service Policy',
+            'name': 'Policy Service History',
             'type': 'ir.actions.act_window',
             'res_model': 'policy.service.history',
             'view_mode': 'form',
             'view_id': view_id,
             'target': 'new',
+            'res_id': history_record.id,
             'context': context,
         }
+
 
     @api.onchange('product_template_id')
     def _onchange_product_template_id(self):

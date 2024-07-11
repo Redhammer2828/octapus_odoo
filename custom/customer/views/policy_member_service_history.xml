@@ -17,10 +17,20 @@
                 </group>
                 <notebook>
                     <page name="category" string="Category">
-                        <field name="category_line_ids" readonly="1" nolabel="1" />
+                        <field name="category_line_ids" readonly="1" nolabel="1" >
+                            <tree>
+                                <field name="category_id" string="category" />
+                                <field name="count" />
+                            </tree>
+                        </field>
                     </page>
                     <page name="service" string="Services">
-                        <field name="line_ids" readonly="1" nolabel="1" />
+                        <field name="line_ids" readonly="1" nolabel="1" >
+                            <tree>
+                                <field name="product_id" string="Service" />
+                                <field name="count" />
+                            </tree>
+                        </field>
                     </page>
                 </notebook>
                 <footer>

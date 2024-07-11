@@ -17,6 +17,7 @@ class ServiceHistoryLines(models.Model):
 
     history_id = fields.Many2one('policy.service.history', string='History')
     product_id = fields.Many2one('product.template', string='Service')
+    count = fields.Integer('No. of Services')
 
 class CategoryLines(models.Model):
     _name = 'category.lines'

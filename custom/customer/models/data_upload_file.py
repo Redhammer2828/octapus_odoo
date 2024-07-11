@@ -23,25 +23,7 @@ class DataUploadFile(models.Model):
         ('validate', 'Validated'),
         ('done', 'Done')
     ], string='Status', default='draft')
-   
-    # def validate_member_line(self, member_line):
-    #     required_fields = ['customer_code', 'member_name', 'vehicle_chasis_no', 'mobile', 'member_expiry_date', 'member_activate_date']
-    #     # Check that member_expiry_date is greater than member_activate_date
-        
-    #     for field in required_fields:
-    #         value = getattr(member_line, field)
-    #         if not value or str(value).lower() == 'nan':
-    #             if field == 'member_name':
-    #                 raise ValidationError("Name not exist in Uploaded Sheet")
-    #             else:
-    #                 raise ValidationError(f"{field.replace('_', ' ').title()} is required for member {member_line.member_name}")
-                
-    #     expiry_date = fields.Date.from_string(member_line.member_expiry_date)
-    #     activate_date = fields.Date.from_string(member_line.member_activate_date)
-    #     if expiry_date < activate_date:
-    #         member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date cannot be earlier than Activation Date!"})
-            # raise ValidationError(f"Expiry Date {member_line.member_expiry_date} cannot be earlier than Activation Date {member_line.member_activate_date} for member {member_line.member_name}")
-            
+               
     def action_validate_policy_data(self):
         start_time = time.time()
         
@@ -59,6 +41,12 @@ class DataUploadFile(models.Model):
             print("ID OF CUSTOMER CODE MATCH in DB--------", matching_partners.ids)
             
             match_found = False  # Flag to indicate if a match is found for the current member_line
+            
+            if not matching_partners:
+            # If no matching partners are found, update the member line status and continue to the next member line
+                member_line.update({'upload_member_status': 'rejection', 'comment': "*Customer not exist!"})
+                print("No matching customer found.")
+                continue
             
             for matching_partner in matching_partners:
                 member_list = self.env['res.partner'].search([('parent_customer_id', '=', matching_partner.id),('member_type', '=', 'policy')])
@@ -305,6 +293,15 @@ class DataUploadFile(models.Model):
             'view_id': self.env.ref('customer.view_upload_member_line_tree').id,
             'domain': [('upload_file_id', '=', self.id), ('upload_member_status', '=', 'rejection')],
             'context': {'default_upload_file_id': self.id},
+        }
+    
+
+    def action_discard(self):
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': self._name,
+            'view_mode': 'tree,form',
+            'target': 'current',
         }
 
 class UploadMemberLine(models.Model):

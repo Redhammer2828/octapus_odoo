@@ -22,6 +22,8 @@
                         <button name="action_delete_members" string="Delete Members" type="object"
                             class="btn-default" confirm="Are you sure you want to delete members?"
                             invisible="state not in ['done']" />
+                        <button name="action_discard" string="Discard" type="object"
+                            class="btn-default" />
                         <button name="action_cancel" string="Cancel" type="object"
                             class="btn-default" invisible="state not in ['validate']" />
                         <field name="state" widget="statusbar"
