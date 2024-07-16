@@ -34,4 +34,5 @@ RUN pip install -r requirements.txt
 EXPOSE 8070
 
 # Set the entrypoint
-CMD ["python","odoo-bin", "-c", "odoo.conf"]
+CMD ["python", "odoo-bin", "-c", "odoo.conf", "-d", "AAA-odoo", "-u", "all"]
+
