@@ -87,6 +87,7 @@ class ResPartnerMembers(models.Model):
         store=True
     )
     policy_member_service_count = fields.Integer(string="Policy Services Count", compute='_compute_policy_member_service_count')
+    policy_member_cash_service_count = fields.Integer(string="Policy Cash Services Count", compute='policy_member_cash_service_count')
     # ------------------------------------------------------------
     # membership_state = fields.Selection(
     #     selection=POLICY_MEMBER_STATE,
@@ -147,15 +148,62 @@ class ResPartnerMembers(models.Model):
             else:
                 partner.member_expired = False
                 
-    @api.depends('service_ids')
+    @api.depends('name')
     def _compute_policy_member_service_count(self):
         for partner in self:
-            partner.policy_member_service_count = len(partner.service_ids)
-    
-
+            service_member_ids = self.env['aaa.service'].search([
+                ('member_id', '=', self.id),
+                ('type', '=', 'non_cash'),
+                ('member_type', '=', 'policy')
+            ])
+            print("MEMBER SERVICES", service_member_ids.ids)
+            partner.policy_member_service_count= len(service_member_ids)
+ 
     def action_view_policy_service(self):
-        # Add your action code here
-        pass
+       
+        return {
+            'name': 'Services',
+            'type': 'ir.actions.act_window',
+            'res_model': 'aaa.service',
+            'view_mode': 'tree,form',
+            'domain': [('member_id', '=', self.id), ('member_type','=','policy'), ('type', '=', 'non_cash')],
+            'context': {
+                'from_res_partner_member_form': True,
+                'default_customer_id': self.parent_customer_id,
+                'default_member_id': self.id,  # Pre-select the parent customer
+            },
+            'views': [(self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
+                    (self.env.ref('customer.call_center_service_form').id, 'form')],
+         
+        }
+   
+    # @api.depends('name')
+    # def _compute_policy_member_cash_service_count(self):
+    #     for cash in self:
+    #         cash_service_ids = self.env['aaa.service'].search([
+    #             ('member_id', '=', self.id),
+    #             ('type', '=', 'cash'),
+    #             ('member_type', '=', 'policy')
+    #         ])
+    #         print("CASH SERVICES", cash_service_ids.ids)
+    #         cash.policy_member_cash_service_count= len(cash_service_ids)
+ 
+    # def action_view_cash_service(self):
+    #     return {
+    #         'name': 'Services',
+    #         'type': 'ir.actions.act_window',
+    #         'res_model': 'aaa.service',
+    #         'view_mode': 'tree,form',
+    #         'domain': [('member_id', '=', self.id), ('member_type','=','policy'), ('type', '=', 'cash')],
+    #         'context': {
+    #             'from_res_partner_member_form': True,
+    #             'default_customer_id': self.parent_customer_id,
+    #             'default_member_id': self.id,  # Pre-select the parent customer
+    #         },
+    #         'views': [(self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
+    #                 (self.env.ref('customer.call_center_service_form').id, 'form')],
+         
+    #     }
 
     def action_membership_renewal(self):
         view_id = self.env.ref('customer.membership_renewal_wizard_form').id
@@ -215,15 +263,20 @@ class ResPartnerMembers(models.Model):
         vehicle_model = self.env['member.vehicle.type'].search([('name', '=', self.vehicle_model)], limit=1)
         print("VEHICLE",self.vehicle_model)
         print("VEHICLE",vehicle_model)
+        card_type = self.env['card.type'].browse([(self.card_type_id.id)])
+        card_type_name = card_type.name
         context = {
             'default_customer_id': self.parent_customer_id.id,
             'default_sequence_id': self.member_partner_category_id.id,
-            'default_card_type': self.card_type_id.id,
+            'default_card_type': card_type_name,
             'default_vehicle_chasis_no': self.vehicle_chasis_no,
             'default_vehicle_type_id': vehicle_model.id if vehicle_model else False,
             'default_product_id': self.service_ids,
             'default_member_type': self.member_type,
-            'default_member_id': self.id,  # Pass the current record ID to member_id
+            'default_member_id': self.id,
+            'default_member_activate_date': self.member_activate_date, # Pass the current record ID to member_id
+            'default_member_expiry_date': self.member_expiry_date,
+            'default_type': 'non_cash', # Pass the current record ID to member_id
             'active_id': self.id,
             'active_model': self._name,
         }

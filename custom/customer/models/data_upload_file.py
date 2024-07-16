@@ -31,9 +31,6 @@ class DataUploadFile(models.Model):
         
         for member_line in self.upload_member_ids:
             print("---------------------------------------------------------------------------")
-            # Validate required fields and date format
-            # self.validate_member_line(member_line)
-
             print("Processing member_line:", member_line)
             matching_partners = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)])
 
@@ -95,62 +92,6 @@ class DataUploadFile(models.Model):
         
         self.state = 'validate'
     
-    #-----PREVIOUS CODE------
-    # def check_member_details(self, member, member_line):
-        # print("Checking details for member ID:", member.id)
-        # print("CHASIS NUMBER EXCEL: ", member_line.vehicle_chasis_no)
-        # print("CHASIS NUMBER DB: ", member.vehicle_chasis_no)
-        # print("VEHICLE CHASIS CHECK:", end=" ")
-
-        # # Assuming vehicle_chasis_no is a string, we strip whitespace and convert to uppercase for comparison
-        # excel_chassis_no = member_line.vehicle_chasis_no.strip().upper()
-        # db_chassis_no = member.vehicle_chasis_no.strip().upper()
-
-        # if excel_chassis_no == db_chassis_no:
-        #     print("[PASS]")
-        #     if member.name == member_line.member_name:
-        #         print("NAME CHECK: [PASS]")
-        #         if member.membership_state == 'temp':
-        #             print("MEMBERSHIP STATE CHECK: [PASS]")
-        #             member_line.update({'upload_member_status': 'exist_temp', 'comment': "Exist Under Temp,*Overwrite"})
-        #             member_line.if_temp_match = member.id
-        #         elif member.membership_state == 'confirm':
-        #             print("MEMBER ID+_+_+__+_+_+_+__++_+_+_+",member.id)
-        #             member_line.if_conf_match = member.id
-        #             print("IF CONF()())(()()()((()())))",member_line.if_conf_match)
-
-        #             expiry_date = fields.Date.from_string(member_line.member_expiry_date)
-        #             activate_date = fields.Date.from_string(member_line.member_activate_date)
-        #             difference = (expiry_date - activate_date).days
-        #             print("EXPIRY DATE:", expiry_date)
-        #             print("ACTIVATION DATE:", activate_date)
-        #             print("DIFFERENCE CALCULATED:", difference)
-        #             print("EXPIRY DATE IN RES.PARTNER:", member.member_expiry_date)
-        #             print("EXPIRY DATE IN EXCEL:", member_line.member_expiry_date)
-
-        #             if member.member_expiry_date != member_line.member_expiry_date:
-        #                 if difference >= 365:
-        #                     print("MEMBERSHIP RENEWAL")
-        #                     member_line.update({'upload_member_status': 'renewal', 'comment': "*Membership Renewal"})
-        #                 else:
-        #                     print("MEMBERSHIP EXTENSION")
-        #                     member_line.update({'upload_member_status': 'update', 'comment': "*Membership Extension"})
-        #             else:
-        #                 print("DUPLICATE RECORD FOUND")
-        #                 member_line.update({'upload_member_status': 'rejection', 'comment': "*Duplicate Record in System!"})
-        #         else:
-        #             print("MEMBERSHIP STATE CHECK: [FAIL]")
-        #             member_line.update({'upload_member_status': 'new', 'comment': "Member Not Exist"})
-        #     else:
-        #         print("NAME CHECK: [FAIL]")
-        #         member_line.update({'upload_member_status': 'new', 'comment': "Member Not Exist"})
-        # else:
-        #     if excel_chassis_no == 'nan' or '':
-        #         member_line.update({'upload_member_status': 'rejection', 'comment': "*Vehicle Chasis Number Does Not Exist!"})
-        #         print("[FAIL]")
-        #     else:
-        #         member_line.update({'upload_member_status': 'new', 'comment': "*New Member"})
-
 #------NEW MEMBERCHIP EXPIRY DATE ADN ACTIVATION CHECK ADDED CODE------
     def check_member_details(self, member, member_line):
         print("Checking details for member ID:", member.id)
@@ -176,10 +117,11 @@ class DataUploadFile(models.Model):
                     print("IF CONF()())(()()()((()())))", member_line.if_conf_match)
 
                     expiry_date = fields.Date.from_string(member_line.member_expiry_date)
-                    activate_date = fields.Date.from_string(member_line.member_activate_date)
-                    difference = (expiry_date - activate_date).days
+                    activate_date = fields.Date.from_string(member.member_expiry_date)
+                    db_expiry_date = fields.Date.from_string(member.member_expiry_date)
+                    difference = (expiry_date - db_expiry_date).days
                     print("EXPIRY DATE:", expiry_date)
-                    print("ACTIVATION DATE:", activate_date)
+                    print("DB EXPIRY DATE:", db_expiry_date)
                     print("DIFFERENCE CALCULATED:", difference)
                     print("EXPIRY DATE IN RES.PARTNER:", member.member_expiry_date)
                     print("EXPIRY DATE IN EXCEL:", member_line.member_expiry_date)
@@ -248,7 +190,9 @@ class DataUploadFile(models.Model):
                     'credit_member_ok': False,
                     'member_type': 'policy',
                     'membership_state': 'confirm',
-                    'member_partner_category_id': matching_category.id
+                    'member_partner_category_id': matching_category.id,
+                    'product_template_id': member_line.package,
+                    'mobile': member_line.mobile,
                     # Add more fields to create as needed
                 })
             elif member_line.upload_member_status in ['renewal', 'update']:

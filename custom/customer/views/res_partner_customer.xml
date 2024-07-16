@@ -348,7 +348,7 @@
         <field name="arch" type="xml">
             <search>
                 <!-- <field name="id" /> -->
-                <field name="display_name" string="Name" />
+                <field name="name" string="Name" />
                 <field name="customer_code" />
                 <field name="phone" />
                 <field name="email" />

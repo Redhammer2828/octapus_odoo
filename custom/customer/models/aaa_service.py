@@ -46,7 +46,13 @@ class AAAService(models.Model):
     main_product_ids = fields.Many2many('product.template', string="Main Products")
     cancelled_service_id = fields.Many2one('aaa.service', string="Cancelled Service", readonly=True)
     acc_payment_id = fields.Many2one('account.payment', string="Payment")
+    # PROVIDER-------------------------------------------------------------------------------------------------------------
     provider_id = fields.Many2one('res.partner', string="Provider") #  domain="[('supplier', '=', True)]"
+    provider_contact = fields.Char(string="Provider Contact")
+    provider_rate = fields.Float(string="Provider Rate")
+    provider_rate_invisible = fields.Float(string="Provider Rate Invisible")
+    avg_vendor_rating = fields.Float(string="Average Vendor Rating")
+    company_vehicle = fields.Boolean(string="Company Vehicle")
     # ============================================================================================================================
     
     member_contact_no = fields.Char(string="Mobile Number")
@@ -108,11 +114,6 @@ class AAAService(models.Model):
     )
   
     # =========================================================================================================
-    provider_contact = fields.Char(string="Provider Contact")
-    provider_rate = fields.Float(string="Provider Rate")
-    provider_rate_invisible = fields.Float(string="Provider Rate Invisible")
-    avg_vendor_rating = fields.Float(string="Average Vendor Rating")
-    company_vehicle = fields.Boolean(string="Company Vehicle")
    
    
     # driver_job_id = fields.Many2one('hr.job', string="Driver Job ID")
@@ -128,6 +129,8 @@ class AAAService(models.Model):
     
     
     completion_time = fields.Datetime(string="Completion Time")
+    member_activate_date = fields.Date('Member Activate Date')
+    member_expiry_date = fields.Date('Member Expiry Date')
     
     
     # @api.onchange('customer_id')
