@@ -35,5 +35,7 @@ EXPOSE 8070
 
 
 # Run odoo-bin with the specified arguments
-CMD ["python", "odoo-bin", "-c", "odoo.conf"]
+#CMD ["python", "odoo-bin", "-c", "odoo.conf"]
+CMD ["python", "odoo-bin", "-c", "odoo.conf", "-d", "AAA-odoo", "-u", "customer"]
+
 
