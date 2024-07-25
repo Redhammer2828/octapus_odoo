@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_service_dispatch_wizard_form" model="ir.ui.view">
+        <field name="name">service.dispatch.wizard.form</field>
+        <field name="model">service.dispatch.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Convert to Cash or Credit">
+                <group>
+                    <field name="service_id" invisible="1"/>
+                    <!-- <p> -->
+                        <label for="service_id" string="Service not in Package. Proceed with Cash/Credit Service?"/>
+                    <!-- </p> -->
+                    <footer>
+                        <button string="Cash Service" class="btn-success" type="object" name="action_cash_service"/>
+                        <button string="Credit Service" class="btn-primary" type="object" name="action_credit_service"/>
+                        <button type="object" special="cancel" string="Cancel"/>
+                    </footer>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <!-- <record id="action_service_dispatch_wizard" model="ir.actions.act_window">
+        <field name="name">Service Dispatch Wizard</field>
+        <field name="res_model">service.dispatch.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_service_dispatch_wizard_form"/>
+        <field name="target">new</field>
+        <field name="context">{'default_service_id': active_id}</field>
+    </record> -->
+
+</odoo>

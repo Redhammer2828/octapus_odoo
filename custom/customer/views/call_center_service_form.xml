@@ -6,7 +6,7 @@
             <field name="name">call.center.service.form</field>
             <field name="model">aaa.service</field>
             <field name="arch" type="xml">
-                <form string="Service" create="false" delete="false">
+                <form string="Service" delete="false">
                     <style>
 
                         .o_form_view:not(.o_field_highlight)
@@ -28,6 +28,8 @@
 
                     </style>
                     <header>
+                        <!-- <button name="action_save" type="object" string="Save" class="oe_stat_button" icon="fa fa-save"/> -->
+                        <button special="cancel" string="Discard" class="oe_highlight"/>
                         <button name="action_initiate_service" string="Initiate" type="object"
                             class="btn-primary" invisible="state != 'draft'" />
                         <button name="action_dispatch_service" string="To Dispatch" type="object"
@@ -48,7 +50,13 @@
                         <button name="action_cancel_service" type="object" string="Cancel"
                             confirm="Cancel this service, do you want to proceed?"
                             invisible="state not in ('initiate', 'dispatch', 'inprogress', 'start', 'reach')" />
-                        <button name="action_discard" type="object" string="Change"
+                        <!-- CUSTTOM ACTION CANCEL -->
+                        <!-- <button name="action_custom_cancel" type="object" string="Discard"
+                            class="custom_cancel_button"
+                            confirm="Cancel this service, do you want to proceed?"
+                            invisible="state not in ('initiate', 'dispatch', 'inprogress', 'start', 'reach')" /> -->
+                        
+                        <button name="action_change" type="object" string="Change"
                             confirm="Change this service, do you want to proceed?"
                             invisible="state not in ('initiate', 'dispatch', 'inprogress', 'start', 'reach')" />
                         <button name="action_create_enquiry" string="Enquiry" type="object"
@@ -83,12 +91,15 @@
                         <group col="3">
                             <group string="GENERAL INFORMATION" name="general_information">
                                 <field name="customer_id" string="Customer"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']" class="required_field" required="1"/>
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']"
+                                    class="required_field" required="1" />
                                 <field name="credit_customer_co" string="Customer C/O" />
                                 <field name="sequence_id" string="Customer Category"
-                                    invisible="member_type != 'adhoc'" class="required_field" required="1" />
+                                    invisible="member_type != 'adhoc'" class="required_field"
+                                    required="1" />
                                 <field name="member_id" string="Member"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']" class="required_field" required="1"/>
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']"
+                                    class="required_field" required="1" />
                                 <field name="member_contact_no" string="Mobile Number"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="email" string="Email"
@@ -102,7 +113,7 @@
                                     readonly="state not in ['draft', 'initiate', 'dispatch']"
                                     invisible="schedule_service_check == False"
                                     required="schedule_service_check == True" />
-                                <field name="requested_date" string="Service date"
+                                <field name="requested_date"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="driving_license" string="Driving License"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
@@ -111,6 +122,8 @@
                                 <field name="smarto_id" readonly="state in ['cancel', 'discard']"
                                     invisible="smarto != True" required="smarto == True" />
                                 <field name="comments" string="Comments" />
+
+
                             </group>
                             <group string="VEHICLE DETAILS" name="vehicle_details">
                                 <!-- <field name="vehicle_type_ok" invisible="1" /> -->
@@ -129,19 +142,22 @@
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" /> -->
                                 <field name="policy_no" string="Policy No"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
-                                <field name="member_activate_date" string="Activate Date" readonly='1' />
-                                <field name="member_expiry_date" string="Expiry Date" readonly='1' />
+
                             </group>
                             <group string="SERVICE DETAILS" name="service_details">
                                 <group class="product_field">
-                                    <field name="product_id" string="Service" class="required_field" required="1" />
+                                    <field name="product_id" string="Service" class="required_field"
+                                        required="1" />
                                     <field name="provider_from_location_id" string="From Location"
-                                        invisible="product_id == False" class="required_field" required="1"/>
+                                        invisible="product_id == False" class="required_field"
+                                        required="1" />
                                     <field name="provider_to_location_id" string="To Location"
-                                        invisible="product_id == False" class="required_field" required="1"/>
+                                        invisible="product_id == False" class="required_field"
+                                        required="1" />
                                 </group>
                                 <separator string="ADDON SERVICES" colspan="4" />
-                                <field name="addon_service_ids" nolabel="1">
+                                <field name="addon_service_ids" nolabel="1"
+                                    invisible="product_id == False">
                                     <tree string="Additional Services" class="addon_tree">
                                         <field name="product_id" string="Service" />
                                         <field name="description" string="Description" />
@@ -160,45 +176,45 @@
                                 </field>
                             </group>
                         </group>
-                        <group col="3">
+                        <group col="2">
                             <group string="PROVIDER DETAILS"
                                 invisible="state in ['draft', 'initiate']">
-                                <field name="product_type" invisible="1" />
-                                <field name="provider_id"
+                                <field name="provider_id" string="Provider"
                                     invisible="state in ['draft', 'initiate']"
-                                    readonly="state in ['done', 'cancel']"/>
-                                <field name="provider_contact"
-                                    invisible="state in ['draft', 'initiate']"
-                                    readonly="state in ['done', 'inprogress', 'start', 'reach']"
-                                    string="Contact Number" />
-                                <field name="provider_rate"
-                                    invisible="state in ['draft', 'initiate']"
-                                    string="Route Rate" readonly="1" />
-                                <field name="provider_rate_invisible" invisible="1" />
-                                <field name="avg_vendor_rating" readonly="1" widget="priority" />
-                                <field name="company_vehicle" invisible="1" />
-                                <field name="vehicle"
-                                    invisible="company_vehicle == True"
-                                    readonly="state in ['done', 'inprogress', 'start', 'reach']" />
-                                <field name="driver_name"
-                                    invisible="company_vehicle == True"
                                     readonly="state in ['done', 'cancel']" />
-                                <field name="driver_num"
+                                <field name="provider_num" string="Contact No"
                                     invisible="state in ['draft', 'initiate']"
-                                    readonly="state in ['done', 'inprogress', 'start', 'reach']"
-                                    string="Contact Number" />
+                                    readonly="state in ['done', 'cancel']" />
+                                <field name="route_rate" string="Route Rate"
+                                    invisible="state in ['draft', 'initiate']"
+                                    readonly="state in ['done', 'cancel']" />
+                                <field name="avg_rating" widget="priority" string="Average Rating"
+                                    invisible="state in ['draft', 'initiate']"
+                                    readonly="state in ['done', 'cancel']" />
+                                <field name="vehicle" string="Vehicle"
+                                    invisible="state in ['draft', 'initiate']"
+                                    readonly="state in ['done', 'cancel']" />
+                                <field name="driver_name" string="Driver Name"
+                                    invisible="state in ['draft', 'initiate']"
+                                    readonly="state in ['done', 'cancel']" />
+                                <field name="driver_num" string="Contact No"
+                                    invisible="state in ['draft', 'initiate']"
+                                    readonly="state in ['done', 'cancel']" />
                             </group>
                             <group string="SUMMARY"
                                 invisible="state in ['draft', 'initiate', 'dispatch']"
                                 readonly="state in ['done']">
-                                <field name="credit_proforma_number"
-                                    readonly="state == 'done'" />
-                                <field name="vendor_rating" string="Rate this service"
-                                    widget="priority" />
-                                <field name="rating_user_id" readonly="1" />
-                                <field name="completion_time"
-                                    readonly="state == 'done'"
-                                    invisible="state not in ['reach', 'done']" />
+                                <field name="credit_proforma_number" string="Trip Sheet Number"
+                                    invisible="state in ['draft', 'initiate', 'dispatch']"
+                                    readonly="state in ['done']" />
+                                <field name="vendor_rating"
+                                    widget="priority" string="Rate this service"
+                                    invisible="state in ['draft', 'initiate', 'dispatch']"
+                                    readonly="state in ['done']" />
+                                <field name="rating_user_id"
+                                    string="Rating Added By"
+                                    invisible="state in ['draft', 'initiate', 'dispatch']"
+                                    readonly="state in ['done']" />
                             </group>
                         </group>
                         <notebook>

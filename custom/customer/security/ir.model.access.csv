@@ -29,3 +29,4 @@ access_service_history,service.history,model_service_history,,1,1,1,1
 access_policy_service_history,policy.service.history,model_policy_service_history,,1,1,1,1
 access_policy_service_history_lines,policy.service.history.lines,model_policy_service_history_lines,,1,1,1,1
 access_category_lines,category.lines,model_category_lines,,1,1,1,1
+access_service_dispatch_wizard,service.dispatch.wizard,model_service_dispatch_wizard,,1,1,1,1

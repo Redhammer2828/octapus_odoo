@@ -1,6 +1,6 @@
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
-from collections import Counter
+from collections import defaultdict, Counter
 from datetime import datetime
 import time
 
@@ -23,75 +23,65 @@ class DataUploadFile(models.Model):
         ('validate', 'Validated'),
         ('done', 'Done')
     ], string='Status', default='draft')
-               
+# -----------------------------------------------------------NEW CODE-----------------------------------------------------------------------------------             
     def action_validate_policy_data(self):
         start_time = time.time()
         
-        print("Upload Member IDs:", self.upload_member_ids)
+        customer_codes = {member_line.customer_code for member_line in self.upload_member_ids}
+        chassis_numbers = {member_line.vehicle_chasis_no.strip().upper() for member_line in self.upload_member_ids if member_line.vehicle_chasis_no.strip().upper() not in ['nan', '']}
+        
+        matching_partners = self.env['res.partner'].search([('customer_code', 'in', list(customer_codes))])
+        partner_ids = matching_partners.ids
+        
+        partner_chassis = self.env['res.partner'].search([('parent_customer_id', 'in', partner_ids), ('member_type', '=', 'policy')])
+        partner_chassis_dict = {partner.vehicle_chasis_no.strip().upper(): partner for partner in partner_chassis}
         
         for member_line in self.upload_member_ids:
-            print("---------------------------------------------------------------------------")
-            print("Processing member_line:", member_line)
-            matching_partners = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)])
-
-            print("EXCEL--- CUSTOMER CODE-NAME-----", member_line.customer_code)
-            print("ID OF CUSTOMER CODE MATCH in DB--------", matching_partners.ids)
+            excel_chassis_no = member_line.vehicle_chasis_no.strip().upper()
             
-            match_found = False  # Flag to indicate if a match is found for the current member_line
+            if excel_chassis_no in ['nan', '']:
+                member_line.update({'upload_member_status': 'rejection', 'comment': "*Vehicle Chasis Number Does Not Exist!"})
+                print("[FAIL]")
+                continue
             
-            if not matching_partners:
-            # If no matching partners are found, update the member line status and continue to the next member line
+            matching_partner = next((p for p in matching_partners if p.customer_code == member_line.customer_code), None)
+            
+            if not matching_partner:
                 member_line.update({'upload_member_status': 'rejection', 'comment': "*Customer not exist!"})
                 print("No matching customer found.")
                 continue
             
-            for matching_partner in matching_partners:
-                member_list = self.env['res.partner'].search([('parent_customer_id', '=', matching_partner.id),('member_type', '=', 'policy')])
-
-                print("MEMBERs LIST------", member_list)
-                
-                for member in member_list:
-                    excel_chassis_no = member_line.vehicle_chasis_no.strip().upper()
-                    db_chassis_no = member.vehicle_chasis_no.strip().upper()
-                    if excel_chassis_no in ['nan', '']:  # Corrected condition
-                        member_line.update({'upload_member_status': 'rejection', 'comment': "*Vehicle Chasis Number Does Not Exist!"})
-                        print("[FAIL]")
-                    if excel_chassis_no == db_chassis_no:
-                        print("Match found for member ID:", member.id)
-                        self.check_member_details(member, member_line)
-                        match_found = True
-                        break  # Exit the loop once a match is found
-                    else:
-                        print("[FAIL]")
-                if match_found:
-                    break  # Exit the outer loop if a match is found
+            member = partner_chassis_dict.get(excel_chassis_no)
             
-            # If no match is found for the current member_line, update its status
-            if not match_found:
-                    expiry_date = fields.Date.from_string(member_line.member_expiry_date)
-                    activate_date = fields.Date.from_string(member_line.member_activate_date)
-                    
-                    if expiry_date < activate_date:
-                        member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date cannot be earlier than Activation Date!"})
-                    else:
-                        member_line.update({'upload_member_status': 'new', 'comment': "**Not exist in System*New Member"})
-                        
-        end_time = time.time()
-        processing_time = end_time - start_time  # Calculate the processing time
+            if member:
+                self.check_member_details(member, member_line)
+            else:
+                expiry_date = fields.Date.from_string(member_line.member_expiry_date)
+                activate_date = fields.Date.from_string(member_line.member_activate_date)
+                
+                if expiry_date < activate_date:
+                    member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date cannot be earlier than Activation Date!"})
+                else:
+                    member_line.update({'upload_member_status': 'new', 'comment': "**Not exist in System*New Member"})
         
-        # Calculate counts
+        end_time = time.time()
+        processing_time = end_time - start_time
+        
         total_count = len(self.upload_member_ids)
-        rejected_count = Counter(member.upload_member_status for member in self.upload_member_ids)['rejection']
-        new_member_count = Counter(member.upload_member_status for member in self.upload_member_ids)['new']
-        updated_member_count = Counter(member.upload_member_status for member in self.upload_member_ids)['update']
-        renewal_member_count = Counter(member.upload_member_status for member in self.upload_member_ids)['renewal']
-        added_member_count = total_count - rejected_count  # Calculate the count of added records
-
-        # Update the upload_log field with counts and processing time
-        self.upload_log = f"Total Records: {total_count} | Rejected Records: {rejected_count} | Added Records: {added_member_count} | New Records: {new_member_count} | Updated Records: {updated_member_count} | Renewal Records: {renewal_member_count} | Time to Process: {processing_time} seconds"  
+        status_counts = Counter(member.upload_member_status for member in self.upload_member_ids)
+        
+        rejected_count = status_counts['rejection']
+        new_member_count = status_counts['new']
+        updated_member_count = status_counts['update']
+        renewal_member_count = status_counts['renewal']
+        added_member_count = total_count - rejected_count
+        
+        self.upload_log = (f"Total Records: {total_count} | Rejected Records: {rejected_count} | Added Records: {added_member_count} | "
+                        f"New Records: {new_member_count} | Updated Records: {updated_member_count} | Renewal Records: {renewal_member_count} | "
+                        f"Time to Process: {processing_time} seconds")
         
         self.state = 'validate'
-    
+
 #------NEW MEMBERCHIP EXPIRY DATE ADN ACTIVATION CHECK ADDED CODE------
     def check_member_details(self, member, member_line):
         print("Checking details for member ID:", member.id)
@@ -153,23 +143,31 @@ class DataUploadFile(models.Model):
                 print("[FAIL]")
             else:
                 member_line.update({'upload_member_status': 'new', 'comment': "*New Member"})
-    
+# ----------------------------------------------------------------------------------------------------------------------------------------------
+# ___________________________________________________________________________________________________________________________________   
     def apply_member_upload_wizard(self):
         # Get the dynamically imported data after validation
         validated_member_lines = self.upload_member_ids.filtered(lambda line: line.upload_member_status != 'rejection')
         
         for member_line in validated_member_lines:
             if member_line.upload_member_status == 'new':
+                # Search for the card type record
+                card_type_record = self.env['card.type'].search([('code', '=', member_line.card_type)], limit=1)
+                if not card_type_record:
+                    raise ValidationError(f"Card type '{member_line.card_type}' not found.")
 
-                card_type_record = self.env['card.type'].search([('code', '=', member_line.card_type)])
+                # Search for the matching partner
+                matching_partner = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)], limit=1)
+                if not matching_partner:
+                    raise ValidationError(f"Partner with customer code '{member_line.customer_code}' not found.")
                 
-                matching_partner = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)])
-                #------------CARTGORY CODE UPLOAD----------------------
-                matching_category=self.env['partner.category'].search([('name','=', member_line.sequence_code),('partner_id','=', matching_partner.id)],limit=1)
-                # matching_category_code = self.env[]
+                # Search for the matching category
+                matching_category = self.env['partner.category'].search([('name', '=', member_line.sequence_code), ('partner_id', '=', matching_partner.id)], limit=1)
+                if not matching_category:
+                    raise ValidationError(f"Category '{member_line.sequence_code}' not found for partner ID {matching_partner.id}.")
+
                 # Create a new partner record
                 new_partner = self.env['res.partner'].create({
-                    # 'customer_code': member_line.customer_code,
                     'card_type_id': card_type_record.id,  # Update with actual field names
                     'old_membership_number': member_line.old_membership_number,
                     'name': member_line.member_name,
@@ -185,7 +183,7 @@ class DataUploadFile(models.Model):
                     'member_activate_date': member_line.member_activate_date,
                     'member_expiry_date': member_line.member_expiry_date,
                     'policy_no': member_line.policy_no,
-                    'is_customer':True,
+                    'is_customer': True,
                     'adhoc_member': False,
                     'credit_member_ok': False,
                     'member_type': 'policy',
@@ -195,15 +193,18 @@ class DataUploadFile(models.Model):
                     'mobile': member_line.mobile,
                     # Add more fields to create as needed
                 })
+                print("New Partner Created:", new_partner.id)
+            
             elif member_line.upload_member_status in ['renewal', 'update']:
                 # Search and get the record based on member_line.if_conf_match
                 matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
-                print("MATCHING PARTNER ID&&&&&&&&&&&&&&&", matching_partner.id)
-                # Check if matching_partner is not empty
+                print("Matching Partner for Update/Renewal:", matching_partner.id)
                 if matching_partner:
                     matching_partner.write({
                         'member_expiry_date': member_line.member_expiry_date,
                     })
+                    print("Partner Updated:", matching_partner.id)
+            
             elif member_line.upload_member_status in ['exist_temp']:
                 matching_partner = self.env['res.partner'].browse(member_line.if_temp_match)
                 if matching_partner:
@@ -211,8 +212,10 @@ class DataUploadFile(models.Model):
                         'membership_state': 'confirm',
                         'member_expiry_date': member_line.member_expiry_date,
                     })
-                
+                    print("Temp Partner Confirmed:", matching_partner.id)
+                    
         self.state = 'done'
+        print("State Updated to 'Done'")
 
     def action_cancel(self):
         self.state = 'draft'

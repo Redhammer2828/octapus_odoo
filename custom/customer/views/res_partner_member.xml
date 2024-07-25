@@ -208,10 +208,10 @@
             <field name="name">res.partner.member.tree</field>
             <field name="model">res.partner</field>
             <field name="arch" type="xml">
-                <tree string="Policy Members">
+                <tree string="Policy Members" >
                     <field name="id" />
                     <field name="ref_num" />
-                    <field name="name" />
+                    <field name="name" string="NAME"/>
                     <field name="parent_customer_id" />
                     <field name="policy_no" />
                     <field name="old_membership_number" />
