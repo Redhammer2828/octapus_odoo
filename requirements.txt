@@ -74,3 +74,4 @@ zeep==4.1.0
 pandas
 openpyxl
 xlrd
+numpy==1.26.4
