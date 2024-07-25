@@ -45,10 +45,11 @@
         'wizards/membership_cancel_wizard.xml',
         'wizards/member_cancel_upload_wizard.xml',
         'wizards/credit_member_upload_wizard.xml',
+        'wizards/service_dispatch_wizard.xml'
         # 'views/product_packages.xml',
-        'static/src/js/customer.js',
+        # 'static/src/js/customer.js',
     ],
     'installable': True,
     'application': True,
-    'sequence': 2
+    'sequence': 2,
 }
