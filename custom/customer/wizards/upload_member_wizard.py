@@ -36,6 +36,7 @@ class UploadMemberWizard(models.TransientModel):
         member_lines = []
         for index, row in excel_data.iterrows():
             row_errors = []
+            mobile_str = "" 
 
             for field in required_fields:
                 if pd.isna(row.get(field)) or row.get(field) == '':
