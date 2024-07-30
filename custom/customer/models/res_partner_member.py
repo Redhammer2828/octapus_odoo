@@ -258,7 +258,7 @@ class ResPartnerMembers(models.Model):
         }
 
     def action_create_service(self):
-        self.membership_state = 'temp'
+        # self.membership_state = 'temp'
         view_id = self.env.ref('customer.call_center_service_form').id
         vehicle_model = self.env['member.vehicle.type'].search([('name', '=', self.vehicle_model)], limit=1)
         print("VEHICLE",self.vehicle_model)
