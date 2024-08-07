@@ -18,7 +18,10 @@
                             invisible="state not in ['validate']" class="btn-primary" />
                         <button name="action_view_rejected_records" string="Rejected Records"
                             type="object" class="btn-default"
-                            invisible="state not in ['validate','done']" />
+                            invisible="state not in ['validate','done']" icon="fa-times-circle"/>
+                        <button name="action_view_added_records" string="Added Records"
+                            type="object" class="btn-default"
+                            invisible="state not in ['validate','done']" icon="fa-check-circle" />
                         <button name="action_delete_members" string="Delete Members" type="object"
                             class="btn-default" confirm="Are you sure you want to delete members?"
                             invisible="state not in ['done']" />
@@ -84,6 +87,7 @@
                         <!-- </group> -->
                         <group string="Status">
                             <field name="upload_log" readonly="1" />
+                            <field name="apply_log" readonly="1" />
                         </group>
                     </sheet>
                 </form>

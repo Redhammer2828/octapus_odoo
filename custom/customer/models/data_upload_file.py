@@ -17,7 +17,7 @@ class DataUploadFile(models.Model):
     upload_by = fields.Many2one('res.users', string='Uploaded By', default=lambda self: self.env.user)
     upload_log = fields.Text( string='Log')
     upload_member_ids = fields.One2many('upload.member.line', 'upload_file_id', string='Members')
-    
+    apply_log = fields.Text( string='Apply Log')
     state = fields.Selection([
         ('draft', 'Draft'),
         ('validate', 'Validated'),
@@ -280,45 +280,59 @@ class DataUploadFile(models.Model):
     #     print("State Updated to 'Done'")
 
     def apply_member_upload_wizard(self):
+        # Start measuring time
+        start_time = time.time()
+
+        # Filter validated member lines upfront
         validated_member_lines = self.upload_member_ids.filtered(lambda line: line.upload_member_status != 'rejection')
 
-        # Collect all necessary data upfront
+        # Collect necessary data
         card_types = {line.card_type for line in validated_member_lines if line.upload_member_status == 'new'}
         customer_codes = {line.customer_code for line in validated_member_lines}
         sequence_codes = {(line.sequence_code, line.customer_code) for line in validated_member_lines if line.upload_member_status == 'new'}
 
+        # Fetch related records in bulk
         card_type_records = self.env['card.type'].search([('code', 'in', list(card_types))])
         customer_code_records = self.env['res.partner'].search([('customer_code', 'in', list(customer_codes))])
-        category_records = self.env['partner.category'].search([('name', 'in', [seq[0] for seq in sequence_codes]), ('partner_id.customer_code', 'in', list(customer_codes))])
+        category_records = self.env['partner.category'].search([
+            ('name', 'in', [seq[0] for seq in sequence_codes]),
+            ('partner_id.customer_code', 'in', list(customer_codes))
+        ])
 
-        card_type_dict = {record.code: record for record in card_type_records}
-        customer_code_dict = {record.customer_code: record for record in customer_code_records}
-        category_dict = {(record.name, record.partner_id.customer_code): record for record in category_records}
+        # Create dictionaries for quick lookups
+        card_type_dict = {record.code: record.id for record in card_type_records}
+        customer_code_dict = {record.customer_code: record.id for record in customer_code_records}
+        category_dict = {(record.name, record.partner_id.customer_code): record.id for record in category_records}
 
         new_partner_vals = []
         update_partner_vals = []
         temp_confirm_partner_vals = []
 
+        created_count = 0
+        updated_count = 0
+        confirmed_count = 0
+
         for member_line in validated_member_lines:
             if member_line.upload_member_status == 'new':
-                card_type_record = card_type_dict.get(member_line.card_type)
-                if not card_type_record:
+                card_type_id = card_type_dict.get(member_line.card_type)
+                if not card_type_id:
                     raise ValidationError(f"Card type '{member_line.card_type}' not found.")
 
-                matching_partner = customer_code_dict.get(member_line.customer_code)
-                if not matching_partner:
+                matching_partner_id = customer_code_dict.get(member_line.customer_code)
+                if not matching_partner_id:
                     raise ValidationError(f"Partner with customer code '{member_line.customer_code}' not found.")
 
-                matching_category = category_dict.get((member_line.sequence_code, member_line.customer_code))
-                if not matching_category:
-                    raise ValidationError(f"Category '{member_line.sequence_code}' not found for partner ID {matching_partner.id}.")
+                matching_category_id = category_dict.get((member_line.sequence_code, member_line.customer_code))
+                if not matching_category_id:
+                    raise ValidationError(f"Category '{member_line.sequence_code}' not found for partner ID {matching_partner_id}.")
 
+                # Collect data for new partners
                 new_partner_vals.append({
-                    'card_type_id': card_type_record.id,
+                    'card_type_id': card_type_id,
                     'old_membership_number': member_line.old_membership_number,
                     'name': member_line.member_name,
                     'street': member_line.street,
-                    'parent_customer_id': matching_partner.id,
+                    'parent_customer_id': matching_partner_id,
                     'vehicle_type': member_line.vehicle_type,
                     'vehicle_model': member_line.vehicle_model,
                     'vehicle_mfg_year': member_line.vehicle_mfg_year,
@@ -334,34 +348,67 @@ class DataUploadFile(models.Model):
                     'credit_member_ok': False,
                     'member_type': 'policy',
                     'membership_state': 'confirm',
-                    'member_partner_category_id': matching_category.id,
+                    'member_partner_category_id': matching_category_id,
                     'product_template_id': member_line.package,
                     'mobile': member_line.mobile,
                 })
 
             elif member_line.upload_member_status in ['renewal', 'update']:
+                # Collect data for updating partners
                 update_partner_vals.append((member_line.if_conf_match, {'member_expiry_date': member_line.member_expiry_date}))
 
             elif member_line.upload_member_status == 'exist_temp':
+                # Collect data for confirming temporary partners
                 temp_confirm_partner_vals.append((member_line.if_temp_match, {'membership_state': 'confirm', 'member_expiry_date': member_line.member_expiry_date}))
 
         # Batch create new partners
         if new_partner_vals:
             new_partners = self.env['res.partner'].create(new_partner_vals)
-            print(f"{len(new_partners)} New Partners Created")
+            created_count = len(new_partners)
+            print(f"{created_count} New Partners Created")
+            self.apply_log = f"{created_count} New Partners Created"
 
         # Batch update existing partners
-        for partner_id, vals in update_partner_vals:
-            self.env['res.partner'].browse(partner_id).write(vals)
-            print(f"Partner Updated: {partner_id}")
+        if update_partner_vals:
+            partner_ids, partner_updates = zip(*update_partner_vals)
+            partners_to_update = self.env['res.partner'].browse(partner_ids)
+            for partner, vals in zip(partners_to_update, partner_updates):
+                partner.write(vals)
+            updated_count = len(update_partner_vals)
+            print(f"{updated_count} Partners Updated")
+            self.apply_log = (
+                f"{self.apply_log}, {updated_count} Partners Updated"
+                if self.apply_log else
+                f"{updated_count} Partners Updated"
+            )
 
         # Batch confirm temporary partners
-        for partner_id, vals in temp_confirm_partner_vals:
-            self.env['res.partner'].browse(partner_id).write(vals)
-            print(f"Temp Partner Confirmed: {partner_id}")
+        if temp_confirm_partner_vals:
+            temp_partner_ids, temp_partner_updates = zip(*temp_confirm_partner_vals)
+            temp_partners_to_update = self.env['res.partner'].browse(temp_partner_ids)
+            for partner, vals in zip(temp_partners_to_update, temp_partner_updates):
+                partner.write(vals)
+            confirmed_count = len(temp_confirm_partner_vals)
+            print(f"{confirmed_count} Temp Partners Confirmed")
+            self.apply_log = (
+                f"{self.apply_log}, {confirmed_count} Temp Partners Confirmed"
+                if self.apply_log else
+                f"{confirmed_count} Temp Partners Confirmed"
+            )
 
+        # Measure the time taken
+        end_time = time.time()
+        time_taken = end_time - start_time
+
+        # Ensure apply_log is a string
+        if not self.apply_log:
+            self.apply_log = ""
+
+        # Update the state and log
         self.state = 'done'
-        print("State Updated to 'Done'")
+        self.apply_log += f" in {time_taken:.2f} seconds."
+        print(f"State Updated to 'Done' and apply log updated with time taken: {time_taken:.2f} seconds.")
+
     
     
     def action_cancel(self):
@@ -386,6 +433,17 @@ class DataUploadFile(models.Model):
             'view_mode': 'tree',
             'view_id': self.env.ref('customer.view_upload_member_line_tree').id,
             'domain': [('upload_file_id', '=', self.id), ('upload_member_status', '=', 'rejection')],
+            'context': {'default_upload_file_id': self.id},
+        }
+    
+    def action_view_added_records(self):
+        return {
+            'name': 'Added Members',
+            'type': 'ir.actions.act_window',
+            'res_model': 'upload.member.line',
+            'view_mode': 'tree',
+            'view_id': self.env.ref('customer.view_upload_member_line_tree').id,
+            'domain': [('upload_file_id', '=', self.id), ('upload_member_status', 'in', ['new', 'renewal', 'update', 'exist_temp'])],
             'context': {'default_upload_file_id': self.id},
         }
     

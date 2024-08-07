@@ -5,3 +5,5 @@ from . import membership_cancel_wizard
 from . import member_cancel_upload_wizard
 from . import credit_member_upload_wizard
 from . import service_dispatch_wizard
+from . import service_cash_wizard
+from . import schedule_service_wizard
