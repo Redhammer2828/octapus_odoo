@@ -36,7 +36,7 @@
                             class="oe_highlight" invisible="state != 'initiate'" />
                         <button name="action_schedule_service_check" string="Schedule Service"
                             type="object" class="btn-default"
-                            invisible="state not in ('initiate', 'dispatch')" />
+                            invisible="state not in ('initiate')" />
                         <button name="action_inprogress_service" string="In Progress" type="object"
                             class="oe_highlight" invisible="state != 'dispatch'" />
                         <button name="action_start_service" string="Start" type="object"

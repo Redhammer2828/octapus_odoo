@@ -1,5 +1,6 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
+import datetime
 
 class AAAService(models.Model):
     _name = 'aaa.service'
@@ -30,7 +31,7 @@ class AAAService(models.Model):
     member_id = fields.Many2one(
         'res.partner', 
         string="Member", 
-        domain=[('is_company', '=', False)]
+        domain=[('is_company', '=', False)] 
     )
     created_by = fields.Many2one('res.users', string="Agent", default=lambda self: self.env.user, readonly=True)
     
@@ -391,12 +392,139 @@ class AAAService(models.Model):
     #             'status': self.state,
     #         })
     #         return True
+# -----------------------------------------------------LIMIT WARNING----------------------------------
+    # def action_dispatch_service(self):
+    #     # Ensure we're working with a single record
+    #     self.ensure_one()
 
+    #     service_record = self
+    #     member_id = service_record.member_id.id
+    #     print("ID of Service that User is in:", service_record.id)
+    #     print("ID of MEMBER From SERVICE REC:", member_id)
+
+    #     if not member_id:
+    #         raise ValidationError(_("Member not found in the service record."))
+
+    #     if self.member_type == 'policy':
+    #         # Get all service lines for the member
+    #         service_lines = self.env['aaa.service'].search([
+    #             ('member_id', '=', member_id),
+    #             ('state', '!=', 'initiate'),
+    #             ('member_type', '=', 'policy')
+    #         ])
+    #         print("All services Taken by Member, Service Lines:", service_lines.ids)
+    #         service_lines_info = [(line.product_id.id, line.create_date) for line in service_lines]
+    #         print("Service Lines Info:", service_lines_info)
+
+    #         # Get product_template_id from res.partner
+    #         member = self.env['res.partner'].browse(member_id)
+    #         product_template_id = member.product_template_id.id
+    #         print("Package ID:", product_template_id)
+
+    #         if not product_template_id:
+    #             raise ValidationError(_("Package not found for the member."))
+
+    #         # Match product_template_id with product_template_id in product.package.service
+    #         package_services = self.env['product.package.service'].search([
+    #             ('product_template_id', '=', product_template_id)
+    #         ])
+    #         package_service_product_ids = package_services.mapped('product_id.id')
+    #         print("Packages Services Product IDs:", package_service_product_ids)
+
+    #         service_product_id = self.product_id.id  # Assuming `self.product_id` refers to the current service's product
+
+    #         if service_product_id not in package_service_product_ids:
+    #             # The service is not part of the package; trigger the wizard
+    #             print("SERVICE NOT FOUND IN PACKAGE - Triggering Wizard")
+    #             return {
+    #                 'name': _('Convert to Cash or Credit Service'),
+    #                 'type': 'ir.actions.act_window',
+    #                 'res_model': 'service.dispatch.wizard',
+    #                 'view_mode': 'form',
+    #                 'view_id': self.env.ref('customer.view_service_dispatch_wizard_form').id,
+    #                 'target': 'new',
+    #                 'context': {
+    #                     'default_service_id': self.id,
+    #                 },
+    #             }
+
+    #         if not service_lines_info:
+    #             # No existing services found. Proceeding with dispatch.
+    #             print("No existing services found. Proceeding with dispatch.")
+    #             self.state = 'dispatch'
+    #             self.message_post(body=_("Service dispatched successfully."))
+    #             self.env['service.history'].create({
+    #                 'service_id': self.id,
+    #                 'user': self.env.user.id,
+    #                 'time': fields.Datetime.now(),
+    #                 'status': self.state,
+    #             })
+    #             return True
+    #         else:
+    #             # Case: Existing services - check validity against the package
+    #             service_found = False
+    #             validation_error_message = None
+
+    #             # Check each service line against the package service validity
+    #             for service_product_id, create_date in service_lines_info:
+    #                 print("Checking SERVICE PRODUCT_ID:", service_product_id)
+    #                 print("Created Date:", create_date)
+
+    #                 if service_product_id in package_service_product_ids:
+    #                     service_found = True
+    #                     # Find the corresponding package service to get validity_days
+    #                     package_service = package_services.filtered(lambda s: s.product_id.id == service_product_id)
+    #                     if package_service:
+    #                         validity_days = package_service.quantity
+    #                         print("Package service validity:", validity_days)
+
+    #                         service_date = fields.Datetime.from_string(create_date)
+    #                         print("SERVICE DATE:", service_date)
+    #                         current_date = fields.Datetime.now()
+    #                         print("CURRENT DATE:", current_date)
+    #                         days_difference = (current_date - service_date).days
+    #                         print("Days Difference:", days_difference)
+
+    #                         if validity_days == 1 and days_difference < 1:
+    #                             validation_error_message = _("This service can only be used once per day.")
+    #                         elif days_difference < validity_days:
+    #                             days_left = validity_days - days_difference
+    #                             validation_error_message = _(
+    #                                 "Service limit reached for this period. You can use this service again in {} day(s)."
+    #                             ).format(days_left)
+    #                         else:
+    #                             # Valid service found; no need to trigger wizard
+    #                             print("Valid service found. Skipping wizard.")
+    #                             break
+
+    #                     if validation_error_message:
+    #                         raise ValidationError(validation_error_message)
+
+    #     # If no exceptions have been raised, proceed with dispatch
+    #     self.state = 'dispatch'
+    #     self.message_post(body=_("Service dispatched successfully."))
+    #     self.env['service.history'].create({
+    #         'service_id': self.id,
+    #         'user': self.env.user.id,
+    #         'time': fields.Datetime.now(),
+    #         'status': self.state,
+    #     })
+    #     return True
+   
     def action_dispatch_service(self):
         # Ensure we're working with a single record
         self.ensure_one()
-
+        
+        # ----------------------------------------------------------------------------
+        for record in self:
+            if not record.name:
+                if not record.service_sequence:
+                    date_str = datetime.today().strftime('%Y%m%d')
+                    sequence = self.env['ir.sequence'].next_by_code('aaa.service')
+                    record.name = f'SERV-{date_str}-{sequence[-4:]}'
         service_record = self
+        # -----------------------------------------------------------------------------
+
         member_id = service_record.member_id.id
         print("ID of Service that User is in:", service_record.id)
         print("ID of MEMBER From SERVICE REC:", member_id)
@@ -476,31 +604,65 @@ class AAAService(models.Model):
                         if package_service:
                             validity_days = package_service.quantity
                             print("Package service validity:", validity_days)
-
+ 
                             service_date = fields.Datetime.from_string(create_date)
                             print("SERVICE DATE:", service_date)
                             current_date = fields.Datetime.now()
                             print("CURRENT DATE:", current_date)
                             days_difference = (current_date - service_date).days
                             print("Days Difference:", days_difference)
-
+ 
                             if validity_days == 1 and days_difference < 1:
-                                validation_error_message = _("This service can only be used once per day.")
+                                # validation_error_message = _("This service can only be used once per day.")
+                                print("This service can only be used once per day.")
                             elif days_difference < validity_days:
-                                days_left = validity_days - days_difference
-                                validation_error_message = _(
-                                    "Service limit reached for this period. You can use this service again in {} day(s)."
-                                ).format(days_left)
+                                # validation_error_message = _("Service limit reached for this period.")
+                                   print("SERVICE LIMIT REACHED FOR THIS PERIOD - Triggering Wizard")
+                                   return {
+                                        'name': _('Convert to Cash'),
+                                        'type': 'ir.actions.act_window',
+                                        'res_model': 'service.cash.wizard',
+                                        'view_mode': 'form',
+                                        'view_id': self.env.ref('customer.view_service_cash_wizard_form').id,
+                                        'target': 'new',
+                                        'context': {
+                                            'default_service_id': self.id,
+                                        },
+                                    }
                             else:
                                 # Valid service found; no need to trigger wizard
                                 print("Valid service found. Skipping wizard.")
                                 break
-
+ 
+                            if validity_days == 365 and days_difference < 365:
+                                # validation_error_message = _("This service can only be used once per year.")
+                                print("This service can only be used once per year.")
+                            elif days_difference < validity_days:
+                                # validation_error_message = _("Service limit reached for this period.")
+                                print("Service limit reached for this period.")
+                                return {
+                                        'name': _('Convert to Cash'),
+                                        'type': 'ir.actions.act_window',
+                                        'res_model': 'service.cash.wizard',
+                                        'view_mode': 'form',
+                                        'view_id': self.env.ref('customer.view_service_cash_wizard_form').id,
+                                        'target': 'new',
+                                        'context': {
+                                            'default_service_id': self.id,
+                                        },
+                                    }
+                            else:
+                                # Valid service found; no need to trigger wizard
+                                print("Valid service found. Skipping wizard.")
+                                break
+ 
                         if validation_error_message:
                             raise ValidationError(validation_error_message)
-
+ 
+         
         # If no exceptions have been raised, proceed with dispatch
         self.state = 'dispatch'
+        self.requested_date = fields.Datetime.now()
         self.message_post(body=_("Service dispatched successfully."))
         self.env['service.history'].create({
             'service_id': self.id,
@@ -512,6 +674,33 @@ class AAAService(models.Model):
 
     def action_schedule_service_check(self):
         self.schedule_service_check = True
+        self.state= 'initiate'
+        print("Scheduling the Service - Triggering Wizard")
+        return {
+                        'name': _('Schedule Service'),
+                        'type': 'ir.actions.act_window',
+                        'res_model': 'schedule.service.wizard',
+                        'view_mode': 'form',
+                        'view_id': self.env.ref('customer.schedule_service_wizard_view_form').id,
+                        'target': 'new',
+                        'context': {
+                            'default_service_id': self.id,
+                            },
+                }
+            
+    @api.model
+    def check_and_update_state(self):
+        now=fields.Datetime.now()
+        records= self.search([('state', '=', 'initiate'),('requested_date', '<=', now)])
+        records.write({'state':'dispatch'})
+    
+        for record in records:
+            self.env['service.history'].create({
+                'service_id': record.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': record.state,
+            })
 
     def action_inprogress_service(self):
             self.state = 'inprogress'
