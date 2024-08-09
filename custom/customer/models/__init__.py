@@ -4,6 +4,7 @@ from . import product_category
 from . import product_services
 from . import product_packages
 from . import card_type
+from . import country_code
 from . import member_vehicle_type
 from . import member_vehicle_model
 from . import location
