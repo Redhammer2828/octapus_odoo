@@ -24,3 +24,4 @@ class LocationService(models.Model):
     to_h3index = fields.Integer('to_h3index')
     to_latitude = fields.Float('to_latitude')
     to_location = fields.Char('to_location')
+    to_longitude = fields.Float('to_longitude')

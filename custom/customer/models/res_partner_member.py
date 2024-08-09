@@ -104,7 +104,8 @@ class ResPartnerMembers(models.Model):
     # ---------------------------------------
     cancellation_comment = fields.Text('Cancelation Comment')
     # ----------------------------
-
+    membership_history_ids= fields.One2many('membership.history','history_id', string='Membership History')
+    
     @api.model
     def create(self, vals):
         if self.env.context.get('from_res_partner_member_form'):
@@ -437,3 +438,16 @@ class ResPartnerMembers(models.Model):
     #     if name:
     #         args = [('name', operator, name)] + args
     #     return self.search(args, limit=limit).name_get()
+
+    class MembershipHistory(models.Model):
+        _name = 'membership.history'
+        _description = 'Membership History'
+
+        policy_no = fields.Char(string='Policy Number')
+        vehicle_chasis_no = fields.Char(string='Vehicle Chasis No')
+        vehicle_type = fields.Char(string='Vehicle Type')
+        vehicle_plate = fields.Char(string='Vehicle Plate')
+        member_activate_date = fields.Date(string='Member Activate Date')
+        member_expiry_date = fields.Date(string='Member Expiry Date')
+        card_type_id = fields.Many2one('card.type', string='Card Type')
+        history_id = fields.Many2one('res.partner', string="Replaced Member")

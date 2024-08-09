@@ -1,6 +1,8 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 import datetime
+import requests
+import json
 
 class AAAService(models.Model):
     _name = 'aaa.service'
@@ -238,279 +240,41 @@ class AAAService(models.Model):
         return service
 
     def action_initiate_service(self):
-        self.state = 'initiate'
-
-    # def action_dispatch_service(self):
-    #     service_record = self.env['aaa.service'].search([('id', '=', self.id)], limit=1)
-    #     print("Service ID :",service_record.id)
-    #     member_id = service_record.member_id.id
-    #     print("(res.partner) Member ID:",member_id)
-    #     if not member_id:
-    #         raise ValidationError(_("Member not found in the service record."))
-        
-    #     # Get all service lines for the member
-    #     if self.member_type == 'policy':
-    #         service_lines = self.env['aaa.service'].search([('member_id', '=', member_id)])
-    #         print("All services Taken my Member , Service Lines:",service_lines.id)
-    #         service_lines_info = [(line.product_id.id, line.create_date) for line in service_lines]
-    #         print("Service Lines Info:",service_lines_info)
-
-    #         # Get product_template_id from res.partner
-    #         member = self.env['res.partner'].browse(member_id)
-    #         print("MEMBER :",member)
-    #         product_template_id = member.product_template_id.id
-    #         print("Package ID:",product_template_id)
-    #         if not product_template_id:
-    #             raise ValidationError(_("Package not found for the member."))
-            
-    #         # Match product_template_id with product_template_id in product.package.service
-    #         package_services = self.env['product.package.service'].search([('product_template_id', '=', product_template_id)])
-    #         print("Packages Services:",package_services)
-
-    #         # Check each service line against the package service validity
-    #         for package_service in package_services:
-    #             product_id = package_service.product_id.id
-    #             print("Package Service Product ID:",product_id)
-    #             validity_days = package_service.quantity
-    #             print("Pacakge service validity",validity_days)
-    #             for service_product_id, create_date in service_lines_info:
-    #                 print("SERVICE PRODUCT_ID",service_product_id)
-    #                 print("Created Date",create_date)
-    #                 if service_product_id == product_id:
-    #                     service_date = fields.Datetime.from_string(create_date)
-    #                     print("SERVICE DATE",service_date)
-    #                     current_date = fields.Datetime.now()
-    #                     print("CURRENT DATE",current_date)
-    #                     days_difference = (current_date - service_date).days
-    #                     print("Days Difference:",days_difference)
-
-    #                     if validity_days == 1 and days_difference < 1:
-    #                         raise ValidationError(_("This service can only be used once per day."))
-    #                     elif days_difference < validity_days:
-    #                         raise ValidationError(_("Service limit reached for this period."))
-    #                 else:
-    #                     print("SERVICE NOT FOUND IN PACKAGE")
-    #                     return {
-    #                         'name': _('Convert to Cash or Credit Service'),
-    #                         'type': 'ir.actions.act_window',
-    #                         'res_model': 'service.dispatch.wizard',
-    #                         'view_mode': 'form',
-    #                         'view_id': self.env.ref('customer.view_service_dispatch_wizard_form').id,
-    #                         'target': 'new',
-    #                         'context': {
-    #                             'default_service_id': self.id,
-    #                         },
-    #                     }
-    #     else:
-    #     # If validation passes, update the state to 'dispatch'
-    #         self.state = 'dispatch'
-    #         self.message_post(body=_("Service dispatched successfully."))
-    #         for service in self:
-    #             self.env['service.history'].create({
-    #                     'service_id': service.id,
-    #                     'user': self.env.user.id,
-    #                     'time': fields.Datetime.now(),
-    #                     'status': service.state,  
-    #                 })
-    #             return True
-
-    # def action_dispatch_service(self):
-    #     self.ensure_one()  # Ensure we're working with a single record
-
-    #     service_record = self
-    #     print("ID of Service that User In :", service_record.id)
-    #     member_id = service_record.member_id.id
-    #     print("ID of MEMBER From SERVICE REC:", member_id)
-    #     if not member_id:
-    #         raise ValidationError(_("Member not found in the service record."))
-
-    #     # Get all service lines for the member
-    #     if self.member_type == 'policy':
-    #         service_lines = self.env['aaa.service'].search([('member_id', '=', member_id), ('state', '!=', 'initiate')])
-    #         print("All services Taken by Member , Service Lines:", service_lines.ids)
-    #         service_lines_info = [(line.product_id.id, line.create_date) for line in service_lines]
-    #         print("Service Lines Info:", service_lines_info)
-
-    #         # Get product_template_id from res.partner
-    #         member = self.env['res.partner'].browse(member_id)
-    #         print("ID of Policy Member :", member.id)
-    #         product_template_id = member.product_template_id.id
-    #         print("Package ID:", product_template_id)
-    #         if not product_template_id:
-    #             raise ValidationError(_("Package not found for the member."))
-
-    #         # Match product_template_id with product_template_id in product.package.service
-    #         package_services = self.env['product.package.service'].search([('product_template_id', '=', product_template_id)])
-    #         print("Packages Services:", package_services.product_id.ids)
-
-    #         service_found = False
-
-    #         # Check each service line against the package service validity
-    #         for package_service in package_services:
-    #             product_id = package_service.product_id.id
-    #             print("Package Service Product ID:", product_id)
-    #             validity_days = package_service.quantity
-    #             print("Package service validity", validity_days)
-    #             for service_product_id, create_date in service_lines_info:
-    #                 print("SERVICE PRODUCT_ID", service_product_id)
-    #                 print("Created Date", create_date)
-    #                 if service_product_id == product_id:
-    #                     service_found = True
-    #                     service_date = fields.Datetime.from_string(create_date)
-    #                     print("SERVICE DATE", service_date)
-    #                     current_date = fields.Datetime.now()
-    #                     print("CURRENT DATE", current_date)
-    #                     days_difference = (current_date - service_date).days
-    #                     print("Days Difference:", days_difference)
-
-    #                     if validity_days == 1 and days_difference < 1:
-    #                         raise ValidationError(_("This service can only be used once per day."))
-    #                     elif days_difference < validity_days:
-    #                         raise ValidationError(_("Service limit reached for this period."))
-
-    #         if not service_found:
-    #             print("SERVICE NOT FOUND IN PACKAGE")
-    #             return {
-    #                 'name': _('Convert to Cash or Credit Service'),
-    #                 'type': 'ir.actions.act_window',
-    #                 'res_model': 'service.dispatch.wizard',
-    #                 'view_mode': 'form',
-    #                 'view_id': self.env.ref('customer.view_service_dispatch_wizard_form').id,
-    #                 'target': 'new',
-    #                 'context': {
-    #                     'default_service_id': self.id,
-    #                 },
-    #             }
-    #     else:
-    #         # If validation passes, update the state to 'dispatch'
-    #         self.state = 'dispatch'
-    #         self.message_post(body=_("Service dispatched successfully."))
-    #         self.env['service.history'].create({
-    #             'service_id': self.id,
-    #             'user': self.env.user.id,
-    #             'time': fields.Datetime.now(),
-    #             'status': self.state,
-    #         })
-    #         return True
-# -----------------------------------------------------LIMIT WARNING----------------------------------
-    # def action_dispatch_service(self):
-    #     # Ensure we're working with a single record
-    #     self.ensure_one()
-
-    #     service_record = self
-    #     member_id = service_record.member_id.id
-    #     print("ID of Service that User is in:", service_record.id)
-    #     print("ID of MEMBER From SERVICE REC:", member_id)
-
-    #     if not member_id:
-    #         raise ValidationError(_("Member not found in the service record."))
-
-    #     if self.member_type == 'policy':
-    #         # Get all service lines for the member
-    #         service_lines = self.env['aaa.service'].search([
-    #             ('member_id', '=', member_id),
-    #             ('state', '!=', 'initiate'),
-    #             ('member_type', '=', 'policy')
-    #         ])
-    #         print("All services Taken by Member, Service Lines:", service_lines.ids)
-    #         service_lines_info = [(line.product_id.id, line.create_date) for line in service_lines]
-    #         print("Service Lines Info:", service_lines_info)
-
-    #         # Get product_template_id from res.partner
-    #         member = self.env['res.partner'].browse(member_id)
-    #         product_template_id = member.product_template_id.id
-    #         print("Package ID:", product_template_id)
-
-    #         if not product_template_id:
-    #             raise ValidationError(_("Package not found for the member."))
-
-    #         # Match product_template_id with product_template_id in product.package.service
-    #         package_services = self.env['product.package.service'].search([
-    #             ('product_template_id', '=', product_template_id)
-    #         ])
-    #         package_service_product_ids = package_services.mapped('product_id.id')
-    #         print("Packages Services Product IDs:", package_service_product_ids)
-
-    #         service_product_id = self.product_id.id  # Assuming `self.product_id` refers to the current service's product
-
-    #         if service_product_id not in package_service_product_ids:
-    #             # The service is not part of the package; trigger the wizard
-    #             print("SERVICE NOT FOUND IN PACKAGE - Triggering Wizard")
-    #             return {
-    #                 'name': _('Convert to Cash or Credit Service'),
-    #                 'type': 'ir.actions.act_window',
-    #                 'res_model': 'service.dispatch.wizard',
-    #                 'view_mode': 'form',
-    #                 'view_id': self.env.ref('customer.view_service_dispatch_wizard_form').id,
-    #                 'target': 'new',
-    #                 'context': {
-    #                     'default_service_id': self.id,
-    #                 },
-    #             }
-
-    #         if not service_lines_info:
-    #             # No existing services found. Proceeding with dispatch.
-    #             print("No existing services found. Proceeding with dispatch.")
-    #             self.state = 'dispatch'
-    #             self.message_post(body=_("Service dispatched successfully."))
-    #             self.env['service.history'].create({
-    #                 'service_id': self.id,
-    #                 'user': self.env.user.id,
-    #                 'time': fields.Datetime.now(),
-    #                 'status': self.state,
-    #             })
-    #             return True
-    #         else:
-    #             # Case: Existing services - check validity against the package
-    #             service_found = False
-    #             validation_error_message = None
-
-    #             # Check each service line against the package service validity
-    #             for service_product_id, create_date in service_lines_info:
-    #                 print("Checking SERVICE PRODUCT_ID:", service_product_id)
-    #                 print("Created Date:", create_date)
-
-    #                 if service_product_id in package_service_product_ids:
-    #                     service_found = True
-    #                     # Find the corresponding package service to get validity_days
-    #                     package_service = package_services.filtered(lambda s: s.product_id.id == service_product_id)
-    #                     if package_service:
-    #                         validity_days = package_service.quantity
-    #                         print("Package service validity:", validity_days)
-
-    #                         service_date = fields.Datetime.from_string(create_date)
-    #                         print("SERVICE DATE:", service_date)
-    #                         current_date = fields.Datetime.now()
-    #                         print("CURRENT DATE:", current_date)
-    #                         days_difference = (current_date - service_date).days
-    #                         print("Days Difference:", days_difference)
-
-    #                         if validity_days == 1 and days_difference < 1:
-    #                             validation_error_message = _("This service can only be used once per day.")
-    #                         elif days_difference < validity_days:
-    #                             days_left = validity_days - days_difference
-    #                             validation_error_message = _(
-    #                                 "Service limit reached for this period. You can use this service again in {} day(s)."
-    #                             ).format(days_left)
-    #                         else:
-    #                             # Valid service found; no need to trigger wizard
-    #                             print("Valid service found. Skipping wizard.")
-    #                             break
-
-    #                     if validation_error_message:
-    #                         raise ValidationError(validation_error_message)
-
-    #     # If no exceptions have been raised, proceed with dispatch
-    #     self.state = 'dispatch'
-    #     self.message_post(body=_("Service dispatched successfully."))
-    #     self.env['service.history'].create({
-    #         'service_id': self.id,
-    #         'user': self.env.user.id,
-    #         'time': fields.Datetime.now(),
-    #         'status': self.state,
-    #     })
-    #     return True
+        self.state = 'initiated'
    
+    def action_order_response(self, order_number, status, phone_number, vehicle_chasis_no):
+        url = "https://gioapi-gy-dev.livelocal.delivery/aaa-customer/whatsapp/whatsapp-Notification"
+        payload = json.dumps({
+            "order_number": order_number,
+            "status": status,
+            "phone_number": phone_number,
+            "vehicle_chasis_no": vehicle_chasis_no
+        })
+
+        headers = {'Content-Type': 'application/json'}
+        try:
+            response = requests.post(url, headers=headers, data=payload)
+            
+            # Debug: Print raw response text
+            print("Response Text:", response.text)
+
+            if response.status_code == 200:
+                try:
+                    response_text = response.json()
+                    self.message_post(body=_("Notification sent successfully: %s") % response_text)
+                    print("Response sent successfully")
+                except json.JSONDecodeError:
+                    # Handle non-JSON response here
+                    self.message_post(body=_("Non-JSON response received: %s") % response.text)
+                    print("Non-JSON response received:", response.text)
+            else:
+                self.message_post(body=_("Failed to send notification, status code: %s, message: %s") % (response.status_code, response.text))
+                print("Failed to send, status code:", response.status_code, "message:", response.text)
+                
+        except requests.exceptions.RequestException as e:
+            self.message_post(body=_("Request failed: %s") % str(e))
+            print("Request failed:", str(e))
+
     def action_dispatch_service(self):
         # Ensure we're working with a single record
         self.ensure_one()
@@ -560,6 +324,15 @@ class AAAService(models.Model):
 
             service_product_id = self.product_id.id  # Assuming `self.product_id` refers to the current service's product
 
+             # -------------------------------------------------------------------------------------------------- 
+            order_number = self.name
+            status = self.state
+            phone_number = self.member_contact_no
+            vehicle_chasis_no = self.vehicle_chasis_no  # Corrected field name
+
+            self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
+            print(f"checking value of order:{order_number},{status}, {phone_number}, {vehicle_chasis_no}")
+        # -------------------------------------------------------------------------------------------------- 
             if service_product_id not in package_service_product_ids:
                 # The service is not part of the package; trigger the wizard
                 print("SERVICE NOT FOUND IN PACKAGE - Triggering Wizard")
@@ -586,6 +359,7 @@ class AAAService(models.Model):
                     'time': fields.Datetime.now(),
                     'status': self.state,
                 })
+
                 return True
             else:
                 # Case: Existing services - check validity against the package
@@ -658,10 +432,20 @@ class AAAService(models.Model):
  
                         if validation_error_message:
                             raise ValidationError(validation_error_message)
- 
-         
-        # If no exceptions have been raised, proceed with dispatch
+        
+        # -------------------------------------------------------------------------------------------------- 
+        order_number = self.name
+        status = self.state
+        phone_number = self.member_contact_no
+        vehicle_chasis_no = self.vehicle_chasis_no  # Corrected field name
+
+        self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
+        print(f"checking value of order:{order_number},{status}, {phone_number}, {vehicle_chasis_no}")
+        # -------------------------------------------------------------------------------------------------- 
+
+
         self.state = 'dispatch'
+        print("DISPATCHEDDDD",self.state)
         self.requested_date = fields.Datetime.now()
         self.message_post(body=_("Service dispatched successfully."))
         self.env['service.history'].create({

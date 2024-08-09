@@ -183,11 +183,9 @@
                                 <page name="internal_notes" string="Internal Notes">
                                     <field name="comment" placeholder="Internal note..." />
                                 </page>
-                                <!-- <page name="membership_history" string="Membership History"
-                                attrs="{'invisible': [('credit_member_ok','=',True)]}">
-                                    <field name="membership_history" context="{'form_view_ref':
-                                'aaa_membership.view_res_partner_member_history_form'}">
-                                        <tree>
+                                <page name="membership_history" string="Membership History">
+                                <field name="membership_history_ids">
+                                        <tree create="false">
                                             <field name="vehicle_chasis_no"/>
                                             <field name="vehicle_type"/>
                                             <field name="vehicle_plate"/>
@@ -197,7 +195,7 @@
                                             <field name="card_type_id" options="{'no_create_edit':1}"/>
                                         </tree>
                                     </field>
-                                </page> -->
+                                </page>
                             </notebook>
                         </group>
                     </sheet>
@@ -216,7 +214,6 @@
                     <field name="policy_no" />
                     <field name="old_membership_number" />
                     <field name="mobile" />
-                    <!-- <field name="email" /> -->
                     <field name="vehicle_chasis_no" />
                     <field name="vehicle_type" />
                     <field name="vehicle_plate" />

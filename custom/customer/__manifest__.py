@@ -14,6 +14,7 @@
         'views/res_partner_member_cancel.xml',
         'views/config_product.xml',
         'views/card_type.xml',
+        'views/country_code.xml',
         'views/product_packages.xml',
         'views/product_category.xml',
         'views/member_vehicle_type.xml',
