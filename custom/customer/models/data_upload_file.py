@@ -1,8 +1,9 @@
-from odoo import models, fields, api
+from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
 from collections import defaultdict, Counter
 from datetime import datetime
 import time
+import re
 
 class DataUploadFile(models.Model):
     _name = 'data.upload.file'
@@ -88,62 +89,84 @@ class DataUploadFile(models.Model):
 # -----------------------------------------------------------NEW CODE-----------------------------------------------------------------------------------             
     def action_validate_policy_data(self):
         start_time = time.time()
+        country_code_pattern = r'^[A-Z]{2}$'
         
-        customer_codes = {member_line.customer_code for member_line in self.upload_member_ids}
-        chassis_numbers = {member_line.vehicle_chasis_no.strip().upper() for member_line in self.upload_member_ids if member_line.vehicle_chasis_no.strip().upper() not in ['nan', '']}
-        
-        matching_partners = self.env['res.partner'].search([('customer_code', 'in', list(customer_codes))])
-        partner_ids = matching_partners.ids
-        
-        partner_chassis = self.env['res.partner'].search([('parent_customer_id', 'in', partner_ids), ('member_type', '=', 'policy')])
-        partner_chassis_dict = {partner.vehicle_chasis_no.strip().upper(): partner for partner in partner_chassis}
+        print("Upload Member IDs:", self.upload_member_ids)
         
         for member_line in self.upload_member_ids:
-            excel_chassis_no = member_line.vehicle_chasis_no.strip().upper()
+            print("---------------------------------------------------------------------------")
+            # Validate required fields and date format
+            # self.validate_member_line(member_line)
+
+            country_code = member_line.country.strip().upper()
+            print("EXCEL COUNTRY CODE", country_code)
+            if  not re.match(country_code_pattern,country_code):
+                raise ValidationError(_("INVALID COUNTRY CODE FORMAT....."))
+            country= self.env['country.code'].search([('c_code', '=', country_code)], limit=1)
+            print("DB country code.....", country)
+            if not country:
+                raise ValidationError(_("THE UPLODED COUNTRY CODE DOESN'T EXISTss..."))
+
+            print("Processing member_line:", member_line)
+            matching_partners = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)])
+
+            print("EXCEL--- CUSTOMER CODE-NAME-----", member_line.customer_code)
+            print("ID OF CUSTOMER CODE MATCH in DB--------", matching_partners.ids)
             
-            if excel_chassis_no in ['nan', '']:
-                member_line.update({'upload_member_status': 'rejection', 'comment': "*Vehicle Chasis Number Does Not Exist!"})
-                print("[FAIL]")
-                continue
+            match_found = False  # Flag to indicate if a match is found for the current member_line
             
-            matching_partner = next((p for p in matching_partners if p.customer_code == member_line.customer_code), None)
-            
-            if not matching_partner:
+            if not matching_partners:
+            # If no matching partners are found, update the member line status and continue to the next member line
                 member_line.update({'upload_member_status': 'rejection', 'comment': "*Customer not exist!"})
                 print("No matching customer found.")
                 continue
             
-            member = partner_chassis_dict.get(excel_chassis_no)
-            
-            if member:
-                self.check_member_details(member, member_line)
-            else:
-                expiry_date = fields.Date.from_string(member_line.member_expiry_date)
-                activate_date = fields.Date.from_string(member_line.member_activate_date)
+            for matching_partner in matching_partners:
+                member_list = self.env['res.partner'].search([('parent_customer_id', '=', matching_partner.id),('member_type', '=', 'policy')])
+
+                print("MEMBERs LIST------", member_list)
                 
-                if expiry_date < activate_date:
-                    member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date cannot be earlier than Activation Date!"})
-                else:
-                    member_line.update({'upload_member_status': 'new', 'comment': "**Not exist in System*New Member"})
-        
+                for member in member_list:
+                    excel_chassis_no = member_line.vehicle_chasis_no.strip().upper()
+                    db_chassis_no = member.vehicle_chasis_no.strip().upper()
+                    if excel_chassis_no in ['nan', '']:  # Corrected condition
+                        member_line.update({'upload_member_status': 'rejection', 'comment': "*Vehicle Chasis Number Does Not Exist!"})
+                        print("[FAIL]")
+                    if excel_chassis_no == db_chassis_no:
+                        print("Match found for member ID:", member.id)
+                        self.check_member_details(member, member_line)
+                        match_found = True
+                        break  # Exit the loop once a match is found
+                    else:
+                        print("[FAIL]")
+                if match_found:
+                    break  # Exit the outer loop if a match is found
+            
+            # If no match is found for the current member_line, update its status
+            if not match_found:
+                    expiry_date = fields.Date.from_string(member_line.member_expiry_date)
+                    activate_date = fields.Date.from_string(member_line.member_activate_date)
+                    
+                    if expiry_date <= activate_date:
+                        member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date cannot be earlier than or equal to the Activation Date!"})
+                    else:
+                        member_line.update({'upload_member_status': 'new', 'comment': "**Not exist in System*New Member"})
+                        
         end_time = time.time()
-        processing_time = end_time - start_time
+        processing_time = end_time - start_time  # Calculate the processing time
         
+        # Calculate counts
         total_count = len(self.upload_member_ids)
-        status_counts = Counter(member.upload_member_status for member in self.upload_member_ids)
-        
-        rejected_count = status_counts['rejection']
-        new_member_count = status_counts['new']
-        updated_member_count = status_counts['update']
-        renewal_member_count = status_counts['renewal']
-        added_member_count = total_count - rejected_count
-        
-        self.upload_log = (f"Total Records: {total_count} | Rejected Records: {rejected_count} | Added Records: {added_member_count} | "
-                        f"New Records: {new_member_count} | Updated Records: {updated_member_count} | Renewal Records: {renewal_member_count} | "
-                        f"Time to Process: {processing_time} seconds")
+        rejected_count = Counter(member.upload_member_status for member in self.upload_member_ids)['rejection']
+        new_member_count = Counter(member.upload_member_status for member in self.upload_member_ids)['new']
+        updated_member_count = Counter(member.upload_member_status for member in self.upload_member_ids)['update']
+        renewal_member_count = Counter(member.upload_member_status for member in self.upload_member_ids)['renewal']
+        added_member_count = total_count - rejected_count  # Calculate the count of added records
+
+        # Update the upload_log field with counts and processing time
+        self.upload_log = f"Total Records: {total_count} | Rejected Records: {rejected_count} | Added Records: {added_member_count} | New Records: {new_member_count} | Updated Records: {updated_member_count} | Renewal Records: {renewal_member_count} | Time to Process: {processing_time} seconds"  
         
         self.state = 'validate'
-
 #------NEW MEMBERCHIP EXPIRY DATE ADN ACTIVATION CHECK ADDED CODE------
     def check_member_details(self, member, member_line):
         print("Checking details for member ID:", member.id)
