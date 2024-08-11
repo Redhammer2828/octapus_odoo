@@ -26,6 +26,9 @@ class UploadMemberWizard(models.TransientModel):
         except Exception as e:
             raise UserError(f'Error reading Excel file: {e}')
 
+        # Fetch valid country codes
+        valid_country_codes = set(self.env['country.code'].search([]).mapped('c_code'))
+        
         # Excel validation Check 
         required_fields = ['vehicle_chasis_no', 'name', 'customer_code', 'member_expiry_date','card_type','country','invoice_ref_date','package_id','category_code']
         seen_vehicle_chasis_no = set()
@@ -77,7 +80,10 @@ class UploadMemberWizard(models.TransientModel):
             if len(mobile_str) == 1 or set(mobile_str) == {'0'}:
                 row_errors.append(f'Field "mobile" must not be a single digit or only zeros. Row: {index + 2}.')
 
-            
+            # Country code validation
+            country_code = row.get('country')
+            if pd.notna(country_code) and country_code not in valid_country_codes:
+                row_errors.append(f'Invalid country code "{country_code}". Row: {index + 2}.')
             #------------------------------------------------------------------------------------ 
             if row_errors:
                 errors.extend(row_errors)
@@ -107,7 +113,8 @@ class UploadMemberWizard(models.TransientModel):
                 'invoice_ref_date': row.get('invoice_ref_date'),
                 'member_expiry_date': row.get('member_expiry_date'),
                 'member_activate_date': row.get('member_activate_date'),
-                'comment': row.get('remarks'),
+                # 'comment': row.get('remarks'),
+                'remarks': row.get('remarks'),
                 'package': row.get('package_id'),
                 'customer_code': row.get('customer_code'),
                 'sequence_code': row.get('category_code'),

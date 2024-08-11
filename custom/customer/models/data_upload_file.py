@@ -77,10 +77,11 @@ class DataUploadFile(models.Model):
         new_member_count = status_counts['new']
         updated_member_count = status_counts['update']
         renewal_member_count = status_counts['renewal']
+        replaced_member_count = status_counts['replace']
         added_member_count = total_count - rejected_count
         
         self.upload_log = (f"Total Records: {total_count} | Rejected Records: {rejected_count} | Added Records: {added_member_count} | "
-                        f"New Records: {new_member_count} | Updated Records: {updated_member_count} | Renewal Records: {renewal_member_count} | "
+                        f"New Records: {new_member_count} | Updated Records: {updated_member_count} | Renewal Records: {renewal_member_count} | Replace Records: {replaced_member_count} | "
                         f"Time to Process: {processing_time} seconds")
         
         self.state = 'validate'
@@ -537,6 +538,7 @@ class UploadMemberLine(models.Model):
     
     delivery_ref_date = fields.Date(string='Delivery Reference Date')
     comment = fields.Text(string='Comment')
+    remarks = fields.Text('Remarks')
     sequence_code = fields.Char(string='Sequence Code')
 
     card_type = fields.Char('Card Type')
@@ -545,7 +547,6 @@ class UploadMemberLine(models.Model):
     region_code = fields.Char('Region Code')
     vehicle_reg_country = fields.Char('Vehicle Reg Country')
     vehicle_emirate = fields.Char('Vehicle Emirate')
-    remarks = fields.Char('Remarks')
 
     # Custom- Jkc logic
     if_temp_match = fields.Integer('Temp Match ID')
