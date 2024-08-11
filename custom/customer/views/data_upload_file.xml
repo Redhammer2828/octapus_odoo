@@ -80,6 +80,7 @@
                                 <field name="delivery_ref_date" />
                                 <field name="card_type" />
                                 <field name="comment" />
+                                <field name="remarks" />
                                 <field name="sequence_code" />
                                 <field name="upload_member_status" />
                             </tree>
@@ -128,6 +129,7 @@
                     <field name="delivery_ref_date" />
                     <field name="card_type" />
                     <field name="comment" />
+                    <field name="remarks" />
                     <field name="sequence_code" />
                     <field name="upload_member_status" />
                 </tree>
