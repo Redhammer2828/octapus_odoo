@@ -369,6 +369,7 @@ class DataUploadFile(models.Model):
                     'member_type': 'policy',
                     'membership_state': 'confirm',
                     'member_partner_category_id': matching_category.id if matching_category else None,
+                    'product_template_id': member_line.package,
                     # Add more fields to create as needed
                 })
 
