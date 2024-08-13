@@ -43,8 +43,27 @@ stages:
           $(tag)
     - task: SSH@0
       inputs:
+        condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'alpha'))
         sshEndpoint: 'carhire-alpha'
         runOptions: 'commands'
         failOnStdErr: false
+        commands: '/startscripts/aaa-odoo.sh'
+        readyTimeout: '20000'
+    
+    - task: SSH@0
+      condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'qa'))
+      inputs:
+        sshEndpoint: 'carhire-uat'
+        failOnStdErr: false
+        runOptions: 'commands'
+        commands: '/startscripts/aaa-odoo-qa.sh'
+        readyTimeout: '20000'
+
+    - task: SSH@0
+      condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'uat'))
+      inputs:
+        sshEndpoint: 'carhire-uat'
+        failOnStdErr: false
+        runOptions: 'commands'
         commands: '/startscripts/aaa-odoo.sh'
         readyTimeout: '20000'
