@@ -6,4 +6,5 @@ class CountryCode(models.Model):
 
     c_code = fields.Char(string='Country Code', required=True)
     country = fields.Char(string= 'Country', required=True)
- 
+    Test = fields.Char(string='Test')
+    

@@ -28,7 +28,8 @@ class UploadMemberWizard(models.TransientModel):
 
         # Fetch valid country codes
         valid_country_codes = set(self.env['country.code'].search([]).mapped('c_code'))
-        
+        valid_category_codes = set(self.env['partner.category'].search([]).mapped('name'))
+        valid_package_records = set(self.env['product.template'].search([]).mapped('id'))
         # Excel validation Check 
         required_fields = ['vehicle_chasis_no', 'name', 'customer_code', 'member_expiry_date','card_type','country','invoice_ref_date','package_id','category_code']
         seen_vehicle_chasis_no = set()
@@ -84,6 +85,16 @@ class UploadMemberWizard(models.TransientModel):
             country_code = row.get('country')
             if pd.notna(country_code) and country_code not in valid_country_codes:
                 row_errors.append(f'Invalid country code "{country_code}". Row: {index + 2}.')
+
+            #Category code validation
+            category_code = row.get('category_code')
+            if pd.notna(category_code) and category_code not in valid_category_codes:
+                row_errors.append(f'Invalid category code "{category_code}". Row: {index + 2}.')
+ 
+            #Package ID validation
+            package_id = row.get('package_id')
+            if pd.notna(package_id) and package_id not in valid_package_records:
+                row_errors.append(f'Invalid Package ID "{package_id}". Row: {index + 2}.')
             #------------------------------------------------------------------------------------ 
             if row_errors:
                 errors.extend(row_errors)
