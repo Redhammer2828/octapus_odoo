@@ -188,7 +188,7 @@
             <field name="name">res.partner.member.tree</field>
             <field name="model">res.partner</field>
             <field name="arch" type="xml">
-                <tree string="Policy Members" delete="false">
+                <tree string="Policy Members">
                     <field name="id" />
                     <field name="ref_num" />
                     <field name="name" string="NAME"/>

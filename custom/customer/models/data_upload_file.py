@@ -320,18 +320,18 @@ class DataUploadFile(models.Model):
             member_activate_date = fields.Date.from_string(member_line.member_activate_date)
 
             # Update invoice_ref_date and member_activate_date based on the current month
-            if member_activate_date.month != current_month:
-                new_invoice_ref_date = member_activate_date.replace(month=current_month, year=current_year)
-                member_line.update({
-                    'invoice_ref_date': new_invoice_ref_date,
-                    'member_activate_date': new_invoice_ref_date,
-                })
-                print(f"Updated member_activate_date and invoice_ref_date to {new_invoice_ref_date} for member {member_line.member_name}")
-            else:
-                member_line.update({
-                    'member_activate_date': member_line.invoice_ref_date,
-                })
-                print(f"Set member_activate_date to invoice_ref_date for member {member_line.member_name}")
+            # if member_activate_date.month != current_month:
+            #     new_invoice_ref_date = member_activate_date.replace(month=current_month, year=current_year)
+            #     member_line.update({
+            #         'invoice_ref_date': new_invoice_ref_date,
+            #         'member_activate_date': new_invoice_ref_date,
+            #     })
+            #     print(f"Updated member_activate_date and invoice_ref_date to {new_invoice_ref_date} for member {member_line.member_name}")
+            # else:
+            #     member_line.update({
+            #         'member_activate_date': member_line.invoice_ref_date,
+            #     })
+            #     print(f"Set member_activate_date to invoice_ref_date for member {member_line.member_name}")
 
             # Handle 'new' status
             if member_line.upload_member_status == 'new':
