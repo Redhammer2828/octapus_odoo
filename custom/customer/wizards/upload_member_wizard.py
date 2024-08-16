@@ -20,33 +20,41 @@ class UploadMemberWizard(models.TransientModel):
         if not self.file:
             raise UserError('Please select a file to upload.')
 
+        # Decode the file content
         file_content = base64.b64decode(self.file)
         try:
             excel_data = pd.read_excel(io.BytesIO(file_content))
         except Exception as e:
             raise UserError(f'Error reading Excel file: {e}')
 
-        # Fetch valid country codes
+        # Pre-fetch valid data for validation
         valid_country_codes = set(self.env['country.code'].search([]).mapped('c_code'))
         valid_category_codes = set(self.env['partner.category'].search([]).mapped('name'))
-        valid_package_records = set(self.env['product.template'].search([]).mapped('id'))
-        # Excel validation Check 
-        required_fields = ['vehicle_chasis_no', 'name', 'customer_code', 'member_expiry_date','card_type','country','invoice_ref_date','package_id','category_code']
-        seen_vehicle_chasis_no = set()
-        errors = []
+        valid_package_ids = set(self.env['product.template'].search([]).mapped('id'))
+
+        # Define required fields and regex patterns
+        required_fields = [
+            'vehicle_chasis_no', 'name', 'customer_code', 'member_expiry_date', 'card_type', 
+            'country', 'invoice_ref_date', 'package_id', 'category_code'
+        ]
         date_format_regex = re.compile(r'^\d{2}/\d{2}/\d{4}$')
-        
-        # Data Upload Function 
+        seen_vehicle_chasis_no = set()
+
+        errors = []
         member_lines = []
+
+        # Iterate over the rows in the Excel data
         for index, row in excel_data.iterrows():
             row_errors = []
-            mobile_str = "" 
+            mobile_str = ""
 
+            # Check required fields
             for field in required_fields:
                 if pd.isna(row.get(field)) or row.get(field) == '':
                     row_errors.append(f'Field "{field}" is required and cannot be empty. Row: {index + 2}.')
 
-            for date_field in ['member_expiry_date', 'member_activate_date' , 'invoice_ref_date']:
+            # Validate date fields
+            for date_field in ['member_expiry_date', 'member_activate_date', 'invoice_ref_date']:
                 date_value = row.get(date_field)
                 if pd.notna(date_value):
                     if isinstance(date_value, (pd.Timestamp, datetime)):
@@ -54,57 +62,48 @@ class UploadMemberWizard(models.TransientModel):
                     if not isinstance(date_value, str) or not date_format_regex.match(date_value):
                         row_errors.append(f'Field "{date_field}" must be in dd/mm/yyyy format. Row: {index + 2}.')
 
+            # Check for duplicate vehicle chassis numbers
             vehicle_chasis_no = row.get('vehicle_chasis_no')
-
             if vehicle_chasis_no in seen_vehicle_chasis_no:
                 row_errors.append(f'Duplicate value "{vehicle_chasis_no}" found in "vehicle_chasis_no". Row: {index + 2}.')
             else:
                 seen_vehicle_chasis_no.add(vehicle_chasis_no)
-            #----------------------------------------------------ERROR--------------------------------- 
-            # mobile = row.get('mobile')
-            # if pd.notna(mobile) and not re.match(r'^\d+$', str(mobile)):
-            #     row_errors.append(f'Field "mobile" must contain only numbers. Row: {index + 1}.')
-            #----------------------------------------------------ERROR--------------------------------- 
+
+            # Validate mobile field
             mobile = row.get('mobile')
-            # if not pd.notna(mobile):
-            #     row_errors.append(f'Field "mobile" Empty. Row: {index + 2}.')
             if mobile and pd.notna(mobile):
-                mobile_str = str(mobile).strip()
-                mobile_str = mobile_str.split(".")[0]
-                # print(f"Row {index + 1}: mobile_str='{mobile_str}'")
-                if not mobile_str:
+                mobile_str = str(mobile).strip().split(".")[0]
+                if not mobile_str.isdigit():
                     row_errors.append(f'Field "mobile" must contain only numbers. Row: {index + 2}.')
-                if mobile_str:
-                    if not mobile_str.isdigit():
-                        row_errors.append(f'Field "mobile" must contain only numbers. Row: {index + 2}.')
-                # Additional check for single digit or only zeros
             if len(mobile_str) == 1 or set(mobile_str) == {'0'}:
                 row_errors.append(f'Field "mobile" must not be a single digit or only zeros. Row: {index + 2}.')
 
-            # Country code validation
+            # Validate country code
             country_code = row.get('country')
             if pd.notna(country_code) and country_code not in valid_country_codes:
                 row_errors.append(f'Invalid country code "{country_code}". Row: {index + 2}.')
 
-            #Category code validation
+            # Validate category code
             category_code = row.get('category_code')
             if pd.notna(category_code) and category_code not in valid_category_codes:
                 row_errors.append(f'Invalid category code "{category_code}". Row: {index + 2}.')
- 
-            #Package ID validation
+
+            # Validate package ID
             package_id = row.get('package_id')
-            if pd.notna(package_id) and package_id not in valid_package_records:
+            if pd.notna(package_id) and package_id not in valid_package_ids:
                 row_errors.append(f'Invalid Package ID "{package_id}". Row: {index + 2}.')
-            #------------------------------------------------------------------------------------ 
+
+            # If any errors are found for the current row, accumulate them and skip to the next row
             if row_errors:
                 errors.extend(row_errors)
                 continue
 
+            # Prepare data for creating member lines
             member_line_data = {
                 'card_type': row['card_type'],
-                'old_membership_number': row['old_membership_number'],
+                'old_membership_number': row.get('old_membership_number'),
                 'member_name': row.get('name'),
-                'mobile': row.get('mobile'),
+                'mobile': mobile_str,
                 'street': row.get('address'),
                 'state': row.get('emirate'),
                 'country': row.get('country'),
@@ -124,7 +123,6 @@ class UploadMemberWizard(models.TransientModel):
                 'invoice_ref_date': row.get('invoice_ref_date'),
                 'member_expiry_date': row.get('member_expiry_date'),
                 'member_activate_date': row.get('member_activate_date'),
-                # 'comment': row.get('remarks'),
                 'remarks': row.get('remarks'),
                 'package': row.get('package_id'),
                 'customer_code': row.get('customer_code'),
@@ -132,10 +130,12 @@ class UploadMemberWizard(models.TransientModel):
             }
             member_lines.append((0, 0, member_line_data))
 
+        # Raise accumulated errors if any
         if errors:
             error_message = "\n".join(errors)
             raise UserError(f'Errors found in the uploaded file:\n{error_message}')
 
+        # Create data upload file record
         data_upload_file = self.env['data.upload.file'].create({
             'name': self.name,
             'file_type': self.file_type,
@@ -145,6 +145,7 @@ class UploadMemberWizard(models.TransientModel):
             'upload_member_ids': member_lines
         })
 
+        # Return the form view of the created record
         return {
             'name': 'Data Upload File',
             'type': 'ir.actions.act_window',
@@ -155,4 +156,5 @@ class UploadMemberWizard(models.TransientModel):
         }
 
     def action_policy_member_upload_csv(self):
+        # Implementation for CSV upload can be added here
         pass
