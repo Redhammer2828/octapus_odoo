@@ -1,6 +1,7 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 import datetime
+from datetime import timedelta
 import requests
 import json
 
@@ -44,13 +45,19 @@ class AAAService(models.Model):
     # vehicle_emirate_id = fields.Many2one('emirate', string="Vehicle Emirate ID")
     provider_from_location_id = fields.Many2one('location.internal', string="From Location")
     provider_to_location_id = fields.Many2one('location.internal', string="To Location")
+    
+    # SERVICE LOCATION LAT LONG
+    from_serive_location_id = fields.Many2one('location.service', string="From Lat Location")
+    to_serive_location_id = fields.Many2one('location.service', string="To Lat Location")
+    from_lat_location = fields.Text('Location')
+    to_lat_location = fields.Text('Location')
+    
     uom_id = fields.Many2one('uom.uom', string="Unit of Measure")
     # rating_user_id = fields.Many2one('res.users', string="Rating User")
     new_service_id = fields.Many2one('product.template', string="New Service")
     main_product_ids = fields.Many2many('product.template', string="Main Products")
     cancelled_service_id = fields.Many2one('aaa.service', string="Cancelled Service", readonly=True)
     acc_payment_id = fields.Many2one('account.payment', string="Payment")
-   
    
     # PROVIDER-------------------------------------------------------------------------------------------------------------
     provider_id = fields.Many2one('res.partner', string="Provider") #  domain="[('supplier', '=', True)]"
@@ -456,111 +463,155 @@ class AAAService(models.Model):
     #     })
     #     return True
 
+
+# ---------------------------------------------------NEW A CODE-----------------------------------------------
     def action_dispatch_service(self):
-        for record in self:
-            if not record.name:
-                if not record.service_sequence:
-                    date_str = datetime.today().strftime('%Y%m%d')
-                    sequence = self.env['ir.sequence'].next_by_code('aaa.service')
-                    record.name = f'SERV-{date_str}-{sequence[-4:]}'
-                   
         self.ensure_one()
-        self.schedule_date_time = fields.Datetime.now()
+        self._generate_service_name()
  
-        service_record = self
-        member_id = service_record.member_id.id
- 
-        if not member_id:
+        if not self.member_id:
             raise ValidationError(_("Member not found in the service record."))
  
-        if self.member_type == 'policy':
-            service_lines = self.env['aaa.service'].search([
-                ('member_id', '=', member_id),
-                ('state', '!=', 'initiate'),
-                ('member_type', '=', 'policy')
-            ])
+        # Retrieve the product_template_id from the member
+        member = self.member_id
+        print("POLICY MEMBER", member)
+        product_template_id = member.product_template_id.id
+        print("PACKAGE ID of Member", product_template_id)
  
-            service_lines_info = [(line.product_id.id, line.create_date) for line in service_lines]
+        if not product_template_id:
+            raise ValidationError(_("Package not found for the member."))
  
-            member = self.env['res.partner'].browse(member_id)
-            product_template_id = member.product_template_id.id
-            policy_period = (member.member_expiry_date - member.member_activate_date).days
+        # Check if the selected service is part of the package
+        if not self._is_service_in_package(product_template_id):
+            print("SERVICE NOT IN PACKAGE  TRIGGERING CASH/CREDIT WIZARD")
+            return self._trigger_cash_or_credit_service_wizard()
  
-            if not product_template_id:
-                raise ValidationError(_("Package not found for the member."))
+        # Validate service limits including parent category and time-based limits
+        if not self._validate_service_limits(product_template_id):
+            print("SERVICE VALIDITY REACHED THE CATEGORY LIMITS")
+            return self._trigger_cash_service_wizard()
  
-            package_services = self.env['product.package.service'].search([
-                ('product_template_id', '=', product_template_id)
-            ])
-           
-            package_service_product_ids = package_services.mapped('product_id.id')
+        # Dispatch the service if all validations pass
+        self._dispatch_service()
+        return True
  
-            service_product_id = self.product_id.id
+    def _generate_service_name(self):
+        if not self.name:
+            if not self.service_sequence:
+                date_str = datetime.today().strftime('%Y%m%d')
+                sequence = self.env['ir.sequence'].next_by_code('aaa.service')
+                self.name = f'SERV-{date_str}-{sequence[-4:]}'
+        self.schedule_date_time = fields.Datetime.now()
  
-            if service_product_id not in package_service_product_ids:
-                return {
-                    'name': _('Convert to Cash or Credit Service'),
-                    'type': 'ir.actions.act_window',
-                    'res_model': 'service.dispatch.wizard',
-                    'view_mode': 'form',
-                    'view_id': self.env.ref('customer.view_service_dispatch_wizard_form').id,
-                    'target': 'new',
-                    'context': {
-                        'default_service_id': self.id,
-                    },
-                }
+    def _is_service_in_package(self, product_template_id):
+        # Check if the service is part of the package
+        package_services = self.env['product.package.service'].search([
+            ('product_template_id', '=', product_template_id)
+        ])
+        print("SERVICES IN THE PACKAGE ID", package_services)
+        service_product_id = self.product_id.id
+        print("SERVICE CHOSEN BY THE MEMBER", service_product_id)
+        return service_product_id in package_services.mapped('product_id.id')
  
-            if not service_lines_info:
-                self.state = 'dispatch'
-                self.message_post(body=_("Service dispatched successfully."))
-                self.env['service.history'].create({
-                    'service_id': self.id,
-                    'user': self.env.user.id,
-                    'time': fields.Datetime.now(),
-                    'status': self.state,
-                })
-                return True
-            else:
-                service_found = False
-                validation_error_message = None
+    def _validate_service_limits(self, product_template_id):
+        parent_category_id = self.product_id.categ_id.id
+        print("PARENT CATEGORY ID", parent_category_id)
  
-                # Fetching the parent category (categ_id) from product.template
-                package_category = self.product_id.categ_id
-                parent_package_id = package_category.id
+        # If there's no parent category, proceed with the dispatch
+        if not parent_category_id:
+            return True
  
-                # Searching for services under the specific categ_id in product.category.limit
-                category_services = self.env['product.category.limit'].search([
-                    ('category_id', '=', parent_package_id)
-                ])
+        # Fetch the service limits defined in product.category.limit
+        category_limits = self.env['product.category.limit'].search([
+            ('categ_id', '=', parent_category_id),
+            ('category_id', '=', product_template_id)
+        ])
+        print("PARENT CATEGORY LIMITS", category_limits)
  
-                # List the services under this category taken by the member
-                for service_product_id, create_date in service_lines_info:
-                    if service_product_id in package_service_product_ids:
-                        service_found = True
-                       
-                        matching_service = category_services.filtered(lambda s: s.product_id.id == service_product_id)
-                       
-                        if matching_service:
-                            quantity = matching_service.quantity
-                            validity_hours = matching_service.hours
+        if not category_limits:
+            return True  # No limits defined, so validation passes.
  
-                            current_time = fields.Datetime.now()
-                            service_time = fields.Datetime.from_string(create_date)
-                            hours_difference = (current_time - service_time).total_seconds() / 3600
+        # Fetch all services taken by the member under this parent category
+        member_services_in_category = self.env['aaa.service'].search([
+            ('member_id', '=', self.member_id.id),
+            ('product_id.categ_id', '=', parent_category_id),
+            ('state', '=', 'dispatch'),
+        ])
+        print("POLICY MEMBER SERVICES IN CAT", member_services_in_category)
  
-                            if validity_hours and hours_difference < validity_hours:
-                                validation_error_message = _("This service can only be used once every %d hours." % validity_hours)
-                                break
-                            elif hours_difference < 24 and quantity == 1:
-                                validation_error_message = _("This service can only be used once per day.")
-                                break
-                            elif hours_difference < 8760 and quantity == 365:
-                                validation_error_message = _("This service can only be used once per year.")
-                                break
+        current_time = fields.Datetime.now()
+        print("CURRENT SERVICE DISPATCH TIME", current_time)
+        valid_services_count = 0
+        # print("VALID COUNT OF SERVICES", valid_services_count)
  
-                if validation_error_message:
-                    raise ValidationError(validation_error_message)
+        for limit in category_limits:
+            quantity_limit = limit.quantity
+            print("NO OF TIMES SERVICE CAN BE ACCESSED IN CAT_LIMIT", quantity_limit)
+            validity_hours = limit.hours * (24 if limit.uom_id.name == 'Days' else 1)
+            print("TIME PERIOD OF SERVICE IN THE CAT_LIMIT", validity_hours)
  
+            for service in member_services_in_category:
+                service_time = fields.Datetime.from_string(service.create_date)
+                print("PREVIOUS TIME OF SERVICE DISPATCH", service_time)
+                hours_difference = (current_time - service_time).total_seconds() / 3600
+                print("TIME DIFFERENCE B/W THE CURRENT AND PREVIOUS SERVICE DISPATCH", hours_difference)
+               
+                if hours_difference <= validity_hours:
+                    valid_services_count += 1
+                    print("VALID COUNT OF SERVICES", valid_services_count)
+ 
+            if valid_services_count >= quantity_limit:
+                return False  # Limit exceeded, trigger the cash service wizard.
+ 
+        # Ensure only one service is chosen within the parent category in the last 24 hours
+        if not self._is_service_accessed_within_limit(24):
+            return False  # If another service was accessed within the validity period, trigger the cash service wizard.
+ 
+        return True  # All validations passed.
+ 
+    def _is_service_accessed_within_limit(self, hours=24):
+        # Calculate the time difference for the 24-hour rule
+        validity_period_ago = fields.Datetime.now() - timedelta(hours=hours)
+        print("24 Hr TIME STAMP", validity_period_ago)
+ 
+        # Search for any services within the past 24 hours
+        recent_service_in_category = self.env['aaa.service'].search_count([
+            ('member_id', '=', self.member_id.id),
+            ('product_id.categ_id', '=', self.product_id.categ_id.id),
+            ('state', '=', 'dispatch'),
+            ('create_date', '>=', validity_period_ago),  # Only look within the last 24 hours
+        ])
+        print("CAT_SERVICES ACCESSED IN LAST 24 HOURS", recent_service_in_category)
+       
+        return recent_service_in_category == 0
+ 
+    def _trigger_cash_or_credit_service_wizard(self):
+        return {
+            'name': _('Convert to Cash or Credit Service'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'service.dispatch.wizard',
+            'view_mode': 'form',
+            'view_id': self.env.ref('customer.view_service_dispatch_wizard_form').id,
+            'target': 'new',
+            'context': {
+                'default_service_id': self.id,
+            },
+        }
+ 
+    def _trigger_cash_service_wizard(self):
+        return {
+            'name': _('Convert to Cash'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'service.cash.wizard',
+            'view_mode': 'form',
+            'view_id': self.env.ref('customer.view_service_cash_wizard_form').id,
+            'target': 'new',
+            'context': {
+                'default_service_id': self.id,
+            },
+        }
+ 
+    def _dispatch_service(self):
         self.state = 'dispatch'
         self.message_post(body=_("Service dispatched successfully."))
         self.env['service.history'].create({
@@ -569,8 +620,7 @@ class AAAService(models.Model):
             'time': fields.Datetime.now(),
             'status': self.state,
         })
-        return True
-
+# --------------------------------------------------------------------------------------------------
     def action_schedule_service_check(self):
         self.schedule_service_check = True
         self.state= 'initiate'

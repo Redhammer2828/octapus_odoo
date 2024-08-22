@@ -23,31 +23,31 @@
                     </style>
                     <header>
                         <button name="action_confirm_membership" string="Confirm" type="object" 
-                            class="oe_highlight" invisible="membership_state != 'temp'" />
+                            class="oe_highlight" invisible="membership_state == 'cancel' or membership_state != 'temp'" />
                         <!-- CREATE SERVICE -->
                         <button name="action_create_service" string="Create Service"
                             type="object" icon="fa-wrench o_button_icon" 
-                            invisible="member_expired == True" />
+                            invisible="membership_state == 'cancel' or member_expired == True" />
                         <!-- CREATE SERVICE -->
                         <button name="action_create_enquiry" string="Enquiry"
-                            type="object" icon="fa-pencil" invisible="membership_state == 'cancel'" />
+                            type="object" icon="fa-pencil" invisible="membership_state == 'cancel' or membership_state == 'cancel'" />
                         <!-- POLICY SERVICE HISTORY -->
                         <button name="action_policy_service_history" string="Service History"
-                            icon="fa-book" type="object" />
-                        <!-- MEMBERSHIP RENUAL -->
+                            icon="fa-book" type="object" invisible="0" />
+                        <!-- MEMBERSHIP RENEWAL -->
                         <button name="action_membership_renewal" string="Membership Renewal"
                             type="object" icon="fa-lightbulb-o"
-                            invisible="membership_state == 'temp'" />
+                            invisible="membership_state == 'cancel' or membership_state == 'temp'" />
                         <!-- MEMBERSHIP EXTENSION -->
                         <button name="action_membership_extension" string="Membership Extension" 
                             type="object" icon="fa-lightbulb-o"
-                            invisible="membership_state == 'temp'" />
+                            invisible="membership_state == 'cancel' or membership_state == 'temp'" />
                         <!-- MEMBERSHIP CANCEL -->
                         <button name="action_membership_cancel" string="Membership Cancel"
                             type="object" icon="fa-lightbulb-o"
-                            invisible="membership_state == 'temp'" />
+                            invisible="membership_state == 'cancel' or membership_state == 'temp'" />
                         <!-- MEMBERSHIP STATE -->
-                        <field name="member_expired" invisible="1" readonly='1' />
+                        <field name="member_expired" invisible="1" readonly="1" />
                         <field name="membership_state" widget="statusbar" nolabel="1" 
                             statusbar_visible="temp,confirm,cancel"/>
                         <!-- POLICY EXPIRED ALERT FLAG -->
