@@ -399,7 +399,7 @@ class DataUploadFile(models.Model):
                         'comment': 'Member replaced with uploaded member details',
                     })
                     print("Replaced member state updated to canceled.")
-
+ 
                     # Create a history record for the existing member
                     self.env['membership.history'].create({
                         'policy_no': matching_partner.policy_no,
@@ -412,13 +412,16 @@ class DataUploadFile(models.Model):
                         'history_id': matching_partner.id,
                     })
                     print("Created history record for existing member.")
-
+ 
                     # Update existing member with new details
                     matching_partner.write({
                         'name': member_line.member_name,
                         'membership_state': 'confirm',
                         'member_expiry_date': member_line.member_expiry_date,
                         'policy_no': member_line.policy_no,
+                        'member_activate_date': member_line.member_activate_date,
+                        'invoice_ref_date': member_line.invoice_ref_date,
+                        'delivery_ref_date': member_line.delivery_ref_date,
                         'vehicle_type': member_line.vehicle_type,
                         'vehicle_model': member_line.vehicle_model,
                         'vehicle_mfg_year': member_line.vehicle_mfg_year,
@@ -428,7 +431,7 @@ class DataUploadFile(models.Model):
                         'mobile': member_line.mobile,
                     })
                     print("Existing member replaced with uploaded member details.")
-
+ 
             print(f"Finished processing member_line: {member_line.customer_code}")
         
         # Measure the time taken

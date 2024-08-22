@@ -149,11 +149,16 @@
                                     <field name="product_id" string="Service" class="required_field"
                                         required="1" />
                                     <field name="provider_from_location_id" string="From Location"
-                                        invisible="product_id == False" class="required_field"
-                                        required="1" />
+                                        invisible="product_id == False" class="required_field" />
                                     <field name="provider_to_location_id" string="To Location"
-                                        invisible="product_id == False" class="required_field"
-                                        required="1" />
+                                        invisible="product_id == False" class="required_field"/>
+                                    <field name="from_serive_location_id" string="From Lat Location"
+                                        invisible="product_id == False" class="required_field" />
+                                    <field name="to_serive_location_id" string="To Lat Location"
+                                        invisible="product_id == False" class="required_field"/>
+                                    <field name="location" string="Lat Location"
+                                        invisible="product_id == False" class="required_field"/>
+                                    
                                 </group>
                                 <separator string="ADDON SERVICES" colspan="4" />
                                 <field name="addon_service_ids" nolabel="1"
