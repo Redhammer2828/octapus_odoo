@@ -152,11 +152,13 @@
                                         invisible="product_id == False" class="required_field" />
                                     <field name="provider_to_location_id" string="To Location"
                                         invisible="product_id == False" class="required_field"/>
-                                    <field name="from_serive_location_id" string="From Lat Location"
+                                    <!-- <field name="from_serive_location_id" string="From Lat Location"
                                         invisible="product_id == False" class="required_field" />
                                     <field name="to_serive_location_id" string="To Lat Location"
+                                        invisible="product_id == False" class="required_field"/> -->
+                                    <field name="from_lat_location" string="From Location"
                                         invisible="product_id == False" class="required_field"/>
-                                    <field name="location" string="Lat Location"
+                                    <field name="to_lat_location" string="To Location"
                                         invisible="product_id == False" class="required_field"/>
                                     
                                 </group>

@@ -49,7 +49,8 @@ class AAAService(models.Model):
     # SERVICE LOCATION LAT LONG
     from_serive_location_id = fields.Many2one('location.service', string="From Lat Location")
     to_serive_location_id = fields.Many2one('location.service', string="To Lat Location")
-    location = fields.Text('Location')
+    from_lat_location = fields.Text('Location')
+    to_lat_location = fields.Text('Location')
     
     uom_id = fields.Many2one('uom.uom', string="Unit of Measure")
     # rating_user_id = fields.Many2one('res.users', string="Rating User")
