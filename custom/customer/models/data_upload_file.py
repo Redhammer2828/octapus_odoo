@@ -373,13 +373,42 @@ class DataUploadFile(models.Model):
                     # Add more fields to create as needed
                 })
 
-            # Handle 'renewal' or 'update' status
+             # Handle 'renewal' or 'update' status
             elif member_line.upload_member_status in ['renewal', 'update']:
                 matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
                 if matching_partner:
-                    matching_partner.write({
-                        'member_expiry_date': member_line.member_expiry_date,
+                    self.env['membership.history'].create({
+                        'policy_no': matching_partner.policy_no,
+                        'vehicle_chasis_no': matching_partner.vehicle_chasis_no,
+                        'vehicle_type': matching_partner.vehicle_type,
+                        'vehicle_plate': matching_partner.vehicle_plate,
+                        'member_activate_date': matching_partner.member_activate_date,
+                        'member_expiry_date': matching_partner.member_expiry_date,
+                        'card_type_id': matching_partner.card_type_id.id,
+                        'history_id': matching_partner.id,
                     })
+                    print("Created history record for existing member.")
+ 
+                      # Update existing member with new details
+                    matching_partner.write({
+                        'name': member_line.member_name,
+                        'membership_state': 'confirm',
+                        'member_expiry_date': member_line.member_expiry_date,
+                        'policy_no': member_line.policy_no,
+                        'member_activate_date': member_line.member_activate_date,
+                        'invoice_ref_date': member_line.invoice_ref_date,
+                        'delivery_ref_date': member_line.delivery_ref_date,
+                        'vehicle_type': member_line.vehicle_type,
+                        'vehicle_model': member_line.vehicle_model,
+                        'vehicle_mfg_year': member_line.vehicle_mfg_year,
+                        'vehicle_plate': member_line.vehicle_plate,
+                        'vehicle_chasis_no': member_line.vehicle_chasis_no,
+                        'street': member_line.street,
+                        'mobile': member_line.mobile,
+                    })
+                    print("Existing member replaced with renewed policy details")
+ 
+                print(f"Finished processing member_line: {member_line.customer_code}")
 
             # Handle 'exist_temp' status
             elif member_line.upload_member_status == 'exist_temp':
