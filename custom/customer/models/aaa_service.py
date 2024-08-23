@@ -472,26 +472,22 @@ class AAAService(models.Model):
         if not self.member_id:
             raise ValidationError(_("Member not found in the service record."))
  
-        # Retrieve the product_template_id from the member
         member = self.member_id
         print("POLICY MEMBER", member)
         product_template_id = member.product_template_id.id
-        print("PACKAGE ID of Member", product_template_id)
+        print("PACKAGE ID OF POLICY MEMBER", product_template_id)
  
         if not product_template_id:
             raise ValidationError(_("Package not found for the member."))
  
-        # Check if the selected service is part of the package
         if not self._is_service_in_package(product_template_id):
-            print("SERVICE NOT IN PACKAGE  TRIGGERING CASH/CREDIT WIZARD")
+            print("SERVICE NOT IN PACKAGE - TRIGGERING CASH/CREDIT WIZARD")
             return self._trigger_cash_or_credit_service_wizard()
  
-        # Validate service limits including parent category and time-based limits
         if not self._validate_service_limits(product_template_id):
-            print("SERVICE VALIDITY REACHED THE CATEGORY LIMITS")
+            print("SERVICE VALIDITY REACHED THE CATEGORY LIMITS - TRIGGERING CASH WIZARD")
             return self._trigger_cash_service_wizard()
  
-        # Dispatch the service if all validations pass
         self._dispatch_service()
         return True
  
@@ -504,86 +500,102 @@ class AAAService(models.Model):
         self.schedule_date_time = fields.Datetime.now()
  
     def _is_service_in_package(self, product_template_id):
-        # Check if the service is part of the package
         package_services = self.env['product.package.service'].search([
             ('product_template_id', '=', product_template_id)
         ])
-        print("SERVICES IN THE PACKAGE ID", package_services)
+        print("SERVICES IN THE PACKAGE", package_services)
         service_product_id = self.product_id.id
-        print("SERVICE CHOSEN BY THE MEMBER", service_product_id)
+        print("SERVICE TAKEN BY THE MEMBER", service_product_id)
         return service_product_id in package_services.mapped('product_id.id')
  
     def _validate_service_limits(self, product_template_id):
         parent_category_id = self.product_id.categ_id.id
-        print("PARENT CATEGORY ID", parent_category_id)
+        print("PARENT CATEGORY OF CHOSEN SERVICE  IN PACKAGE", parent_category_id)
  
-        # If there's no parent category, proceed with the dispatch
         if not parent_category_id:
             return True
  
-        # Fetch the service limits defined in product.category.limit
         category_limits = self.env['product.category.limit'].search([
             ('categ_id', '=', parent_category_id),
             ('category_id', '=', product_template_id)
         ])
-        print("PARENT CATEGORY LIMITS", category_limits)
+        print("VAL_LIMITS OF PARENT_CAT", category_limits)
  
         if not category_limits:
-            return True  # No limits defined, so validation passes.
+            return True
  
-        # Fetch all services taken by the member under this parent category
-        member_services_in_category = self.env['aaa.service'].search([
+        quantity_limit = 10  # Default value
+        validity_period_days = 365  # Default value
+ 
+        for limit in category_limits:
+            quantity_limit = float(limit.quantity)
+            print("NO OF SERVICE_ACCESS IN CAT_DURATION",quantity_limit)
+            validity_period_days = limit.hours if limit.uom_id.name == 'Days' else (limit.hours * 24)
+            print("CAT_DURATION", validity_period_days)
+ 
+        # Check for services that need to adhere to the 24-hour rule
+        if any(limit.hours == 24 and limit.quantity == 1 for limit in category_limits):
+            if not self._is_service_accessible_in_24_hours(parent_category_id):
+                print("SERVICE DISPATCHED BEFORE 24 HOURS - TRIGGERING CASH WIZARD")
+                return False  # Trigger the cash service wizard
+ 
+        if self.service_type != 'location_duration':
+            if not self._is_service_accessible_in_24_hours(parent_category_id):
+                remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
+                print("REMAINING SERVICE ACCESS in the CAT_DURATION", remaining_quantity)
+                raise ValidationError(
+                    _("A service can only be initiated after 24 hours of the last dispatch. Remaining quantity: %d") % remaining_quantity
+                )
+       
+        if self.service_type == 'location_duration':
+            period_start = fields.Datetime.now() - timedelta(days=validity_period_days)
+            print("START OF RAC_CAT SERVICE", period_start)
+ 
+            total_days = 0
+            member_services_in_category = self.env['aaa.service'].search([
+                ('member_id', '=', self.member_id.id),
+                ('product_id.categ_id', '=', parent_category_id),
+                ('state', '=', 'dispatch'),
+                ('date_time_to', '>=', period_start),
+            ])
+            print("MEMBER SERVICES IN PARENT_CAT", member_services_in_category)
+ 
+            for service in member_services_in_category:
+                if service.service_type == 'location_duration' and service.date_time_to and service.date_time_from:
+                    service_duration = (service.date_time_to - service.date_time_from).total_seconds() / (3600 * 24)
+                    print("SERVICE DURATION FOR RAC_CAT SERVICE", service_duration)
+                    total_days += service_duration
+ 
+                    print("TOTAL DAYS OF RAC_CAT SERVICE ACCESS", total_days)
+ 
+            if total_days >= quantity_limit:
+                return False
+ 
+            if not self._is_service_accessible_in_24_hours(parent_category_id):
+                remaining_quantity = quantity_limit - total_days
+                print("REMAINING RAC_CAT SERVICE", remaining_quantity)
+                raise ValidationError(
+                    _("A service of type 'location_duration' can only be initiated after 24 hours of the last dispatch. Remaining quantity (days): %d") % remaining_quantity
+                )
+ 
+        return True
+ 
+    def _is_service_accessible_in_24_hours(self, parent_category_id):
+        last_dispatch_time = fields.Datetime.now() - timedelta(hours=24)
+        recent_services = self.env['aaa.service'].search_count([
+            ('member_id', '=', self.member_id.id),
+            ('product_id.categ_id', '=', parent_category_id),
+            ('state', '=', 'dispatch'),
+            ('create_date', '>=', last_dispatch_time),
+        ])
+        return recent_services == 0
+ 
+    def _count_services_in_category(self, parent_category_id):
+        return self.env['aaa.service'].search_count([
             ('member_id', '=', self.member_id.id),
             ('product_id.categ_id', '=', parent_category_id),
             ('state', '=', 'dispatch'),
         ])
-        print("POLICY MEMBER SERVICES IN CAT", member_services_in_category)
- 
-        current_time = fields.Datetime.now()
-        print("CURRENT SERVICE DISPATCH TIME", current_time)
-        valid_services_count = 0
-        # print("VALID COUNT OF SERVICES", valid_services_count)
- 
-        for limit in category_limits:
-            quantity_limit = limit.quantity
-            print("NO OF TIMES SERVICE CAN BE ACCESSED IN CAT_LIMIT", quantity_limit)
-            validity_hours = limit.hours * (24 if limit.uom_id.name == 'Days' else 1)
-            print("TIME PERIOD OF SERVICE IN THE CAT_LIMIT", validity_hours)
- 
-            for service in member_services_in_category:
-                service_time = fields.Datetime.from_string(service.create_date)
-                print("PREVIOUS TIME OF SERVICE DISPATCH", service_time)
-                hours_difference = (current_time - service_time).total_seconds() / 3600
-                print("TIME DIFFERENCE B/W THE CURRENT AND PREVIOUS SERVICE DISPATCH", hours_difference)
-               
-                if hours_difference <= validity_hours:
-                    valid_services_count += 1
-                    print("VALID COUNT OF SERVICES", valid_services_count)
- 
-            if valid_services_count >= quantity_limit:
-                return False  # Limit exceeded, trigger the cash service wizard.
- 
-        # Ensure only one service is chosen within the parent category in the last 24 hours
-        if not self._is_service_accessed_within_limit(24):
-            return False  # If another service was accessed within the validity period, trigger the cash service wizard.
- 
-        return True  # All validations passed.
- 
-    def _is_service_accessed_within_limit(self, hours=24):
-        # Calculate the time difference for the 24-hour rule
-        validity_period_ago = fields.Datetime.now() - timedelta(hours=hours)
-        print("24 Hr TIME STAMP", validity_period_ago)
- 
-        # Search for any services within the past 24 hours
-        recent_service_in_category = self.env['aaa.service'].search_count([
-            ('member_id', '=', self.member_id.id),
-            ('product_id.categ_id', '=', self.product_id.categ_id.id),
-            ('state', '=', 'dispatch'),
-            ('create_date', '>=', validity_period_ago),  # Only look within the last 24 hours
-        ])
-        print("CAT_SERVICES ACCESSED IN LAST 24 HOURS", recent_service_in_category)
-       
-        return recent_service_in_category == 0
  
     def _trigger_cash_or_credit_service_wizard(self):
         return {

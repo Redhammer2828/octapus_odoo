@@ -77,7 +77,7 @@ class ResPartnerMembers(models.Model):
     # comment = fields.Text(string='Internal Notes')
     # membership_history = fields.One2many('membership.history.model', 'partner_id', string='Membership History')
     product_template_id = fields.Many2one('product.template', string="Package")
-    service_ids = fields.Many2many('product.product', string="Services", widget="many2many_tags", options="{'no_create_edit': True}")
+    service_ids = fields.Many2many('product.product', string="Services", widget="many2many_tags", options="{'no_create_edit': True}" ,compute='_compute_service_ids', store=True)
     member_partner_category_id = fields.Many2one('partner.category', string='Category')
 
     #------------------------------------------------------------
@@ -381,19 +381,21 @@ class ResPartnerMembers(models.Model):
         }
 
 
-    @api.onchange('product_template_id')
-    def _onchange_product_template_id(self):
-        if self.product_template_id:
-            print("=========",self.product_template_id)
-            services = self.env['product.package.service'].search([('product_template_id', '=', self.product_template_id.id)])
+    @api.depends('product_template_id')
+    def _compute_service_ids(self):
+        for record in self:
+            if record.product_template_id:
+                services = self.env['product.package.service'].search([('product_template_id', '=', record.product_template_id.id)])
+                product_ids = services.mapped('product_id').ids
+                if product_ids:
+                    record.service_ids = [(6, 0, product_ids)]
+                else:
+                    record.service_ids = [(6, 0, [])]
+            else:
+                record.service_ids = [(6, 0, [])]
 
-            print("SERVICE LIST",services)
-            product_ids = services.mapped('product_id').ids
-            print("Product IDs:", product_ids)
-            if product_ids:
-                related_products = self.env['product.template'].search([('id', 'in', product_ids)])
-                print("Related Products:", related_products)
-                self.service_ids = [(6, 0, related_products.ids)]
+        
+
 
     @api.onchange('parent_customer_id')
     def _onchange_parent_customer_id(self):
