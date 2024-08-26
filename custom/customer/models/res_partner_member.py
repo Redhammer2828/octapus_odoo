@@ -270,6 +270,7 @@ class ResPartnerMembers(models.Model):
             'default_customer_id': self.parent_customer_id.id,
             'default_sequence_id': self.member_partner_category_id.id,
             'default_card_type': card_type_name,
+            'default_member_contact_no': self.mobile,
             'default_vehicle_chasis_no': self.vehicle_chasis_no,
             'default_vehicle_type_id': vehicle_model.id if vehicle_model else False,
             'default_product_id': self.service_ids,
