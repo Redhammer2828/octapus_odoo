@@ -128,9 +128,12 @@ class AAAService(models.Model):
         ('duration', 'Duration')
     ], string="Product Type")
     
-    datetime_from = fields.Datetime(string="Datetime From")
-    datetime_to = fields.Datetime(string="Datetime To")
+    # datetime_from = fields.Datetime(string="Datetime From")
+    # datetime_to = fields.Datetime(string="Datetime To")
+    date_time_from = fields.Datetime(string= "From Date time") 
+    date_time_to = fields.Datetime(string="To Date time")
     quantity = fields.Float(string="Quantity")
+    service_type = fields.Selection(related='product_id.service_type', store=True, readonly=True)
     
     
     service_time = fields.Datetime(string="Service Time")
@@ -152,7 +155,6 @@ class AAAService(models.Model):
     )
   
     # =========================================================================================================
-   
    
     # driver_job_id = fields.Many2one('hr.job', string="Driver Job ID")
     # driver_id = fields.Many2one('hr.employee', string="Driver", domain="[('job_id', '=', driver_job_id)]")
@@ -498,6 +500,16 @@ class AAAService(models.Model):
                 sequence = self.env['ir.sequence'].next_by_code('aaa.service')
                 self.name = f'SERV-{date_str}-{sequence[-4:]}'
         self.schedule_date_time = fields.Datetime.now()
+        order_number = self.name
+        status = 'dispatch'
+        phone_number = self.member_contact_no
+        vehicle_chasis_no = self.vehicle_chasis_no  # Corrected field name
+        print("API_____order_no_____________",order_number)
+        print("API_____Status_____________",status)
+        print("API______phone number____________",phone_number)
+        print("API_____V ch Number_____________",vehicle_chasis_no)
+        self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
+
  
     def _is_service_in_package(self, product_template_id):
         package_services = self.env['product.package.service'].search([
@@ -575,7 +587,7 @@ class AAAService(models.Model):
                 remaining_quantity = quantity_limit - total_days
                 print("REMAINING RAC_CAT SERVICE", remaining_quantity)
                 raise ValidationError(
-                    _("A service of type 'location_duration' can only be initiated after 24 hours of the last dispatch. Remaining quantity (days): %d") % remaining_quantity
+                    _("A RENT A CAR service can only be initiated after 24 hours of the last dispatch. Remaining quantity (days): %d") % remaining_quantity
                 )
  
         return True
