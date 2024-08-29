@@ -78,7 +78,7 @@ class ResPartnerMembers(models.Model):
     # membership_history = fields.One2many('membership.history.model', 'partner_id', string='Membership History')
     product_template_id = fields.Many2one('product.template', string="Package")
     service_ids = fields.Many2many('product.product', string="Services", widget="many2many_tags", options="{'no_create_edit': True}" ,compute='_compute_service_ids', store=True)
-    member_partner_category_id = fields.Many2one('partner.category', string='Category')
+    member_partner_category_id = fields.Many2one('partner.category',string='Category',domain="[('partner_id', '=', parent_customer_id),('member_type', '=', member_type)]")
 
     #------------------------------------------------------------
     member_expired = fields.Boolean(

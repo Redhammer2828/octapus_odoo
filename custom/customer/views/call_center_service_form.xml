@@ -95,7 +95,7 @@
                                     class="required_field" required="1" />
                                 <field name="credit_customer_co" string="Customer C/O" />
                                 <field name="sequence_id" string="Customer Category"
-                                    invisible="member_type != 'adhoc'" class="required_field"
+                                    class="required_field"
                                     required="1" />
                                 <field name="member_id" string="Member"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']"

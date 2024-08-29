@@ -100,13 +100,11 @@
                                 <field name="policy_no" string="Policy No" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
                                     class="required_field" required="1" readonly="is_readonly" />
-                                <field name="old_membership_number" readonly="is_readonly" />
-                                <field name="member_activate_date" date_format="%d/%m/%Y"
-                                    readonly="is_readonly" />
+                                <field name="old_membership_number" /> 
+                                <field name="member_activate_date" date_format="%d/%m/%Y"/>
                                 <field name="member_expiry_date" class="required_field" required="1"
                                     date_format="%d/%m/%Y" widget="date" readonly="is_readonly" />
                                 <field name="card_type_id" class="required_field" required="1"
-                                    readonly="is_readonly"
                                     options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
                                 <field name="member_partner_category_id" class="required_field"
                                     required="1" readonly="is_readonly"

@@ -6,6 +6,8 @@ access_member_vehicle_model,member.vehicle.model,model_member_vehicle_model,,1,1
 access_location_internal,location.internal,model_location_internal,,1,1,1,1
 access_location_external,location.external,model_location_external,,1,1,1,1
 access_location_service,location.service,model_location_service,,1,1,1,1
+access_location_from,location.from,model_location_from,,1,1,1,1
+access_location_to,location.to,model_location_to,,1,1,1,1
 access_external_service,external.service,model_external_service,,1,1,1,1
 access_product_package_service,product.package.service,model_product_package_service,,1,1,1,1
 access_product_category_limit,product.category.limit,model_product_category_limit,,1,1,1,1
