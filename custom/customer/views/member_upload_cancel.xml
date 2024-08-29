@@ -41,7 +41,8 @@
                         </group>
                         <!-- <group string="Members"> -->
                         <field name="upload_member_ids" nolabel="1">
-                            <tree string="Data" editable="bottom" col="1">
+                            <tree string="Data" editable="bottom" col="1"
+                            decoration-primary="upload_status == 'cancellation'">
 
                                 <field name="customer_code" />
                                 <field name="vehicle_chasis_no" />

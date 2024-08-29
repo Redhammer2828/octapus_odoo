@@ -43,8 +43,8 @@ class AAAService(models.Model):
     
     product_id = fields.Many2one('product.template', string="Service",domain=[('bundle_product', '=', False)])
     # vehicle_emirate_id = fields.Many2one('emirate', string="Vehicle Emirate ID")
-    provider_from_location_id = fields.Many2one('location.internal', string="From Location")
-    provider_to_location_id = fields.Many2one('location.internal', string="To Location")
+    provider_from_location_id = fields.Many2one('location.from', string="From Location")
+    provider_to_location_id = fields.Many2one('location.to', string="To Location")
     
     # SERVICE LOCATION LAT LONG
     from_serive_location_id = fields.Many2one('location.service', string="From Lat Location")
@@ -500,16 +500,6 @@ class AAAService(models.Model):
                 sequence = self.env['ir.sequence'].next_by_code('aaa.service')
                 self.name = f'SERV-{date_str}-{sequence[-4:]}'
         self.schedule_date_time = fields.Datetime.now()
-        order_number = self.name
-        status = 'dispatch'
-        phone_number = self.member_contact_no
-        vehicle_chasis_no = self.vehicle_chasis_no  # Corrected field name
-        print("API_____order_no_____________",order_number)
-        print("API_____Status_____________",status)
-        print("API______phone number____________",phone_number)
-        print("API_____V ch Number_____________",vehicle_chasis_no)
-        self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
-
  
     def _is_service_in_package(self, product_template_id):
         package_services = self.env['product.package.service'].search([
@@ -549,15 +539,27 @@ class AAAService(models.Model):
         if any(limit.hours == 24 and limit.quantity == 1 for limit in category_limits):
             if not self._is_service_accessible_in_24_hours(parent_category_id):
                 print("SERVICE DISPATCHED BEFORE 24 HOURS - TRIGGERING CASH WIZARD")
-                return False  # Trigger the cash service wizard
+                return False # Trigger the cash service wizard
+            else:
+                return True
+   
  
         if self.service_type != 'location_duration':
             if not self._is_service_accessible_in_24_hours(parent_category_id):
                 remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
                 print("REMAINING SERVICE ACCESS in the CAT_DURATION", remaining_quantity)
+                if remaining_quantity <= 0:
+                    print("REMAINING SERVICE ACCESS REACHED ZERO - TRIGGERING CASH WIZARD")
+                    return False  # Trigger the cash service wizard
                 raise ValidationError(
                     _("A service can only be initiated after 24 hours of the last dispatch. Remaining quantity: %d") % remaining_quantity
                 )
+             # Additional validation to check if the service is within the category limits, even if more than 24 hours have passed
+            remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
+            if remaining_quantity <= 0:
+                print("REMAINING SERVICE ACCESS REACHED ZERO AFTER 24 HOURS - TRIGGERING CASH WIZARD")
+                return False  # Trigger the cash service wizard
+           
        
         if self.service_type == 'location_duration':
             period_start = fields.Datetime.now() - timedelta(days=validity_period_days)
@@ -567,7 +569,8 @@ class AAAService(models.Model):
             member_services_in_category = self.env['aaa.service'].search([
                 ('member_id', '=', self.member_id.id),
                 ('product_id.categ_id', '=', parent_category_id),
-                ('state', '=', 'dispatch'),
+                # ('state', '=', 'dispatch'),
+                ('state', 'in', ['dispatch', 'inprogress', 'start', 'reach', 'done']),
                 ('date_time_to', '>=', period_start),
             ])
             print("MEMBER SERVICES IN PARENT_CAT", member_services_in_category)
@@ -587,7 +590,7 @@ class AAAService(models.Model):
                 remaining_quantity = quantity_limit - total_days
                 print("REMAINING RAC_CAT SERVICE", remaining_quantity)
                 raise ValidationError(
-                    _("A RENT A CAR service can only be initiated after 24 hours of the last dispatch. Remaining quantity (days): %d") % remaining_quantity
+                    _("A service of type 'location_duration' can only be initiated after 24 hours of the last dispatch. Remaining quantity (days): %d") % remaining_quantity
                 )
  
         return True
@@ -597,7 +600,8 @@ class AAAService(models.Model):
         recent_services = self.env['aaa.service'].search_count([
             ('member_id', '=', self.member_id.id),
             ('product_id.categ_id', '=', parent_category_id),
-            ('state', '=', 'dispatch'),
+            # ('state', '=', 'dispatch'),
+            ('state', 'in', ['dispatch', 'inprogress', 'start', 'reach', 'done']),
             ('create_date', '>=', last_dispatch_time),
         ])
         return recent_services == 0
@@ -606,7 +610,8 @@ class AAAService(models.Model):
         return self.env['aaa.service'].search_count([
             ('member_id', '=', self.member_id.id),
             ('product_id.categ_id', '=', parent_category_id),
-            ('state', '=', 'dispatch'),
+            # ('state', '=', 'dispatch'),
+            ('state', 'in', ['dispatch', 'inprogress', 'start', 'reach', 'done']),
         ])
  
     def _trigger_cash_or_credit_service_wizard(self):

@@ -70,6 +70,7 @@ class ResPartnerCustomer(models.Model):
 class PartnerCategory(models.Model):
     _name = 'partner.category'
     _description = 'Partner Category'
+    _rec_name = 'description'
 
     partner_id = fields.Many2one('res.partner', string='Partner', inverse_name='customer_category_ids')
 
@@ -80,11 +81,3 @@ class PartnerCategory(models.Model):
         ('adhoc', 'Adhoc')],
         string='Type')
     description = fields.Text(string="Description")
-
-    # Not Working
-    def name_get(self):  
-        result = []
-        for record in self:
-            name = record.description or record.name
-            result.append((record.id, name))
-        return result
