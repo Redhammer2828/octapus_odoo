@@ -1,0 +1,69 @@
+# Docker
+# Build and push an image to Azure Container Registry
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+trigger:
+- development
+- qa
+- uat
+- gama
+
+resources:
+- repo: self
+
+variables:
+  # Container registry service connection established during pipeline creation
+  dockerRegistryServiceConnection: 'a56b6d1f-41c3-4ed0-8c74-ad6c7da487ad'
+  imageRepository: 'aaaerp'
+  containerRegistry: 'carhiredev.azurecr.io'
+  dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
+  tag: '$(Build.SourceBranchName)'
+
+  # Agent VM image name
+  vmImageName: 'ubuntu-latest'
+
+stages:
+- stage: Build
+  displayName: Build and push stage
+  jobs:
+  - job: Build
+    displayName: Build
+    pool:
+      # vmImage: $(vmImageName)
+      name: alpha
+    steps:
+    - task: Docker@2
+      displayName: Build and push an image to container registry
+      inputs:
+        command: buildAndPush
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        tags: |
+          $(tag)
+    - task: SSH@0
+      inputs:
+        condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'alpha'))
+        sshEndpoint: 'carhire-alpha'
+        runOptions: 'commands'
+        failOnStdErr: false
+        commands: '/startscripts/aaa-odoo.sh'
+        readyTimeout: '20000'
+    
+    - task: SSH@0
+      condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'qa'))
+      inputs:
+        sshEndpoint: 'carhire-uat'
+        failOnStdErr: false
+        runOptions: 'commands'
+        commands: '/startscripts/aaa-odoo-qa.sh'
+        readyTimeout: '20000'
+
+    - task: SSH@0
+      condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'uat'))
+      inputs:
+        sshEndpoint: 'carhire-uat'
+        failOnStdErr: false
+        runOptions: 'commands'
+        commands: '/startscripts/aaa-odoo.sh'
+        readyTimeout: '20000'
