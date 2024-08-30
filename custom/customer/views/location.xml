@@ -59,33 +59,17 @@
             </field>
         </record>
 
-        <!-- Form View LOCATION FROM -->
+        <!-- Form View LOCATION -->
         <record id="location_from_view_form" model="ir.ui.view">
-            <field name="name">location.from</field>
-            <field name="model">location.from</field>
+            <field name="name">location.latlong.form</field>
+            <field name="model">location.latlong</field>
             <field name="arch" type="xml">
                 <form string="Location From">
                     <sheet>
                         <group>
-                            <field name="from_location" />
-                            <field name="from_latitude" />
-                            <field name="from_longitude" />
-                        </group>
-                    </sheet>
-                </form>
-            </field>
-        </record>
-        <!-- Form View LOCATION FROM -->
-        <record id="location_to_view_form" model="ir.ui.view">
-            <field name="name">location.to</field>
-            <field name="model">location.to</field>
-            <field name="arch" type="xml">
-                <form string="Location To">
-                    <sheet>
-                        <group>
-                            <field name="to_location" />
-                            <field name="to_latitude" />
-                            <field name="to_longitude" />
+                            <field name="location" />
+                            <field name="latitude" />
+                            <field name="longitude" />
                         </group>
                     </sheet>
                 </form>
@@ -131,25 +115,13 @@
         
         <!-- Tree LOCATION FROM -->
         <record id="view_location_from_tree" model="ir.ui.view">
-            <field name="name">location.from</field>
-            <field name="model">location.from</field>
+            <field name="name">location.latlong.tree</field>
+            <field name="model">location.latlong</field>
             <field name="arch" type="xml">
                 <tree string="Location From">
-                    <field name="from_location" />
-                    <field name="from_latitude" />
-                    <field name="from_longitude" />
-                </tree>
-            </field>
-        </record>
-        <!-- Tree LOCATION TO -->
-        <record id="view_location_to_tree" model="ir.ui.view">
-            <field name="name">location.to</field>
-            <field name="model">location.to</field>
-            <field name="arch" type="xml">
-                <tree string="Location To">
-                    <field name="to_location" />
-                    <field name="to_latitude" />
-                    <field name="to_longitude" />
+                    <field name="location" />
+                    <field name="latitude" />
+                    <field name="longitude" />
                 </tree>
             </field>
         </record>
@@ -185,20 +157,13 @@
             <!-- <field name="view_id" ref="view_location_service_tree" /> -->
         </record>
      
-        <!-- Action to location from -->
-        <record id="action_location_from" model="ir.actions.act_window">
-            <field name="name">Location From</field>
-            <field name="res_model">location.from</field>
+        <!-- Action to location LATLONG -->
+        <record id="action_location_latlong" model="ir.actions.act_window">
+            <field name="name">Location</field>
+            <field name="res_model">location.latlong</field>
             <field name="view_mode">tree,form</field>
         </record>
        
-        <!-- Action to location To -->
-        <record id="action_location_to" model="ir.actions.act_window">
-            <field name="name">Location To</field>
-            <field name="res_model">location.to</field>
-            <field name="view_mode">tree,form</field>
-        </record>
-
 
         <menuitem
             id="menu_location_internal"
@@ -224,17 +189,17 @@
         <!-- ACTION SERVICE LOCATION FROM -->
         <menuitem
             id="menu_location_from"
-            name="Location From"
+            name="Location"
             parent="menu_location"
-            action="action_location_from"
+            action="action_location_latlong"
             sequence="81" />
         <!-- ACTION SERVICE LOCATION TO -->
-        <menuitem
+        <!-- <menuitem
             id="menu_location_to"
             name="Location To"
             parent="menu_location"
             action="action_location_to"
-            sequence="82" />
+            sequence="82" /> -->
 
     </data>
 

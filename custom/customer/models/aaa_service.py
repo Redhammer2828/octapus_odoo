@@ -43,8 +43,8 @@ class AAAService(models.Model):
     
     product_id = fields.Many2one('product.template', string="Service",domain=[('bundle_product', '=', False)])
     # vehicle_emirate_id = fields.Many2one('emirate', string="Vehicle Emirate ID")
-    provider_from_location_id = fields.Many2one('location.from', string="From Location")
-    provider_to_location_id = fields.Many2one('location.to', string="To Location")
+    provider_from_location_id = fields.Many2one('location.latlong', string="From Location")
+    provider_to_location_id = fields.Many2one('location.latlong', string="To Location")
     
     # SERVICE LOCATION LAT LONG
     from_serive_location_id = fields.Many2one('location.service', string="From Lat Location")
