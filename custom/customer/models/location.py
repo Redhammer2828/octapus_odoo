@@ -32,5 +32,5 @@ class LocationFrom(models.Model):
     _rec_name = 'location'
 
     location = fields.Char('Location')
-    latitude = fields.Float('Latitude',digits=(16, 8))
-    longitude = fields.Float('Longitude',digits=(16, 8))
+    latitude = fields.Char('Latitude')
+    longitude = fields.Char('Longitude')
