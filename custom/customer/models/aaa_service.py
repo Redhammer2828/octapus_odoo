@@ -284,6 +284,15 @@ class AAAService(models.Model):
             self.message_post(body=_("Request failed: %s") % str(e))
             print("Request failed:", str(e))
 
+    def action_order_create(self, order_number):
+        url = f"https://gioapi-gy-dev.livelocal.delivery/aaa-customer/consumers/create/road_side_service/{order_number}"
+
+        response = requests.post(url)
+
+        print("API RESPONSE-ORDER CREATED",response.text)
+        
+        
+
     # def action_dispatch_service(self):
     #     # Ensure we're working with a single record
     #     self.ensure_one()
@@ -500,6 +509,16 @@ class AAAService(models.Model):
                 sequence = self.env['ir.sequence'].next_by_code('aaa.service')
                 self.name = f'SERV-{date_str}-{sequence[-4:]}'
         self.schedule_date_time = fields.Datetime.now()
+        # -----------API------------------------------------------------------------------------------------
+        order_number = self.name
+        status = self.state
+        phone_number = self.member_contact_no
+        vehicle_chasis_no = self.vehicle_chasis_no  # Corrected field name
+
+        self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
+        self.action_order_create(order_number)
+        print(f"checking value of order:{order_number},{status}, {phone_number}, {vehicle_chasis_no}")
+        # -----------------------------------------------------------------------------------------------
  
     def _is_service_in_package(self, product_template_id):
         package_services = self.env['product.package.service'].search([
@@ -543,7 +562,6 @@ class AAAService(models.Model):
             else:
                 return True
    
- 
         if self.service_type != 'location_duration':
             if not self._is_service_accessible_in_24_hours(parent_category_id):
                 remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)

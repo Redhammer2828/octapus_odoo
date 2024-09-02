@@ -446,6 +446,8 @@ class ResPartnerMembers(models.Model):
         _name = 'membership.history'
         _description = 'Membership History'
 
+        # name = fields.Char('Name')
+        # ref_num = fields.Char('Ref Num')
         policy_no = fields.Char(string='Policy Number')
         vehicle_chasis_no = fields.Char(string='Vehicle Chasis No')
         vehicle_type = fields.Char(string='Vehicle Type')
@@ -454,3 +456,4 @@ class ResPartnerMembers(models.Model):
         member_expiry_date = fields.Date(string='Member Expiry Date')
         card_type_id = fields.Many2one('card.type', string='Card Type')
         history_id = fields.Many2one('res.partner', string="Replaced Member")
+        
