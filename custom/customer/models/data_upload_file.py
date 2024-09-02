@@ -81,7 +81,7 @@ class DataUploadFile(models.Model):
         added_member_count = total_count - rejected_count
         
         self.upload_log = (f"Total Records: {total_count} | Rejected Records: {rejected_count} | Added Records: {added_member_count} | "
-                        f"New Records: {new_member_count} | Updated Records: {updated_member_count} | Renewal Records: {renewal_member_count} | Replace Records: {replaced_member_count} | "
+                        f"New Records: {new_member_count} | Extension Records: {updated_member_count} | Renewal Records: {renewal_member_count} | Changed Records: {replaced_member_count} | "
                         f"Time to Process: {processing_time} seconds")
         
         self.state = 'validate'
@@ -456,7 +456,7 @@ class DataUploadFile(models.Model):
                     print("Renewed the policy member.....")
                     # Create a history record for the existing member
                     self.env['membership.history'].create({
-                        'name': matching_partner.name,
+                        # 'name': matching_partner.name,
                         'policy_no': matching_partner.policy_no,
                         'vehicle_chasis_no': matching_partner.vehicle_chasis_no,
                         'vehicle_type': matching_partner.vehicle_type,
