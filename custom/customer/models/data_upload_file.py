@@ -36,7 +36,7 @@ class DataUploadFile(models.Model):
         matching_partners = self.env['res.partner'].search([('customer_code', 'in', list(customer_codes))])
         partner_ids = matching_partners.ids
         
-        partner_chassis = self.env['res.partner'].search([('parent_customer_id', 'in', partner_ids), ('member_type', '=', 'policy')])
+        partner_chassis = self.env['res.partner'].search([('parent_customer_id', 'in', partner_ids), ('member_type', '=', 'policy'),('membership_state', '!=', 'cancel')])
         partner_chassis_dict = {partner.vehicle_chasis_no.strip().upper(): partner for partner in partner_chassis}
         
         for member_line in self.upload_member_ids:
@@ -99,14 +99,14 @@ class DataUploadFile(models.Model):
 
         if excel_chassis_no == db_chassis_no:
             print("[PASS]")
-            print("ex CUSTOMER CODE",member_line.customer_code)
+            print("EXCEL-CUSTOMER CODE",member_line.customer_code)
             # matching_customer = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)], limit=1)
-            print("PARENT CUSTOMER ID",member.parent_customer_id.id)
+            # print("PARENT CUSTOMER ID",member.parent_customer_id.id)
             # Retrieve the parent customer record using the parent_customer_id
             parent_customer = self.env['res.partner'].browse(member.parent_customer_id.id)
              # Get the customer_code from the parent customer record
             parent_customer_code = parent_customer.customer_code
-            print("CUSTOMER CODE",parent_customer_code)
+            print("DB-CUSTOMER CODE",parent_customer_code)
             matching_partner = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)], limit=1)
             print("RES PARTNER ID OF CUSTOMER CODE",matching_partner)
             # Customer Code Check
@@ -155,8 +155,10 @@ class DataUploadFile(models.Model):
                     print("NAME CHECK: [FAIL]")
                     # member_line.update({'upload_member_status': 'new', 'comment': "Member Not Exist"})
                     db_name= member.name
+                    db_expiry_date = member.member_expiry_date
+                    excel_expiry_date = member_line.member_expiry_date
                     
-                    if member.member_expiry_date >= member_line.member_expiry_date:
+                    if db_expiry_date >= excel_expiry_date:
                         member_line.update({'upload_member_status':'rejection', 'comment': 'Member with same expiry date'})
                         print("EXPIRY DATE_CHECK FAILED!!")
                     elif member.member_expiry_date < member_line.member_expiry_date:
@@ -169,17 +171,18 @@ class DataUploadFile(models.Model):
                 print("CUSTOMER CODE CHECK: [FAIL]")
 
                 other_partner = self.env['res.partner'].search([
-                    ('vehicle_chasis_no', '=', excel_chassis_no)
+                    ('vehicle_chasis_no', '=', excel_chassis_no),
+                    ('membership_state', '!=', 'cancel')
                 ], limit=1)
                 print("OTHER PARTNER",other_partner)
                 if other_partner:
                     current_date = fields.Date.context_today(self)
                     db_expiry_date = member.member_expiry_date
                     if db_expiry_date >= current_date:
-                        member_line.update({'upload_member_status': 'replace', 'comment': "Active Data Found Under Another Customer. Cancelling & Add as New Member"})
-                    if db_expiry_date < current_date:
-                        member_line.update({'upload_member_status': 'replace', 'comment': "Expired Data Found Under Another Customer. Cancelling & Add as New Member"})
-                        member_line.if_rep_match = member.id
+                        member_line.update({'upload_member_status': 'company_change', 'comment': "Active Data Found Under Another Customer. Cancelling & Add as New Member"})
+                    elif db_expiry_date < current_date:
+                        member_line.update({'upload_member_status': 'company_change', 'comment': "Expired Data Found Under Another Customer. Cancelling & Add as New Member"})
+                        member_line.if_cpm_match = member.id
                         print("MEMBER REPLACEMENT PASS...")
                 else:    
                     member_line.update({'upload_member_status': 'new', 'comment': "*New Member"})
@@ -193,98 +196,331 @@ class DataUploadFile(models.Model):
 
                 member_line.update({'upload_member_status': 'new', 'comment': "*New Member"})
 # ----------------------------------------------------------------------------------------------------------------------------------------------
-# ---------------------------------------------------------------new FLOW----------------------------------------------
-        # else:
-        #     if excel_chassis_no == 'nan' or excel_chassis_no == '':
-        #         member_line.update({'upload_member_status': 'rejection', 'comment': "*Vehicle Chasis Number Does Not Exist!"})
-        #         print("[FAIL]")
-        #     else:
-        #         # Search for the chassis number in res.partner under another customer_code
-        #         other_partner = self.env['res.partner'].search([
-        #             ('db_chassis_no', '=', excel_chassis_no),
-        #             ('customer_code', '!=', member_line.customer_code)
-        #         ], limit=1)
-        #         print("OTHER_PARTNERS_OTHER_CUSTOMER",other_partner)
-
-        #         if other_partner:
-        #             # Check if member_expiry_date is greater than the current date
-        #             current_date = fields.Date.context_today(self)
-        #             other_partner_expiry_date = fields.Date.from_string(other_partner.member_expiry_date)
-
-        #             if other_partner_expiry_date >= current_date:
-        #                 # If expiry date is greater than current date, update to 'replace' state
-        #                 member_line.update({
-        #                     'upload_member_status': 'replace',
-        #                     'comment': f"Member Replaced (Found under another customer: {other_partner.customer_code})"
-        #                 })
-        #                 member_line.if_rep_match = other_partner.id
-        #                 print(f"REPLACE: Found chassis number under a different customer with valid expiry date.")
-        #             else:
-        #                 # If expiry date is not greater, treat as new member
-        #                 member_line.update({
-        #                     'upload_member_status': 'replace',
-        #                     'comment': f"Member Replaced (Found under another customer: {other_partner.customer_code})"
-        #                 })
-        #         else:
-        #             # If no matching chassis number is found under another customer, treat as a new member
-        #             member_line.update({'upload_member_status': 'new', 'comment': "*New Member"})
-        #             print("New member: No matching chassis number found under another customer.")
-# ------------------------------------------------------------------------------------------------------------------------------------
-
+    def apply_member_upload_wizard(self):
+    
+            # Start measuring time
+            start_time = time.time()
+            # Get the dynamically imported data after validation
+            validated_member_lines = self.upload_member_ids.filtered(lambda line: line.upload_member_status != 'rejection')
+            current_month = datetime.today().month
+            current_year = datetime.today().year
+    
+            # Step 1: Pre-fetch data to minimize repetitive database queries
+            customer_codes = {line.customer_code for line in validated_member_lines}
+            partners = self.env['res.partner'].search([('customer_code', 'in', list(customer_codes))])
+            partner_dict = {partner.customer_code: partner for partner in partners}
+    
+            card_types = {line.card_type for line in validated_member_lines}
+            card_type_records = self.env['card.type'].search([('code', 'in', list(card_types))])
+            card_type_dict = {card.code: card for card in card_type_records}
+    
+            sequence_codes = {line.sequence_code for line in validated_member_lines}
+            categories = self.env['partner.category'].search([('name', 'in', list(sequence_codes))])
+            category_dict = {(cat.name, cat.partner_id.id): cat for cat in categories}
+    
+            packages = {line.package for line in validated_member_lines}
+            package_records = self.env['product.template'].search([('id', 'in', list(packages))])
+            package_dict = {pkg.id: pkg for pkg in package_records}
+    
+            # Step 2: Process each member line
+            for member_line in validated_member_lines:
+                member_activate_date = fields.Date.from_string(member_line.member_activate_date)
+    
+                # Update invoice_ref_date and member_activate_date based on the current month
+                # if member_activate_date.month != current_month:
+                #     new_invoice_ref_date = member_activate_date.replace(month=current_month, year=current_year)
+                #     member_line.update({
+                #         'invoice_ref_date': new_invoice_ref_date,
+                #         'member_activate_date': new_invoice_ref_date,
+                #     })
+                #     print(f"Updated member_activate_date and invoice_ref_date to {new_invoice_ref_date} for member {member_line.member_name}")
+                # else:
+                #     member_line.update({
+                #         'member_activate_date': member_line.invoice_ref_date,
+                #     })
+                #     print(f"Set member_activate_date to invoice_ref_date for member {member_line.member_name}")
+    
+                # Handle 'new' status
+                if member_line.upload_member_status == 'new':
+                    card_type_record = card_type_dict.get(member_line.card_type)
+                    matching_partner = partner_dict.get(member_line.customer_code)
+    
+                    if not matching_partner or not card_type_record:
+                        print(f"No matching partner or card type for member {member_line.customer_code}")
+                        continue
+    
+                    matching_category = category_dict.get((member_line.sequence_code, matching_partner.id))
+                    matching_package = package_dict.get(member_line.package)
+    
+                    # Create a new partner record
+                    new_partner = self.env['res.partner'].create({
+                        'card_type_id': card_type_record.id,
+                        'old_membership_number': member_line.old_membership_number,
+                        'name': member_line.member_name,
+                        'street': member_line.street,
+                        'mobile': member_line.mobile,
+                        'parent_customer_id': matching_partner.id,
+                        'vehicle_type': member_line.vehicle_type,
+                        'vehicle_model': member_line.vehicle_model,
+                        'vehicle_mfg_year': member_line.vehicle_mfg_year,
+                        'vehicle_plate': member_line.vehicle_plate,
+                        'vehicle_chasis_no': member_line.vehicle_chasis_no,
+                        'invoice_ref_date': member_line.invoice_ref_date,
+                        'delivery_ref_date': member_line.delivery_ref_date,
+                        'member_activate_date': member_line.member_activate_date,
+                        'member_expiry_date': member_line.member_expiry_date,
+                        'policy_no': member_line.policy_no,
+                        'is_customer': True,
+                        'adhoc_member': False,
+                        'credit_member_ok': False,
+                        'member_type': 'policy',
+                        'membership_state': 'confirm',
+                        'member_partner_category_id': matching_category.id if matching_category else None,
+                        # Add more fields to create as needed
+                    })
+    
+                # Handle 'renewal' or 'update' status
+                elif member_line.upload_member_status in ['renewal']:
+                    matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
+                    if matching_partner:
+                        matching_partner.write({
+                            'membership_state': 'cancel',
+                            'comment': 'Member Renewed the policy',
+                        })
+                        print("Renewed the policy member.....")
+                        # Create a history record for the existing member
+                        self.env['membership.history'].create({
+                            'policy_no': matching_partner.policy_no,
+                            'vehicle_chasis_no': matching_partner.vehicle_chasis_no,
+                            'vehicle_type': matching_partner.vehicle_type,
+                            'vehicle_plate': matching_partner.vehicle_plate,
+                            'member_activate_date': matching_partner.member_activate_date,
+                            'member_expiry_date': matching_partner.member_expiry_date,
+                            'card_type_id': matching_partner.card_type_id.id,
+                            'history_id': matching_partner.id,
+                        })
+                        print("Created history record for existing member.")
+    
+                        # Update existing member with new details
+                        matching_partner.write({
+                            'name': member_line.member_name,
+                            'membership_state': 'confirm',
+                            'member_expiry_date': member_line.member_expiry_date,
+                            'policy_no': member_line.policy_no,
+                            'member_activate_date': member_line.member_activate_date,
+                            'invoice_ref_date': member_line.invoice_ref_date,
+                            'delivery_ref_date': member_line.delivery_ref_date,
+                            'vehicle_type': member_line.vehicle_type,
+                            'vehicle_model': member_line.vehicle_model,
+                            'vehicle_mfg_year': member_line.vehicle_mfg_year,
+                            'vehicle_plate': member_line.vehicle_plate,
+                            'vehicle_chasis_no': member_line.vehicle_chasis_no,
+                            'street': member_line.street,
+                            'mobile': member_line.mobile,
+                        })
+                        print("Existing member replaced with renewed policy details")
+    
+                    print(f"Finished processing member_line: {member_line.customer_code}")
+    
+                elif member_line.upload_member_status in ['update']:
+                    matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
+                    if matching_partner:
+                        matching_partner.write({
+                            'membership_state': 'cancel',
+                            'comment': 'Member Extended the policy',
+                        })
+                        print(" POLICY EXTENSION...........")
+                        # Create a history record for the existing member
+                        self.env['membership.history'].create({
+                            'policy_no': matching_partner.policy_no,
+                            'vehicle_chasis_no': matching_partner.vehicle_chasis_no,
+                            'vehicle_type': matching_partner.vehicle_type,
+                            'vehicle_plate': matching_partner.vehicle_plate,
+                            'member_activate_date': matching_partner.member_activate_date,
+                            'member_expiry_date': matching_partner.member_expiry_date,
+                            'card_type_id': matching_partner.card_type_id.id,
+                            'history_id': matching_partner.id,
+                        })
+                        print("Created history record for existing member.")
+    
+                        # Update existing member with new details
+                        matching_partner.write({
+                            'name': member_line.member_name,
+                            'membership_state': 'confirm',
+                            'member_expiry_date': member_line.member_expiry_date,
+                            'policy_no': member_line.policy_no,
+                            'member_activate_date': member_line.member_activate_date,
+                            'invoice_ref_date': member_line.invoice_ref_date,
+                            'delivery_ref_date': member_line.delivery_ref_date,
+                            'vehicle_type': member_line.vehicle_type,
+                            'vehicle_model': member_line.vehicle_model,
+                            'vehicle_mfg_year': member_line.vehicle_mfg_year,
+                            'vehicle_plate': member_line.vehicle_plate,
+                            'vehicle_chasis_no': member_line.vehicle_chasis_no,
+                            'street': member_line.street,
+                            'mobile': member_line.mobile,
+                        })
+                        print("Existing member replaced with extended policy details")
+    
+                    print(f"Finished processing member_line: {member_line.customer_code}")
+    
+                # Handle 'exist_temp' status
+                elif member_line.upload_member_status == 'exist_temp':
+                    matching_partner = self.env['res.partner'].browse(member_line.if_temp_match)
+                    if matching_partner:
+                        matching_partner.write({
+                            'membership_state': 'confirm',
+                            'member_expiry_date': member_line.member_expiry_date,
+                        })
+    
+                # Handle 'replace' status
+                elif member_line.upload_member_status == 'replace':
+                    matching_partner = self.env['res.partner'].browse(member_line.if_cpm_match)
+                    if matching_partner:
+                        matching_partner.write({
+                            'membership_state': 'cancel',
+                            'comment': 'Member replaced with uploaded member details',
+                        })
+                        print("Replaced member state updated to canceled.")
+    
+                        # Create a history record for the existing member
+                        self.env['membership.history'].create({
+                            'policy_no': matching_partner.policy_no,
+                            'vehicle_chasis_no': matching_partner.vehicle_chasis_no,
+                            'vehicle_type': matching_partner.vehicle_type,
+                            'vehicle_plate': matching_partner.vehicle_plate,
+                            'member_activate_date': matching_partner.member_activate_date,
+                            'member_expiry_date': matching_partner.member_expiry_date,
+                            'card_type_id': matching_partner.card_type_id.id,
+                            'history_id': matching_partner.id,
+                        })
+                        print("Created history record for existing member.")
+                        # Update existing member with new details
+                        matching_partner.write({
+                            'name': member_line.member_name,
+                            'membership_state': 'confirm',
+                            'member_expiry_date': member_line.member_expiry_date,
+                            'policy_no': member_line.policy_no,
+                            'member_activate_date': member_line.member_activate_date,
+                            'invoice_ref_date': member_line.invoice_ref_date,
+                            'delivery_ref_date': member_line.delivery_ref_date,
+                            'vehicle_type': member_line.vehicle_type,
+                            'vehicle_model': member_line.vehicle_model,
+                            'vehicle_mfg_year': member_line.vehicle_mfg_year,
+                            'vehicle_plate': member_line.vehicle_plate,
+                            'vehicle_chasis_no': member_line.vehicle_chasis_no,
+                            'street': member_line.street,
+                            'mobile': member_line.mobile,
+                        })
+                        print("Existing member replaced with uploaded member details.")
+                # Handle 'replace' status
+                elif member_line.upload_member_status == 'company_change':
+                    matching_partner = self.env['res.partner'].browse(member_line.if_cpm_match)
+                    if matching_partner:
+                        matching_partner.write({
+                            'membership_state': 'cancel',
+                            'comment': 'Member replaced with uploaded member details',
+                        })
+                        print("Replaced member state updated to canceled.")
+    
+                        # Create a history record for the existing member
+                        self.env['membership.history'].create({
+                            'policy_no': matching_partner.policy_no,
+                            'vehicle_chasis_no': matching_partner.vehicle_chasis_no,
+                            'vehicle_type': matching_partner.vehicle_type,
+                            'vehicle_plate': matching_partner.vehicle_plate,
+                            'member_activate_date': matching_partner.member_activate_date,
+                            'member_expiry_date': matching_partner.member_expiry_date,
+                            'card_type_id': matching_partner.card_type_id.id,
+                            'history_id': matching_partner.id,
+                        })
+                        print("Created history record for existing member.")
+                        parent_customer_code = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)], limit=1)
+                        # Update existing member with new details
+                        matching_partner.write({
+                            'parent_customer_id': parent_customer_code.id,
+                            'name': member_line.member_name,
+                            'membership_state': 'confirm',
+                            'member_expiry_date': member_line.member_expiry_date,
+                            'policy_no': member_line.policy_no,
+                            'member_activate_date': member_line.member_activate_date,
+                            'invoice_ref_date': member_line.invoice_ref_date,
+                            'delivery_ref_date': member_line.delivery_ref_date,
+                            'vehicle_type': member_line.vehicle_type,
+                            'vehicle_model': member_line.vehicle_model,
+                            'vehicle_mfg_year': member_line.vehicle_mfg_year,
+                            'vehicle_plate': member_line.vehicle_plate,
+                            'vehicle_chasis_no': member_line.vehicle_chasis_no,
+                            'street': member_line.street,
+                            'mobile': member_line.mobile,
+                        })
+                        print("Existing member replaced with uploaded member details.")
+    
+                print(f"Finished processing member_line: {member_line.customer_code}")
+        
+            # Measure the time taken
+            end_time = time.time()
+            time_taken = end_time - start_time
+    
+            # Ensure apply_log is a string
+            if not self.apply_log:
+                self.apply_log = ""
+    
+            # Update the state and log
+            self.state = 'done'
+            self.apply_log += f" in {time_taken:.2f} seconds."
+            print(f"State Updated to 'Done' and apply log updated with time taken: {time_taken:.2f} seconds.")
+   
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
     # def apply_member_upload_wizard(self):
+
     #     # Start measuring time
     #     start_time = time.time()
-
-    #     # Filter validated member lines upfront
+    #     # Get the dynamically imported data after validation
     #     validated_member_lines = self.upload_member_ids.filtered(lambda line: line.upload_member_status != 'rejection')
+    #     current_month = datetime.today().month
+    #     current_year = datetime.today().year
 
-    #     # Collect necessary data
-    #     card_types = {line.card_type for line in validated_member_lines if line.upload_member_status == 'new'}
+    #     # Step 1: Pre-fetch data to minimize repetitive database queries
     #     customer_codes = {line.customer_code for line in validated_member_lines}
-    #     sequence_codes = {(line.sequence_code, line.customer_code) for line in validated_member_lines if line.upload_member_status == 'new'}
+    #     partners = self.env['res.partner'].search([('customer_code', 'in', list(customer_codes))])
+    #     partner_dict = {partner.customer_code: partner for partner in partners}
 
-    #     # Fetch related records in bulk
+    #     card_types = {line.card_type for line in validated_member_lines}
     #     card_type_records = self.env['card.type'].search([('code', 'in', list(card_types))])
-    #     customer_code_records = self.env['res.partner'].search([('customer_code', 'in', list(customer_codes))])
-    #     category_records = self.env['partner.category'].search([
-    #         ('name', 'in', [seq[0] for seq in sequence_codes]),
-    #         ('partner_id.customer_code', 'in', list(customer_codes))
-    #     ])
+    #     card_type_dict = {card.code: card for card in card_type_records}
 
-    #     # Create dictionaries for quick lookups
-    #     card_type_dict = {record.code: record.id for record in card_type_records}
-    #     customer_code_dict = {record.customer_code: record.id for record in customer_code_records}
-    #     category_dict = {(record.name, record.partner_id.customer_code): record.id for record in category_records}
+    #     sequence_codes = {line.sequence_code for line in validated_member_lines}
+    #     categories = self.env['partner.category'].search([('name', 'in', list(sequence_codes))])
+    #     category_dict = {(cat.name, cat.partner_id.id): cat for cat in categories}
 
-    #     new_partner_vals = []
-    #     update_partner_vals = []
-    #     temp_confirm_partner_vals = []
+    #     packages = {line.package for line in validated_member_lines}
+    #     package_records = self.env['product.template'].search([('id', 'in', list(packages))])
+    #     package_dict = {pkg.id: pkg for pkg in package_records}
 
-    #     created_count = 0
-    #     updated_count = 0
-    #     confirmed_count = 0
-
+    #     # Step 2: Process each member line
     #     for member_line in validated_member_lines:
+    #         member_activate_date = fields.Date.from_string(member_line.member_activate_date)
+    #         # Handle 'new' status
     #         if member_line.upload_member_status == 'new':
-    #             card_type_id = card_type_dict.get(member_line.card_type)
-    #             if not card_type_id:
-    #                 raise ValidationError(f"Card type '{member_line.card_type}' not found.")
+    #             card_type_record = card_type_dict.get(member_line.card_type)
+    #             matching_partner = partner_dict.get(member_line.customer_code)
 
-    #             matching_partner_id = customer_code_dict.get(member_line.customer_code)
-    #             if not matching_partner_id:
-    #                 raise ValidationError(f"Partner with customer code '{member_line.customer_code}' not found.")
+    #             if not matching_partner or not card_type_record:
+    #                 print(f"No matching partner or card type for member {member_line.customer_code}")
+    #                 continue
 
-    #             matching_category_id = category_dict.get((member_line.sequence_code, member_line.customer_code))
-    #             if not matching_category_id:
-    #                 raise ValidationError(f"Category '{member_line.sequence_code}' not found for partner ID {matching_partner_id}.")
+    #             matching_category = category_dict.get((member_line.sequence_code, matching_partner.id))
+    #             matching_package = package_dict.get(member_line.package)
 
-    #             # Collect data for new partners
-    #             new_partner_vals.append({
-    #                 'card_type_id': card_type_id,
+    #             # Create a new partner record
+    #             new_partner = self.env['res.partner'].create({
+    #                 'card_type_id': card_type_record.id,
     #                 'old_membership_number': member_line.old_membership_number,
     #                 'name': member_line.member_name,
     #                 'street': member_line.street,
-    #                 'parent_customer_id': matching_partner_id,
+    #                 'mobile': member_line.mobile,
+    #                 'parent_customer_id': matching_partner.id,
     #                 'vehicle_type': member_line.vehicle_type,
     #                 'vehicle_model': member_line.vehicle_model,
     #                 'vehicle_mfg_year': member_line.vehicle_mfg_year,
@@ -300,54 +536,150 @@ class DataUploadFile(models.Model):
     #                 'credit_member_ok': False,
     #                 'member_type': 'policy',
     #                 'membership_state': 'confirm',
-    #                 'member_partner_category_id': matching_category_id,
+    #                 'member_partner_category_id': matching_category.id if matching_category else None,
     #                 'product_template_id': member_line.package,
-    #                 'mobile': member_line.mobile,
+    #                 # Add more fields to create as needed
     #             })
 
-    #         elif member_line.upload_member_status in ['renewal', 'update']:
-    #             # Collect data for updating partners
-    #             update_partner_vals.append((member_line.if_conf_match, {'member_expiry_date': member_line.member_expiry_date}))
+    #         # Handle 'renewal' or 'update' status
+    #         elif member_line.upload_member_status in ['renewal']:
+    #             matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
+    #             if matching_partner:
+    #                 matching_partner.write({
+    #                     'membership_state': 'cancel',
+    #                     'comment': 'Member Renewed the policy',
+    #                 })
+    #                 print("Renewed the policy member.....")
+    #                 # Create a history record for the existing member
+    #                 self.env['membership.history'].create({
+    #                     # 'name': matching_partner.name,
+    #                     'policy_no': matching_partner.policy_no,
+    #                     'vehicle_chasis_no': matching_partner.vehicle_chasis_no,
+    #                     'vehicle_type': matching_partner.vehicle_type,
+    #                     'vehicle_plate': matching_partner.vehicle_plate,
+    #                     'member_activate_date': matching_partner.member_activate_date,
+    #                     'member_expiry_date': matching_partner.member_expiry_date,
+    #                     'card_type_id': matching_partner.card_type_id.id,
+    #                     'history_id': matching_partner.id,
+    #                 })
+    #                 print("Created history record for existing member.")
+    #                   # Update existing member with new details
+    #                 matching_partner.write({
+    #                     'name': member_line.member_name,
+    #                     'membership_state': 'confirm',
+    #                     'member_expiry_date': member_line.member_expiry_date,
+    #                     'policy_no': member_line.policy_no,
+    #                     'member_activate_date': member_line.member_activate_date,
+    #                     'invoice_ref_date': member_line.invoice_ref_date,
+    #                     'delivery_ref_date': member_line.delivery_ref_date,
+    #                     'vehicle_type': member_line.vehicle_type,
+    #                     'vehicle_model': member_line.vehicle_model,
+    #                     'vehicle_mfg_year': member_line.vehicle_mfg_year,
+    #                     'vehicle_plate': member_line.vehicle_plate,
+    #                     'vehicle_chasis_no': member_line.vehicle_chasis_no,
+    #                     'street': member_line.street,
+    #                     'mobile': member_line.mobile,
+    #                 })
+    #                 print("Existing member replaced with renewed policy details")
 
+    #             print(f"Finished processing member_line: {member_line.customer_code}")
+
+    #         elif member_line.upload_member_status in ['update']:
+    #             matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
+    #             if matching_partner:
+    #                 matching_partner.write({
+    #                     'membership_state': 'cancel',
+    #                     'comment': 'Member Extended the policy',
+    #                 })
+    #                 print(" POLICY EXTENSION...........")
+    #                 # Create a history record for the existing member
+    #                 self.env['membership.history'].create({
+    #                     'policy_no': matching_partner.policy_no,
+    #                     'vehicle_chasis_no': matching_partner.vehicle_chasis_no,
+    #                     'vehicle_type': matching_partner.vehicle_type,
+    #                     'vehicle_plate': matching_partner.vehicle_plate,
+    #                     'member_activate_date': matching_partner.member_activate_date,
+    #                     'member_expiry_date': matching_partner.member_expiry_date,
+    #                     'card_type_id': matching_partner.card_type_id.id,
+    #                     'history_id': matching_partner.id,
+    #                 })
+    #                 print("Created history record for existing member.")
+
+    #                   # Update existing member with new details
+    #                 matching_partner.write({
+    #                     'name': member_line.member_name,
+    #                     'membership_state': 'confirm',
+    #                     'member_expiry_date': member_line.member_expiry_date,
+    #                     'policy_no': member_line.policy_no,
+    #                     'member_activate_date': member_line.member_activate_date,
+    #                     'invoice_ref_date': member_line.invoice_ref_date,
+    #                     'delivery_ref_date': member_line.delivery_ref_date,
+    #                     'vehicle_type': member_line.vehicle_type,
+    #                     'vehicle_model': member_line.vehicle_model,
+    #                     'vehicle_mfg_year': member_line.vehicle_mfg_year,
+    #                     'vehicle_plate': member_line.vehicle_plate,
+    #                     'vehicle_chasis_no': member_line.vehicle_chasis_no,
+    #                     'street': member_line.street,
+    #                     'mobile': member_line.mobile,
+    #                 })
+    #                 print("Existing member replaced with extended policy details")
+
+    #             print(f"Finished processing member_line: {member_line.customer_code}")
+
+    #         # Handle 'exist_temp' status
     #         elif member_line.upload_member_status == 'exist_temp':
-    #             # Collect data for confirming temporary partners
-    #             temp_confirm_partner_vals.append((member_line.if_temp_match, {'membership_state': 'confirm', 'member_expiry_date': member_line.member_expiry_date}))
+    #             matching_partner = self.env['res.partner'].browse(member_line.if_temp_match)
+    #             if matching_partner:
+    #                 matching_partner.write({
+    #                     'membership_state': 'confirm',
+    #                     'member_expiry_date': member_line.member_expiry_date,
+    #                 })
 
-    #     # Batch create new partners
-    #     if new_partner_vals:
-    #         new_partners = self.env['res.partner'].create(new_partner_vals)
-    #         created_count = len(new_partners)
-    #         print(f"{created_count} New Partners Created")
-    #         self.apply_log = f"{created_count} New Partners Created"
+    #         # Handle 'replace' status
+    #         elif member_line.upload_member_status == 'replace':
+    #             matching_partner = self.env['res.partner'].browse(member_line.if_rep_match)
+    #             if matching_partner:
+    #                 matching_partner.write({
+    #                     'membership_state': 'cancel',
+    #                     'comment': 'Member replaced with uploaded member details',
+    #                 })
+    #                 print("Replaced member state updated to canceled.")
 
-    #     # Batch update existing partners
-    #     if update_partner_vals:
-    #         partner_ids, partner_updates = zip(*update_partner_vals)
-    #         partners_to_update = self.env['res.partner'].browse(partner_ids)
-    #         for partner, vals in zip(partners_to_update, partner_updates):
-    #             partner.write(vals)
-    #         updated_count = len(update_partner_vals)
-    #         print(f"{updated_count} Partners Updated")
-    #         self.apply_log = (
-    #             f"{self.apply_log}, {updated_count} Partners Updated"
-    #             if self.apply_log else
-    #             f"{updated_count} Partners Updated"
-    #         )
+    #                 # Create a history record for the existing member
+    #                 self.env['membership.history'].create({
+    #                     'policy_no': matching_partner.policy_no,
+    #                     'vehicle_chasis_no': matching_partner.vehicle_chasis_no,
+    #                     'vehicle_type': matching_partner.vehicle_type,
+    #                     'vehicle_plate': matching_partner.vehicle_plate,
+    #                     'member_activate_date': matching_partner.member_activate_date,
+    #                     'member_expiry_date': matching_partner.member_expiry_date,
+    #                     'card_type_id': matching_partner.card_type_id.id,
+    #                     'history_id': matching_partner.id,
+    #                 })
+    #                 print("Created history record for existing member.")
+    #                 matching_partner = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)], limit=1)
+    #                 # Update existing member with new details
+    #                 matching_partner.create({
+    #                     'name': member_line.member_name,
+    #                     'parent_customer_id': matching_partner.id, 
+    #                     'membership_state': 'confirm',
+    #                     'member_expiry_date': member_line.member_expiry_date,
+    #                     'policy_no': member_line.policy_no,
+    #                     'member_activate_date': member_line.member_activate_date,
+    #                     'invoice_ref_date': member_line.invoice_ref_date,
+    #                     'delivery_ref_date': member_line.delivery_ref_date,
+    #                     'vehicle_type': member_line.vehicle_type,
+    #                     'vehicle_model': member_line.vehicle_model,
+    #                     'vehicle_mfg_year': member_line.vehicle_mfg_year,
+    #                     'vehicle_plate': member_line.vehicle_plate,
+    #                     'vehicle_chasis_no': member_line.vehicle_chasis_no,
+    #                     'street': member_line.street,
+    #                     'mobile': member_line.mobile,
+    #                 })
+    #                 print("Existing member replaced with uploaded member details.")
 
-    #     # Batch confirm temporary partners
-    #     if temp_confirm_partner_vals:
-    #         temp_partner_ids, temp_partner_updates = zip(*temp_confirm_partner_vals)
-    #         temp_partners_to_update = self.env['res.partner'].browse(temp_partner_ids)
-    #         for partner, vals in zip(temp_partners_to_update, temp_partner_updates):
-    #             partner.write(vals)
-    #         confirmed_count = len(temp_confirm_partner_vals)
-    #         print(f"{confirmed_count} Temp Partners Confirmed")
-    #         self.apply_log = (
-    #             f"{self.apply_log}, {confirmed_count} Temp Partners Confirmed"
-    #             if self.apply_log else
-    #             f"{confirmed_count} Temp Partners Confirmed"
-    #         )
-
+    #         print(f"Finished processing member_line: {member_line.customer_code}")
+        
     #     # Measure the time taken
     #     end_time = time.time()
     #     time_taken = end_time - start_time
@@ -360,243 +692,6 @@ class DataUploadFile(models.Model):
     #     self.state = 'done'
     #     self.apply_log += f" in {time_taken:.2f} seconds."
     #     print(f"State Updated to 'Done' and apply log updated with time taken: {time_taken:.2f} seconds.")
-# ---------------------------------------------------------------------------------------------------------------------------------------------------------
-    def apply_member_upload_wizard(self):
-
-        # Start measuring time
-        start_time = time.time()
-        # Get the dynamically imported data after validation
-        validated_member_lines = self.upload_member_ids.filtered(lambda line: line.upload_member_status != 'rejection')
-        current_month = datetime.today().month
-        current_year = datetime.today().year
-
-        # Step 1: Pre-fetch data to minimize repetitive database queries
-        customer_codes = {line.customer_code for line in validated_member_lines}
-        partners = self.env['res.partner'].search([('customer_code', 'in', list(customer_codes))])
-        partner_dict = {partner.customer_code: partner for partner in partners}
-
-        card_types = {line.card_type for line in validated_member_lines}
-        card_type_records = self.env['card.type'].search([('code', 'in', list(card_types))])
-        card_type_dict = {card.code: card for card in card_type_records}
-
-        sequence_codes = {line.sequence_code for line in validated_member_lines}
-        categories = self.env['partner.category'].search([('name', 'in', list(sequence_codes))])
-        category_dict = {(cat.name, cat.partner_id.id): cat for cat in categories}
-
-        packages = {line.package for line in validated_member_lines}
-        package_records = self.env['product.template'].search([('id', 'in', list(packages))])
-        package_dict = {pkg.id: pkg for pkg in package_records}
-
-        # Step 2: Process each member line
-        for member_line in validated_member_lines:
-            member_activate_date = fields.Date.from_string(member_line.member_activate_date)
-
-            # Update invoice_ref_date and member_activate_date based on the current month
-            # if member_activate_date.month != current_month:
-            #     new_invoice_ref_date = member_activate_date.replace(month=current_month, year=current_year)
-            #     member_line.update({
-            #         'invoice_ref_date': new_invoice_ref_date,
-            #         'member_activate_date': new_invoice_ref_date,
-            #     })
-            #     print(f"Updated member_activate_date and invoice_ref_date to {new_invoice_ref_date} for member {member_line.member_name}")
-            # else:
-            #     member_line.update({
-            #         'member_activate_date': member_line.invoice_ref_date,
-            #     })
-            #     print(f"Set member_activate_date to invoice_ref_date for member {member_line.member_name}")
-
-            # Handle 'new' status
-            if member_line.upload_member_status == 'new':
-                card_type_record = card_type_dict.get(member_line.card_type)
-                matching_partner = partner_dict.get(member_line.customer_code)
-
-                if not matching_partner or not card_type_record:
-                    print(f"No matching partner or card type for member {member_line.customer_code}")
-                    continue
-
-                matching_category = category_dict.get((member_line.sequence_code, matching_partner.id))
-                matching_package = package_dict.get(member_line.package)
-
-                # Create a new partner record
-                new_partner = self.env['res.partner'].create({
-                    'card_type_id': card_type_record.id,
-                    'old_membership_number': member_line.old_membership_number,
-                    'name': member_line.member_name,
-                    'street': member_line.street,
-                    'mobile': member_line.mobile,
-                    'parent_customer_id': matching_partner.id,
-                    'vehicle_type': member_line.vehicle_type,
-                    'vehicle_model': member_line.vehicle_model,
-                    'vehicle_mfg_year': member_line.vehicle_mfg_year,
-                    'vehicle_plate': member_line.vehicle_plate,
-                    'vehicle_chasis_no': member_line.vehicle_chasis_no,
-                    'invoice_ref_date': member_line.invoice_ref_date,
-                    'delivery_ref_date': member_line.delivery_ref_date,
-                    'member_activate_date': member_line.member_activate_date,
-                    'member_expiry_date': member_line.member_expiry_date,
-                    'policy_no': member_line.policy_no,
-                    'is_customer': True,
-                    'adhoc_member': False,
-                    'credit_member_ok': False,
-                    'member_type': 'policy',
-                    'membership_state': 'confirm',
-                    'member_partner_category_id': matching_category.id if matching_category else None,
-                    'product_template_id': member_line.package,
-                    # Add more fields to create as needed
-                })
-
-            # Handle 'renewal' or 'update' status
-            elif member_line.upload_member_status in ['renewal']:
-                matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
-                if matching_partner:
-                    matching_partner.write({
-                        'membership_state': 'cancel',
-                        'comment': 'Member Renewed the policy',
-                    })
-                    print("Renewed the policy member.....")
-                    # Create a history record for the existing member
-                    self.env['membership.history'].create({
-                        # 'name': matching_partner.name,
-                        'policy_no': matching_partner.policy_no,
-                        'vehicle_chasis_no': matching_partner.vehicle_chasis_no,
-                        'vehicle_type': matching_partner.vehicle_type,
-                        'vehicle_plate': matching_partner.vehicle_plate,
-                        'member_activate_date': matching_partner.member_activate_date,
-                        'member_expiry_date': matching_partner.member_expiry_date,
-                        'card_type_id': matching_partner.card_type_id.id,
-                        'history_id': matching_partner.id,
-                    })
-                    print("Created history record for existing member.")
-
-                      # Update existing member with new details
-                    matching_partner.write({
-                        'name': member_line.member_name,
-                        'membership_state': 'confirm',
-                        'member_expiry_date': member_line.member_expiry_date,
-                        'policy_no': member_line.policy_no,
-                        'member_activate_date': member_line.member_activate_date,
-                        'invoice_ref_date': member_line.invoice_ref_date,
-                        'delivery_ref_date': member_line.delivery_ref_date,
-                        'vehicle_type': member_line.vehicle_type,
-                        'vehicle_model': member_line.vehicle_model,
-                        'vehicle_mfg_year': member_line.vehicle_mfg_year,
-                        'vehicle_plate': member_line.vehicle_plate,
-                        'vehicle_chasis_no': member_line.vehicle_chasis_no,
-                        'street': member_line.street,
-                        'mobile': member_line.mobile,
-                    })
-                    print("Existing member replaced with renewed policy details")
-
-                print(f"Finished processing member_line: {member_line.customer_code}")
-
-            elif member_line.upload_member_status in ['update']:
-                matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
-                if matching_partner:
-                    matching_partner.write({
-                        'membership_state': 'cancel',
-                        'comment': 'Member Extended the policy',
-                    })
-                    print(" POLICY EXTENSION...........")
-                    # Create a history record for the existing member
-                    self.env['membership.history'].create({
-                        'policy_no': matching_partner.policy_no,
-                        'vehicle_chasis_no': matching_partner.vehicle_chasis_no,
-                        'vehicle_type': matching_partner.vehicle_type,
-                        'vehicle_plate': matching_partner.vehicle_plate,
-                        'member_activate_date': matching_partner.member_activate_date,
-                        'member_expiry_date': matching_partner.member_expiry_date,
-                        'card_type_id': matching_partner.card_type_id.id,
-                        'history_id': matching_partner.id,
-                    })
-                    print("Created history record for existing member.")
-
-                      # Update existing member with new details
-                    matching_partner.write({
-                        'name': member_line.member_name,
-                        'membership_state': 'confirm',
-                        'member_expiry_date': member_line.member_expiry_date,
-                        'policy_no': member_line.policy_no,
-                        'member_activate_date': member_line.member_activate_date,
-                        'invoice_ref_date': member_line.invoice_ref_date,
-                        'delivery_ref_date': member_line.delivery_ref_date,
-                        'vehicle_type': member_line.vehicle_type,
-                        'vehicle_model': member_line.vehicle_model,
-                        'vehicle_mfg_year': member_line.vehicle_mfg_year,
-                        'vehicle_plate': member_line.vehicle_plate,
-                        'vehicle_chasis_no': member_line.vehicle_chasis_no,
-                        'street': member_line.street,
-                        'mobile': member_line.mobile,
-                    })
-                    print("Existing member replaced with extended policy details")
-
-                print(f"Finished processing member_line: {member_line.customer_code}")
-
-            # Handle 'exist_temp' status
-            elif member_line.upload_member_status == 'exist_temp':
-                matching_partner = self.env['res.partner'].browse(member_line.if_temp_match)
-                if matching_partner:
-                    matching_partner.write({
-                        'membership_state': 'confirm',
-                        'member_expiry_date': member_line.member_expiry_date,
-                    })
-
-            # Handle 'replace' status
-            elif member_line.upload_member_status == 'replace':
-                matching_partner = self.env['res.partner'].browse(member_line.if_rep_match)
-                if matching_partner:
-                    matching_partner.write({
-                        'membership_state': 'cancel',
-                        'comment': 'Member replaced with uploaded member details',
-                    })
-                    print("Replaced member state updated to canceled.")
-
-                    # Create a history record for the existing member
-                    self.env['membership.history'].create({
-                        'policy_no': matching_partner.policy_no,
-                        'vehicle_chasis_no': matching_partner.vehicle_chasis_no,
-                        'vehicle_type': matching_partner.vehicle_type,
-                        'vehicle_plate': matching_partner.vehicle_plate,
-                        'member_activate_date': matching_partner.member_activate_date,
-                        'member_expiry_date': matching_partner.member_expiry_date,
-                        'card_type_id': matching_partner.card_type_id.id,
-                        'history_id': matching_partner.id,
-                    })
-                    print("Created history record for existing member.")
-                    matching_partner = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)], limit=1)
-                    # Update existing member with new details
-                    matching_partner.write({
-                        'name': member_line.member_name,
-                        'parent_customer_id': matching_partner.id, 
-                        'membership_state': 'confirm',
-                        'member_expiry_date': member_line.member_expiry_date,
-                        'policy_no': member_line.policy_no,
-                        'member_activate_date': member_line.member_activate_date,
-                        'invoice_ref_date': member_line.invoice_ref_date,
-                        'delivery_ref_date': member_line.delivery_ref_date,
-                        'vehicle_type': member_line.vehicle_type,
-                        'vehicle_model': member_line.vehicle_model,
-                        'vehicle_mfg_year': member_line.vehicle_mfg_year,
-                        'vehicle_plate': member_line.vehicle_plate,
-                        'vehicle_chasis_no': member_line.vehicle_chasis_no,
-                        'street': member_line.street,
-                        'mobile': member_line.mobile,
-                    })
-                    print("Existing member replaced with uploaded member details.")
-
-            print(f"Finished processing member_line: {member_line.customer_code}")
-        
-        # Measure the time taken
-        end_time = time.time()
-        time_taken = end_time - start_time
-
-        # Ensure apply_log is a string
-        if not self.apply_log:
-            self.apply_log = ""
-
-        # Update the state and log
-        self.state = 'done'
-        self.apply_log += f" in {time_taken:.2f} seconds."
-        print(f"State Updated to 'Done' and apply log updated with time taken: {time_taken:.2f} seconds.")
     
     def action_cancel(self):
         self.state = 'draft'
@@ -674,7 +769,8 @@ class UploadMemberLine(models.Model):
         ('update', 'Update Member'),
         ('replace', 'Replaced Member'),
         ('discard', 'Discarded Member'),
-        ('exist_temp', 'Exist in Temp')
+        ('exist_temp', 'Exist in Temp'),
+        ('company_change','Company change')
     ], string='Upload Status')
     # --------------------------------------------------------------------
     customer_ref_date = fields.Date(string='Customer Reference Date')
@@ -707,5 +803,6 @@ class UploadMemberLine(models.Model):
     if_temp_match = fields.Integer('Temp Match ID')
     if_conf_match = fields.Integer('If COnf Match')
     if_rep_match = fields.Integer('If Replace Match')
+    if_cpm_match = fields.Integer('If Company change Match')
     
     
