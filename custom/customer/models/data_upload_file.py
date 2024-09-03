@@ -375,7 +375,7 @@ class DataUploadFile(models.Model):
     
                 # Handle 'replace' status
                 elif member_line.upload_member_status == 'replace':
-                    matching_partner = self.env['res.partner'].browse(member_line.if_cpm_match)
+                    matching_partner = self.env['res.partner'].browse(member_line.if_rep_match)
                     if matching_partner:
                         matching_partner.write({
                             'membership_state': 'cancel',
