@@ -172,28 +172,6 @@ class AAAService(models.Model):
     member_activate_date = fields.Date('Member Activate Date')
     member_expiry_date = fields.Date('Member Expiry Date')
     
-    
-    # @api.onchange('customer_id')
-    # def _onchange_customer_id(self):
-    #     for record in self:
-    #         if record.customer_id:
-    #             # Search for the sequence that matches the criteria
-    #             sequence = self.env['partner.category'].search([
-    #                 ('partner_id', '=', record.customer_id.id),
-    #                 ('member_type', '=', 'credit')
-    #             ], limit=1)
-                
-    #             # Set the sequence_id to the found sequence
-    #             record.sequence_id = sequence.id if sequence else False
-                
-    #             # Search for the member that matches the criteria
-    #             member = self.env['res.partner'].search([
-    #                 ('parent_customer_id', '=', record.customer_id.id),
-    #                 ('member_type', '=', 'credit')
-    #             ], limit=1)
-    #             print("MEMBERRRR",member)
-    #             # Set the member_id to the found member
-    #             record.member_id = member.id if member else False
 
     @api.onchange('customer_id')
     def _onchange_customer_id(self):
@@ -474,12 +452,16 @@ class AAAService(models.Model):
     #     })
     #     return True
 
-
 # ---------------------------------------------------NEW A CODE-----------------------------------------------
     def action_dispatch_service(self):
         self.ensure_one()
         self._generate_service_name()
- 
+        
+        # Check for Credit
+        if self.member_id.member_type in ['credit', 'adhoc']:
+            # Directly dispatch service without any validation
+            self._dispatch_service()
+            return True
         if not self.member_id:
             raise ValidationError(_("Member not found in the service record."))
  
@@ -698,26 +680,56 @@ class AAAService(models.Model):
                 'status': record.state,
             })
 
+    @api.onchange('member_id')
+    def _onchange_member_id(self):
+        """When member_id is set, automatically update the member_type in res.partner if it's a new member."""
+        if self.member_id and not self.member_id.member_type:
+            # Automatically set member type based on service form
+            self.member_id.member_type = self.member_type  # Set from selection in aaa.service
+    
     def action_inprogress_service(self):
-            self.state = 'inprogress'
-            for service in self:
-            
-                self.env['service.history'].create({
-                    'service_id': service.id,
-                    'user': self.env.user.id,
-                    'time': fields.Datetime.now(),
-                    'status': service.state,  
-                })
+        self.state = 'inprogress'
+        for service in self:
+            self.env['service.history'].create({
+                'service_id': service.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': service.state,  
+            })
             return True
 
     def action_start_service(self):
         self.state = 'start'
+        for service in self:
+           self.env['service.history'].create({
+                'service_id': service.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': service.state,  
+        })
+        return True
 
     def action_reach_service(self):
         self.state = 'reach'
+        for service in self:
+           self.env['service.history'].create({
+                'service_id': service.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': service.state,  
+        })
+        return True
 
     def action_done_service(self):
         self.state = 'done'
+        for service in self:
+           self.env['service.history'].create({
+                'service_id': service.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': service.state,  
+        })
+        return True
 
     def cash_service(self):
         self.type = 'cash'
@@ -727,6 +739,14 @@ class AAAService(models.Model):
 
     def action_cancel_service(self):
         self.state = 'cancel'
+        for service in self:
+           self.env['service.history'].create({
+                'service_id': service.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': service.state,  
+        })
+        return True
 
     def action_discard(self):
         self.state = 'discard'
@@ -765,6 +785,7 @@ class AAAService(models.Model):
 
     def history(self):
         pass
+
 
 class ServiceComment(models.Model):
     _name = 'service.comment'

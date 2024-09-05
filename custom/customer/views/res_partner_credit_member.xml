@@ -18,42 +18,58 @@
                         border-radius: 5px;
                         }
                         .required_field{
-                            background-color: #b9a4ff29;
+                        background-color: #b9a4ff29;
                         }
                     </style>
-                    <!-- <headers>
-                        <field name="membership_state" widget="statusbar"/>
-                    </headers> -->
+                    <header>
+                        <!-- CREATE SERVICE -->
+                        <button name="action_create_service" string="Create Service"
+                            type="object" icon="fa-wrench o_button_icon" />
+                        <!-- CREATE ENQUIRY -->
+                        <button name="action_create_enquiry" string="Enquiry"
+                            type="object" icon="fa-pencil" />
+                    </header>
                     <sheet bgcolor="lightblue">
+                        <div class="oe_button_box" name="button_box">
+                            <button name="action_view_credit_service" type="object"
+                                class="oe_stat_button" icon="fa-pencil-square-o">
+                                <field name="credit_member_service_count" widget="statinfo"
+                                    string="Credit Services" />
+                            </button>
+                        </div>
                         <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
                             invisible="active" />
                         <field name="avatar_128" invisible="1" />
                         <field name="image_1920" widget="image" class="oe_avatar"
                             options="{&quot;preview_image&quot;: &quot;avatar_128&quot;}" />
-                            <div class="oe_title">
-                                <label for="name" string="Name" />
-                                <div>
-                                    <field name="name" placeholder="Type.." class="required_field"
-                                        required="1" />
-                                </div>
-                                <label for="parent_customer_id" string="Company" />
-                                <div>
-                                    <field name="parent_customer_id" placeholder="select.."
-                                        class="required_field" required="1" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
-                                </div>
+                        <div class="oe_title">
+                            <label for="name" string="Name" />
+                            <div>
+                                <field name="name" placeholder="Type.." class="required_field"
+                                    required="1" />
                             </div>
+                            <label for="parent_customer_id" string="Company" />
+                            <div>
+                                <field name="parent_customer_id" placeholder="select.."
+                                    class="required_field" required="1"
+                                    options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
+                            </div>
+                        </div>
                         <group col="3">
                             <group>
                                 <field name="policy_no" string="Policy No" class="custom-field" />
-                                <field name="vehicle_chasis_no"  string="Vehicle Chasis No" class="required_field" required="1"/>
+                                <field name="vehicle_chasis_no" string="Vehicle Chasis No"
+                                    class="required_field" required="1" />
                                 <field name="old_membership_number" class="custom-field" />
                                 <field name="member_activate_date" class="custom-field" />
                                 <field name="member_expiry_date" class="custom-field" />
-                                <field name="card_type_id" class="custom-field" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
+                                <field name="card_type_id" class="custom-field"
+                                    options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
                                 <!-- <field name="member_sequence_id" required="1" /> -->
                                 <field name="driving_license" class="custom-field" />
                                 <field name="member_partner_category_id" class="required_field"
-                                required="1" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
+                                    required="1"
+                                    options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
                                 <field name="member_type" widget="radio" readonly="1" />
                                 <field name="membership_cancel_date" readonly="1" />
                                 <!-- <field name="create_uid" string="Created By" readonly="1"/> -->
@@ -166,7 +182,7 @@
             <field name="name">Credit Member</field>
             <field name="res_model">res.partner</field>
             <field name="view_mode">tree,form</field>
-            <field name="search_view_id" ref="res_partner_credit_member_search"/>
+            <field name="search_view_id" ref="res_partner_credit_member_search" />
             <field name="context">{'from_res_partner_credit_member_form': True ,
                 'default_member_type': 'credit' }</field>
             <field name="domain">[('is_customer','=',True),('member_type','=','credit')]</field>
@@ -190,11 +206,11 @@
             sequence='1'
             action="action_res_partner_credit_member" />
 
-        <menuitem 
+        <menuitem
             id="sub_menu_credit_member_upload_history"
             name="Upload History"
             parent="menu_credit_member"
             sequence='3'
-            action=""/>
+            action="" />
     </data>
 </odoo>
