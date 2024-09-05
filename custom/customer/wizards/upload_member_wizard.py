@@ -24,6 +24,7 @@ class UploadMemberWizard(models.TransientModel):
         file_content = base64.b64decode(self.file)
         try:
             excel_data = pd.read_excel(io.BytesIO(file_content))
+            excel_data.fillna('', inplace=True)
         except Exception as e:
             raise UserError(f'Error reading Excel file: {e}')
 

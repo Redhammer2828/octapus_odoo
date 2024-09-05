@@ -70,12 +70,6 @@ class ResPartnerMembers(models.Model):
     adhoc_member = fields.Boolean(string='Adhoc Member')
     credit_member_ok = fields.Boolean(string='Credit Member OK')
     # active = fields.Boolean(string='Active')
-
-    #notebook
-    # product_template_id = fields.Many2one('product.template', string='Product Template')
-    # service_ids = fields.Many2many('service.model', string='Services')
-    # comment = fields.Text(string='Internal Notes')
-    # membership_history = fields.One2many('membership.history.model', 'partner_id', string='Membership History')
     product_template_id = fields.Many2one('product.template', string="Package")
     service_ids = fields.Many2many('product.product', string="Services", widget="many2many_tags", options="{'no_create_edit': True}" ,compute='_compute_service_ids', store=True)
     member_partner_category_id = fields.Many2one('partner.category',string='Category',domain="[('partner_id', '=', parent_customer_id),('member_type', '=', member_type)]")
@@ -87,15 +81,11 @@ class ResPartnerMembers(models.Model):
         store=True
     )
     policy_member_service_count = fields.Integer(string="Policy Services Count", compute='_compute_policy_member_service_count')
-    policy_member_cash_service_count = fields.Integer(string="Policy Cash Services Count", compute='policy_member_cash_service_count')
-    # ------------------------------------------------------------
-    # membership_state = fields.Selection(
-    #     selection=POLICY_MEMBER_STATE,
-    #     string="Status",
-    #     readonly=True, copy=False, index=True,
-    #     tracking=3,
-    #     default='temp')
-    
+    policy_member_cash_service_count = fields.Integer(string="Policy Cash Services Count", compute='_compute_policy_member_cash_service_count')
+    policy_member_credit_service_count = fields.Integer(string="Policy Credit Services Count" ,compute='_compute_policy_member_credit_service_count')
+    credit_member_service_count = fields.Integer(string="Credit Services", compute='_compute_credit_member_service_count')
+    adhoc_member_service_count = fields.Integer(string="Adhoc Services Count", compute='_compute_adhoc_member_service_count')                                                                                        
+    # ------------------------------------------------------------    
     membership_state = fields.Selection([
     ('temp', "Temporary"),
     ('confirm', "Confirmed"),
@@ -148,7 +138,7 @@ class ResPartnerMembers(models.Model):
                 partner.member_expired = True
             else:
                 partner.member_expired = False
-                
+#-------------------------------COUNT CALCULATION-----------------------------------------------------   
     @api.depends('name')
     def _compute_policy_member_service_count(self):
         for partner in self:
@@ -159,7 +149,8 @@ class ResPartnerMembers(models.Model):
             ])
             print("MEMBER SERVICES", service_member_ids.ids)
             partner.policy_member_service_count= len(service_member_ids)
- 
+
+    
     def action_view_policy_service(self):
        
         return {
@@ -177,35 +168,93 @@ class ResPartnerMembers(models.Model):
                     (self.env.ref('customer.call_center_service_form').id, 'form')],
          
         }
-   
-    # @api.depends('name')
-    # def _compute_policy_member_cash_service_count(self):
-    #     for cash in self:
-    #         cash_service_ids = self.env['aaa.service'].search([
-    #             ('member_id', '=', self.id),
-    #             ('type', '=', 'cash'),
-    #             ('member_type', '=', 'policy')
-    #         ])
-    #         print("CASH SERVICES", cash_service_ids.ids)
-    #         cash.policy_member_cash_service_count= len(cash_service_ids)
+    
+    @api.depends('name')
+    def _compute_policy_member_cash_service_count(self):
+        for cash in self:
+            cash_service_ids = self.env['aaa.service'].search([
+                ('member_id', '=', self.id),
+                ('type', '=', 'cash'),
+                ('member_type', '=', 'policy')
+            ])
+            print("CASH SERVICES", cash_service_ids.ids)
+            cash.policy_member_cash_service_count= len(cash_service_ids)
  
-    # def action_view_cash_service(self):
-    #     return {
-    #         'name': 'Services',
-    #         'type': 'ir.actions.act_window',
-    #         'res_model': 'aaa.service',
-    #         'view_mode': 'tree,form',
-    #         'domain': [('member_id', '=', self.id), ('member_type','=','policy'), ('type', '=', 'cash')],
-    #         'context': {
-    #             'from_res_partner_member_form': True,
-    #             'default_customer_id': self.parent_customer_id,
-    #             'default_member_id': self.id,  # Pre-select the parent customer
-    #         },
-    #         'views': [(self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
-    #                 (self.env.ref('customer.call_center_service_form').id, 'form')],
+    def action_view_cash_service(self):
          
-    #     }
-
+         return {
+            'name': 'Services',
+            'type': 'ir.actions.act_window',
+            'res_model': 'aaa.service',
+            'view_mode': 'tree,form',
+            'domain': [('member_id', '=', self.id), ('member_type','=','policy'), ('type', '=', 'cash')],
+            'context': {
+                'from_res_partner_member_form': True,
+                'default_customer_id': self.parent_customer_id,
+                'default_member_id': self.id,  # Pre-select the parent customer
+            },
+            'views': [(self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
+                    (self.env.ref('customer.call_center_service_form').id, 'form')],
+        }
+    
+    @api.depends('name')
+    def _compute_credit_member_service_count(self):
+        for partner in self:
+            service_member_ids = self.env['aaa.service'].search([
+                ('member_id', '=', self.id),
+                ('type', '=', 'non_cash'),
+                ('member_type', '=', 'credit')
+            ])
+            print("MEMBER SERVICES", service_member_ids.ids)
+            partner.credit_member_service_count= len(service_member_ids)
+ 
+    def action_view_credit_service(self):
+       
+            return {
+            'name': 'Credit Services',
+            'type': 'ir.actions.act_window',
+            'res_model': 'aaa.service',
+            'view_mode': 'tree,form',
+            'domain': [('member_id', '=', self.id), ('member_type','=','credit'), ('type', '=', 'non_cash')],
+            'context': {
+                'from_res_partner_member_form': True,
+                'default_customer_id': self.parent_customer_id,
+                'default_member_id': self.id,  # Pre-select the parent customer
+            },
+            'views': [(self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
+                    (self.env.ref('customer.call_center_service_form').id, 'form')],
+         
+        }
+   
+    @api.depends('name')
+    def _compute_adhoc_member_service_count(self):
+        for partner in self:
+            service_member_ids = self.env['aaa.service'].search([
+                ('member_id', '=', self.id),
+                ('type', '=', 'cash'),
+                ('member_type', '=', 'adhoc')
+            ])
+            print("MEMBER SERVICES", service_member_ids.ids)
+            partner.adhoc_member_service_count= len(service_member_ids)
+ 
+    def action_view_adhoc_service(self):
+       
+            return {
+            'name': 'Adhoc Services',
+            'type': 'ir.actions.act_window',
+            'res_model': 'aaa.service',
+            'view_mode': 'tree,form',
+            'domain': [('member_id', '=', self.id), ('member_type','=','adhoc'), ('type', '=', 'cash')],
+            'context': {
+                'from_res_partner_member_form': True,
+                'default_customer_id': self.parent_customer_id,
+                'default_member_id': self.id,  # Pre-select the parent customer
+            },
+            'views': [(self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
+                    (self.env.ref('customer.call_center_service_form').id, 'form')],
+         
+        }
+# ----------------------------------------------------------------------------------------------------- 
     def action_membership_renewal(self):
         view_id = self.env.ref('customer.membership_renewal_wizard_form').id
         return {
@@ -407,40 +456,6 @@ class ResPartnerMembers(models.Model):
             ])
             print("Parent Customer ID",self.parent_customer_id)
             print("PARTNER CATEGORIES",partner_categories)
-
-    # @api.onchange('parent_customer_id')
-    # def _onchange_parent_customer_id(self):
-    #     if self.parent_customer_id:
-    #         product_categories = self.env['partner.category'].search([('partner_id', '=', self.parent_customer_id.id)])
-    #         return {'domain': {'member_partner_category_id': [('id', 'in', product_categories.ids)]}}
-    #     else:
-    #         return {'domain': {'member_partner_category_id': [('id', 'in', [])]}}
-
-    # def search_partner_categories(self):
-    #     if self.parent_customer_id:
-    #         partner_categories = self.env['partner.category'].search([('partner_id', '=', self.parent_customer_id.id)])
-    #         return partner_categories
-    #     else:
-    #         return self.env['partner.category'].browse([])  # Return an empty recordset if no parent_customer_id
-
-    # @api.onchange('parent_customer_id') 
-    # def _onchange_parent_customer_id(self):
-    #     if self.parent_customer_id:
-    #         partner_categories = self.env['partner.category'].search([
-    #             ('partner_id', '=', self.parent_customer_id.id),
-    #             ('member_type', '=', 'policy')
-    #         ])
-    #         domain = [('id', 'in', partner_categories.ids)]
-    #     else:
-    #         domain = [('id', '=', 0)]
-    #     return {'domain': {'member_partner_category_id': domain}}
-
-    # @api.model
-    # def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
-    #     args = args or []
-    #     if name:
-    #         args = [('name', operator, name)] + args
-    #     return self.search(args, limit=limit).name_get()
 
     class MembershipHistory(models.Model):
         _name = 'membership.history'
