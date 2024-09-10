@@ -34,4 +34,4 @@ class LocationFrom(models.Model):
     location = fields.Char('Location')
     latitude = fields.Char('Latitude')
     longitude = fields.Char('Longitude')
-    h3_index = fields.Char('H3 INDEX')
+    # h3_index = fields.Char('H3 INDEX')
