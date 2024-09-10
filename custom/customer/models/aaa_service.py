@@ -159,6 +159,7 @@ class AAAService(models.Model):
    
     # driver_job_id = fields.Many2one('hr.job', string="Driver Job ID")
     driver_id = fields.Many2one('hr.employee', string="Driver")
+    is_driver_name_visible = fields.Boolean(string='Display Driver Name',default=True)
      
     # vehicle_id = fields.Many2one('fleet.vehicle', string="Vehicle")
     # vehicle = fields.Char(string="Vehicle")
@@ -175,16 +176,15 @@ class AAAService(models.Model):
     
     @api.onchange('provider_id')
     def _onchange_provider_id(self):
-        """
-        If the selected provider has `is_driver_available = True`, show the driver field.
-        Otherwise, reset the driver_id.
-        """
-        if self.provider_id and self.provider_id.is_driver_available:
-            # Do nothing, let the driver_id field be visible and selected.
-            pass
-        else:
-            # Reset the driver_id if provider does not have a driver available
-            self.driver_id = False
+            """
+            Dynamically show/hide driver_name or driver_id based on the provider's name.
+            If provider's name is 'Arabian Automobile Association', hide driver_name and show driver_id.
+            Otherwise, show driver_name and hide driver_id.
+            """
+            if self.provider_id and self.provider_id.name.strip().lower() == 'arabian automobile association':
+                self.is_driver_name_visible = False  # Hide driver_name and show driver_id
+            else:
+                self.is_driver_name_visible = True  # Show driver_name and hide driver_id
     
     @api.onchange('customer_id')
     def _onchange_customer_id(self):

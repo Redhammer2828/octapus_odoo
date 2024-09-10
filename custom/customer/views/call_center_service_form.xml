@@ -204,11 +204,22 @@
                                 <field name="vehicle" string="Vehicle"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']" />
-                                <field name="driver_id" string="Driver"
-                                    invisible="provider_id.is_driver_available != 'True'" />
-                                <field name="driver_name" string="Driver Name"
-                                    invisible="state in ['draft', 'initiate']"
-                                    readonly="state in ['done', 'cancel']" />
+                                <!-- <field name="driver_id" string="Driver"
+                                    invisible="provider_id.is_driver_available != 'True'" /> -->
+                                    <!-- Driver Name (Char) Field: visible when is_driver_name_visible
+                                    is True -->
+                                <field name="is_driver_name_visible" invisible="1" />
+                                <field name="driver_name"
+                                    invisible="is_driver_name_visible == False"
+                                    readonly="state in ['done', 'cancel']"
+                                    required="state in ['dispatch']" />
+
+                                <!-- Driver ID (Many2one) Field: visible when is_driver_name_visible
+                                is False -->
+                                <field name="driver_id"
+                                    invisible="is_driver_name_visible == True"
+                                    readonly="state in ['done', 'cancel']"
+                                    required="state in ['dispatch']" />
                                 <field name="driver_num" string="Contact No"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']" />
