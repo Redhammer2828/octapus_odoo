@@ -16,15 +16,15 @@ class LocationService(models.Model):
     _name = 'location.service'
     _description = 'Service Location'
 
-    amount = fields.Integer('amount')
-    from_h3index = fields.Integer('from_h3index')
-    from_latitude = fields.Float('from_latitude')
-    from_location = fields.Char('from_location')
-    from_longitude = fields.Float('from_longitude')
-    to_h3index = fields.Integer('to_h3index')
-    to_latitude = fields.Float('to_latitude')
-    to_location = fields.Char('to_location')
-    to_longitude = fields.Float('to_longitude')
+    amount = fields.Integer('Amount')
+    from_h3index = fields.Char('From H3index')
+    from_latitude = fields.Float('From Latitude')
+    from_location = fields.Char('From Location')
+    from_longitude = fields.Float('From Longitude')
+    to_h3index = fields.Char('To H3index')
+    to_latitude = fields.Float('To Latitude')
+    to_location = fields.Char('To Location')
+    to_longitude = fields.Float('To Longitude')
 
 class LocationFrom(models.Model):
     _name = 'location.latlong'
@@ -34,3 +34,4 @@ class LocationFrom(models.Model):
     location = fields.Char('Location')
     latitude = fields.Char('Latitude')
     longitude = fields.Char('Longitude')
+    h3_index = fields.Char('H3 INDEX')

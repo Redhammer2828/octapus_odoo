@@ -291,6 +291,7 @@
                                         domain="[('share', '=', False)]" />
                                 </group>
                                 <group string="Purchase" name="purchase" priority="2">
+                                    <field name="is_vendor" />
                                 </group>
                                 <group name="misc" string="Misc">
                                     <field name="company_registry" invisible="parent_id" />

@@ -8,6 +8,8 @@ class ResPartnerMembers(models.Model):
 
     parent_customer_id = fields.Many2one('res.partner', string='Customer')
     is_customer = fields.Boolean('Is_customer')
+    is_vendor = fields.Boolean('Is_vendor')
+    is_driver_available = fields.Boolean('Is Driver Available',default='False')
     # -----------------------------------------
     ref_num = fields.Char('Membership Number')
 
