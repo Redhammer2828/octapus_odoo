@@ -21,6 +21,9 @@
 
                         <group>
                             <field name="is_company" />
+                            <field name="is_vendor" invisible="1" />
+                            <field name="is_driver_available" />
+                            
                             <field name="name" string="Name" class=""/>
                             <field name="parent_customer_id" string="Company" />
                         </group>

@@ -70,6 +70,7 @@
                             <field name="location" />
                             <field name="latitude" />
                             <field name="longitude" />
+                            <field name="h3_index"/>
                         </group>
                     </sheet>
                 </form>
@@ -122,6 +123,7 @@
                     <field name="location" />
                     <field name="latitude" />
                     <field name="longitude" />
+                    <field name="h3_index" />
                 </tree>
             </field>
         </record>

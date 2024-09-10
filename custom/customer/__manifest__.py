@@ -2,7 +2,7 @@
 {
     'name': 'Customer',
     'version': '1.0',
-    'depends': ['base', 'web','product'],
+    'depends': ['base', 'web','product','hr'],
     'author': 'Sasoft',
     'category': 'Sales',
     'description': 'Customers Management',

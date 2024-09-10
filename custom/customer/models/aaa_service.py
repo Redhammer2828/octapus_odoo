@@ -60,7 +60,7 @@ class AAAService(models.Model):
     acc_payment_id = fields.Many2one('account.payment', string="Payment")
    
     # PROVIDER-------------------------------------------------------------------------------------------------------------
-    provider_id = fields.Many2one('res.partner', string="Provider") #  domain="[('supplier', '=', True)]"
+    provider_id = fields.Many2one('res.partner', string="Provider" ,domain=[('is_vendor', '=', True)]) #  domain="[('supplier', '=', True)]"
     provider_contact = fields.Char(string="Provider Contact")
     provider_num = fields.Char('Provider Num')
     provider_rate = fields.Float(string="Provider Rate")
@@ -78,6 +78,7 @@ class AAAService(models.Model):
     route_rate = fields.Float(string="Route Rate")
     driver_name = fields.Char(string="Driver Name")
     driver_num = fields.Char(string="Driver Number")
+    # driver_id = fields.Many2one('hr.employee', string="Driver", domain=[('job_title', '=', 'Driver')])
     # ============================================================================================================================
     
     # SUMMARY---------------------------------------------------------------------------------------------------------------------
@@ -139,7 +140,7 @@ class AAAService(models.Model):
     service_time = fields.Datetime(string="Service Time")
     cash_collected_hidden = fields.Boolean(string="Cash Collected Hidden")
     cash_collected = fields.Float(string="Cash Collected")
-    
+    amount=fields.Float(compute='_compute_location_amount',string="Cash To Be Collected")      
     
     addon_ok = fields.Boolean(string="Addon OK")
     waive_off = fields.Boolean(string="Waive Off")
@@ -157,13 +158,13 @@ class AAAService(models.Model):
     # =========================================================================================================
    
     # driver_job_id = fields.Many2one('hr.job', string="Driver Job ID")
-    # driver_id = fields.Many2one('hr.employee', string="Driver", domain="[('job_id', '=', driver_job_id)]")
-    
+    driver_id = fields.Many2one('hr.employee', string="Driver")
+     
     # vehicle_id = fields.Many2one('fleet.vehicle', string="Vehicle")
     # vehicle = fields.Char(string="Vehicle")
     
-    driver_name = fields.Char(string="Driver Name")
-    driver_num = fields.Char(string="Driver Number")
+    # driver_name = fields.Char(string="Driver Name")
+    # driver_num = fields.Char(string="Driver Number")
     # credit_proforma_number = fields.Char(string="Credit Proforma Number")
     # vendor_rating = fields.Float(string="Vendor Rating")
     
@@ -172,7 +173,19 @@ class AAAService(models.Model):
     member_activate_date = fields.Date('Member Activate Date')
     member_expiry_date = fields.Date('Member Expiry Date')
     
-
+    @api.onchange('provider_id')
+    def _onchange_provider_id(self):
+        """
+        If the selected provider has `is_driver_available = True`, show the driver field.
+        Otherwise, reset the driver_id.
+        """
+        if self.provider_id and self.provider_id.is_driver_available:
+            # Do nothing, let the driver_id field be visible and selected.
+            pass
+        else:
+            # Reset the driver_id if provider does not have a driver available
+            self.driver_id = False
+    
     @api.onchange('customer_id')
     def _onchange_customer_id(self):
         context = self.env.context
@@ -225,6 +238,39 @@ class AAAService(models.Model):
         })
        
         return service
+    
+    @api.depends('provider_from_location_id', 'provider_to_location_id')
+    def _compute_location_amount(self):
+        for cash in self:
+            if cash.provider_from_location_id and cash.provider_to_location_id:
+                # Retrieve and normalize the actual values from the related models
+                from_location_value = cash.provider_from_location_id.location
+                to_location_value = cash.provider_to_location_id.location
+ 
+                # Debugging output
+                print("FROM_LOCATION_VALUE:", from_location_value)
+                print("TO_LOCATION_VALUE:", to_location_value)
+ 
+                # Perform the search with exact matches
+                service_record = self.env['location.service'].search([
+                    ('from_location', '=ilike', from_location_value),
+                    ('to_location', '=ilike', to_location_value)
+                ], limit=1)
+                print("SERVICE_RECORD_FROM_LOCATION:", service_record.from_latitude)
+                print("SERVICE_RECORD_TO_LOCATION:", service_record.to_latitude)
+ 
+                # Debugging output
+                if service_record:
+                    print("SERVICE_RECORD_FOUND:")
+                   
+                    print("SERVICE_RECORD_AMOUNT:", service_record.amount)
+                    cash.amount = service_record.amount
+                else:
+                    print("NO RECORD FOUND")
+                    cash.amount = 0
+            else:
+                print("MISSING PROVIDER LOCATIONS")
+                cash.amount = 0
 
     def action_initiate_service(self):
         self.state = 'initiated'
@@ -466,9 +512,9 @@ class AAAService(models.Model):
             raise ValidationError(_("Member not found in the service record."))
  
         member = self.member_id
-        print("POLICY MEMBER", member)
+        print("POLICY MEMBER = res_partner id =", member.id)
         product_template_id = member.product_template_id.id
-        print("PACKAGE ID OF POLICY MEMBER", product_template_id)
+        print("PACKAGE ID OF POLICY MEMBER = product.package.servide", product_template_id)
  
         if not product_template_id:
             raise ValidationError(_("Package not found for the member."))
@@ -503,14 +549,30 @@ class AAAService(models.Model):
         # -----------------------------------------------------------------------------------------------
  
     def _is_service_in_package(self, product_template_id):
+        # Search for services within the package
         package_services = self.env['product.package.service'].search([
             ('product_template_id', '=', product_template_id)
         ])
         print("SERVICES IN THE PACKAGE", package_services)
-        service_product_id = self.product_id.id
+        print("PRODUCT PACKAGE SERVICE - Service ids", package_services.product_id.ids)
+
+        service_product_id = self.product_id.id  # The service the member is trying to avail
         print("SERVICE TAKEN BY THE MEMBER", service_product_id)
-        return service_product_id in package_services.mapped('product_id.id')
- 
+
+        # Search for matching products in product.product
+        matching_products = self.env['product.product'].search([('id', 'in', package_services.product_id.ids)])
+        print("MATCHING PRODUCTS", matching_products)
+
+        # Get product_tmpl_id from the matching products
+        matching_product_tmpl_ids = matching_products.mapped('product_tmpl_id.id')
+        print("MATCHING PRODUCT TEMPLATE IDS", matching_product_tmpl_ids)
+
+        # Check if the service product matches any of the product templates
+        if service_product_id in matching_product_tmpl_ids:
+            print("SERVICE MATCHES A PRODUCT IN THE PACKAGE")
+            return True
+        
+
     def _validate_service_limits(self, product_template_id):
         parent_category_id = self.product_id.categ_id.id
         print("PARENT CATEGORY OF CHOSEN SERVICE  IN PACKAGE", parent_category_id)
