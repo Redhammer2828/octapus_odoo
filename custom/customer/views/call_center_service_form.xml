@@ -152,10 +152,10 @@
                                     <field name="service_type" invisible="1" />
                                     <field name="provider_from_location_id" string="From Location"
                                         invisible="service_type == 'location'"
-                                        class="required_field" required="1" />
+                                        class="required_field" required="1" options="{'no_create': True}"/>
                                     <field name="provider_to_location_id" string="To Location"
                                         invisible=""
-                                        class="required_field" required="1" />
+                                        class="required_field" required="1" options="{'no_create': True}"/>
                                     <field name="date_time_from" string="From Date time"
                                         invisible="service_type != 'location_duration'"
                                         class="required_field" required="1" />
@@ -177,9 +177,9 @@
                                             <field name="product_id" />
                                             <field name="provider_from_location_id"
                                                 string="From Location"
-                                                invisible="product_id == False" />
+                                                invisible="product_id == False" options="{'no_create': True}"/>
                                             <field name="provider_to_location_id"
-                                                string="To Location" invisible="product_id == False" />
+                                                string="To Location" invisible="product_id == False" options="{'no_create': True}"/>
                                         </group>
                                     </form>
                                 </field>
@@ -191,7 +191,7 @@
                                 <field name="provider_id" string="Provider"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']"
-                                    required="1" class="required_field" />
+                                    required="1" class="required_field" options="{'no_create': True}" />
                                 <field name="provider_num" string="Contact No"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']" />
@@ -219,7 +219,7 @@
                                 <field name="driver_id"
                                     invisible="is_driver_name_visible == True"
                                     readonly="state in ['done', 'cancel']"
-                                    required="state in ['dispatch']" />
+                                    required="state in ['dispatch']" options="{'no_create': True}"/>
                                 <field name="driver_num" string="Contact No"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']" />

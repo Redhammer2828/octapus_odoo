@@ -20,7 +20,8 @@ class Enquiry(models.Model):
     customer_id = fields.Many2one('res.partner', string='Customer')
     member_id = fields.Many2one('res.partner', string='Member')
     service_id = fields.Many2one('product.template', string='Service')
-
+    enq_id = fields.Many2one('aaa.service',string='Enq_Service',ondelete='cascade') #IN aaa.enquiry
+    
     @api.onchange('customer_id')
     def _onchange_customer_id(self):
         if not self.customer_id:
