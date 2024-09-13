@@ -160,7 +160,7 @@ class AAAService(models.Model):
     # driver_job_id = fields.Many2one('hr.job', string="Driver Job ID")
     driver_id = fields.Many2one('hr.employee', string="Driver")
     is_driver_name_visible = fields.Boolean(string='Display Driver Name',default=True)
-     
+    enquiry_ids = fields.One2many('aaa.enquiry','enq_id',string="Enquiries") # IN aaa.service  
     # vehicle_id = fields.Many2one('fleet.vehicle', string="Vehicle")
     # vehicle = fields.Char(string="Vehicle")
     
@@ -246,31 +246,40 @@ class AAAService(models.Model):
                 # Retrieve and normalize the actual values from the related models
                 from_location_value = cash.provider_from_location_id.location
                 to_location_value = cash.provider_to_location_id.location
- 
+    
                 # Debugging output
                 print("FROM_LOCATION_VALUE:", from_location_value)
                 print("TO_LOCATION_VALUE:", to_location_value)
- 
+    
                 # Perform the search with exact matches
                 service_record = self.env['location.service'].search([
                     ('from_location', '=ilike', from_location_value),
                     ('to_location', '=ilike', to_location_value)
                 ], limit=1)
-                print("SERVICE_RECORD_FROM_LOCATION:", service_record.from_latitude)
-                print("SERVICE_RECORD_TO_LOCATION:", service_record.to_latitude)
- 
-                # Debugging output
-                if service_record:
-                    print("SERVICE_RECORD_FOUND:")
-                   
+
+                if service_record and service_record.amount != 0:
+                    print("SERVICE_RECORD_FOUND (DIRECT):")
                     print("SERVICE_RECORD_AMOUNT:", service_record.amount)
                     cash.amount = service_record.amount
                 else:
-                    print("NO RECORD FOUND")
-                    cash.amount = 0
+                    # Try with reversed locations if the first search amount is 0 or no record is found
+                    print("DIRECT MATCH NOT FOUND OR AMOUNT IS 0, TRYING REVERSED LOCATIONS")
+                    service_record_reversed = self.env['location.service'].search([
+                        ('from_location', '=ilike', to_location_value),
+                        ('to_location', '=ilike', from_location_value)
+                    ], limit=1)
+
+                    if service_record_reversed and service_record_reversed.amount != 0:
+                        print("SERVICE_RECORD_FOUND (REVERSED):")
+                        print("SERVICE_RECORD_AMOUNT:", service_record_reversed.amount)
+                        cash.amount = service_record_reversed.amount
+                    else:
+                        print("NO RECORD FOUND WITH REVERSED LOCATIONS OR AMOUNT IS 0")
+                        cash.amount = 0
             else:
                 print("MISSING PROVIDER LOCATIONS")
                 cash.amount = 0
+
 
     def action_initiate_service(self):
         self.state = 'initiated'
@@ -645,8 +654,24 @@ class AAAService(models.Model):
  
                     print("TOTAL DAYS OF RAC_CAT SERVICE ACCESS", total_days)
  
-            if total_days >= quantity_limit:
+            # if total_days >= quantity_limit:
+            #     return False
+ 
+                # Check if remaining service days exceed the quantity limit
+            remaining_days = quantity_limit - total_days
+            print("REMAINING SERVICE DAYS ALLOWED:", remaining_days)
+ 
+            if remaining_days <= 0:
                 return False
+           
+            # Check if the new service exceeds the remaining days
+            new_service_duration = (self.date_time_to - self.date_time_from).total_seconds() / (3600 * 24)
+            if new_service_duration > remaining_days:
+                    raise ValidationError(
+                        _("The service can only be accessed for the remaining %d days. Please adjust the service duration.") % remaining_days
+                    )
+ 
+ 
  
             if not self._is_service_accessible_in_24_hours(parent_category_id):
                 remaining_quantity = quantity_limit - total_days
@@ -711,6 +736,15 @@ class AAAService(models.Model):
             'time': fields.Datetime.now(),
             'status': self.state,
         })
+
+        self .env['service.comment'].create({
+            'service_id': self.id,
+            'comment' : self.comments or 'DISPATCHED',
+            'comment_date_and_time' : fields.Datetime.now(),
+            'comment_user': self.env.user.id,
+            'comment_status' : self.state,
+           
+         })
 # --------------------------------------------------------------------------------------------------
     def action_schedule_service_check(self):
         self.schedule_service_check = True
@@ -741,6 +775,14 @@ class AAAService(models.Model):
                 'time': fields.Datetime.now(),
                 'status': record.state,
             })
+            self .env['service.comment'].create({
+                'service_id': record.id,
+                'comment' : record.comments or 'Scheduled to dispatch',
+                'comment_date_and_time' : fields.Datetime.now(),
+                'comment_user': self.env.user.id,
+                'comment_status' : record.state,
+           
+        })
 
     @api.onchange('member_id')
     def _onchange_member_id(self):
@@ -750,46 +792,84 @@ class AAAService(models.Model):
             self.member_id.member_type = self.member_type  # Set from selection in aaa.service
     
     def action_inprogress_service(self):
-        self.state = 'inprogress'
-        for service in self:
-            self.env['service.history'].create({
-                'service_id': service.id,
-                'user': self.env.user.id,
-                'time': fields.Datetime.now(),
-                'status': service.state,  
-            })
+            self.state = 'inprogress'
+            for service in self:
+            
+                self.env['service.history'].create({
+                    'service_id': service.id,
+                    'user': self.env.user.id,
+                    'time': fields.Datetime.now(),
+                    'status': service.state,  
+                })
+                self .env['service.comment'].create({
+                    'service_id': service.id,
+                    'comment' : service.comments or 'IN PROGRESS',
+                    'comment_date_and_time' : fields.Datetime.now(),
+                    'comment_user': self.env.user.id,
+                    'comment_status' : service.state,
+                
+        })
             return True
 
     def action_start_service(self):
         self.state = 'start'
         for service in self:
-           self.env['service.history'].create({
-                'service_id': service.id,
-                'user': self.env.user.id,
-                'time': fields.Datetime.now(),
-                'status': service.state,  
+            
+                self.env['service.history'].create({
+                    'service_id': service.id,
+                    'user': self.env.user.id,
+                    'time': fields.Datetime.now(),
+                    'status': service.state,  
+                })
+                self .env['service.comment'].create({
+                    'service_id': service.id,
+                    'comment' : service.comments or 'STARTED',
+                    'comment_date_and_time' : fields.Datetime.now(),
+                    'comment_user': self.env.user.id,
+                    'comment_status' : service.state,
+                
         })
         return True
-
+    
     def action_reach_service(self):
         self.state = 'reach'
         for service in self:
-           self.env['service.history'].create({
-                'service_id': service.id,
-                'user': self.env.user.id,
-                'time': fields.Datetime.now(),
-                'status': service.state,  
+            
+                self.env['service.history'].create({
+                    'service_id': service.id,
+                    'user': self.env.user.id,
+                    'time': fields.Datetime.now(),
+                    'status': service.state,  
+                })
+
+                self .env['service.comment'].create({
+                    'service_id': service.id,
+                    'comment' : service.comments or 'REACHED',
+                    'comment_date_and_time' : fields.Datetime.now(),
+                    'comment_user': self.env.user.id,
+                    'comment_status' : service.state,
+           
         })
         return True
 
     def action_done_service(self):
         self.state = 'done'
         for service in self:
-           self.env['service.history'].create({
-                'service_id': service.id,
-                'user': self.env.user.id,
-                'time': fields.Datetime.now(),
-                'status': service.state,  
+            
+                self.env['service.history'].create({
+                    'service_id': service.id,
+                    'user': self.env.user.id,
+                    'time': fields.Datetime.now(),
+                    'status': service.state,  
+                })
+
+                self .env['service.comment'].create({
+                    'service_id': service.id,
+                    'comment' : service.comments or 'COMPLETED',
+                    'comment_date_and_time' : fields.Datetime.now(),
+                    'comment_user': self.env.user.id,
+                    'comment_status' : service.state,
+           
         })
         return True
 
@@ -802,11 +882,20 @@ class AAAService(models.Model):
     def action_cancel_service(self):
         self.state = 'cancel'
         for service in self:
-           self.env['service.history'].create({
-                'service_id': service.id,
-                'user': self.env.user.id,
-                'time': fields.Datetime.now(),
-                'status': service.state,  
+            
+                self.env['service.history'].create({
+                    'service_id': service.id,
+                    'user': self.env.user.id,
+                    'time': fields.Datetime.now(),
+                    'status': service.state,  
+                })
+                self .env['service.comment'].create({
+                    'service_id': service.id,
+                    'comment' : service.comments or 'CANCELLED',
+                    'comment_date_and_time' : fields.Datetime.now(),
+                    'comment_user': self.env.user.id,
+                    'comment_status' : service.state,
+                
         })
         return True
 
@@ -815,6 +904,23 @@ class AAAService(models.Model):
     
     def action_change(self):
         self.state = 'change'
+        for service in self:
+            
+                self.env['service.history'].create({
+                    'service_id': service.id,
+                    'user': self.env.user.id,
+                    'time': fields.Datetime.now(),
+                    'status': service.state,  
+                })
+                self .env['service.comment'].create({
+                    'service_id': service.id,
+                    'comment' : service.comments or 'CHANGED',
+                    'comment_date_and_time' : fields.Datetime.now(),
+                    'comment_user': self.env.user.id,
+                    'comment_status' : service.state,
+                
+        })
+        return True
 
     def action_custom_cancel_service(self):
         self.ensure_one()
@@ -824,6 +930,16 @@ class AAAService(models.Model):
         }
 
     def action_create_enquiry(self):
+        # Create a new enquiry linked to the current service
+        new_enquiry = self.env['aaa.enquiry'].create({
+            'name': 'New Enquiry',  # Default or dynamic name for the enquiry
+            'enq_id': self.id,  # Link the enquiry to the current service
+            'date': fields.Datetime.now(),
+            'mobile':self.member_contact_no,
+            'email': self.email,
+            'comment': self.state or 'Enquiry',
+            'created_by': self.env.user.id
+                    })
         view_id = self.env.ref('customer.call_center_enquiry_view_form').id
         return{
             'name': 'Service Policy',
@@ -837,7 +953,7 @@ class AAAService(models.Model):
                 'default_member_id': self.member_id.id,
             }  
         }
-     
+    
     def action_waive_off(self):
         # self.waive_off = True
         pass
