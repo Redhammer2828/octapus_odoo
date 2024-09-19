@@ -319,6 +319,7 @@
                                     <field name="name" />
                                     <field name="member_type" />
                                     <field name="description" />
+                                    <field name="default_member" />
                                     <!-- Add more fields if needed -->
                                 </tree>
                             </field>

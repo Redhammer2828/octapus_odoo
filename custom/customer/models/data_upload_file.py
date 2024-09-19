@@ -485,8 +485,11 @@ class DataUploadFile(models.Model):
             'name': 'Added Members',
             'type': 'ir.actions.act_window',
             'res_model': 'upload.member.line',
-            'view_mode': 'tree',
-            'view_id': self.env.ref('customer.view_upload_member_line_tree').id,
+            'view_mode': 'tree,form',
+            'views': [
+                (self.env.ref('customer.view_upload_member_line_tree').id, 'tree'),
+                (self.env.ref('customer.res_partner_member_form').id, 'form')
+            ],
             'domain': [('upload_file_id', '=', self.id), ('upload_member_status', 'in', ['new', 'renewal', 'update', 'exist_temp'])],
             'context': {'default_upload_file_id': self.id},
         }

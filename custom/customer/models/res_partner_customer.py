@@ -81,3 +81,4 @@ class PartnerCategory(models.Model):
         ('adhoc', 'Adhoc')],
         string='Type')
     description = fields.Text(string="Description")
+    default_member = fields.Many2one('res.partner',String="Default Member")
