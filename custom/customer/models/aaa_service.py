@@ -186,8 +186,8 @@ class AAAService(models.Model):
             else:
                 self.is_driver_name_visible = True  # Show driver_name and hide driver_id
     
-    @api.onchange('customer_id')
-    def _onchange_customer_id(self):
+    @api.onchange('customer_id','sequence_id')
+    def _onchange_customer_id_sequence_id(self):
         context = self.env.context
         # Check if the specific context keys match the expected values
         if context.get('default_member_type') == 'credit' and context.get('default_type') == 'non_cash':
@@ -196,21 +196,26 @@ class AAAService(models.Model):
                     # Search for the sequence that matches the criteria
                     sequence = self.env['partner.category'].search([
                         ('partner_id', '=', record.customer_id.id),
-                        ('member_type', '=', 'credit')
+                        ('member_type', '=', 'credit'),
+                        ('name', '=', record.sequence_id.name)
                     ], limit=1)
-                    
+                   
                     # Set the sequence_id to the found sequence
                     record.sequence_id = sequence.id if sequence else False
-                    
+ 
+                    # If sequence is found, set default_member from the category
+                    if sequence:
+                         # Assign the `default_member` from the `sequence` (partner.category) to `record.member_id`
+                        record.member_id = sequence.default_member.id if sequence.default_member else False
+                   
                     # Search for the member that matches the criteria
-                    member = self.env['res.partner'].search([
-                        ('parent_customer_id', '=', record.customer_id.id),
-                        ('member_type', '=', 'credit')
-                    ], limit=1)
-                    print("MEMBERRRR", member)
+                    # member = self.env['res.partner'].search([
+                    #     ('parent_customer_id', '=', record.customer_id.id),
+                    #     ('member_type', '=', 'credit')
+                    # ], limit=1)
+                    # print("MEMBERRRR", member)
                     # Set the member_id to the found member
-                    record.member_id = member.id if member else False
-
+                    # record.member_id = member.id if member else False
     @api.model
     def create(self, vals):
         # Ensure the name field is set using a sequence if not provided
