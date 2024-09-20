@@ -69,16 +69,16 @@ class UploadMemberWizard(models.TransientModel):
                 row_errors.append(f'Duplicate value "{vehicle_chasis_no}" found in "vehicle_chasis_no". Row: {index + 2}.')
             else:
                 seen_vehicle_chasis_no.add(vehicle_chasis_no)
-
+# -----------------------------------TEMPORARY REMOVAL--------------------------------------------------------------------
             # Validate mobile field
-            mobile = row.get('mobile')
-            if mobile and pd.notna(mobile):
-                mobile_str = str(mobile).strip().split(".")[0]
-                if not mobile_str.isdigit():
-                    row_errors.append(f'Field "mobile" must contain only numbers. Row: {index + 2}.')
-            if len(mobile_str) == 1 or set(mobile_str) == {'0'}:
-                row_errors.append(f'Field "mobile" must not be a single digit or only zeros. Row: {index + 2}.')
-
+            # mobile = row.get('mobile')
+            # if mobile and pd.notna(mobile):
+            #     mobile_str = str(mobile).strip().split(".")[0]
+            #     if not mobile_str.isdigit():
+            #         row_errors.append(f'Field "mobile" must contain only numbers. Row: {index + 2}.')
+            # if len(mobile_str) == 1 or set(mobile_str) == {'0'}:
+            #     row_errors.append(f'Field "mobile" must not be a single digit or only zeros. Row: {index + 2}.')
+# ------------------------------------------------------------------------------------------------------------------------
             # Validate country code
             country_code = row.get('country')
             if pd.notna(country_code) and country_code not in valid_country_codes:
@@ -104,7 +104,10 @@ class UploadMemberWizard(models.TransientModel):
                 'card_type': row['card_type'],
                 'old_membership_number': row.get('old_membership_number'),
                 'member_name': row.get('name'),
-                'mobile': mobile_str,
+                # Changed for mobile
+                # 'mobile': mobile_str, 
+                # Changed for mobile temprory
+                'mobile': row.get('mobile'),
                 'street': row.get('address'),
                 'state': row.get('emirate'),
                 'country': row.get('country'),
