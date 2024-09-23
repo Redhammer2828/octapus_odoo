@@ -13,7 +13,7 @@ resources:
 
 variables:
   # Container registry service connection established during pipeline creation
-  dockerRegistryServiceConnection: 'a56b6d1f-41c3-4ed0-8c74-ad6c7da487ad'
+  dockerRegistryServiceConnection: '571785fc-12e8-4f30-bc07-b73e241f4e37'
   imageRepository: 'aaaerp'
   containerRegistry: 'carhiredev.azurecr.io'
   dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
