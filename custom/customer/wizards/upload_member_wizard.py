@@ -5,6 +5,7 @@ import re
 from datetime import datetime
 from odoo import models, fields, api
 from odoo.exceptions import UserError
+from concurrent.futures import ThreadPoolExecutor
 
 class UploadMemberWizard(models.TransientModel):
     _name = 'upload.member.wizard'
@@ -38,14 +39,13 @@ class UploadMemberWizard(models.TransientModel):
             'vehicle_chasis_no', 'name', 'customer_code', 'member_expiry_date', 'card_type', 
             'country', 'invoice_ref_date', 'package_id', 'category_code'
         ]
-        date_format_regex = re.compile(r'^\d{2}/\d{2}/\d{4}$')
+        date_format = '%d-%m-%Y'
         seen_vehicle_chasis_no = set()
 
         errors = []
         member_lines = []
 
-        # Iterate over the rows in the Excel data
-        for index, row in excel_data.iterrows():
+        def process_row(row, index):
             row_errors = []
             mobile_str = ""
 
@@ -54,60 +54,32 @@ class UploadMemberWizard(models.TransientModel):
                 if pd.isna(row.get(field)) or row.get(field) == '':
                     row_errors.append(f'Field "{field}" is required and cannot be empty. Row: {index + 2}.')
 
-            # Validate date fields
-            for date_field in ['member_expiry_date', 'member_activate_date', 'invoice_ref_date']:
+            # Date fields to be converted
+            date_fields = ['delivery_ref_date', 'member_expiry_date', 'invoice_ref_date', 'member_activate_date']
+
+            for date_field in date_fields:
                 date_value = row.get(date_field)
-                if pd.notna(date_value):
-                    if isinstance(date_value, (pd.Timestamp, datetime)):
-                        date_value = date_value.strftime('%d/%m/%Y')
-                    if not isinstance(date_value, str) or not date_format_regex.match(date_value):
-                        row_errors.append(f'Field "{date_field}" must be in dd/mm/yyyy format. Row: {index + 2}.')
+                if pd.notna(date_value) and date_value != "":
+                    if isinstance(date_value, str):
+                        try:
+                            date_value = datetime.strptime(date_value, date_format).strftime('%Y-%m-%d')
+                        except ValueError:
+                            row_errors.append(f'Field "{date_field}" contains an invalid date. Row: {index + 2}.')
+                    elif isinstance(date_value, (pd.Timestamp, datetime)):
+                        date_value = date_value.strftime('%Y-%m-%d')
+                else:
+                    date_value = None
 
-            # Check for duplicate vehicle chassis numbers
-            vehicle_chasis_no = row.get('vehicle_chasis_no')
-            if vehicle_chasis_no in seen_vehicle_chasis_no:
-                row_errors.append(f'Duplicate value "{vehicle_chasis_no}" found in "vehicle_chasis_no". Row: {index + 2}.')
-            else:
-                seen_vehicle_chasis_no.add(vehicle_chasis_no)
-# -----------------------------------TEMPORARY REMOVAL--------------------------------------------------------------------
-            # Validate mobile field
-            # mobile = row.get('mobile')
-            # if mobile and pd.notna(mobile):
-            #     mobile_str = str(mobile).strip().split(".")[0]
-            #     if not mobile_str.isdigit():
-            #         row_errors.append(f'Field "mobile" must contain only numbers. Row: {index + 2}.')
-            # if len(mobile_str) == 1 or set(mobile_str) == {'0'}:
-            #     row_errors.append(f'Field "mobile" must not be a single digit or only zeros. Row: {index + 2}.')
-# ------------------------------------------------------------------------------------------------------------------------
-            # Validate country code
-            country_code = row.get('country')
-            if pd.notna(country_code) and country_code not in valid_country_codes:
-                row_errors.append(f'Invalid country code "{country_code}". Row: {index + 2}.')
+                row[date_field] = date_value
 
-            # Validate category code
-            category_code = row.get('category_code')
-            if pd.notna(category_code) and category_code not in valid_category_codes:
-                row_errors.append(f'Invalid category code "{category_code}". Row: {index + 2}.')
-
-            # Validate package ID
-            package_id = row.get('package_id')
-            if pd.notna(package_id) and package_id not in valid_package_ids:
-                row_errors.append(f'Invalid Package ID "{package_id}". Row: {index + 2}.')
-
-            # If any errors are found for the current row, accumulate them and skip to the next row
             if row_errors:
-                errors.extend(row_errors)
-                continue
+                return row_errors, None
 
-            # Prepare data for creating member lines
             member_line_data = {
                 'card_type': row['card_type'],
                 'old_membership_number': row.get('old_membership_number'),
                 'member_name': row.get('name'),
-                # Changed for mobile
-                # 'mobile': mobile_str, 
-                # Changed for mobile temprory
-                'mobile': row.get('mobile'),
+                'mobile': mobile_str,
                 'street': row.get('address'),
                 'state': row.get('emirate'),
                 'country': row.get('country'),
@@ -119,11 +91,11 @@ class UploadMemberWizard(models.TransientModel):
                 'vehicle_plate': row.get('vehicle_plate'),
                 'mail_ref': row.get('mail_ref'),
                 'vehicle_reg_code': row.get('vehicle_reg_code'),
-                'vehicle_chasis_no': vehicle_chasis_no,
+                'vehicle_chasis_no': row.get('vehicle_chasis_no'),
                 'policy_no': row.get('policy_no'),
                 'vehicle_reg_country': row.get('vehicle_reg_country'),
                 'vehicle_emirate': row.get('vehicle_emirate'),
-                'delivery_ref_date': row.get('delivery_date'),
+                'delivery_ref_date': row.get('delivery_ref_date'),
                 'invoice_ref_date': row.get('invoice_ref_date'),
                 'member_expiry_date': row.get('member_expiry_date'),
                 'member_activate_date': row.get('member_activate_date'),
@@ -132,14 +104,24 @@ class UploadMemberWizard(models.TransientModel):
                 'customer_code': row.get('customer_code'),
                 'sequence_code': row.get('category_code'),
             }
-            member_lines.append((0, 0, member_line_data))
 
-        # Raise accumulated errors if any
+            return [], member_line_data
+
+        # Using thread pool for parallel processing
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [executor.submit(process_row, row, index) for index, row in excel_data.iterrows()]
+            for future in futures:
+                row_errors, member_line = future.result()
+                if row_errors:
+                    errors.extend(row_errors)
+                else:
+                    member_lines.append((0, 0, member_line))
+
         if errors:
             error_message = "\n".join(errors)
             raise UserError(f'Errors found in the uploaded file:\n{error_message}')
 
-        # Create data upload file record
+        # Bulk create member lines
         data_upload_file = self.env['data.upload.file'].create({
             'name': self.name,
             'file_type': self.file_type,
@@ -149,7 +131,6 @@ class UploadMemberWizard(models.TransientModel):
             'upload_member_ids': member_lines
         })
 
-        # Return the form view of the created record
         return {
             'name': 'Data Upload File',
             'type': 'ir.actions.act_window',
@@ -160,5 +141,4 @@ class UploadMemberWizard(models.TransientModel):
         }
 
     def action_policy_member_upload_csv(self):
-        # Implementation for CSV upload can be added here
         pass
