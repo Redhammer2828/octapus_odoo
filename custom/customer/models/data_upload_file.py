@@ -60,9 +60,9 @@ class DataUploadFile(models.Model):
                 self.check_member_details(member, member_line)
             else:
                 expiry_date = fields.Date.from_string(member_line.member_expiry_date)
-                activate_date = fields.Date.from_string(member_line.member_activate_date)
+                activate_date = fields.Date.from_string(member_line.member_activate_date) if member_line.member_activate_date else None
                 
-                if expiry_date < activate_date:
+                if activate_date is not None and expiry_date < activate_date:
                     member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date cannot be earlier than Activation Date!"})
                 else:
                     member_line.update({'upload_member_status': 'new', 'comment': "**Not exist in System*New Member"})
@@ -260,6 +260,7 @@ class DataUploadFile(models.Model):
                         'credit_member_ok': False,
                         'member_type': 'policy',
                         'membership_state': 'confirm',
+                        'product_template_id': member_line.package,
                         'member_partner_category_id': matching_category.id if matching_category else None,
                         # Add more fields to create as needed
                     })

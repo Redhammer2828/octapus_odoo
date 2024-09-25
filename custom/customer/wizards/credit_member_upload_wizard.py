@@ -1,87 +1,77 @@
 import io
 import base64
 import pandas as pd
-import re
 from datetime import datetime
 from odoo import models, fields, api
 from odoo.exceptions import UserError
+from concurrent.futures import ThreadPoolExecutor
 
-class MemberCancelUploadWizard(models.TransientModel):
+class CreditMemberUploadWizard(models.TransientModel):
     _name = "credit.member.upload.wizard"
     _description = "Credit Member Upload Wizard"
 
     name = fields.Char(string="Name", required=True)
-    file_type = fields.Selection([('excel', 'Excel'), ('csv', 'CSV')], string="File Type",default='excel', required=True)
+    file_type = fields.Selection([('excel', 'Excel')], string="File Type", default='excel', required=True)
     file = fields.Binary(string="File")
     file_name = fields.Char(string="File Name", readonly=True)
-    type = fields.Char(string="Type", invisible=True) 
+    type = fields.Char(string="Type", invisible=True)
 
     def action_credit_member_upload_excel(self):
-        # Ensure the file is provided
         if not self.file:
-            return {'warning': {'title': 'Warning', 'message': 'Please select a file to upload.'}}
+            raise UserError('Please select a file to upload.')
 
-        # Decode the file data and create a pandas DataFrame
+        # Decode and read the Excel file
         file_content = base64.b64decode(self.file)
         try:
             excel_data = pd.read_excel(io.BytesIO(file_content))
         except Exception as e:
-            return {'warning': {'title': 'Error', 'message': f'Error reading Excel file: {e}'}}
+            raise UserError(f'Error reading Excel file: {e}')
 
-        # Excel validation Check 
-        required_fields = ['vehicle_chasis_no', 'name', 'customer_code', 'member_expiry_date','card_type','country','invoice_ref_date','category_code']
-        seen_vehicle_chasis_no = set()
+        required_fields = [
+            'vehicle_chasis_no', 'name', 'customer_code', 
+            'member_expiry_date', 'card_type', 'country', 
+            'invoice_ref_date', 'category_code'
+        ]
         errors = []
-        date_format_regex = re.compile(r'^\d{2}/\d{2}/\d{4}$')
-
-
-        # Prepare data for creating upload.member.line records
+        date_format = '%d-%m-%Y'  # Expected date format
         credit_member_lines = []
-        for index, row in excel_data.iterrows():
-            row_errors = []
-            mobile_str = "" 
 
+        # Pre-fetch necessary data to avoid redundant ORM calls
+        existing_member_codes = set(self.env['credit.member'].search([]).mapped('customer_code'))
+
+        def process_row(index, row):
+            row_errors = []
+            member_line_data = {}
+
+            # Validate required fields
             for field in required_fields:
                 if pd.isna(row.get(field)) or row.get(field) == '':
                     row_errors.append(f'Field "{field}" is required and cannot be empty. Row: {index + 2}.')
 
-            for date_field in ['member_expiry_date', 'member_activate_date' , 'invoice_ref_date']:
+            # Process date fields
+            date_fields = ['delivery_ref_date', 'member_expiry_date', 'member_activate_date', 'invoice_ref_date']
+            for date_field in date_fields:
                 date_value = row.get(date_field)
                 if pd.notna(date_value):
-                    if isinstance(date_value, (pd.Timestamp, datetime)):
-                        date_value = date_value.strftime('%d/%m/%Y')
-                    if not isinstance(date_value, str) or not date_format_regex.match(date_value):
-                        row_errors.append(f'Field "{date_field}" must be in dd/mm/yyyy format. Row: {index + 2}.')
+                    if isinstance(date_value, str):
+                        try:
+                            date_value = datetime.strptime(date_value, date_format).strftime('%Y-%m-%d')
+                        except ValueError:
+                            row_errors.append(f'Field "{date_field}" contains an invalid date. Row: {index + 2}.')
+                    elif isinstance(date_value, (pd.Timestamp, datetime)):
+                        date_value = date_value.strftime('%Y-%m-%d')
+                else:
+                    date_value = None  # Handle missing dates
 
-            vehicle_chasis_no = row.get('vehicle_chasis_no')
+                row[date_field] = date_value  # Save converted date back to the row
 
-            if vehicle_chasis_no in seen_vehicle_chasis_no:
-                row_errors.append(f'Duplicate value "{vehicle_chasis_no}" found in "vehicle_chasis_no". Row: {index + 2}.')
-            else:
-                seen_vehicle_chasis_no.add(vehicle_chasis_no)
-
-#----------------------------------------------------MOBILE FIELD CHECK---------------------------------             
-            mobile = row.get('mobile')
-
-            if mobile and pd.notna(mobile):
-                mobile_str = str(mobile).strip()
-                mobile_str = mobile_str.split(".")[0]
-                if not mobile_str:
-                    row_errors.append(f'Field "mobile" must contain only numbers. Row: {index + 2}.')
-                if mobile_str:
-                    if not mobile_str.isdigit():
-                        row_errors.append(f'Field "mobile" must contain only numbers. Row: {index + 2}.')
-                # Additional check for single digit or only zeros
-            if len(mobile_str) == 1 or set(mobile_str) == {'0'}:
-                row_errors.append(f'Field "mobile" must not be a single digit or only zeros. Row: {index + 2}.')
-#--------------------------------------------------------------------------------------------------------------------- 
             if row_errors:
-                errors.extend(row_errors)
-                continue
+                return row_errors, None
 
+            # Prepare data for the credit.member.line record
             member_line_data = {
-                'card_type': row['card_type'],
-                'old_membership_number': row['old_membership_number'],
+                'card_type': row.get('card_type'),
+                'old_membership_number': row.get('old_membership_number'),
                 'member_name': row.get('name'),
                 'mobile': row.get('mobile'),
                 'street': row.get('address'),
@@ -95,11 +85,11 @@ class MemberCancelUploadWizard(models.TransientModel):
                 'vehicle_plate': row.get('vehicle_plate'),
                 'mail_ref': row.get('mail_ref'),
                 'vehicle_reg_code': row.get('vehicle_reg_code'),
-                'vehicle_chasis_no': vehicle_chasis_no,
+                'vehicle_chasis_no': row.get('vehicle_chasis_no'),
                 'policy_no': row.get('policy_no'),
                 'vehicle_reg_country': row.get('vehicle_reg_country'),
                 'vehicle_emirate': row.get('vehicle_emirate'),
-                'delivery_ref_date': row.get('delivery_date'),
+                'delivery_ref_date': row.get('delivery_ref_date'),
                 'invoice_ref_date': row.get('invoice_ref_date'),
                 'member_expiry_date': row.get('member_expiry_date'),
                 'member_activate_date': row.get('member_activate_date'),
@@ -107,32 +97,40 @@ class MemberCancelUploadWizard(models.TransientModel):
                 'package': row.get('package_id'),
                 'customer_code': row.get('customer_code'),
                 'sequence_code': row.get('category_code'),
-                # Add other fields from the Excel file as needed
             }
-            credit_member_lines.append((0, 0, member_line_data))
-        
+            return [], member_line_data
+
+        # Use thread pool for parallel processing of rows
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [executor.submit(process_row, index, row) for index, row in excel_data.iterrows()]
+            for future in futures:
+                row_errors, member_line = future.result()
+                if row_errors:
+                    errors.extend(row_errors)
+                elif member_line:
+                    credit_member_lines.append((0, 0, member_line))
+
         if errors:
-            error_message = "\n".join(errors)
+            error_message = "\n\n".join(errors)
             raise UserError(f'Errors found in the uploaded file:\n{error_message}')
 
-        # Create member.upload.cancel record
+        # Create the credit.member.upload record
         credit_member_upload = self.env['credit.member.upload'].create({
             'name': self.name,
             'file_type': self.file_type,
             'file': self.file,
-            'state': 'draft',  # Default state
-            'upload_member_ids': credit_member_lines  # Assign member lines to the One2many field
+            'state': 'draft',
+            'upload_member_ids': credit_member_lines
         })
 
-        # Return action to open form view of the newly created record
         return {
             'name': 'Credit Member Upload',
             'type': 'ir.actions.act_window',
             'res_model': 'credit.member.upload',
             'view_mode': 'form',
-            'res_id': credit_member_upload.id,  # Assuming data_upload_file is the created record
-            'target': 'current',  # Open in the same window
+            'res_id': credit_member_upload.id,
+            'target': 'current',
         }
-    
+
     def action_credit_member_upload_csv(self):
         pass
