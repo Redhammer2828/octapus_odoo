@@ -12,8 +12,8 @@
                     <field name="sequence_id" />
                     <field name="member_id" />
                     <field name="product_id" />
-                    <field name="provider_from_location_id" string="From" />
-                    <field name="provider_to_location_id" string="To" />
+                    <!-- <field name="provider_from_location_id" string="From" /> -->
+                    <!-- <field name="provider_to_location_id" string="To" /> -->
                     <field name="state" string="State" />
                 </tree>
             </field>

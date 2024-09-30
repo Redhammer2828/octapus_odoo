@@ -18,9 +18,9 @@ class AAAService(models.Model):
         ('draft', 'Draft'),
         ('initiate', 'Initiate'),
         ('dispatch', 'Dispatch'),
-        ('inprogress', 'In Progress'),
         ('start', 'Start'),
         ('reach', 'Reach'),
+        ('completed_by_driver', 'Completed by driver'),
         ('done', 'Done'),
         ('cancel', 'Cancelled'),
         ('change', 'Changed' )
@@ -43,14 +43,28 @@ class AAAService(models.Model):
     
     product_id = fields.Many2one('product.template', string="Service",domain=[('bundle_product', '=', False)])
     # vehicle_emirate_id = fields.Many2one('emirate', string="Vehicle Emirate ID")
-    provider_from_location_id = fields.Many2one('location.latlong', string="From Location")
-    provider_to_location_id = fields.Many2one('location.latlong', string="To Location")
+
+    # ----COMMENTED FOR TEST PURPOSE-----------------------------------------------------------------------------------
+    # provider_from_location_id = fields.Many2one('location.latlong', string="From Location")
+    # provider_to_location_id = fields.Many2one('location.latlong', string="To Location")
     
+    # ----------------LOCATION API ADDITION-------------------------------------------------------------------------    
+    # provider_from_location_id = fields.Many2one('location', string="From Location")
+    # provider_to_location_id = fields.Many2one('location', string="To Location")
+    # provider_from_location_id = fields.Char('Provider FRom LOcation Id')
+    # provider_to_location_id = fields.Char('Provider TO LOcation Id')
+
+
+    # from_location_ids = fields.Many2many('location', compute='_compute_from_location_ids', store=False)
+    # to_location_ids = fields.Many2many('location', compute='_compute_to_location_ids', store=False)
+    # ----------------------------------------------------------------------------------------    
+
+
     # SERVICE LOCATION LAT LONG
-    from_serive_location_id = fields.Many2one('location.service', string="From Lat Location")
-    to_serive_location_id = fields.Many2one('location.service', string="To Lat Location")
-    from_lat_location = fields.Text('Location')
-    to_lat_location = fields.Text('Location')
+    # from_serive_location_id = fields.Many2one('location.service', string="From Lat Location")
+    # to_serive_location_id = fields.Many2one('location.service', string="To Lat Location")
+    # from_lat_location = fields.Text('Location')
+    # to_lat_location = fields.Text('Location')
     
     uom_id = fields.Many2one('uom.uom', string="Unit of Measure")
     # rating_user_id = fields.Many2one('res.users', string="Rating User")
@@ -140,7 +154,7 @@ class AAAService(models.Model):
     service_time = fields.Datetime(string="Service Time")
     cash_collected_hidden = fields.Boolean(string="Cash Collected Hidden")
     cash_collected = fields.Float(string="Cash Collected")
-    amount=fields.Float(compute='_compute_location_amount',string="Cash To Be Collected")      
+    # amount=fields.Float(compute='_compute_location_amount',string="Cash To Be Collected")      
     
     addon_ok = fields.Boolean(string="Addon OK")
     waive_off = fields.Boolean(string="Waive Off")
@@ -173,7 +187,235 @@ class AAAService(models.Model):
     completion_time = fields.Datetime(string="Completion Time")
     member_activate_date = fields.Date('Member Activate Date')
     member_expiry_date = fields.Date('Member Expiry Date')
+
+    # # -----------LOCATION- API TESTINGs--------------------------------------------------
     
+    search_query = fields.Char(string='Search Query')
+    search_results = fields.Many2many('location.suggestion', string='Search Results', compute='_fetch_location_suggestions')
+    selected_from_location = fields.Many2one('location.suggestion', string='From Location')
+    selected_to_location = fields.Many2one('location.suggestion', string='To Location')
+    amount = fields.Integer(string='Amount', compute='_compute_amount', store=True)  # Dynamically computed amount
+
+    from_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
+    to_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
+
+    @api.depends('search_query')
+    def _fetch_location_suggestions(self):
+        for record in self:
+            record.search_results = [(5, 0, 0)]  # Clear existing results
+            if record.search_query:
+                try:
+                    url = "https://nominatim-carhire-dev.livelocal.delivery/search.php"
+                    params = {
+                        'q': record.search_query,
+                        'format': 'geocodejson',
+                    }
+                    headers = {
+                        'Accept-Language': 'en'
+                    }
+                    response = requests.post(url, params=params, headers=headers)
+                    response.raise_for_status()
+
+                    if response.status_code == 200:
+                        data = response.json()
+                        if 'features' in data:
+                            Suggestion = self.env['location.suggestion']
+                            for feature in data['features']:
+                                label = feature['properties']['geocoding']['label']
+                                coordinates = feature['geometry']['coordinates']
+                                suggestion = Suggestion.create({
+                                    'name': label,
+                                    'feature_data': str(feature),
+                                    'longitude': coordinates[0],
+                                    'latitude': coordinates[1]  # Store full feature data for later use if needed
+                                })
+                                record.search_results = [(4, suggestion.id)]
+                        else:
+                            # Create a "No results" suggestion
+                            no_result = Suggestion.create({'name': 'No results found'})
+                            record.search_results = [(4, no_result.id)]
+                    else:
+                        error_msg = Suggestion.create({'name': f'API error: {response.status_code}'})
+                        record.search_results = [(4, error_msg.id)]
+                except Exception as e:
+                    error_msg = Suggestion.create({'name': f'Error fetching location: {str(e)}'})
+                    record.search_results = [(4, error_msg.id)]
+
+
+
+
+    @api.onchange('selected_from_location', 'selected_to_location')
+    def _onchange_selected_locations(self):
+        # Trigger computation of the amount when locations are selected
+        self._compute_amount()
+
+    @api.depends('selected_from_location', 'selected_to_location')
+    def _compute_amount(self):
+        for record in self:
+            if record.selected_from_location and record.selected_to_location:
+                # Fetch lat/long from selected locations
+                from_lat = record.selected_from_location.latitude
+                from_lon = record.selected_from_location.longitude
+                to_lat = record.selected_to_location.latitude
+                to_lon = record.selected_to_location.longitude
+
+                # Search for matching LocationService
+                location_service = self.env['location.service'].search([
+                    ('from_latitude', '=', from_lat),
+                    ('from_longitude', '=', from_lon),
+                    ('to_latitude', '=', to_lat),
+                    ('to_longitude', '=', to_lon)
+                ], limit=1)
+
+                if location_service:
+                    record.amount = location_service.amount
+                else:
+                    record.amount = 0  # No matching service found, set to 0
+            else:
+                record.amount = 0  # If locations are not selected, set amount to 0
+
+
+    @api.depends('selected_from_location', 'selected_to_location')
+    def _compute_emirates(self):
+        for record in self:
+            if record.selected_from_location:
+                record.from_location_emirate = self._extract_emirate_from_feature_data(record.selected_from_location.feature_data)
+            else:
+                record.from_location_emirate = ''
+
+            if record.selected_to_location:
+                record.to_location_emirate = self._extract_emirate_from_feature_data(record.selected_to_location.feature_data)
+            else:
+                record.to_location_emirate = ''
+
+    def _extract_emirate_from_feature_data(self, feature_data):
+        """
+        Extracts the emirate from the feature data JSON string and appends 'Emirate' with bold tags.
+        """
+        known_emirates = ['Abu Dhabi', 'Ajman', 'Dubai', 'Fujairah', 'Ras Al Khaimah', 'Sharjah', 'Umm Al-Quwain']
+        
+        if feature_data:
+            try:
+                feature_data = feature_data.replace("'", '"')  # Ensure JSON is valid
+                feature = json.loads(feature_data)  # Parse the JSON
+                
+                geocoding = feature.get('properties', {}).get('geocoding', {})
+                label = geocoding.get('label', '').lower()  # Convert label to lowercase
+                
+                # Remove "emirate" from the label if present
+                label = label.replace('emirate', '').strip()
+                
+                parts = [part.strip() for part in label.split(',')]  # Clean label
+                
+                for emirate in known_emirates:
+                    # Case-insensitive match, ignoring the "Emirate" postfix
+                    if emirate.lower() in [part.lower() for part in parts]:
+                        # Return the emirate with 'Emirate' and wrapped in bold tags
+                        return f"{emirate} Emirate"
+                
+                return 'Unknown Emirate'  # Default if no emirate is found
+            except Exception as e:
+                print(f"Debug - Exception: {e}")
+                return 'Unknown Emirate'
+        return ''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # @api.onchange('provider_from_location_id')
+    # def _onchange_provider_from_location(self):
+    #     if self.provider_from_location_id:
+    #         # Use the selected location for further logic if needed
+    #         pass
+
+    # @api.onchange('provider_to_location_id')
+    # def _onchange_provider_to_location(self):
+    #     if self.provider_to_location_id:
+    #         # Use the selected location for further logic if needed
+    #         pass
+
+    # @api.depends('provider_from_location_id')
+    # def _compute_from_location_ids(self):
+    #     for record in self:
+    #         search_query = self.env.context.get('search_query', '')
+    #         print("QUERYUY",search_query)
+    #         if search_query:
+    #             record.from_location_ids = self._fetch_location_suggestions(search_query)
+    #         else:
+    #             record.from_location_ids = []
+
+    # @api.depends('provider_to_location_id')
+    # def _compute_to_location_ids(self):
+    #     for record in self:
+    #         search_query = self.env.context.get('search_query', '')
+    #         print("QUERYUY PROVIDER TO",search_query)
+    #         if search_query:
+    #             record.to_location_ids = self._fetch_location_suggestions(search_query)
+    #         else:
+    #             record.to_location_ids = []
+
+    # def _fetch_location_suggestions(self, search_query):
+    #     # Replace the URL with the one provided by the user
+    #     url = 'https://nominatim-carhire-dev.livelocal.delivery/search.php'
+    #     params = {
+    #         'q': search_query,
+    #         'format': 'geocodejson'
+    #     }
+    #     try:
+    #         response = requests.get(url, params=params)
+    #         if response.status_code == 200:
+    #             data = response.json()
+    #             print("DATA",data)
+    #             return self._create_location_records(data.get('features', []))
+    #         else:
+    #             print(f"API error: {response.text}")
+    #     except requests.RequestException as e:
+    #         print(f"Error calling external API: {str(e)}")
+
+    # def _create_location_records(self, locations):
+    #     location_ids = []
+    #     for location in locations:
+    #         geocoding = location.get('properties', {}).get('geocoding', {})
+    #         name = geocoding.get('label')
+    #         latitude = location.get('geometry', {}).get('coordinates', [])[1]
+    #         longitude = location.get('geometry', {}).get('coordinates', [])[0]
+    #         location_id = self.env['location'].create({
+    #             'name': name,
+    #             'latitude': latitude,
+    #             'longitude': longitude
+    #         })
+    #         location_ids.append(location_id.id)
+    #     return location_ids
+
+
+
+    # -------------------------------------------------------------------------
     @api.onchange('provider_id')
     def _onchange_provider_id(self):
             """
@@ -244,46 +486,46 @@ class AAAService(models.Model):
        
         return service
     
-    @api.depends('provider_from_location_id', 'provider_to_location_id')
-    def _compute_location_amount(self):
-        for cash in self:
-            if cash.provider_from_location_id and cash.provider_to_location_id:
-                # Retrieve and normalize the actual values from the related models
-                from_location_value = cash.provider_from_location_id.location
-                to_location_value = cash.provider_to_location_id.location
+    # @api.depends('provider_from_location_id', 'provider_to_location_id')
+    # def _compute_location_amount(self):
+    #     for cash in self:
+    #         if cash.provider_from_location_id and cash.provider_to_location_id:
+    #             # Retrieve and normalize the actual values from the related models
+    #             from_location_value = cash.provider_from_location_id.location
+    #             to_location_value = cash.provider_to_location_id.location
     
-                # Debugging output
-                print("FROM_LOCATION_VALUE:", from_location_value)
-                print("TO_LOCATION_VALUE:", to_location_value)
+    #             # Debugging output
+    #             print("FROM_LOCATION_VALUE:", from_location_value)
+    #             print("TO_LOCATION_VALUE:", to_location_value)
     
-                # Perform the search with exact matches
-                service_record = self.env['location.service'].search([
-                    ('from_location', '=ilike', from_location_value),
-                    ('to_location', '=ilike', to_location_value)
-                ], limit=1)
+    #             # Perform the search with exact matches
+    #             service_record = self.env['location.service'].search([
+    #                 ('from_location', '=ilike', from_location_value),
+    #                 ('to_location', '=ilike', to_location_value)
+    #             ], limit=1)
 
-                if service_record and service_record.amount != 0:
-                    print("SERVICE_RECORD_FOUND (DIRECT):")
-                    print("SERVICE_RECORD_AMOUNT:", service_record.amount)
-                    cash.amount = service_record.amount
-                else:
-                    # Try with reversed locations if the first search amount is 0 or no record is found
-                    print("DIRECT MATCH NOT FOUND OR AMOUNT IS 0, TRYING REVERSED LOCATIONS")
-                    service_record_reversed = self.env['location.service'].search([
-                        ('from_location', '=ilike', to_location_value),
-                        ('to_location', '=ilike', from_location_value)
-                    ], limit=1)
+    #             if service_record and service_record.amount != 0:
+    #                 print("SERVICE_RECORD_FOUND (DIRECT):")
+    #                 print("SERVICE_RECORD_AMOUNT:", service_record.amount)
+    #                 cash.amount = service_record.amount
+    #             else:
+    #                 # Try with reversed locations if the first search amount is 0 or no record is found
+    #                 print("DIRECT MATCH NOT FOUND OR AMOUNT IS 0, TRYING REVERSED LOCATIONS")
+    #                 service_record_reversed = self.env['location.service'].search([
+    #                     ('from_location', '=ilike', to_location_value),
+    #                     ('to_location', '=ilike', from_location_value)
+    #                 ], limit=1)
 
-                    if service_record_reversed and service_record_reversed.amount != 0:
-                        print("SERVICE_RECORD_FOUND (REVERSED):")
-                        print("SERVICE_RECORD_AMOUNT:", service_record_reversed.amount)
-                        cash.amount = service_record_reversed.amount
-                    else:
-                        print("NO RECORD FOUND WITH REVERSED LOCATIONS OR AMOUNT IS 0")
-                        cash.amount = 0
-            else:
-                print("MISSING PROVIDER LOCATIONS")
-                cash.amount = 0
+    #                 if service_record_reversed and service_record_reversed.amount != 0:
+    #                     print("SERVICE_RECORD_FOUND (REVERSED):")
+    #                     print("SERVICE_RECORD_AMOUNT:", service_record_reversed.amount)
+    #                     cash.amount = service_record_reversed.amount
+    #                 else:
+    #                     print("NO RECORD FOUND WITH REVERSED LOCATIONS OR AMOUNT IS 0")
+    #                     cash.amount = 0
+    #         else:
+    #             print("MISSING PROVIDER LOCATIONS")
+    #             cash.amount = 0
 
 
     def action_initiate_service(self):
@@ -329,188 +571,6 @@ class AAAService(models.Model):
 
         print("API RESPONSE-ORDER CREATED",response.text)
         
-        
-
-    # def action_dispatch_service(self):
-    #     # Ensure we're working with a single record
-    #     self.ensure_one()
-        
-    #     # ----------------------------------------------------------------------------
-    #     for record in self:
-    #         if not record.name:
-    #             if not record.service_sequence:
-    #                 date_str = datetime.today().strftime('%Y%m%d')
-    #                 sequence = self.env['ir.sequence'].next_by_code('aaa.service')
-    #                 record.name = f'SERV-{date_str}-{sequence[-4:]}'
-    #     service_record = self
-    #     # -----------------------------------------------------------------------------
-
-    #     member_id = service_record.member_id.id
-    #     print("ID of Service that User is in:", service_record.id)
-    #     print("ID of MEMBER From SERVICE REC:", member_id)
-
-    #     if not member_id:
-    #         raise ValidationError(_("Member not found in the service record."))
-
-    #     if self.member_type == 'policy':
-    #         # Get all service lines for the member
-    #         service_lines = self.env['aaa.service'].search([
-    #             ('member_id', '=', member_id),
-    #             ('state', '!=', 'initiate'),
-    #             ('member_type', '=', 'policy')
-    #         ])
-    #         print("All services Taken by Member, Service Lines:", service_lines.ids)
-    #         service_lines_info = [(line.product_id.id, line.create_date) for line in service_lines]
-    #         print("Service Lines Info:", service_lines_info)
-
-    #         # Get product_template_id from res.partner
-    #         member = self.env['res.partner'].browse(member_id)
-    #         product_template_id = member.product_template_id.id
-    #         print("Package ID:", product_template_id)
-
-    #         if not product_template_id:
-    #             raise ValidationError(_("Package not found for the member."))
-
-    #         # Match product_template_id with product_template_id in product.package.service
-    #         package_services = self.env['product.package.service'].search([
-    #             ('product_template_id', '=', product_template_id)
-    #         ])
-    #         package_service_product_ids = package_services.mapped('product_id.id')
-    #         print("Packages Services Product IDs:", package_service_product_ids)
-
-    #         service_product_id = self.product_id.id  # Assuming `self.product_id` refers to the current service's product
-
-    #          # -------------------------------------------------------------------------------------------------- 
-    #         order_number = self.name
-    #         status = self.state
-    #         phone_number = self.member_contact_no
-    #         vehicle_chasis_no = self.vehicle_chasis_no  # Corrected field name
-
-    #         self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
-    #         print(f"checking value of order:{order_number},{status}, {phone_number}, {vehicle_chasis_no}")
-    #     # -------------------------------------------------------------------------------------------------- 
-    #         if service_product_id not in package_service_product_ids:
-    #             # The service is not part of the package; trigger the wizard
-    #             print("SERVICE NOT FOUND IN PACKAGE - Triggering Wizard")
-    #             return {
-    #                 'name': _('Convert to Cash or Credit Service'),
-    #                 'type': 'ir.actions.act_window',
-    #                 'res_model': 'service.dispatch.wizard',
-    #                 'view_mode': 'form',
-    #                 'view_id': self.env.ref('customer.view_service_dispatch_wizard_form').id,
-    #                 'target': 'new',
-    #                 'context': {
-    #                     'default_service_id': self.id,
-    #                 },
-    #             }
-
-    #         if not service_lines_info:
-    #             # No existing services found. Proceeding with dispatch.
-    #             print("No existing services found. Proceeding with dispatch.")
-    #             self.state = 'dispatch'
-    #             self.message_post(body=_("Service dispatched successfully."))
-    #             self.env['service.history'].create({
-    #                 'service_id': self.id,
-    #                 'user': self.env.user.id,
-    #                 'time': fields.Datetime.now(),
-    #                 'status': self.state,
-    #             })
-
-    #             return True
-    #         else:
-    #             # Case: Existing services - check validity against the package
-    #             service_found = False
-    #             validation_error_message = None
-
-    #             # Check each service line against the package service validity
-    #             for service_product_id, create_date in service_lines_info:
-    #                 print("Checking SERVICE PRODUCT_ID:", service_product_id)
-    #                 print("Created Date:", create_date)
-
-    #                 if service_product_id in package_service_product_ids:
-    #                     service_found = True
-    #                     # Find the corresponding package service to get validity_days
-    #                     package_service = package_services.filtered(lambda s: s.product_id.id == service_product_id)
-    #                     if package_service:
-    #                         validity_days = package_service.quantity
-    #                         print("Package service validity:", validity_days)
- 
-    #                         service_date = fields.Datetime.from_string(create_date)
-    #                         print("SERVICE DATE:", service_date)
-    #                         current_date = fields.Datetime.now()
-    #                         print("CURRENT DATE:", current_date)
-    #                         days_difference = (current_date - service_date).days
-    #                         print("Days Difference:", days_difference)
- 
-    #                         if validity_days == 1 and days_difference < 1:
-    #                             # validation_error_message = _("This service can only be used once per day.")
-    #                             print("This service can only be used once per day.")
-    #                         elif days_difference < validity_days:
-    #                             # validation_error_message = _("Service limit reached for this period.")
-    #                                print("SERVICE LIMIT REACHED FOR THIS PERIOD - Triggering Wizard")
-    #                                return {
-    #                                     'name': _('Convert to Cash'),
-    #                                     'type': 'ir.actions.act_window',
-    #                                     'res_model': 'service.cash.wizard',
-    #                                     'view_mode': 'form',
-    #                                     'view_id': self.env.ref('customer.view_service_cash_wizard_form').id,
-    #                                     'target': 'new',
-    #                                     'context': {
-    #                                         'default_service_id': self.id,
-    #                                     },
-    #                                 }
-    #                         else:
-    #                             # Valid service found; no need to trigger wizard
-    #                             print("Valid service found. Skipping wizard.")
-    #                             break
- 
-    #                         if validity_days == 365 and days_difference < 365:
-    #                             # validation_error_message = _("This service can only be used once per year.")
-    #                             print("This service can only be used once per year.")
-    #                         elif days_difference < validity_days:
-    #                             # validation_error_message = _("Service limit reached for this period.")
-    #                             print("Service limit reached for this period.")
-    #                             return {
-    #                                     'name': _('Convert to Cash'),
-    #                                     'type': 'ir.actions.act_window',
-    #                                     'res_model': 'service.cash.wizard',
-    #                                     'view_mode': 'form',
-    #                                     'view_id': self.env.ref('customer.view_service_cash_wizard_form').id,
-    #                                     'target': 'new',
-    #                                     'context': {
-    #                                         'default_service_id': self.id,
-    #                                     },
-    #                                 }
-    #                         else:
-    #                             # Valid service found; no need to trigger wizard
-    #                             print("Valid service found. Skipping wizard.")
-    #                             break
- 
-    #                     if validation_error_message:
-    #                         raise ValidationError(validation_error_message)
-        
-    #     # -------------------------------------------------------------------------------------------------- 
-    #     order_number = self.name
-    #     status = self.state
-    #     phone_number = self.member_contact_no
-    #     vehicle_chasis_no = self.vehicle_chasis_no  # Corrected field name
-
-    #     self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
-    #     print(f"checking value of order:{order_number},{status}, {phone_number}, {vehicle_chasis_no}")
-    #     # -------------------------------------------------------------------------------------------------- 
-
-
-    #     self.state = 'dispatch'
-    #     print("DISPATCHEDDDD",self.state)
-    #     self.requested_date = fields.Datetime.now()
-    #     self.message_post(body=_("Service dispatched successfully."))
-    #     self.env['service.history'].create({
-    #         'service_id': self.id,
-    #         'user': self.env.user.id,
-    #         'time': fields.Datetime.now(),
-    #         'status': self.state,
-    #     })
-    #     return True
 
 # ---------------------------------------------------NEW A CODE-----------------------------------------------
     def action_dispatch_service(self):
@@ -796,25 +856,25 @@ class AAAService(models.Model):
             # Automatically set member type based on service form
             self.member_id.member_type = self.member_type  # Set from selection in aaa.service
     
-    def action_inprogress_service(self):
-            self.state = 'inprogress'
-            for service in self:
+    # def action_inprogress_service(self):
+    #         self.state = 'inprogress'
+    #         for service in self:
             
-                self.env['service.history'].create({
-                    'service_id': service.id,
-                    'user': self.env.user.id,
-                    'time': fields.Datetime.now(),
-                    'status': service.state,  
-                })
-                self .env['service.comment'].create({
-                    'service_id': service.id,
-                    'comment' : service.comments or 'IN PROGRESS',
-                    'comment_date_and_time' : fields.Datetime.now(),
-                    'comment_user': self.env.user.id,
-                    'comment_status' : service.state,
+    #             self.env['service.history'].create({
+    #                 'service_id': service.id,
+    #                 'user': self.env.user.id,
+    #                 'time': fields.Datetime.now(),
+    #                 'status': service.state,  
+    #             })
+    #             self .env['service.comment'].create({
+    #                 'service_id': service.id,
+    #                 'comment' : service.comments or 'IN PROGRESS',
+    #                 'comment_date_and_time' : fields.Datetime.now(),
+    #                 'comment_user': self.env.user.id,
+    #                 'comment_status' : service.state,
                 
-        })
-            return True
+    #     })
+    #         return True
 
     def action_start_service(self):
         self.state = 'start'

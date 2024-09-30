@@ -6,6 +6,18 @@
     'author': 'Sasoft',
     'category': 'Sales',
     'description': 'Customers Management',
+    'assets': {
+        'web.assets_backend': [
+            # 'web/static/src/js/core/**/*',  # Ensure that core web assets are included
+            # 'web/static/src/js/widgets/**/*',  # Widgets and core functionality
+            # '/customer/static/lib/jquery-ui/jquery-ui.min.js',  # Include jQuery UI
+            # '/customer/static/lib/jquery-ui/jquery-ui.min.css',  # Include jQuery UI CSS
+            # '/customer/static/src/js/location_autocomplete.js',  # Your custom JS file
+            # 'customer/static/src/js/location_widget.js',
+            # 'web.core',  # Required dependency
+            # 'web.Widget',  # Required dependency
+        ],
+    },
     'data': [
         'security/ir.model.access.csv',
         'views/res_partner_customer.xml',
@@ -54,6 +66,13 @@
         # 'views/product_packages.xml',
         # 'static/src/js/customer.js',
     ],
+
+    # 'assets': {
+    #     'web.assets_backend': [
+    #         'customer/static/src/js/location_autocomplete.js',
+    #         'https://code.jquery.com/jquery-3.6.0.min.js',  # Add jQuery here
+    #     ],
+    # },
     'installable': True,
     'application': True,
     'sequence': 2,

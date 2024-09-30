@@ -42,13 +42,6 @@
             </field>
         </record>
         
-        <!-- <menuitem
-            id="menu_member_vehicle_type"
-            name="Vehicle Type"
-            parent="menu_configuration"
-            action="member_vehicle_type_action"
-            sequence="40" /> -->
-
         <menuitem id="menu_member_vehicle_type" name="Vehicle Type" parent="menu_configuration" action="member_vehicle_type_action" sequence="40"/>
 
     </data>
