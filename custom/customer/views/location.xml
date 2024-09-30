@@ -195,13 +195,6 @@
             parent="menu_location"
             action="action_location_latlong"
             sequence="81" />
-        <!-- ACTION SERVICE LOCATION TO -->
-        <!-- <menuitem
-            id="menu_location_to"
-            name="Location To"
-            parent="menu_location"
-            action="action_location_to"
-            sequence="82" /> -->
 
     </data>
 

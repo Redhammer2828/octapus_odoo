@@ -50,10 +50,36 @@ class UploadMemberWizard(models.TransientModel):
             mobile_str = ""
 
             # Check required fields
+            required_fields = [
+                'vehicle_chasis_no', 'name', 'customer_code', 'member_expiry_date', 'card_type', 
+                'country', 'invoice_ref_date', 'package_id', 'category_code'  # Added sequence_code
+            ]
+            
             for field in required_fields:
                 if pd.isna(row.get(field)) or row.get(field) == '':
                     row_errors.append(f'Field "{field}" is required and cannot be empty. Row: {index + 2}.')
 
+            # Step 1: Fetch customer_code from Excel and search in res.partner
+            # customer_code = row.get('customer_code')
+            # print("CUSTOMER CODE-------",customer_code)
+            # customer = self.env['res.partner'].search([('customer_code', '=', customer_code)], limit=1)
+            # print("customer_Code---------",customer.id)
+            
+            # if customer:
+            #     # Step 2: Fetch sequence_code from Excel and validate it against partner.category
+            #     category_code = row.get('category_code')
+            #     print("CATEGORY CODE------",category_code)
+            #     category = self.env['partner.category'].search([
+            #         ('name', '=', category_code),
+            #         ('partner_id', '=', customer.id)  # Filter by partner_id
+            #     ])
+            #     print("CATEGORYRRR",category)
+                
+            #     if not category:
+            #         row_errors.append(f'Sequence code "{category_code}" not found for customer "{customer_code}". Row: {index + 2}.')
+            category_code = row.get('category_code')
+            if category_code and category_code not in valid_category_codes:
+                row_errors.append(f'Invalid category code "{category_code}" in row {index + 2}.')
             # Date fields to be converted
             date_fields = ['delivery_ref_date', 'member_expiry_date', 'invoice_ref_date', 'member_activate_date']
 
@@ -79,7 +105,7 @@ class UploadMemberWizard(models.TransientModel):
                 'card_type': row['card_type'],
                 'old_membership_number': row.get('old_membership_number'),
                 'member_name': row.get('name'),
-                'mobile': mobile_str,
+                'mobile': row.get('mobile'),
                 'street': row.get('address'),
                 'state': row.get('emirate'),
                 'country': row.get('country'),
@@ -95,7 +121,7 @@ class UploadMemberWizard(models.TransientModel):
                 'policy_no': row.get('policy_no'),
                 'vehicle_reg_country': row.get('vehicle_reg_country'),
                 'vehicle_emirate': row.get('vehicle_emirate'),
-                'delivery_ref_date': row.get('delivery_ref_date'),
+                'delivery_ref_date': row.get('delivery_date'),
                 'invoice_ref_date': row.get('invoice_ref_date'),
                 'member_expiry_date': row.get('member_expiry_date'),
                 'member_activate_date': row.get('member_activate_date'),
@@ -106,6 +132,7 @@ class UploadMemberWizard(models.TransientModel):
             }
 
             return [], member_line_data
+
 
         # Using thread pool for parallel processing
         with ThreadPoolExecutor(max_workers=4) as executor:

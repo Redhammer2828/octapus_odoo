@@ -16,6 +16,7 @@
                             invisible="state not in ['draft']" class="btn-primary" />
                         <button name="apply_member_upload_wizard" string="Apply" type="object"
                             invisible="state not in ['validate']" class="btn-primary" />
+                        <!-- <button name="apply_tester" string="TEST" type="object" class="btn-primary" /> -->
                         <button name="action_view_rejected_records" string="Rejected Records"
                             type="object" class="btn-default"
                             invisible="state not in ['validate','done']" icon="fa-times-circle"/>

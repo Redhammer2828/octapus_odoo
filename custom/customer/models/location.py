@@ -1,4 +1,8 @@
 from odoo import models, fields
+import requests
+from odoo import http
+from odoo.http import request, Response
+
 
 class LocationInternal(models.Model):
     _name = 'location.internal'
@@ -35,3 +39,21 @@ class LocationFrom(models.Model):
     latitude = fields.Char('Latitude')
     longitude = fields.Char('Longitude')
     # h3_index = fields.Char('H3 INDEX')
+
+class Location(models.Model):
+    _name = 'location'
+    _description = 'Location'
+
+    name = fields.Char(string="Location Name", required=True)
+    latitude = fields.Float(string="Latitude")
+    longitude = fields.Float(string="Longitude")
+
+
+class LocationSuggestion(models.Model):
+    _name = 'location.suggestion'
+    _description = 'Location Suggestion'
+
+    name = fields.Char(string='Location Name')
+    feature_data = fields.Text(string='Feature Data')
+    latitude = fields.Float(string='Latitude', digits=(10, 8))
+    longitude = fields.Float(string='Longitude', digits=(11, 8))

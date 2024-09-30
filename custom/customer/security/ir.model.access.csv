@@ -36,3 +36,9 @@ access_service_dispatch_wizard,service.dispatch.wizard,model_service_dispatch_wi
 access_service_cash_wizard,service.cash.wizard,model_service_cash_wizard,,1,1,1,1
 access_schedule_service_wizard,schedule.service.wizard,model_schedule_service_wizard,,1,1,1,1
 access_membership_history_user,membership.history.user,model_membership_history,base.group_user,1,1,1,1
+access_location,location,model_location,,1,1,1,1
+access_location_suggestion,location.suggestion,model_location_suggestion,,1,1,1,1
+access_enquiry_config,enquiry.config,model_enquiry_config,base.group_user,1,1,1,1
+access_enquiry_subtype,enquiry.subtype,model_enquiry_subtype,base.group_user,1,1,1,1
+access_complaint_config,complaint.config,model_complaint_config,base.group_user,1,1,1,1
+access_complaint_subtype,complaint.subtype,model_complaint_subtype,base.group_user,1,1,1,1

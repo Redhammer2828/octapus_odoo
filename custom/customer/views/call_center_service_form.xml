@@ -38,10 +38,10 @@
                         <button name="action_schedule_service_check" string="Schedule Service"
                             type="object" class="btn-default"
                             invisible="state not in ('initiate')" />
-                        <button name="action_inprogress_service" string="In Progress" type="object"
-                            class="oe_highlight" invisible="state != 'dispatch'" />
+                        <!-- <button name="action_inprogress_service" string="In Progress" type="object"
+                            class="oe_highlight" invisible="state != 'dispatch'" /> -->
                         <button name="action_start_service" string="Start" type="object"
-                            class="btn-primary" invisible="state != 'inprogress'" />
+                            class="btn-primary" invisible="state != 'dispatch'"/>
                         <button name="action_reach_service" string="Reach" type="object"
                             class="btn-primary" invisible="state != 'start'" />
                         <button name="action_done_service" string="Completed" type="object"
@@ -50,7 +50,7 @@
                             invisible="state != 'reach'" />
                         <button name="action_cancel_service" type="object" string="Cancel"
                             confirm="Cancel this service, do you want to proceed?"
-                            invisible="state not in ('initiate', 'dispatch', 'inprogress', 'start', 'reach')" />
+                            invisible="state not in ('initiate', 'dispatch', 'start', 'reach')" />
                         <!-- CUSTTOM ACTION CANCEL -->
                         <!-- <button name="action_custom_cancel" type="object" string="Discard"
                             class="custom_cancel_button"
@@ -59,14 +59,14 @@
 
                         <button name="action_change" type="object" string="Change"
                             confirm="Change this service, do you want to proceed?"
-                            invisible="state not in ('initiate', 'dispatch', 'inprogress', 'start', 'reach')" />
+                            invisible="state not in ('initiate', 'dispatch', 'start','completed_by_driver', 'reach')" />
                         <button name="action_create_enquiry" string="Enquiry" type="object"
                             class="btn-default"
-                            invisible="state not in ('initiate', 'dispatch', 'inprogress', 'start', 'reach')" />
+                            invisible="state not in ('initiate', 'dispatch', 'start', 'reach','completed_by_driver')" />
                         <button name="action_new" string="New Service" type="object"
                             invisible="state != 'discard'" />
                         <field name="state" widget="statusbar" nolabel="1"
-                            statusbar_visible="initiate,dispatch,inprogress,start,reach,done" />
+                            statusbar_visible="initiate,dispatch,start,reach,completed_by_driver,done" />
                     </header>
                     <sheet>
                         <div class="row"
@@ -147,22 +147,58 @@
                             </group>
                             <group string="SERVICE DETAILS" name="service_details">
                                 <group class="product_field">
+
+                                    <!-- Add the invisible fields here -->
+                                    <!-- <field name="from_location_ids" invisible="1" /> -->
+                                    <!-- <field name="to_location_ids" invisible="1" /> -->
+
                                     <field name="product_id" string="Service" class="required_field"
                                         required="1" />
                                     <field name="service_type" invisible="1" />
-                                    <field name="provider_from_location_id" string="From Location"
+                                    <!--
+                                    dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd -->
+
+                                    <!-- <field name="provider_from_location_id" string="From
+                                    Location"
                                         invisible="service_type == 'location'"
-                                        class="required_field" required="1" options="{'no_create': True}"/>
+                                        class="required_field" required="1"
+                                        options="{'no_create': True}" />
                                     <field name="provider_to_location_id" string="To Location"
                                         invisible=""
-                                        class="required_field" required="1" options="{'no_create': True}"/>
+                                        class="required_field" required="1"
+                                        options="{'no_create': True}" /> -->
+
+                                    <!-- <field name="provider_from_location_id" /> -->
+                                    <!-- <field name="provider_to_location_id" /> -->
+
+
+                                    <field name="search_query" />
+
+
+                                    <field name="search_results" widget="many2many_tags"
+                                        options="{'no_create': True}" />
+
+
+                                    <field name="selected_from_location"
+                                        domain="[('id', 'in', search_results)]"
+                                        options="{'no_create': True}"/>
+                                    <field name="from_location_emirate"
+                                        style="font-weight: 500;color: #28a745;" />
+                                    <field name="selected_to_location"
+                                        domain="[('id', 'in', search_results)]"
+                                        options="{'no_create': True, 'no_open': True}" />
+                                    <field name="to_location_emirate"
+                                        style="font-weight: 500;color: #28a745;" />
+                                    <field name="amount" />
+                                    <!--
+                                    dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd -->
                                     <field name="date_time_from" string="From Date time"
                                         invisible="service_type != 'location_duration'"
                                         class="required_field" required="1" />
                                     <field name="date_time_to" string="To Date time"
                                         invisible="service_type != 'location_duration'"
                                         class="required_field" required="1" />
-                                    <field name="amount" />
+                                    <!-- <field name="amount" /> -->
                                 </group>
                                 <separator string="ADDON SERVICES" colspan="4" />
                                 <field name="addon_service_ids" nolabel="1"
@@ -175,11 +211,13 @@
                                     <form string="Additional Service">
                                         <group>
                                             <field name="product_id" />
-                                            <field name="provider_from_location_id"
+                                            <!-- <field name="provider_from_location_id"
                                                 string="From Location"
-                                                invisible="product_id == False" options="{'no_create': True}"/>
+                                                invisible="product_id == False"
+                                                options="{'no_create': True}" />
                                             <field name="provider_to_location_id"
-                                                string="To Location" invisible="product_id == False" options="{'no_create': True}"/>
+                                                string="To Location" invisible="product_id == False"
+                                                options="{'no_create': True}" /> -->
                                         </group>
                                     </form>
                                 </field>
@@ -191,7 +229,8 @@
                                 <field name="provider_id" string="Provider"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']"
-                                    required="1" class="required_field" options="{'no_create': True}" />
+                                    required="1" class="required_field"
+                                    options="{'no_create': True}" />
                                 <field name="provider_num" string="Contact No"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']" />
@@ -206,7 +245,7 @@
                                     readonly="state in ['done', 'cancel']" />
                                 <!-- <field name="driver_id" string="Driver"
                                     invisible="provider_id.is_driver_available != 'True'" /> -->
-                                    <!-- Driver Name (Char) Field: visible when is_driver_name_visible
+                                <!-- Driver Name (Char) Field: visible when is_driver_name_visible
                                     is True -->
                                 <field name="is_driver_name_visible" invisible="1" />
                                 <field name="driver_name"
@@ -219,7 +258,7 @@
                                 <field name="driver_id"
                                     invisible="is_driver_name_visible == True"
                                     readonly="state in ['done', 'cancel']"
-                                    required="state in ['dispatch']" options="{'no_create': True}"/>
+                                    required="state in ['dispatch']" options="{'no_create': True}" />
                                 <field name="driver_num" string="Contact No"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']" />
