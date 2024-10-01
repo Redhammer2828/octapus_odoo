@@ -43,7 +43,7 @@ stages:
           $(tag)
     - task: SSH@0
       inputs:
-        condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'alpha'))
+        condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'development'))
         sshEndpoint: 'carhire-alpha'
         runOptions: 'commands'
         failOnStdErr: false
