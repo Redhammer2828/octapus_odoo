@@ -76,3 +76,4 @@ stages:
         runOptions: 'commands'
         commands: '/startscripts/aaa-odoo.sh'
         readyTimeout: '20000'
+
