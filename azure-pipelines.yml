@@ -52,7 +52,7 @@ stages:
 
     - task: SSH@0
       inputs:
-        condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'alpha'))
+        condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'kirkosalpha'))
         sshEndpoint: 'kirkos-dev'
         runOptions: 'commands'
         failOnStdErr: false
