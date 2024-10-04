@@ -1,6 +1,8 @@
 from odoo import models,fields,api, _
 from odoo.exceptions import ValidationError
 import logging
+from lxml import etree
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +166,7 @@ class ResPartnerMembers(models.Model):
             vals['credit_member_ok'] = False
             vals['adhoc_member'] = True
             vals['member_type'] = 'adhoc'
-        
+        vals['is_duplicated'] = False
         # Create the new partner record after validations
         new_partner = super(ResPartnerMembers, self).create(vals)
         return new_partner
@@ -267,26 +269,13 @@ class ResPartnerMembers(models.Model):
             # 'policy_no': 'Dup-' + (self.policy_no or ''),
             'vehicle_chasis_no': 'Dup-' + (self.vehicle_chasis_no or ''),
             # 'vehicle_plate': 'Dup-' + (self.vehicle_plate or ''),
+            'membership_state': 'temp',
             'is_duplicated': True,
         })
 
         # Call the super method to create the duplicated record
         return super(ResPartnerMembers, self).copy(default)
-
-    @api.model
-    def fields_view_get(self, view_id=None, view_type='form', toolbar=False, submenu=False):
-        result = super(ResPartnerMembers, self).fields_view_get(view_id=view_id, view_type=view_type, toolbar=toolbar, submenu=submenu)
-
-        if view_type == 'form':
-            # Get the view architecture
-            doc = result['arch']
-            # Modify fields dynamically based on is_duplicated condition
-            if self._context.get('is_duplicated'):
-                doc = doc.replace('readonly="1"', '')  # Make the fields editable in the form view when duplicating
-            result['arch'] = doc
-
-        return result
-
+    
     @api.depends('membership_state')
     def _compute_is_readonly(self):
         for record in self:
