@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 class ResPartnerMembers(models.Model):
     _inherit = 'res.partner'
 
-    parent_customer_id = fields.Many2one('res.partner', string='Customer')
+    parent_customer_id=fields.Many2one('res.partner',string='Customer',domain="[('is_company', '=', True)]")
     is_customer = fields.Boolean('Is_customer')
     is_vendor = fields.Boolean('Is_vendor')
     is_driver_available = fields.Boolean('Is Driver Available',default='False')
