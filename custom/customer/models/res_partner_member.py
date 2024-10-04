@@ -1,4 +1,5 @@
-from odoo import models,fields,api
+from odoo import models,fields,api, _
+from odoo.exceptions import ValidationError
 import logging
 
 logger = logging.getLogger(__name__)
@@ -10,6 +11,7 @@ class ResPartnerMembers(models.Model):
     is_customer = fields.Boolean('Is_customer')
     is_vendor = fields.Boolean('Is_vendor')
     is_driver_available = fields.Boolean('Is Driver Available',default='False')
+    is_duplicated = fields.Boolean(string='Duplicated Record', default=False)
     # -----------------------------------------
     ref_num = fields.Char('Membership Number')
 
@@ -98,14 +100,58 @@ class ResPartnerMembers(models.Model):
     # ----------------------------
     membership_history_ids= fields.One2many('membership.history','history_id', string='Membership History')
     
+    # @api.model
+    # def create(self, vals):
+    #     if self.env.context.get('from_res_partner_member_form'):
+    #         vals['is_customer'] = True
+    #         vals['credit_member_ok'] = False
+    #         vals['adhoc_member'] = False
+    #         vals['member_type'] = 'policy'
+        
+
+    #     if self.env.context.get('from_res_partner_credit_member_form'):
+    #         vals['is_customer'] = True
+    #         vals['credit_member_ok'] = True
+    #         vals['adhoc_member'] = False
+    #         vals['member_type'] = 'credit'
+
+    #     if self.env.context.get('from_res_partner_adhoc_member_form'):
+    #         vals['is_customer'] = True
+    #         vals['credit_member_ok'] = False
+    #         vals['adhoc_member'] = True
+    #         vals['member_type'] = 'adhoc'
+        
+    #     new_partner = super(ResPartnerMembers, self).create(vals)
+    #     return new_partner
     @api.model
     def create(self, vals):
+        parent_customer_id = vals.get('parent_customer_id')
+        vehicle_chasis_no = vals.get('vehicle_chasis_no')
+        print("parent_customer_id......",parent_customer_id)
+        print("vehicle_chasis_no.....",vehicle_chasis_no)
+        # If parent_customer_id and vehicle_chasis_no are provided, perform the validation
+        if parent_customer_id and vehicle_chasis_no:
+            # Search for all res.partner records with the same vehicle_chasis_no
+            existing_member = self.search([
+                ('vehicle_chasis_no', '=', vehicle_chasis_no)
+            ])
+            print("Existing Member With same Chasis number",existing_member)
+            if existing_member:
+                for member in existing_member:
+                    print("Company id of the matched chsis ..COMPANY ID",member.parent_customer_id.id)
+                    if member.parent_customer_id.id == parent_customer_id:
+                        # If parent_customer_id is the same, raise an error
+                        raise ValidationError("Member Already Exists under this company.")
+                    else:
+                        # If parent_customer_id is different, raise an error
+                        raise ValidationError("Member Already Exists under another company.")
+
+        # Perform context-based customizations
         if self.env.context.get('from_res_partner_member_form'):
             vals['is_customer'] = True
             vals['credit_member_ok'] = False
             vals['adhoc_member'] = False
             vals['member_type'] = 'policy'
-        
 
         if self.env.context.get('from_res_partner_credit_member_form'):
             vals['is_customer'] = True
@@ -119,11 +165,127 @@ class ResPartnerMembers(models.Model):
             vals['adhoc_member'] = True
             vals['member_type'] = 'adhoc'
         
+        # Create the new partner record after validations
         new_partner = super(ResPartnerMembers, self).create(vals)
         return new_partner
 
     def action_confirm_membership(self):
-        self.membership_state = 'confirm'
+            for record in self:
+                company = record.parent_customer_id  # Get the company directly
+            
+                if company:
+                    # Step 1: Check if a vehicle with the same chassis number exists within the same company, excluding the current record
+                    existing_members = self.env['res.partner'].search([
+                        ('vehicle_chasis_no', '=', record.vehicle_chasis_no),
+                        ('parent_customer_id', '=', company.id),
+                        ('membership_state', '=', 'confirm'),
+                        ('id', '!=', record.id)  # Exclude the current record from the search
+                    ])
+                    print("Existing members", existing_members)
+                
+                    if existing_members:
+                        for existing_member in existing_members:
+                            existing_expiry_date = existing_member.member_expiry_date
+                            current_expiry_date = record.member_expiry_date
+    
+                            # Log for debugging purposes
+                            print("Existing member expiry date", existing_expiry_date)
+                            print("COMPANY",company)
+    
+                            # Handle case where the existing member's expiry date has passed
+                            if existing_expiry_date and existing_expiry_date < date.today():
+                                # Expired policy: Cancel the existing membership and confirm the new one
+                                existing_member.membership_state = 'cancel'
+                                record.membership_state = 'confirm'
+                            else:
+                                # Active policy exists: Raise validation error
+                                if existing_member.name != record.name:
+                                    # If the existing member has a different name, raise an error
+                                    raise ValidationError(_("An active policy with the same chassis number under the selected company already exists!"))
+                                else:
+                                # If the same name and chassis number exist, handle expiry date difference
+    
+                                        current_expiry_date = record.member_expiry_date  # Ensure that you fetch the current record's expiry date
+                                        existing_expiry_date = existing_member.member_expiry_date
+    
+                                        # **New validation check**: If the expiry dates are the same, raise an error
+                                        if current_expiry_date == existing_expiry_date:
+                                            raise ValidationError(_("A record with the same chassis number and expiry date already exists!"))
+    
+                                        # Calculate the difference in expiry dates
+                                        date_difference = (current_expiry_date - existing_expiry_date).days
+    
+                                        if date_difference >= 365:
+                                            # If the difference is greater than or equal to 365 days, suggest renewal
+                                            raise ValidationError(_("An already existing record has an expiry difference of >= 365 days. Please proceed with membership renewal."))
+                                        elif date_difference < 365:
+                                            # If the difference is less than 365 days, suggest extension
+                                            raise ValidationError(_("The same record exists with an expiry date difference of < 365 days. Please proceed with membership extension."))
+                    
+                        # If none of the existing members are active (i.e., all expired and cancelled), confirm the current record
+                        record.membership_state = 'confirm'
+    
+            # Step 2: Check if the same chassis number exists under another company
+            chassis_in_another_company = self.env['res.partner'].search([
+                ('vehicle_chasis_no', '=', record.vehicle_chasis_no),
+                ('parent_customer_id', '!=', company.id),  # Check if the chassis number exists under a different company
+                ('membership_state', '=', 'confirm')
+            ])
+    
+            if chassis_in_another_company:
+                # Loop through each record that has the same chassis number in another company
+                for other_member in chassis_in_another_company:
+                    another_company_expiry_date = other_member.member_expiry_date
+                    print("Another company expiry date", another_company_expiry_date)
+    
+                    if another_company_expiry_date and another_company_expiry_date >= date.today():
+                        # If the existing record's expiry date is greater than or equal to the current date, raise an error
+                        raise ValidationError(_("The same chassis number exists under another company with an active policy!"))
+                    else:
+                        # If the policy is expired, you can handle it as needed (e.g., cancel it)
+                        other_member.membership_state = 'cancel'
+            
+                # If all the other company's records have expired policies, confirm the current record
+                record.membership_state = 'confirm'
+    
+            # Step 3: Check that the expiry date is greater than the activation date if both are set
+            if record.member_activate_date and record.member_expiry_date:
+                if record.member_expiry_date <= record.member_activate_date:
+                    raise ValidationError(_("The expiry date should be greater than the activation date."))
+    
+            # Step 4: Confirm membership if all validations pass
+            record.membership_state = 'confirm'
+    
+    def copy(self, default=None):
+        if default is None:
+            default = {}
+
+        # Adding 'Dup-' prefix to specific fields when duplicating
+        default.update({
+            'name': 'Dup-' + (self.name or ''),
+            # 'ref_num': 'Dup-' + (self.ref_num or ''),
+            # 'policy_no': 'Dup-' + (self.policy_no or ''),
+            'vehicle_chasis_no': 'Dup-' + (self.vehicle_chasis_no or ''),
+            # 'vehicle_plate': 'Dup-' + (self.vehicle_plate or ''),
+            'is_duplicated': True,
+        })
+
+        # Call the super method to create the duplicated record
+        return super(ResPartnerMembers, self).copy(default)
+
+    @api.model
+    def fields_view_get(self, view_id=None, view_type='form', toolbar=False, submenu=False):
+        result = super(ResPartnerMembers, self).fields_view_get(view_id=view_id, view_type=view_type, toolbar=toolbar, submenu=submenu)
+
+        if view_type == 'form':
+            # Get the view architecture
+            doc = result['arch']
+            # Modify fields dynamically based on is_duplicated condition
+            if self._context.get('is_duplicated'):
+                doc = doc.replace('readonly="1"', '')  # Make the fields editable in the form view when duplicating
+            result['arch'] = doc
+
+        return result
 
     @api.depends('membership_state')
     def _compute_is_readonly(self):
