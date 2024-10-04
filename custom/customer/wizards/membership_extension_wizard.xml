@@ -7,10 +7,10 @@
             <form string="Membership Extension">
                 <group>
                     <group>
-                        <field name="expiry_date" readonly="1" />
+                        <field name="expiry_date" readonly="1" required="1"/>
                     </group>
                     <group>
-                        <field name="new_expiry_date" on_change="1" />
+                        <field name="new_expiry_date" on_change="1" required="1" />
                     </group>
                 </group>
                 <footer>
