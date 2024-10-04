@@ -98,6 +98,7 @@
                                 <!-- is_readonly Flag created when confirm is clicked to make fields
                                 readonly -->
                                 <field name="is_readonly" invisible="1" />
+                                <field name="is_duplicated" invisible="1"/>
                                 <!-- . -->
                                 <field name="policy_no" string="Policy No" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
