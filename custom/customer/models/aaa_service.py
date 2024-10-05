@@ -41,33 +41,8 @@ class AAAService(models.Model):
     vehicle_type_id = fields.Many2one('member.vehicle.type', string="Vehicle Type")
     vehicle_model_id = fields.Many2one('member.vehicle.model', string="Vehicle Model")
     
-    product_id = fields.Many2one('product.template', string="Service",domain=[('bundle_product', '=', False)])
-    # vehicle_emirate_id = fields.Many2one('emirate', string="Vehicle Emirate ID")
-
-    # ----COMMENTED FOR TEST PURPOSE-----------------------------------------------------------------------------------
-    # provider_from_location_id = fields.Many2one('location.latlong', string="From Location")
-    # provider_to_location_id = fields.Many2one('location.latlong', string="To Location")
-    
-    # ----------------LOCATION API ADDITION-------------------------------------------------------------------------    
-    # provider_from_location_id = fields.Many2one('location', string="From Location")
-    # provider_to_location_id = fields.Many2one('location', string="To Location")
-    # provider_from_location_id = fields.Char('Provider FRom LOcation Id')
-    # provider_to_location_id = fields.Char('Provider TO LOcation Id')
-
-
-    # from_location_ids = fields.Many2many('location', compute='_compute_from_location_ids', store=False)
-    # to_location_ids = fields.Many2many('location', compute='_compute_to_location_ids', store=False)
-    # ----------------------------------------------------------------------------------------    
-
-
-    # SERVICE LOCATION LAT LONG
-    # from_serive_location_id = fields.Many2one('location.service', string="From Lat Location")
-    # to_serive_location_id = fields.Many2one('location.service', string="To Lat Location")
-    # from_lat_location = fields.Text('Location')
-    # to_lat_location = fields.Text('Location')
-    
+    product_id = fields.Many2one('product.template', string="Service",domain=[('bundle_product', '=', False)])  
     uom_id = fields.Many2one('uom.uom', string="Unit of Measure")
-    # rating_user_id = fields.Many2one('res.users', string="Rating User")
     new_service_id = fields.Many2one('product.template', string="New Service")
     main_product_ids = fields.Many2many('product.template', string="Main Products")
     cancelled_service_id = fields.Many2one('aaa.service', string="Cancelled Service", readonly=True)
@@ -168,21 +143,11 @@ class AAAService(models.Model):
         'service_id',
         string='Additional Services'
     )
-  
     # =========================================================================================================
    
-    # driver_job_id = fields.Many2one('hr.job', string="Driver Job ID")
     driver_id = fields.Many2one('hr.employee', string="Driver")
     is_driver_name_visible = fields.Boolean(string='Display Driver Name',default=True)
     enquiry_ids = fields.One2many('aaa.enquiry','enq_id',string="Enquiries") # IN aaa.service  
-    # vehicle_id = fields.Many2one('fleet.vehicle', string="Vehicle")
-    # vehicle = fields.Char(string="Vehicle")
-    
-    # driver_name = fields.Char(string="Driver Name")
-    # driver_num = fields.Char(string="Driver Number")
-    # credit_proforma_number = fields.Char(string="Credit Proforma Number")
-    # vendor_rating = fields.Float(string="Vendor Rating")
-    
     
     completion_time = fields.Datetime(string="Completion Time")
     member_activate_date = fields.Date('Member Activate Date')
@@ -190,7 +155,7 @@ class AAAService(models.Model):
 
     # # -----------LOCATION- API TESTINGs--------------------------------------------------
     
-    search_query = fields.Char(string='Search Query')
+    search_query = fields.Char(string='Search Locations')
     search_results = fields.Many2many('location.suggestion', string='Search Results', compute='_fetch_location_suggestions')
     selected_from_location = fields.Many2one('location.suggestion', string='From Location')
     selected_to_location = fields.Many2one('location.suggestion', string='To Location')
@@ -246,6 +211,14 @@ class AAAService(models.Model):
 
     @api.onchange('selected_from_location', 'selected_to_location')
     def _onchange_selected_locations(self):
+        # Clear the search_query and search_results when a location is selected
+        if self.selected_from_location:
+            self.search_query = ''
+            self.search_results = [(5, 0, 0)]  # Clear existing results
+        if self.selected_to_location:
+            self.search_query = ''
+            self.search_results = [(5, 0, 0)]  # Clear existing results
+
         # Trigger computation of the amount when locations are selected
         self._compute_amount()
 
