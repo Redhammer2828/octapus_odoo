@@ -28,9 +28,9 @@
                     <sheet>
                         <group string="Enquiry" col="3">
                             <group>
-                                <field name="customer_id" can_create="true" can_write="true" />
-                                <field name="member_id" invisible="customer_id == False" on_change="1" can_create="true" can_write="true" />
-                                <field name="service_id" invisible="member_id == False" can_create="true" can_write="true" />
+                                <field name="customer_id" can_create="true" can_write="true" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
+                                <field name="member_id" invisible="customer_id == False" on_change="1" can_create="true" can_write="true" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
+                                <field name="service_id" invisible="member_id == False" can_create="true" can_write="true" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
                                 <field name="enquiry_type_id" invisible="service_id == False" options="{'no_create':True 'no_edit':True}" />
                                 <field name="enquiries_id" invisible="service_id == False" options="{'no_create':True 'no_edit':True}"/>
                                 <field name="complaint_type_id" invisible="service_id == False" options="{'no_create':True 'no_edit':True}"/>

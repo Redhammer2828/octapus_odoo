@@ -18,9 +18,10 @@ class Enquiry(models.Model):
     policy_no = fields.Char(string='Policy No')
     date = fields.Datetime(string='Create Date', readonly=True, default=fields.Datetime.now)
     
-    customer_id = fields.Many2one('res.partner', string='Customer')
-    member_id = fields.Many2one('res.partner', string='Member')
-    service_id = fields.Many2one('product.template', string='Service')
+    customer_id = fields.Many2one('res.partner', string='Customer', domain="[('is_company', '=', True)]")
+    member_id = fields.Many2one('res.partner', string='Member', domain="[('is_company', '=', False)]")
+    service_id = fields.Many2one('product.template', string='Service', domain="[('bundle_product', '=', False)]")
+ 
     enq_id = fields.Many2one('aaa.service',string='Enq_Service',ondelete='cascade') #IN aaa.enquiry
     enquiry_type_id = fields.Many2one('enquiry.config', string='Enquiry Type', required=True)
     enquiries_id = fields.Many2one('enquiry.subtype', string='Enquiry Subtype', domain="[('enquiry_type_id','=',enquiry_type_id)]")
