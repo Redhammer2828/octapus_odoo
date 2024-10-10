@@ -6,7 +6,7 @@
             <field name="name">call.center.all.service.view.tree</field>
             <field name="model">aaa.service</field>
             <field name="arch" type="xml">
-                <tree string="" create="False">
+                <tree string="" create="False" duplicate="false">
                     <field name="customer_id" />
                     <field name="credit_customer_co" />
                     <field name="sequence_id" />

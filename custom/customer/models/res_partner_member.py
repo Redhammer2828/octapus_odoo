@@ -102,74 +102,34 @@ class ResPartnerMembers(models.Model):
     # ----------------------------
     membership_history_ids= fields.One2many('membership.history','history_id', string='Membership History')
     
-    # @api.model
-    # def create(self, vals):
-    #     if self.env.context.get('from_res_partner_member_form'):
-    #         vals['is_customer'] = True
-    #         vals['credit_member_ok'] = False
-    #         vals['adhoc_member'] = False
-    #         vals['member_type'] = 'policy'
-        
-
-    #     if self.env.context.get('from_res_partner_credit_member_form'):
-    #         vals['is_customer'] = True
-    #         vals['credit_member_ok'] = True
-    #         vals['adhoc_member'] = False
-    #         vals['member_type'] = 'credit'
-
-    #     if self.env.context.get('from_res_partner_adhoc_member_form'):
-    #         vals['is_customer'] = True
-    #         vals['credit_member_ok'] = False
-    #         vals['adhoc_member'] = True
-    #         vals['member_type'] = 'adhoc'
-        
-    #     new_partner = super(ResPartnerMembers, self).create(vals)
-    #     return new_partner
     @api.model
     def create(self, vals):
         parent_customer_id = vals.get('parent_customer_id')
         vehicle_chasis_no = vals.get('vehicle_chasis_no')
-        print("parent_customer_id......",parent_customer_id)
-        print("vehicle_chasis_no.....",vehicle_chasis_no)
+        print("parent_customer_id......", parent_customer_id)
+        print("vehicle_chasis_no.....", vehicle_chasis_no)
+ 
+        # Initialize a list to hold warning messages
+        warnings = []
+ 
         # If parent_customer_id and vehicle_chasis_no are provided, perform the validation
         if parent_customer_id and vehicle_chasis_no:
             # Search for all res.partner records with the same vehicle_chasis_no
             existing_member = self.search([
                 ('vehicle_chasis_no', '=', vehicle_chasis_no)
             ])
-            print("Existing Member With same Chasis number",existing_member)
+            print("Existing Member With same Chasis number", existing_member)
+ 
             if existing_member:
                 for member in existing_member:
-                    print("Company id of the matched chsis ..COMPANY ID",member.parent_customer_id.id)
+                    print("Company id of the matched chasis ..COMPANY ID", member.parent_customer_id.id)
                     if member.parent_customer_id.id == parent_customer_id:
-                        # If parent_customer_id is the same, raise an error
-                        raise ValidationError("Member Already Exists under this company.")
+                        # If parent_customer_id is the same, log a warning message
+                        warnings.append("Warning: Member already exists under this company.")
                     else:
-                        # If parent_customer_id is different, raise an error
-                        raise ValidationError("Member Already Exists under another company.")
-
-        # Perform context-based customizations
-        if self.env.context.get('from_res_partner_member_form'):
-            vals['is_customer'] = True
-            vals['credit_member_ok'] = False
-            vals['adhoc_member'] = False
-            vals['member_type'] = 'policy'
-
-        if self.env.context.get('from_res_partner_credit_member_form'):
-            vals['is_customer'] = True
-            vals['credit_member_ok'] = True
-            vals['adhoc_member'] = False
-            vals['member_type'] = 'credit'
-
-        if self.env.context.get('from_res_partner_adhoc_member_form'):
-            vals['is_customer'] = True
-            vals['credit_member_ok'] = False
-            vals['adhoc_member'] = True
-            vals['member_type'] = 'adhoc'
-        vals['is_duplicated'] = False
-        # Create the new partner record after validations
-        new_partner = super(ResPartnerMembers, self).create(vals)
-        return new_partner
+                        # If parent_customer_id is different, log a warning message
+                        warnings.append("Warning: Member already exists under another company.")
+ 
 
     def action_confirm_membership(self):
             for record in self:
@@ -474,7 +434,9 @@ class ResPartnerMembers(models.Model):
             'default_card_type': card_type_name,
             'default_member_contact_no': self.mobile,
             'default_vehicle_chasis_no': self.vehicle_chasis_no,
-            'default_vehicle_type_id': vehicle_model.id if vehicle_model else False,
+            'default_vehicle_type_id': self.vehicle_type,
+            'default_vehicle_model_id': self.vehicle_model,
+            'default_vehicle_plate': self.vehicle_plate,
             'default_product_id': self.service_ids,
             'default_member_type': self.member_type,
             'default_member_id': self.id,
