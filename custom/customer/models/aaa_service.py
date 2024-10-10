@@ -38,8 +38,10 @@ class AAAService(models.Model):
     )
     created_by = fields.Many2one('res.users', string="Agent", default=lambda self: self.env.user, readonly=True)
     
-    vehicle_type_id = fields.Many2one('member.vehicle.type', string="Vehicle Type")
-    vehicle_model_id = fields.Many2one('member.vehicle.model', string="Vehicle Model")
+    # vehicle_type_id = fields.Many2one('member.vehicle.type', string="Vehicle Type")
+    # vehicle_model_id = fields.Many2one('member.vehicle.model', string="Vehicle Model")
+    vehicle_type_id = fields.Char('Vehicle Type')   #Chaged to char
+    vehicle_model_id = fields.Char('Vehicle Model')  #Changed to char
     
     product_id = fields.Many2one('product.template', string="Service",domain=[('bundle_product', '=', False)])  
     uom_id = fields.Many2one('uom.uom', string="Unit of Measure")
@@ -105,9 +107,7 @@ class AAAService(models.Model):
     vehicle_model = fields.Char(string="Vehicle Model")
     
     vehicle_plate = fields.Char(string="Vehicle Plate")
-    vehicle_chasis_no = fields.Char(string="Vehicle Chasis No")
-    
-   
+    vehicle_chasis_no = fields.Char(string="Vehicle Chasis No") 
     policy_no = fields.Char(string="Policy No")
     
     
@@ -206,9 +206,6 @@ class AAAService(models.Model):
                     error_msg = Suggestion.create({'name': f'Error fetching location: {str(e)}'})
                     record.search_results = [(4, error_msg.id)]
 
-
-
-
     @api.onchange('selected_from_location', 'selected_to_location')
     def _onchange_selected_locations(self):
         # Clear the search_query and search_results when a location is selected
@@ -292,102 +289,6 @@ class AAAService(models.Model):
                 return 'Unknown Emirate'
         return ''
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # @api.onchange('provider_from_location_id')
-    # def _onchange_provider_from_location(self):
-    #     if self.provider_from_location_id:
-    #         # Use the selected location for further logic if needed
-    #         pass
-
-    # @api.onchange('provider_to_location_id')
-    # def _onchange_provider_to_location(self):
-    #     if self.provider_to_location_id:
-    #         # Use the selected location for further logic if needed
-    #         pass
-
-    # @api.depends('provider_from_location_id')
-    # def _compute_from_location_ids(self):
-    #     for record in self:
-    #         search_query = self.env.context.get('search_query', '')
-    #         print("QUERYUY",search_query)
-    #         if search_query:
-    #             record.from_location_ids = self._fetch_location_suggestions(search_query)
-    #         else:
-    #             record.from_location_ids = []
-
-    # @api.depends('provider_to_location_id')
-    # def _compute_to_location_ids(self):
-    #     for record in self:
-    #         search_query = self.env.context.get('search_query', '')
-    #         print("QUERYUY PROVIDER TO",search_query)
-    #         if search_query:
-    #             record.to_location_ids = self._fetch_location_suggestions(search_query)
-    #         else:
-    #             record.to_location_ids = []
-
-    # def _fetch_location_suggestions(self, search_query):
-    #     # Replace the URL with the one provided by the user
-    #     url = 'https://nominatim-carhire-dev.livelocal.delivery/search.php'
-    #     params = {
-    #         'q': search_query,
-    #         'format': 'geocodejson'
-    #     }
-    #     try:
-    #         response = requests.get(url, params=params)
-    #         if response.status_code == 200:
-    #             data = response.json()
-    #             print("DATA",data)
-    #             return self._create_location_records(data.get('features', []))
-    #         else:
-    #             print(f"API error: {response.text}")
-    #     except requests.RequestException as e:
-    #         print(f"Error calling external API: {str(e)}")
-
-    # def _create_location_records(self, locations):
-    #     location_ids = []
-    #     for location in locations:
-    #         geocoding = location.get('properties', {}).get('geocoding', {})
-    #         name = geocoding.get('label')
-    #         latitude = location.get('geometry', {}).get('coordinates', [])[1]
-    #         longitude = location.get('geometry', {}).get('coordinates', [])[0]
-    #         location_id = self.env['location'].create({
-    #             'name': name,
-    #             'latitude': latitude,
-    #             'longitude': longitude
-    #         })
-    #         location_ids.append(location_id.id)
-    #     return location_ids
-
-
-
     # -------------------------------------------------------------------------
     @api.onchange('provider_id')
     def _onchange_provider_id(self):
@@ -423,14 +324,6 @@ class AAAService(models.Model):
                          # Assign the `default_member` from the `sequence` (partner.category) to `record.member_id`
                         record.member_id = sequence.default_member.id if sequence.default_member else False
                    
-                    # Search for the member that matches the criteria
-                    # member = self.env['res.partner'].search([
-                    #     ('parent_customer_id', '=', record.customer_id.id),
-                    #     ('member_type', '=', 'credit')
-                    # ], limit=1)
-                    # print("MEMBERRRR", member)
-                    # Set the member_id to the found member
-                    # record.member_id = member.id if member else False
     @api.model
     def create(self, vals):
         # Ensure the name field is set using a sequence if not provided
@@ -459,53 +352,11 @@ class AAAService(models.Model):
        
         return service
     
-    # @api.depends('provider_from_location_id', 'provider_to_location_id')
-    # def _compute_location_amount(self):
-    #     for cash in self:
-    #         if cash.provider_from_location_id and cash.provider_to_location_id:
-    #             # Retrieve and normalize the actual values from the related models
-    #             from_location_value = cash.provider_from_location_id.location
-    #             to_location_value = cash.provider_to_location_id.location
-    
-    #             # Debugging output
-    #             print("FROM_LOCATION_VALUE:", from_location_value)
-    #             print("TO_LOCATION_VALUE:", to_location_value)
-    
-    #             # Perform the search with exact matches
-    #             service_record = self.env['location.service'].search([
-    #                 ('from_location', '=ilike', from_location_value),
-    #                 ('to_location', '=ilike', to_location_value)
-    #             ], limit=1)
-
-    #             if service_record and service_record.amount != 0:
-    #                 print("SERVICE_RECORD_FOUND (DIRECT):")
-    #                 print("SERVICE_RECORD_AMOUNT:", service_record.amount)
-    #                 cash.amount = service_record.amount
-    #             else:
-    #                 # Try with reversed locations if the first search amount is 0 or no record is found
-    #                 print("DIRECT MATCH NOT FOUND OR AMOUNT IS 0, TRYING REVERSED LOCATIONS")
-    #                 service_record_reversed = self.env['location.service'].search([
-    #                     ('from_location', '=ilike', to_location_value),
-    #                     ('to_location', '=ilike', from_location_value)
-    #                 ], limit=1)
-
-    #                 if service_record_reversed and service_record_reversed.amount != 0:
-    #                     print("SERVICE_RECORD_FOUND (REVERSED):")
-    #                     print("SERVICE_RECORD_AMOUNT:", service_record_reversed.amount)
-    #                     cash.amount = service_record_reversed.amount
-    #                 else:
-    #                     print("NO RECORD FOUND WITH REVERSED LOCATIONS OR AMOUNT IS 0")
-    #                     cash.amount = 0
-    #         else:
-    #             print("MISSING PROVIDER LOCATIONS")
-    #             cash.amount = 0
-
-
     def action_initiate_service(self):
         self.state = 'initiated'
    
     def action_order_response(self, order_number, status, phone_number, vehicle_chasis_no):
-        url = "https://gioapi-gy-dev.livelocal.delivery/aaa-customer/whatsapp/whatsapp-Notification"
+        url = "https://gioapi-gy-dev.kirkos.ae/aaa-customer/whatsapp/whatsapp-Notification"
         payload = json.dumps({
             "order_number": order_number,
             "status": status,
@@ -538,13 +389,12 @@ class AAAService(models.Model):
             print("Request failed:", str(e))
 
     def action_order_create(self, order_number):
-        url = f"https://gioapi-gy-dev.livelocal.delivery/aaa-customer/consumers/create/road_side_service/{order_number}"
+        url = f"https://gioapi-gy-dev.kirkos.ae/aaa-customer/consumers/create/road_side_service/{order_number}"
 
         response = requests.post(url)
 
         print("API RESPONSE-ORDER CREATED",response.text)
         
-
 # ---------------------------------------------------NEW A CODE-----------------------------------------------
     def action_dispatch_service(self):
         self.ensure_one()
@@ -829,26 +679,6 @@ class AAAService(models.Model):
             # Automatically set member type based on service form
             self.member_id.member_type = self.member_type  # Set from selection in aaa.service
     
-    # def action_inprogress_service(self):
-    #         self.state = 'inprogress'
-    #         for service in self:
-            
-    #             self.env['service.history'].create({
-    #                 'service_id': service.id,
-    #                 'user': self.env.user.id,
-    #                 'time': fields.Datetime.now(),
-    #                 'status': service.state,  
-    #             })
-    #             self .env['service.comment'].create({
-    #                 'service_id': service.id,
-    #                 'comment' : service.comments or 'IN PROGRESS',
-    #                 'comment_date_and_time' : fields.Datetime.now(),
-    #                 'comment_user': self.env.user.id,
-    #                 'comment_status' : service.state,
-                
-    #     })
-    #         return True
-
     def action_start_service(self):
         self.state = 'start'
         for service in self:

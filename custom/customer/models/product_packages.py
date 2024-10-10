@@ -19,7 +19,8 @@ class ProductPackagesService(models.Model):
     _name = 'product.package.service'
     _description = 'Your Service Model'
 
-    product_template_id = fields.Many2one('product.template', string='Product Services', domain="[('type', '=', 'service'), ('detailed_type', '=', 'service')]")
+    # product_template_id = fields.Many2one('product.template', string='Product Services', domain="[('type', '=', 'service'), ('detailed_type', '=', 'service')]")
+    product_template_id = fields.Many2one('product.template', string='Product Services')
 
     is_intercity = fields.Boolean('Intercity')
     product_id = fields.Many2one('product.product', string='Product')

@@ -9,9 +9,9 @@ class ProductCategoryInherit(models.Model):
         ('standard', 'Standard Price'),
         ('fifo', 'First In First Out (FIFO)'),
         ('average', 'Average Cost (AVCO)')
-    ], string='Costing Method', default='standard' ,required=True)
+    ], string='Costing Method', default='standard')
 
     property_valuation = fields.Selection([
         ('manual_periodic', 'Manual'),
         ('real_time', 'Automated')
-    ], string='Inventory Valuation' , default='manual_periodic' , required=True)
+    ], string='Inventory Valuation' , default='manual_periodic')

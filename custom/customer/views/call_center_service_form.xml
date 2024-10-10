@@ -6,7 +6,7 @@
             <field name="name">call.center.service.form</field>
             <field name="model">aaa.service</field>
             <field name="arch" type="xml">
-                <form string="Service" delete="false">
+                <form string="Service" delete="false" duplicate="false">
                     <style>
 
                         .o_form_view:not(.o_field_highlight)

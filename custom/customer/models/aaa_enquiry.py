@@ -28,22 +28,6 @@ class Enquiry(models.Model):
     complaint_type_id = fields.Many2one('complaint.config', string='Complaint Type', required=True)
     complaints_id = fields.Many2one('complaint.subtype', string='Complaint Subtype', domain="[('complaint_type_id','=',complaint_type_id)]" )
 
-
-    # @api.onchange('enquiry_type_id')
-    # def _onchange_enquiry_type(self):
-    #     if self.enquiry_type_id:
-    #         return {
-    #             'domain': {
-    #                         'enquiries_id': [('enquiry_type_id', '=', self.enquiry_type_id.id)]
-    #             }
-    #         }
-    #     else:
-    #         return {
-    #             'domain': {
-    #                 'enquiries_id': []
-    #             }
-    #         }
-
     @api.onchange('enquiry_type_id')
     def _onchange_enquiry_type(self):
         if self.enquiry_type_id:
@@ -74,35 +58,6 @@ class Enquiry(models.Model):
                 }
             }
         
-    # @api.onchange('complaint_type_id')
-    # def _onchange_complaint_type(self):
-    #     print("CT id",self.complaint_type_id.id)
-    #     if self.complaint_type_id:
-    #         complaints= self.env['complaint.subtype'].search([('complaint_type_id','=', self.complaint_type_id.id)])
-    #         print("COMPLAINTS", complaints.ids)
-    #         if complaints:
-    #             return {
-    #                     'domain': {
-    #                         'complaints_id': [('ids', 'in', complaints.ids)]  # Use 'id' field to filter by valid records
-    #                     }
-                
-    #                 }
-    #         else:
-    #                 # If no complaints found, clear the domain
-    #                 return {
-    #                     'domain': {
-    #                         'complaints_id': []
-    #                     }
-    #                 }
-    #     else:
-    #             print("No complaint_type_id selected")
-    #             # Clear the domain if no complaint_type_id is selected
-    #             return {
-    #                 'domain': {
-    #                     'complaints_id': []
-    #                 }
-    #             }
-
     @api.onchange('complaint_type_id')
     def _onchange_complaint_type(self):
         if self.complaint_type_id:
@@ -150,23 +105,12 @@ class EnquiryConfig(models.Model):
     name = fields.Char(string='Enquiry Type', required=True)
     subtype_ids = fields.One2many('enquiry.subtype', 'enquiry_type_id', string='Enquiry Subtypes')
 
-    # _name = 'enquiry.config'
-    # _description = 'Enquiry Type'
-
-    # enquiry_type= fields.Char(string="Enquiry type")
-    # enquiry= fields.Char(string="Enquiries")
-    # # complaint_type= fields.Char(string="Complaint type")
-    # # complaint= fields.Char(string="Complaints")
-
 class EnquirySubtype(models.Model):
     _name = 'enquiry.subtype'
     _description = 'Enquiries'
 
     name = fields.Char(string='Enquiry Subtype', required=True)
     enquiry_type_id = fields.Many2one('enquiry.config', string='Enquiry Type', required=True)
-
-#     enquiry_type= fields.Char(string="Enquiry type")
-#     enquiry= fields.Char(string="Enquiries")
 
 class ComplaintConfig(models.Model):
     _name = 'complaint.config'
@@ -175,17 +119,9 @@ class ComplaintConfig(models.Model):
     name = fields.Char(string='Complaint Type', required=True)
     subtype_ids = fields.One2many('complaint.subtype', 'complaint_type_id', string='Complaint Subtypes')
 
-    
-    #  complaint_type= fields.Char(string="Complaint type")
-    #  complaint= fields.Char(string="Complaints")
-
 class ComplaintSubtype(models.Model):
     _name = 'complaint.subtype'
     _description = 'Complaints'
 
     name = fields.Char(string='Complaint Subtype', required=True)
     complaint_type_id = fields.Many2one('complaint.config', string='Complaint Type', required=True)
-
-    
-#      complaint_type= fields.Char(string="Complaint type")
-#      complaint= fields.Char(string="Complaints")
