@@ -40,8 +40,8 @@ class AAAService(models.Model):
     
     # vehicle_type_id = fields.Many2one('member.vehicle.type', string="Vehicle Type")
     # vehicle_model_id = fields.Many2one('member.vehicle.model', string="Vehicle Model")
-    vehicle_type_id = fields.Char('Vehicle Type')   #Chaged to char
-    vehicle_model_id = fields.Char('Vehicle Model')  #Changed to char
+    vehicle_type = fields.Char('Vehicle Type')   #Chaged to char
+    vehicle_model = fields.Char('Vehicle Model')  #Changed to char
     
     product_id = fields.Many2one('product.template', string="Service",domain=[('bundle_product', '=', False)])  
     uom_id = fields.Many2one('uom.uom', string="Unit of Measure")

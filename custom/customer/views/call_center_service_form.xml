@@ -132,9 +132,9 @@
                             <group string="VEHICLE DETAILS" name="vehicle_details">
                                 <!-- <field name="vehicle_type_ok" invisible="1" /> -->
                                 <!-- <field name="vehicle_model_ok" invisible="1" /> -->
-                                <field name="vehicle_type_id" string="Vehicle Type"
+                                <field name="vehicle_type" string="Vehicle Type"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
-                                <field name="vehicle_model_id" string="Vehicle Model"
+                                <field name="vehicle_model" string="Vehicle Model"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <!-- <field name="vehicle_model" string="Vehicle Model"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" /> -->
