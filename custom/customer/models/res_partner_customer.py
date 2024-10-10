@@ -48,11 +48,6 @@ class ResPartnerCustomer(models.Model):
     def waive_off_history(self):
         pass
 
-     #For Active / Archive in Form view 
-    # def toggle_active(self):
-    #     for rec in self:
-    #         rec.active = not rec.active
-
     def duplicate_record(self):
         self.ensure_one()
         duplicate_record = self.copy()
