@@ -390,7 +390,7 @@ class AAAService(models.Model):
 
     def action_order_create(self, order_number):
         url = f"https://gioapi-gy-dev.kirkos.ae/aaa-customer/consumers/create/road_side_service/{order_number}"
-
+        
         response = requests.post(url)
 
         print("API RESPONSE-ORDER CREATED",response.text)
