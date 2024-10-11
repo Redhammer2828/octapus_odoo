@@ -6,7 +6,7 @@
             <field name="name">call.center.service.form</field>
             <field name="model">aaa.service</field>
             <field name="arch" type="xml">
-                <form string="Service" delete="false">
+                <form string="Service" delete="false" duplicate="false">
                     <style>
 
                         .o_form_view:not(.o_field_highlight)
@@ -38,10 +38,11 @@
                         <button name="action_schedule_service_check" string="Schedule Service"
                             type="object" class="btn-default"
                             invisible="state not in ('initiate')" />
-                        <!-- <button name="action_inprogress_service" string="In Progress" type="object"
+                        <!-- <button name="action_inprogress_service" string="In Progress"
+                        type="object"
                             class="oe_highlight" invisible="state != 'dispatch'" /> -->
                         <button name="action_start_service" string="Start" type="object"
-                            class="btn-primary" invisible="state != 'dispatch'"/>
+                            class="btn-primary" invisible="state != 'dispatch'" />
                         <button name="action_reach_service" string="Reach" type="object"
                             class="btn-primary" invisible="state != 'start'" />
                         <button name="action_done_service" string="Completed" type="object"
@@ -93,14 +94,16 @@
                             <group string="GENERAL INFORMATION" name="general_information">
                                 <field name="customer_id" string="Customer"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']"
-                                    class="required_field" required="1" />
+                                    class="required_field" required="1"
+                                    options="{'no_create': True}" />
                                 <field name="credit_customer_co" string="Customer C/O" />
                                 <field name="sequence_id" string="Customer Category"
                                     class="required_field"
-                                    required="1" />
+                                    required="1" options="{'no_create': True}" />
                                 <field name="member_id" string="Member"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']"
-                                    class="required_field" required="1" />
+                                    class="required_field" required="1"
+                                    options="{'no_create': True}" />
                                 <field name="member_contact_no" string="Mobile Number"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="email" string="Email"
@@ -129,9 +132,9 @@
                             <group string="VEHICLE DETAILS" name="vehicle_details">
                                 <!-- <field name="vehicle_type_ok" invisible="1" /> -->
                                 <!-- <field name="vehicle_model_ok" invisible="1" /> -->
-                                <field name="vehicle_type_id" string="Vehicle Type"
+                                <field name="vehicle_type" string="Vehicle Type"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
-                                <field name="vehicle_model_id" string="Vehicle Model"
+                                <field name="vehicle_model" string="Vehicle Model"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <!-- <field name="vehicle_model" string="Vehicle Model"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" /> -->
@@ -148,57 +151,45 @@
                             <group string="SERVICE DETAILS" name="service_details">
                                 <group class="product_field">
 
-                                    <!-- Add the invisible fields here -->
-                                    <!-- <field name="from_location_ids" invisible="1" /> -->
-                                    <!-- <field name="to_location_ids" invisible="1" /> -->
-
                                     <field name="product_id" string="Service" class="required_field"
-                                        required="1" />
+                                        required="1" options="{'no_create': True}"/>
                                     <field name="service_type" invisible="1" />
-                                    <!--
-                                    dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd -->
 
-                                    <!-- <field name="provider_from_location_id" string="From
-                                    Location"
-                                        invisible="service_type == 'location'"
-                                        class="required_field" required="1"
-                                        options="{'no_create': True}" />
-                                    <field name="provider_to_location_id" string="To Location"
-                                        invisible=""
-                                        class="required_field" required="1"
-                                        options="{'no_create': True}" /> -->
-
-                                    <!-- <field name="provider_from_location_id" /> -->
-                                    <!-- <field name="provider_to_location_id" /> -->
-
-
-                                    <field name="search_query" />
-
+                                    <field name="search_query"
+                                        style="background-color: #e6dddd;border-radius: 9px;" placeholder="Type Location name..."/>
 
                                     <field name="search_results" widget="many2many_tags"
                                         options="{'no_create': True}" />
 
-
                                     <field name="selected_from_location"
                                         domain="[('id', 'in', search_results)]"
-                                        options="{'no_create': True}"/>
+                                        options="{'no_create': True}"
+                                        invisible="service_type == 'location'"
+                                        class="required_field"
+                                        required="1" />
+
                                     <field name="from_location_emirate"
                                         style="font-weight: 500;color: #28a745;" />
+
                                     <field name="selected_to_location"
                                         domain="[('id', 'in', search_results)]"
-                                        options="{'no_create': True, 'no_open': True}" />
+                                        options="{'no_create': True, 'no_open': True}"
+                                        class="required_field"
+                                        required="1" />
+
                                     <field name="to_location_emirate"
                                         style="font-weight: 500;color: #28a745;" />
-                                    <field name="amount" />
-                                    <!--
-                                    dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd -->
+
+                                    <field name="amount" invisible="type != 'cash'" />
+
                                     <field name="date_time_from" string="From Date time"
                                         invisible="service_type != 'location_duration'"
                                         class="required_field" required="1" />
+
                                     <field name="date_time_to" string="To Date time"
                                         invisible="service_type != 'location_duration'"
                                         class="required_field" required="1" />
-                                    <!-- <field name="amount" /> -->
+                                    
                                 </group>
                                 <separator string="ADDON SERVICES" colspan="4" />
                                 <field name="addon_service_ids" nolabel="1"

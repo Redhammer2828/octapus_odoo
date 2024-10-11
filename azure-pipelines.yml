@@ -41,18 +41,11 @@ stages:
         containerRegistry: $(dockerRegistryServiceConnection)
         tags: |
           $(tag)
-    - task: SSH@0
-      inputs:
-        condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'development'))
-        sshEndpoint: 'carhire-alpha'
-        runOptions: 'commands'
-        failOnStdErr: false
-        commands: '/startscripts/aaa-odoo.sh'
-        readyTimeout: '20000'
+    
 
     - task: SSH@0
       inputs:
-        condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'kirkosalpha'))
+        condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'development'))
         sshEndpoint: 'kirkos-dev'
         runOptions: 'commands'
         failOnStdErr: false
