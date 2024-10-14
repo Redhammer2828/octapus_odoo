@@ -123,7 +123,7 @@ class AAAService(models.Model):
     date_time_from = fields.Datetime(string= "From Date time") 
     date_time_to = fields.Datetime(string="To Date time")
     quantity = fields.Float(string="Quantity")
-    service_type = fields.Selection(related='product_id.service_type', store=True, readonly=True)
+    service_based = fields.Selection(related='product_id.service_based', store=True, readonly=True)
     
     
     service_time = fields.Datetime(string="Service Time")
@@ -503,7 +503,7 @@ class AAAService(models.Model):
             else:
                 return True
    
-        if self.service_type != 'location_duration':
+        if self.service_based != 'location_duration':
             if not self._is_service_accessible_in_24_hours(parent_category_id):
                 remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
                 print("REMAINING SERVICE ACCESS in the CAT_DURATION", remaining_quantity)
@@ -520,7 +520,7 @@ class AAAService(models.Model):
                 return False  # Trigger the cash service wizard
            
        
-        if self.service_type == 'location_duration':
+        if self.service_based == 'location_duration':
             period_start = fields.Datetime.now() - timedelta(days=validity_period_days)
             print("START OF RAC_CAT SERVICE", period_start)
  
@@ -535,7 +535,7 @@ class AAAService(models.Model):
             print("MEMBER SERVICES IN PARENT_CAT", member_services_in_category)
  
             for service in member_services_in_category:
-                if service.service_type == 'location_duration' and service.date_time_to and service.date_time_from:
+                if service.service_based == 'location_duration' and service.date_time_to and service.date_time_from:
                     service_duration = (service.date_time_to - service.date_time_from).total_seconds() / (3600 * 24)
                     print("SERVICE DURATION FOR RAC_CAT SERVICE", service_duration)
                     total_days += service_duration

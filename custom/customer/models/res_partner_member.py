@@ -105,52 +105,52 @@ class ResPartnerMembers(models.Model):
     # ----------------------------
     membership_history_ids= fields.One2many('membership.history','history_id', string='Membership History')
     
-    @api.model
-    def create(self, vals):
-        # Handle specific form context to set fields accordingly
-        if self.env.context.get('from_res_partner_member_form'):
-            vals['is_customer'] = True
-            vals['credit_member_ok'] = False
-            vals['adhoc_member'] = False
-            vals['member_type'] = 'policy'
-        
-        elif self.env.context.get('from_res_partner_credit_member_form'):
-            vals['is_customer'] = True
-            vals['credit_member_ok'] = True
-            vals['adhoc_member'] = False
-            vals['member_type'] = 'credit'
-
-        elif self.env.context.get('from_res_partner_adhoc_member_form'):
-            vals['is_customer'] = True
-            vals['credit_member_ok'] = False
-            vals['adhoc_member'] = True
-            vals['member_type'] = 'adhoc'
-
-        new_partner = super(ResPartnerMembers, self).create(vals)
-        return new_partner
     # @api.model
     # def create(self, vals):
+    #     # Handle specific form context to set fields accordingly
     #     if self.env.context.get('from_res_partner_member_form'):
     #         vals['is_customer'] = True
     #         vals['credit_member_ok'] = False
     #         vals['adhoc_member'] = False
     #         vals['member_type'] = 'policy'
         
-
-    #     if self.env.context.get('from_res_partner_credit_member_form'):
+    #     elif self.env.context.get('from_res_partner_credit_member_form'):
     #         vals['is_customer'] = True
     #         vals['credit_member_ok'] = True
     #         vals['adhoc_member'] = False
     #         vals['member_type'] = 'credit'
 
-    #     if self.env.context.get('from_res_partner_adhoc_member_form'):
+    #     elif self.env.context.get('from_res_partner_adhoc_member_form'):
     #         vals['is_customer'] = True
     #         vals['credit_member_ok'] = False
     #         vals['adhoc_member'] = True
     #         vals['member_type'] = 'adhoc'
-        
+
     #     new_partner = super(ResPartnerMembers, self).create(vals)
     #     return new_partner
+    @api.model
+    def create(self, vals):
+        if self.env.context.get('from_res_partner_member_form'):
+            vals['is_customer'] = True
+            vals['credit_member_ok'] = False
+            vals['adhoc_member'] = False
+            vals['member_type'] = 'policy'
+        
+
+        if self.env.context.get('from_res_partner_credit_member_form'):
+            vals['is_customer'] = True
+            vals['credit_member_ok'] = True
+            vals['adhoc_member'] = False
+            vals['member_type'] = 'credit'
+
+        if self.env.context.get('from_res_partner_adhoc_member_form'):
+            vals['is_customer'] = True
+            vals['credit_member_ok'] = False
+            vals['adhoc_member'] = True
+            vals['member_type'] = 'adhoc'
+        
+        new_partner = super(ResPartnerMembers, self).create(vals)
+        return new_partner
 
     def action_confirm_membership(self):
             for record in self:
