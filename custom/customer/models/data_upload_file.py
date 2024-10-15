@@ -158,10 +158,10 @@ class DataUploadFile(models.Model):
                     db_expiry_date = member.member_expiry_date
                     excel_expiry_date = member_line.member_expiry_date
                     
-                    if db_expiry_date >= excel_expiry_date:
+                    if db_expiry_date > excel_expiry_date:
                         member_line.update({'upload_member_status':'rejection', 'comment': 'Member with same expiry date'})
                         print("EXPIRY DATE_CHECK FAILED!!")
-                    elif member.member_expiry_date < member_line.member_expiry_date:
+                    elif member.member_expiry_date <= member_line.member_expiry_date:
                         member_line.update({'upload_member_status': 'replace', 'comment': "Member Replaced"})
                         member_line.if_rep_match = member.id
 
