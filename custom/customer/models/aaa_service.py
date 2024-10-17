@@ -162,6 +162,7 @@ class AAAService(models.Model):
     selected_to_location = fields.Many2one('location.suggestion', string='To Location')
     from_location = fields.Char('From Location') #For Data IMPORT
     to_location = fields.Char('to Location') #For Data IMPORT
+    is_imported = fields.Boolean('Is Imported')
     amount = fields.Integer(string='Amount', compute='_compute_amount', store=True)  # Dynamically computed amount
 
     from_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)

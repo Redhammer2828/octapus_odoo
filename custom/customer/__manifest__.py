@@ -4,7 +4,7 @@
     'version': '1.0',
     'depends': ['base', 'web','product','hr'],
     'author': 'Sasoft',
-    'category': 'Sales',
+    'category': 'Customer',
     'description': 'Customers Management',
     'assets': {
         'web.assets_backend': [
