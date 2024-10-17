@@ -36,6 +36,7 @@ class AAAService(models.Model):
         string="Member", 
         domain=[('is_company', '=', False)] 
     )
+    membership_num = fields.Char('Membership Number')
     created_by = fields.Many2one('res.users', string="Agent", default=lambda self: self.env.user, readonly=True)
     
     # vehicle_type_id = fields.Many2one('member.vehicle.type', string="Vehicle Type")
@@ -159,6 +160,8 @@ class AAAService(models.Model):
     search_results = fields.Many2many('location.suggestion', string='Search Results', compute='_fetch_location_suggestions')
     selected_from_location = fields.Many2one('location.suggestion', string='From Location')
     selected_to_location = fields.Many2one('location.suggestion', string='To Location')
+    from_location = fields.Char('From Location') #For Data IMPORT
+    to_location = fields.Char('to Location') #For Data IMPORT
     amount = fields.Integer(string='Amount', compute='_compute_amount', store=True)  # Dynamically computed amount
 
     from_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
@@ -229,6 +232,10 @@ class AAAService(models.Model):
                 to_lat = record.selected_to_location.latitude
                 to_lon = record.selected_to_location.longitude
 
+                print("FROM LATITUDE",from_lat)
+                print("FROM LONGITUDE",from_lon)
+                print("TO LATITUDE ",to_lat)
+                print("TO Longotude ",to_lon)
                 # Search for matching LocationService
                 location_service = self.env['location.service'].search([
                     ('from_latitude', '=', from_lat),
@@ -236,7 +243,7 @@ class AAAService(models.Model):
                     ('to_latitude', '=', to_lat),
                     ('to_longitude', '=', to_lon)
                 ], limit=1)
-
+                print("LOCATION MATCH",location_service)
                 if location_service:
                     record.amount = location_service.amount
                 else:
