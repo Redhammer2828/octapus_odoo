@@ -168,7 +168,8 @@
                                         invisible="service_based == 'location'"
                                         class="required_field"
                                         required="1" />
-                                    <field name="from_location"/>
+                                    <field name="is_imported" invisible="1"/>
+                                    <field name="from_location" invisible="is_imported != 'true'"/>
                                     <field name="from_location_emirate"
                                         style="font-weight: 500;color: #28a745;" />
 
@@ -177,7 +178,7 @@
                                         options="{'no_create': True, 'no_open': True}"
                                         class="required_field"
                                         required="1" />
-                                    <field name="to_location"/>
+                                    <field name="to_location" invisible="is_imported != 'true'"/>
                                     <field name="to_location_emirate"
                                         style="font-weight: 500;color: #28a745;" />
 
