@@ -59,4 +59,4 @@ EXPOSE 8070
 USER $ODOO_USER
 
 # Set the entrypoint
-CMD ["python", "odoo-bin","-d","AAA-odoo", "-c", "odoo.conf","-u","all"]
+CMD ["python", "odoo-bin", "-c", "odoo.conf"]
