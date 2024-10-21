@@ -458,6 +458,7 @@ class ResPartnerMembers(models.Model):
             'default_vehicle_type': self.vehicle_type,
             'default_vehicle_model': self.vehicle_model,
             'default_vehicle_plate': self.vehicle_plate,
+            'default_policy_no': self.policy_no,
             'default_product_id': self.service_ids,
             'default_member_type': self.member_type,
             'default_member_id': self.id,

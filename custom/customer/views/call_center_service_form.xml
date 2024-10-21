@@ -6,7 +6,7 @@
             <field name="name">call.center.service.form</field>
             <field name="model">aaa.service</field>
             <field name="arch" type="xml">
-                <form string="Service" delete="false" duplicate="false">
+                <form string="Service" delete="false" duplicate="false" readonly="state == 'cancel'">
                     <style>
 
                         .o_form_view:not(.o_field_highlight)
@@ -104,6 +104,7 @@
                                     readonly="state not in ['draft', 'initiate', 'dispatch']"
                                     class="required_field" required="1"
                                     options="{'no_create': True}" />
+                                <field name="membership_num"/>
                                 <field name="member_contact_no" string="Mobile Number"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="email" string="Email"
@@ -167,7 +168,8 @@
                                         invisible="service_based == 'location'"
                                         class="required_field"
                                         required="1" />
-
+                                    <field name="is_imported" invisible="1"/>
+                                    <field name="from_location" invisible="is_imported != 'true'"/>
                                     <field name="from_location_emirate"
                                         style="font-weight: 500;color: #28a745;" />
 
@@ -176,7 +178,7 @@
                                         options="{'no_create': True, 'no_open': True}"
                                         class="required_field"
                                         required="1" />
-
+                                    <field name="to_location" invisible="is_imported != 'true'"/>
                                     <field name="to_location_emirate"
                                         style="font-weight: 500;color: #28a745;" />
 
