@@ -55,9 +55,7 @@ class MemberSearch(models.Model):
                 (self.env.ref('customer.res_partner_member_tree').id, 'tree'),
                 (self.env.ref('customer.res_partner_member_form').id, 'form'),
                 ]
-
         }
-
         
     def search_credit_member(self):
         partner_obj = self.env['res.partner']
