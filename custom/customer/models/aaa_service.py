@@ -1,5 +1,5 @@
 from odoo import api, fields, models, _
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError , UserError
 import datetime
 from datetime import timedelta
 import requests
@@ -167,6 +167,8 @@ class AAAService(models.Model):
 
     from_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
     to_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
+
+    orgin_no = fields.Char('Orgin')
 
     @api.depends('search_query')
     def _fetch_location_suggestions(self):
@@ -814,7 +816,9 @@ class AAAService(models.Model):
             'mobile':self.member_contact_no,
             'email': self.email,
             'comment': self.state or 'Enquiry',
-            'created_by': self.env.user.id
+            'created_by': self.env.user.id,
+            'enquiry_type_id': self.env['enquiry.config'].search([], limit=1).id,
+            'complaint_type_id': self.env['complaint.config'].search([], limit=1).id,
                     })
         view_id = self.env.ref('customer.call_center_enquiry_view_form').id
         return{
@@ -839,7 +843,62 @@ class AAAService(models.Model):
 
     def history(self):
         pass
-
+    
+    def action_new_change(self):
+        new_service = False  # Initialize variable to avoid unbound error in case of multiple records
+        for service in self:
+            # Fetch the previous service's name field, which is the sequence number
+            previous_service_sequence = service.name  # Assuming 'name' contains the sequence number
+            print("PREVIOUS SERVICE SEQUENCE NO:", previous_service_sequence)
+ 
+            # Debugging: Ensure the service object is correct
+            print("SERVICE ID:", service.id)
+ 
+            # Try creating the new service record
+            try:
+                new_service = self.env['aaa.service'].create({
+                    'state': 'initiate',  # Set the state of the new service to 'initiate'
+                    'orgin_no': previous_service_sequence,  # Copy the name (sequence number) to the origin_no field
+                    'customer_id': service.customer_id.id,  # Copy the customer ID
+                    'sequence_id': service.sequence_id.id,
+                    'member_id': service.member_id.id,
+                    'vehicle_type': service.vehicle_type,
+                    'vehicle_model': service.vehicle_model,
+                    'vehicle_plate': service.vehicle_plate,
+                    'vehicle_chasis_no': service.vehicle_chasis_no,
+                    'policy_no': service.policy_no,
+                })
+ 
+                # Debugging: Ensure the new service is created
+                print("NEW SERVICE ID:", new_service.id)
+ 
+            except Exception as e:
+                print("ERROR CREATING NEW SERVICE:", str(e))
+                raise UserError(_("Failed to create a new service: %s") % str(e))  # Raise an error with a meaningful message
+ 
+        # Ensure the new service was created
+        if not new_service:
+            raise UserError(_("No new service record was created."))
+ 
+        # Ensure the view_id reference is correct
+        try:
+            view_id = self.env.ref('customer.call_center_service_form').id  # Make sure this reference is correct
+            print("VIEW ID:", view_id)
+        except Exception as e:
+            print("ERROR FETCHING VIEW ID:", str(e))
+            raise UserError(_("Failed to fetch the form view: %s") % str(e))
+ 
+        # Open the newly created service form in edit mode (editable)
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'aaa.service',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_id': new_service.id,  # Pass the ID of the newly created service record
+            'view_id': view_id,  # Ensure correct view reference
+            'target': 'current',  # Open in the current window
+            'flags': {'form': {'action_buttons': True, 'options': {'mode': 'edit'}}},  # Make sure the form is in edit mode
+        }
 
 class ServiceComment(models.Model):
     _name = 'service.comment'
