@@ -225,6 +225,43 @@ class AAAService(models.Model):
         # Trigger computation of the amount when locations are selected
         self._compute_amount()
 
+    @api.onchange('date_time_from', 'date_time_to')
+    def _onchange_from_to_date(self):
+        for record in self:
+            if record.date_time_from and record.date_time_to:
+                delta = record.date_time_to - record.date_time_from
+                record.quantity = delta.days
+            else:
+                record.quantity = 0
+    # @api.depends('selected_from_location', 'selected_to_location')
+    # def _compute_amount(self):
+    #     for record in self:
+    #         if record.selected_from_location and record.selected_to_location:
+    #             # Fetch lat/long from selected locations
+    #             from_lat = record.selected_from_location.latitude
+    #             from_lon = record.selected_from_location.longitude
+    #             to_lat = record.selected_to_location.latitude
+    #             to_lon = record.selected_to_location.longitude
+
+    #             print("FROM LATITUDE",from_lat)
+    #             print("FROM LONGITUDE",from_lon)
+    #             print("TO LATITUDE ",to_lat)
+    #             print("TO Longotude ",to_lon)
+    #             # Search for matching LocationService
+    #             location_service = self.env['location.service'].search([
+    #                 ('from_latitude', '=', from_lat),
+    #                 ('from_longitude', '=', from_lon),
+    #                 ('to_latitude', '=', to_lat),
+    #                 ('to_longitude', '=', to_lon)
+    #             ], limit=1)
+    #             print("LOCATION MATCH",location_service)
+    #             if location_service:
+    #                 record.amount = location_service.amount
+    #             else:
+    #                 record.amount = 0  # No matching service found, set to 0
+    #         else:
+    #             record.amount = 0  # If locations are not selected, set amount to 0
+   
     @api.depends('selected_from_location', 'selected_to_location')
     def _compute_amount(self):
         for record in self:
@@ -235,24 +272,35 @@ class AAAService(models.Model):
                 to_lat = record.selected_to_location.latitude
                 to_lon = record.selected_to_location.longitude
 
-                print("FROM LATITUDE",from_lat)
-                print("FROM LONGITUDE",from_lon)
-                print("TO LATITUDE ",to_lat)
-                print("TO Longotude ",to_lon)
-                # Search for matching LocationService
-                location_service = self.env['location.service'].search([
-                    ('from_latitude', '=', from_lat),
-                    ('from_longitude', '=', from_lon),
-                    ('to_latitude', '=', to_lat),
-                    ('to_longitude', '=', to_lon)
-                ], limit=1)
-                print("LOCATION MATCH",location_service)
-                if location_service:
-                    record.amount = location_service.amount
-                else:
-                    record.amount = 0  # No matching service found, set to 0
-            else:
-                record.amount = 0  # If locations are not selected, set amount to 0
+                print("FROM LATITUDE", from_lat)
+                print("FROM LONGITUDE", from_lon)
+                print("TO LATITUDE ", to_lat)
+                print("TO LONGITUDE ", to_lon)
+
+                # Prepare API payload
+                payload = {
+                    "merchant_longitude": from_lon,
+                    "merchant_latitude": from_lat,
+                    "customer_longitude": to_lon,
+                    "customer_latitude": to_lat
+                }
+
+                # API URL
+                url = 'https://gioapi-gy-dev.kirkos.ae/carhire-order/order/service/deliveryfee/aaa/delivery-fee'
+                
+                try:
+                    # Make the POST request
+                    headers = {'Content-Type': 'application/json'}
+                    response = requests.post(url, headers=headers, data=json.dumps(payload))
+
+                    # Check if the request was successful
+                    if response.status_code == 200:
+                        print("API Response:", response.json())  # Print JSON response
+                    else:
+                        print(f"Failed to fetch data. Status code: {response.status_code}, Response: {response.text}")
+                
+                except Exception as e:
+                    print(f"Error occurred while making the API request: {str(e)}")
 
 
     @api.depends('selected_from_location', 'selected_to_location')
@@ -362,6 +410,25 @@ class AAAService(models.Model):
        
         return service
     
+    def write(self, vals):
+        # Call the super method to preserve the original behavior of write
+        result = super(AAAService, self).write(vals)
+        
+        # Check if there is a comment and if the record is being updated
+        if 'comments' in vals:
+            # Search for existing comment for this service
+            existing_comment = self.env['service.comment'].search([('service_id', '=', self.id)], limit=1)
+            
+            # Update the existing comment if found, else create a new comment
+            if existing_comment:
+                existing_comment.write({
+                    'comment': vals.get('comments') or 'DISPATCHED',
+                    'comment_date_and_time': fields.Datetime.now(),
+                    'comment_user': self.env.user.id,
+                    'comment_status': self.state,
+                })
+        return result
+    
     def action_initiate_service(self):
         self.state = 'initiated'
    
@@ -409,7 +476,7 @@ class AAAService(models.Model):
     def action_dispatch_service(self):
         self.ensure_one()
         self._generate_service_name()
-        
+       
         # Check for Credit
         if self.member_id.member_type in ['credit', 'adhoc']:
             # Directly dispatch service without any validation
@@ -449,7 +516,7 @@ class AAAService(models.Model):
         status = self.state
         phone_number = self.member_contact_no
         vehicle_chasis_no = self.vehicle_chasis_no  # Corrected field name
-
+ 
         self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
         self.action_order_create(order_number)
         print(f"checking value of order:{order_number},{status}, {phone_number}, {vehicle_chasis_no}")
@@ -462,24 +529,23 @@ class AAAService(models.Model):
         ])
         print("SERVICES IN THE PACKAGE", package_services)
         print("PRODUCT PACKAGE SERVICE - Service ids", package_services.product_id.ids)
-
+ 
         service_product_id = self.product_id.id  # The service the member is trying to avail
         print("SERVICE TAKEN BY THE MEMBER", service_product_id)
-
+ 
         # Search for matching products in product.product
         matching_products = self.env['product.product'].search([('id', 'in', package_services.product_id.ids)])
         print("MATCHING PRODUCTS", matching_products)
-
+ 
         # Get product_tmpl_id from the matching products
         matching_product_tmpl_ids = matching_products.mapped('product_tmpl_id.id')
         print("MATCHING PRODUCT TEMPLATE IDS", matching_product_tmpl_ids)
-
+ 
         # Check if the service product matches any of the product templates
         if service_product_id in matching_product_tmpl_ids:
             print("SERVICE MATCHES A PRODUCT IN THE PACKAGE")
             return True
         
-
     def _validate_service_limits(self, product_template_id):
         parent_category_id = self.product_id.categ_id.id
         print("PARENT CATEGORY OF CHOSEN SERVICE  IN PACKAGE", parent_category_id)
@@ -529,53 +595,53 @@ class AAAService(models.Model):
                 print("REMAINING SERVICE ACCESS REACHED ZERO AFTER 24 HOURS - TRIGGERING CASH WIZARD")
                 return False  # Trigger the cash service wizard
            
-       
         if self.service_based == 'location_duration':
             period_start = fields.Datetime.now() - timedelta(days=validity_period_days)
-            print("START OF RAC_CAT SERVICE", period_start)
+            print("START OF LOCATION DURATION SERVICE PERIOD:", period_start)
  
             total_days = 0
+            # Fetch all services in the same category within the validity period
             member_services_in_category = self.env['aaa.service'].search([
                 ('member_id', '=', self.member_id.id),
                 ('product_id.categ_id', '=', parent_category_id),
-                # ('state', '=', 'dispatch'),
-                ('state', 'in', ['dispatch', 'inprogress', 'start', 'reach', 'done']),
+                ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
                 ('date_time_to', '>=', period_start),
             ])
-            print("MEMBER SERVICES IN PARENT_CAT", member_services_in_category)
+            print("MEMBER SERVICES IN CATEGORY:", member_services_in_category)
  
+            # Calculate the total days accessed in the category
             for service in member_services_in_category:
                 if service.service_based == 'location_duration' and service.date_time_to and service.date_time_from:
                     service_duration = (service.date_time_to - service.date_time_from).total_seconds() / (3600 * 24)
-                    print("SERVICE DURATION FOR RAC_CAT SERVICE", service_duration)
+                    print("SERVICE DURATION FOR LOCATION DURATION SERVICE:", service_duration)
                     total_days += service_duration
+                    print("TOTAL SERVICE DAYS ACCESSED:", total_days)
  
-                    print("TOTAL DAYS OF RAC_CAT SERVICE ACCESS", total_days)
- 
-            # if total_days >= quantity_limit:
-            #     return False
- 
-                # Check if remaining service days exceed the quantity limit
+            # Calculate remaining days from the quantity limit
             remaining_days = quantity_limit - total_days
             print("REMAINING SERVICE DAYS ALLOWED:", remaining_days)
  
+            # Update the 'quantity' field with the remaining days
+            # self.quantity = remaining_days
+            # print("UPDATED QUANTITY FIELD WITH REMAINING DAYS:", self.quantity)
+ 
+            # If remaining_days is less than or equal to 0, trigger the cash service wizard
             if remaining_days <= 0:
+                print("SERVICE LIMIT EXCEEDED - TRIGGERING CASH WIZARD")
                 return False
-           
-            # Check if the new service exceeds the remaining days
+ 
+            # Check if the new service duration exceeds the remaining days
             new_service_duration = (self.date_time_to - self.date_time_from).total_seconds() / (3600 * 24)
             if new_service_duration > remaining_days:
-                    raise ValidationError(
-                        _("The service can only be accessed for the remaining %d days. Please adjust the service duration.") % remaining_days
-                    )
- 
- 
- 
-            if not self._is_service_accessible_in_24_hours(parent_category_id):
-                remaining_quantity = quantity_limit - total_days
-                print("REMAINING RAC_CAT SERVICE", remaining_quantity)
                 raise ValidationError(
-                    _("A service of type 'location_duration' can only be initiated after 24 hours of the last dispatch. Remaining quantity (days): %d") % remaining_quantity
+                    _("The service can only be accessed for the remaining %d days. Please adjust the service duration.") % remaining_days
+                )
+ 
+            # Ensure that even if 24 hours have passed, the service is not dispatchable if the total service days exceed the limit
+            if not self._is_service_accessible_in_24_hours(parent_category_id):
+                print("SERVICE DISPATCHED WITHIN 24 HOURS - BLOCKING SERVICE DISPATCH")
+                raise ValidationError(
+                    _("A service of type 'location_duration' can only be initiated after 24 hours of the last dispatch. Remaining quantity (days): %d") % remaining_days
                 )
  
         return True
@@ -586,7 +652,7 @@ class AAAService(models.Model):
             ('member_id', '=', self.member_id.id),
             ('product_id.categ_id', '=', parent_category_id),
             # ('state', '=', 'dispatch'),
-            ('state', 'in', ['dispatch', 'inprogress', 'start', 'reach', 'done']),
+            ('state', 'in', ['dispatch','start', 'reach', 'completed_by_driver', 'done']),
             ('create_date', '>=', last_dispatch_time),
         ])
         return recent_services == 0
@@ -596,7 +662,7 @@ class AAAService(models.Model):
             ('member_id', '=', self.member_id.id),
             ('product_id.categ_id', '=', parent_category_id),
             # ('state', '=', 'dispatch'),
-            ('state', 'in', ['dispatch', 'inprogress', 'start', 'reach', 'done']),
+            ('state', 'in', ['dispatch','start', 'reach','completed_by_driver', 'done']),
         ])
  
     def _trigger_cash_or_credit_service_wizard(self):
@@ -634,7 +700,7 @@ class AAAService(models.Model):
             'time': fields.Datetime.now(),
             'status': self.state,
         })
-
+ 
         self .env['service.comment'].create({
             'service_id': self.id,
             'comment' : self.comments or 'DISPATCHED',
@@ -643,7 +709,7 @@ class AAAService(models.Model):
             'comment_status' : self.state,
            
          })
-# --------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------
     def action_schedule_service_check(self):
         self.schedule_service_check = True
         self.state= 'initiate'
@@ -729,7 +795,28 @@ class AAAService(models.Model):
            
         })
         return True
-
+    
+    def action_completed_rac(self):
+        #pass
+        self.state = 'completed_by_driver'
+        for service in self:
+           
+                self.env['service.history'].create({
+                    'service_id': service.id,
+                    'user': self.env.user.id,
+                    'time': fields.Datetime.now(),
+                    'status': service.state,  
+                })
+ 
+                self .env['service.comment'].create({
+                    'service_id': service.id,
+                    'comment' : service.comments or 'Completed by driver',
+                    'comment_date_and_time' : fields.Datetime.now(),
+                    'comment_user': self.env.user.id,
+                    'comment_status' : service.state,
+        })
+        return True
+    
     def action_done_service(self):
         self.state = 'done'
         for service in self:

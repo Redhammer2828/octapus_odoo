@@ -6,7 +6,8 @@
             <field name="name">call.center.service.form</field>
             <field name="model">aaa.service</field>
             <field name="arch" type="xml">
-                <form string="Service" delete="false" duplicate="false" readonly="state == 'cancel'">
+                <form string="Service" delete="false" duplicate="false"
+                    readonly="state in['cancel', 'done']">
                     <style>
 
                         .o_form_view:not(.o_field_highlight)
@@ -25,7 +26,13 @@
                         .required_field{
                         background-color: #b9a4ff29;
                         }
-
+                        .oe_chatter {
+                        display: flex;
+                        justify-content: center;
+                        margin: 0 auto;
+                        width: 100%;
+                        text-align: center; /* Ensure centered text within the footer */
+                        }
                     </style>
                     <header>
                         <button name="action_initiate_service" string="Initiate" type="object"
@@ -39,10 +46,21 @@
                             class="btn-primary" invisible="state != 'dispatch'" />
                         <button name="action_reach_service" string="Reach" type="object"
                             class="btn-primary" invisible="state != 'start'" />
+                        <button name="action_completed_rac" string="Completed RAC" type="object"
+                            class="btn-primary"
+                            confirm="Complete this RAC service, do you want to proceed?"
+                            invisible="service_based != 'location_duration' or state != 'reach'" />
+
+
+                        <button name="action_done_service" string="Done" type="object"
+                            class="btn-primary"
+                            invisible="service_based != 'location_duration' or state != 'completed_by_driver'" />
                         <button name="action_done_service" string="Completed" type="object"
                             class="btn-primary"
                             confirm="Complete this service, do you want to proceed?"
-                            invisible="state != 'reach'" />
+                            invisible="state != 'reach' or service_based == 'location_duration'" />
+
+
                         <button name="action_cancel_service" type="object" string="Cancel"
                             confirm="Cancel this service, do you want to proceed?"
                             invisible="state not in ('initiate', 'dispatch', 'start', 'reach')" />
@@ -86,15 +104,17 @@
                                     readonly="state not in ['draft', 'initiate', 'dispatch']"
                                     class="required_field" required="1"
                                     options="{'no_create': True}" />
-                                <field name="credit_customer_co" string="Customer C/O" readonly="state == 'cancel'"/>
+                                <field name="credit_customer_co" string="Customer C/O"
+                                    readonly="state in['cancel', 'done']" />
                                 <field name="sequence_id" string="Customer Category"
                                     class="required_field"
-                                    required="1" options="{'no_create': True}" readonly="state == 'cancel'"/>
+                                    required="1" options="{'no_create': True}"
+                                    readonly="state in['cancel', 'done']" />
                                 <field name="member_id" string="Member"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']"
                                     class="required_field" required="1"
                                     options="{'no_create': True}" />
-                                <field name="membership_num" readonly="state == 'cancel'"/>
+                                <field name="membership_num" readonly="state in['cancel', 'done']" />
                                 <field name="member_contact_no" string="Mobile Number"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="email" string="Email"
@@ -117,37 +137,34 @@
                                 <field name="smarto_id" readonly="state in ['cancel', 'discard']"
                                     invisible="smarto != True" required="smarto == True" />
                                 <field name="comments" string="Comments" />
-                                <field name="orgin_no" string="Orgin" invisible="state not in ('change', 'initiate')" readonly="1" />
+                                <field name="orgin_no" string="Orgin"
+                                    invisible="state not in ('change', 'initiate')" readonly="1" />
 
                             </group>
                             <group string="VEHICLE DETAILS" name="vehicle_details">
-                                <!-- <field name="vehicle_type_ok" invisible="1" /> -->
-                                <!-- <field name="vehicle_model_ok" invisible="1" /> -->
                                 <field name="vehicle_type" string="Vehicle Type"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch','start','reach']" />
                                 <field name="vehicle_model" string="Vehicle Model"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
-                                <!-- <field name="vehicle_model" string="Vehicle Model"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']" /> -->
+                                    readonly="state not in ['draft', 'initiate', 'dispatch','start','reach']" />
                                 <field name="vehicle_plate" string="Vehicle Plate"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
-                                <!-- <field name="vehicle_emirate_id"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']" /> -->
                                 <field name="policy_no" string="Policy No"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
-
                             </group>
                             <group string="SERVICE DETAILS" name="service_details">
                                 <group class="product_field">
 
                                     <field name="product_id" string="Service" class="required_field"
-                                        required="1" options="{'no_create': True}" readonly="state == 'cancel'"/>
+                                        required="1" options="{'no_create': True}"
+                                        readonly="state in['cancel', 'done']" />
                                     <field name="service_based" invisible="1" />
 
                                     <field name="search_query"
-                                        style="background-color: #e6dddd;border-radius: 9px;" placeholder="Type Location name..." readonly="state == 'cancel'"/>
+                                        style="background-color: #e6dddd;border-radius: 9px;"
+                                        placeholder="Type Location name..."
+                                        readonly="state in['cancel', 'done']" />
 
                                     <field name="search_results" widget="many2many_tags"
                                         options="{'no_create': True}" />
@@ -155,20 +172,21 @@
                                     <field name="selected_from_location"
                                         domain="[('id', 'in', search_results)]"
                                         options="{'no_create': True}"
-                                        invisible="service_based == 'location'"
+                                        invisible="service_based == 'location_duration'"
                                         class="required_field"
-                                        required="1" readonly="state == 'cancel'"/>
-                                    <field name="is_imported" invisible="1"/>
-                                    <field name="from_location" invisible="is_imported != 'true'"/>
+                                        required="1" readonly="state in['cancel', 'done']" />
+                                    <field name="is_imported" invisible="1" />
+                                    <field name="from_location" invisible="is_imported != 'true'" />
                                     <field name="from_location_emirate"
-                                        style="font-weight: 500;color: #28a745;" />
+                                        style="font-weight: 500;color: #28a745;"
+                                        invisible="service_based == 'location_duration'" />
 
                                     <field name="selected_to_location"
                                         domain="[('id', 'in', search_results)]"
                                         options="{'no_create': True, 'no_open': True}"
                                         class="required_field"
-                                        required="1" readonly="state == 'cancel'"/>
-                                    <field name="to_location" invisible="is_imported != 'true'"/>
+                                        required="1" readonly="state in['cancel', 'done']" />
+                                    <field name="to_location" invisible="is_imported != 'true'" />
                                     <field name="to_location_emirate"
                                         style="font-weight: 500;color: #28a745;" />
 
@@ -176,17 +194,22 @@
 
                                     <field name="date_time_from" string="From Date time"
                                         invisible="service_based != 'location_duration'"
-                                        class="required_field" required="1" />
+                                        class="required_field" required="1"
+                                        readonly="state in['cancel', 'done']" />
 
                                     <field name="date_time_to" string="To Date time"
                                         invisible="service_based != 'location_duration'"
-                                        class="required_field" required="1" />
-                                    
+                                        class="required_field" required="1"
+                                        readonly="state in['cancel', 'done']" />
+                                    <field name="quantity" string="Quantity (Days)"
+                                        invisible="service_based != 'location_duration'"
+                                        class="required_field" readonly="1" />
                                 </group>
                                 <separator string="ADDON SERVICES" colspan="4" />
                                 <field name="addon_service_ids" nolabel="1"
-                                    invisible="product_id == False" readonly="state == 'cancel'">
-                                    <tree string="Additional Services" class="addon_tree" >
+                                    invisible="product_id == False"
+                                    readonly="state in['cancel', 'done']">
+                                    <tree string="Additional Services" class="addon_tree">
                                         <field name="product_id" string="Service" />
                                         <field name="description" string="Description" />
                                         <field name="price_subtotal" string="Rate" />
@@ -201,7 +224,7 @@
                         </group>
                         <group col="2">
                             <group string="PROVIDER DETAILS"
-                                invisible="state in ['draft', 'initiate']" >
+                                invisible="state in ['draft', 'initiate']">
                                 <field name="provider_id" string="Provider"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']"
@@ -222,8 +245,7 @@
                                 <field name="is_driver_name_visible" invisible="1" />
                                 <field name="driver_name"
                                     invisible="is_driver_name_visible == False"
-                                    readonly="state in ['done', 'cancel']"
-                                    required="state in ['dispatch']" />
+                                    readonly="state in ['done', 'cancel']" />
                                 <field name="driver_id"
                                     invisible="is_driver_name_visible == True"
                                     readonly="state in ['done', 'cancel']"
