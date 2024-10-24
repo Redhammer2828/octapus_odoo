@@ -45,8 +45,8 @@ class Location(models.Model):
     _description = 'Location'
 
     name = fields.Char(string="Location Name", required=True)
-    latitude = fields.Float(string="Latitude")
-    longitude = fields.Float(string="Longitude")
+    latitude = fields.Char(string="Latitude")
+    longitude = fields.Char(string="Longitude")
 
 
 class LocationSuggestion(models.Model):
@@ -55,5 +55,7 @@ class LocationSuggestion(models.Model):
 
     name = fields.Char(string='Location Name')
     feature_data = fields.Text(string='Feature Data')
-    latitude = fields.Float(string='Latitude', digits=(10, 8))
-    longitude = fields.Float(string='Longitude', digits=(11, 8))
+    # latitude = fields.Float(string='Latitude', digits=(16, 14))
+    # longitude = fields.Float(string='Longitude', digits=(16, 14))
+    latitude = fields.Char('latitude')
+    longitude = fields.Char('longitude')
