@@ -50,8 +50,6 @@
                             class="btn-primary"
                             confirm="Complete this RAC service, do you want to proceed?"
                             invisible="service_based != 'location_duration' or state != 'reach'" />
-
-
                         <button name="action_done_service" string="Done" type="object"
                             class="btn-primary"
                             invisible="service_based != 'location_duration' or state != 'completed_by_driver'" />
@@ -60,10 +58,18 @@
                             confirm="Complete this service, do you want to proceed?"
                             invisible="state != 'reach' or service_based == 'location_duration'" />
 
-
                         <button name="action_cancel_service" type="object" string="Cancel"
                             confirm="Cancel this service, do you want to proceed?"
                             invisible="state not in ('initiate', 'dispatch', 'start', 'reach')" />
+
+                        <button name="action_request_service" type="object" string="Request"
+                            invisible="state != 'cancel'" groups="base.group_user"
+                            class="btn-primary" />
+
+                        <button name="action_approve_service" type="object" string="Approve"
+                            groups="base.group_system" invisible="state != 'requested'"
+                            class="btn-primary" />
+
                         <button name="action_new_change" type="object" string="New Change"
                             invisible="state not in ('change')" />
                         <button name="action_change" type="object" string="Change"
