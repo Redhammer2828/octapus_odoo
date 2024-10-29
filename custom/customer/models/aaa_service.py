@@ -1,7 +1,7 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError , UserError
 import datetime
-from datetime import timedelta
+from datetime import timedelta,datetime
 import requests
 import json
 
@@ -23,10 +23,10 @@ class AAAService(models.Model):
         ('completed_by_driver', 'Completed by driver'),
         ('done', 'Done'),
         ('cancel', 'Cancelled'),
-        ('change', 'Changed' )
+        ('change', 'Changed' ),
+        ('approved','Approved'),
+        ('requested','Requeted')
     ], string="Status", readonly=True, default='initiate', tracking=True)
- 
-    
     #MANY2ONE-------------------------------------------------------------------------------------------------------
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
     credit_customer_co = fields.Char('Customer C/O')
@@ -384,13 +384,25 @@ class AAAService(models.Model):
                    
     @api.model
     def create(self, vals):
-        # Ensure the name field is set using a sequence if not provided
+        # Ensure the name field is set using a specific format if not provided
         if vals.get('name', _('New')) == _('New'):
-            vals['name'] = self.env['ir.sequence'].next_by_code('aaa.service') or _('New')
-       
+            # Get the current month and year for formatting
+            current_month = datetime.now().strftime('%m')  # 2-digit month
+            current_year = datetime.now().strftime('%Y')   # 4-digit year
+ 
+            # Get the next sequence number (without the prefix)
+            sequence_number = self.env['ir.sequence'].next_by_code('aaa.service')
+ 
+            # Extract only the numeric part of the sequence number
+            numeric_part = sequence_number.split('-')[-1]  # Get the part after the last dash
+            sequence_number = f"{int(numeric_part):08d}"  # Ensure it's zero-padded to 8 digits
+ 
+            # Format the service name
+            vals['name'] = f"SER/{current_month}/{current_year}/{sequence_number}"
+ 
         # Create the aaa.service record
         service = super(AAAService, self).create(vals)
-       
+ 
         # Create the service.history record
         self.env['service.history'].create({
             'service_id': service.id,
@@ -398,18 +410,17 @@ class AAAService(models.Model):
             'time': fields.Datetime.now(),
             'status': service.state,
         })
-
-        self .env['service.comment'].create({
+ 
+        # Create the service.comment record
+        self.env['service.comment'].create({
             'service_id': service.id,
-            'comment' : service.comments,
-            'comment_date_and_time' : fields.Datetime.now(),
+            'comment': service.comments,
+            'comment_date_and_time': fields.Datetime.now(),
             'comment_user': self.env.user.id,
-            'comment_status' : service.state,
-           
+            'comment_status': service.state,
         })
-       
-        return service
-    
+ 
+        return service   
     def write(self, vals):
         # Call the super method to preserve the original behavior of write
         result = super(AAAService, self).write(vals)
@@ -422,7 +433,7 @@ class AAAService(models.Model):
             # Update the existing comment if found, else create a new comment
             if existing_comment:
                 existing_comment.write({
-                    'comment': vals.get('comments') or 'DISPATCHED',
+                    'comment': vals.get('comments'),
                     'comment_date_and_time': fields.Datetime.now(),
                     'comment_user': self.env.user.id,
                     'comment_status': self.state,
@@ -690,7 +701,7 @@ class AAAService(models.Model):
                 'default_service_id': self.id,
             },
         }
- 
+    
     def _dispatch_service(self):
         self.state = 'dispatch'
         self.message_post(body=_("Service dispatched successfully."))
@@ -700,16 +711,22 @@ class AAAService(models.Model):
             'time': fields.Datetime.now(),
             'status': self.state,
         })
- 
-        self .env['service.comment'].create({
-            'service_id': self.id,
-            'comment' : self.comments or 'DISPATCHED',
-            'comment_date_and_time' : fields.Datetime.now(),
-            'comment_user': self.env.user.id,
-            'comment_status' : self.state,
-           
-         })
-    # --------------------------------------------------------------------------------------------------
+        for service in self:
+            # Define the comment content based on whether a manual comment is provided
+            comment_content = service.comments or 'DISPATCHED'
+            # Create the service.comment record
+            self.env['service.comment'].create({
+                'service_id': service.id,
+                'comment': comment_content,
+                'comment_date_and_time': fields.Datetime.now(),
+                'comment_user': self.env.user.id,
+                'comment_status': service.state,
+            })
+            # Clear the comments field if it was manually provided
+            if service.comments:
+                service.comments = False  # Clear the comments field
+        return True
+# --------------------------------------------------------------------------------------------------
     def action_schedule_service_check(self):
         self.schedule_service_check = True
         self.state= 'initiate'
@@ -758,42 +775,56 @@ class AAAService(models.Model):
     def action_start_service(self):
         self.state = 'start'
         for service in self:
-            
-                self.env['service.history'].create({
+           
+            self.env['service.history'].create({
                     'service_id': service.id,
                     'user': self.env.user.id,
                     'time': fields.Datetime.now(),
                     'status': service.state,  
                 })
-                self .env['service.comment'].create({
-                    'service_id': service.id,
-                    'comment' : service.comments or 'STARTED',
-                    'comment_date_and_time' : fields.Datetime.now(),
-                    'comment_user': self.env.user.id,
-                    'comment_status' : service.state,
-                
-        })
+        comment_content = service.comments or 'START'
+ 
+                # Create the service.comment record
+        self.env['service.comment'].create({
+                'service_id': service.id,
+                'comment': comment_content,
+                'comment_date_and_time': fields.Datetime.now(),
+                'comment_user': self.env.user.id,
+                'comment_status': service.state,
+                })
+ 
+                # If a manual comment exists, clear the service.comments field after creating the record
+        if service.comments:
+                service.comments = False
+ 
         return True
     
     def action_reach_service(self):
         self.state = 'reach'
         for service in self:
-            
+           
                 self.env['service.history'].create({
                     'service_id': service.id,
                     'user': self.env.user.id,
                     'time': fields.Datetime.now(),
                     'status': service.state,  
                 })
-
-                self .env['service.comment'].create({
-                    'service_id': service.id,
-                    'comment' : service.comments or 'REACHED',
-                    'comment_date_and_time' : fields.Datetime.now(),
-                    'comment_user': self.env.user.id,
-                    'comment_status' : service.state,
-           
-        })
+ 
+        comment_content = service.comments or 'REACHED'
+ 
+            # Create the service.comment record
+        self.env['service.comment'].create({
+            'service_id': service.id,
+            'comment': comment_content,
+            'comment_date_and_time': fields.Datetime.now(),
+            'comment_user': self.env.user.id,
+            'comment_status': service.state,
+            })
+ 
+            # If a manual comment exists, clear the service.comments field after creating the record
+        if service.comments:
+            service.comments = False
+ 
         return True
     
     def action_completed_rac(self):
@@ -808,34 +839,49 @@ class AAAService(models.Model):
                     'status': service.state,  
                 })
  
-                self .env['service.comment'].create({
-                    'service_id': service.id,
-                    'comment' : service.comments or 'Completed by driver',
-                    'comment_date_and_time' : fields.Datetime.now(),
-                    'comment_user': self.env.user.id,
-                    'comment_status' : service.state,
-        })
+        comment_content = service.comments or 'COMPLETED BY DRIVER'
+ 
+            # Create the service.comment record
+        self.env['service.comment'].create({
+            'service_id': service.id,
+            'comment': comment_content,
+            'comment_date_and_time': fields.Datetime.now(),
+            'comment_user': self.env.user.id,
+            'comment_status': service.state,
+            })
+ 
+            # If a manual comment exists, clear the service.comments field after creating the record
+        if service.comments:
+            service.comments = False
+ 
         return True
     
     def action_done_service(self):
         self.state = 'done'
         for service in self:
-            
+           
                 self.env['service.history'].create({
                     'service_id': service.id,
                     'user': self.env.user.id,
                     'time': fields.Datetime.now(),
                     'status': service.state,  
                 })
-
-                self .env['service.comment'].create({
-                    'service_id': service.id,
-                    'comment' : service.comments or 'COMPLETED',
-                    'comment_date_and_time' : fields.Datetime.now(),
-                    'comment_user': self.env.user.id,
-                    'comment_status' : service.state,
-           
-        })
+ 
+        comment_content = service.comments or 'COMPLETED'
+ 
+            # Create the service.comment record
+        self.env['service.comment'].create({
+            'service_id': service.id,
+            'comment': comment_content,
+            'comment_date_and_time': fields.Datetime.now(),
+            'comment_user': self.env.user.id,
+            'comment_status': service.state,
+            })
+ 
+            # If a manual comment exists, clear the service.comments field after creating the record
+        if service.comments:
+            service.comments = False
+ 
         return True
 
     def cash_service(self):
@@ -847,21 +893,28 @@ class AAAService(models.Model):
     def action_cancel_service(self):
         self.state = 'cancel'
         for service in self:
-            
+           
                 self.env['service.history'].create({
                     'service_id': service.id,
                     'user': self.env.user.id,
                     'time': fields.Datetime.now(),
                     'status': service.state,  
                 })
-                self .env['service.comment'].create({
-                    'service_id': service.id,
-                    'comment' : service.comments or 'CANCELLED',
-                    'comment_date_and_time' : fields.Datetime.now(),
-                    'comment_user': self.env.user.id,
-                    'comment_status' : service.state,
-                
-        })
+                comment_content = service.comments or 'CANCELLED'
+ 
+            # Create the service.comment record
+        self.env['service.comment'].create({
+            'service_id': service.id,
+            'comment': comment_content,
+            'comment_date_and_time': fields.Datetime.now(),
+            'comment_user': self.env.user.id,
+            'comment_status': service.state,
+            })
+ 
+            # If a manual comment exists, clear the service.comments field after creating the record
+        if service.comments:
+            service.comments = False
+ 
         return True
 
     def action_discard(self):
@@ -870,21 +923,28 @@ class AAAService(models.Model):
     def action_change(self):
         self.state = 'change'
         for service in self:
-            
+           
                 self.env['service.history'].create({
                     'service_id': service.id,
                     'user': self.env.user.id,
                     'time': fields.Datetime.now(),
                     'status': service.state,  
                 })
-                self .env['service.comment'].create({
-                    'service_id': service.id,
-                    'comment' : service.comments or 'CHANGED',
-                    'comment_date_and_time' : fields.Datetime.now(),
-                    'comment_user': self.env.user.id,
-                    'comment_status' : service.state,
-                
-        })
+                comment_content = service.comments or 'CHANGED'
+ 
+            # Create the service.comment record
+        self.env['service.comment'].create({
+            'service_id': service.id,
+            'comment': comment_content,
+            'comment_date_and_time': fields.Datetime.now(),
+            'comment_user': self.env.user.id,
+            'comment_status': service.state,
+            })
+ 
+        # If a manual comment exists, clear the service.comments field after creating the record
+        if service.comments:
+            service.comments = False
+ 
         return True
 
     def action_custom_cancel_service(self):
@@ -937,10 +997,8 @@ class AAAService(models.Model):
             # Fetch the previous service's name field, which is the sequence number
             previous_service_sequence = service.name  # Assuming 'name' contains the sequence number
             print("PREVIOUS SERVICE SEQUENCE NO:", previous_service_sequence)
- 
             # Debugging: Ensure the service object is correct
             print("SERVICE ID:", service.id)
- 
             # Try creating the new service record
             try:
                 new_service = self.env['aaa.service'].create({
@@ -955,18 +1013,14 @@ class AAAService(models.Model):
                     'vehicle_chasis_no': service.vehicle_chasis_no,
                     'policy_no': service.policy_no,
                 })
- 
                 # Debugging: Ensure the new service is created
                 print("NEW SERVICE ID:", new_service.id)
- 
             except Exception as e:
                 print("ERROR CREATING NEW SERVICE:", str(e))
                 raise UserError(_("Failed to create a new service: %s") % str(e))  # Raise an error with a meaningful message
- 
         # Ensure the new service was created
         if not new_service:
             raise UserError(_("No new service record was created."))
- 
         # Ensure the view_id reference is correct
         try:
             view_id = self.env.ref('customer.call_center_service_form').id  # Make sure this reference is correct
@@ -974,7 +1028,6 @@ class AAAService(models.Model):
         except Exception as e:
             print("ERROR FETCHING VIEW ID:", str(e))
             raise UserError(_("Failed to fetch the form view: %s") % str(e))
- 
         # Open the newly created service form in edit mode (editable)
         return {
             'type': 'ir.actions.act_window',
@@ -986,6 +1039,51 @@ class AAAService(models.Model):
             'target': 'current',  # Open in the current window
             'flags': {'form': {'action_buttons': True, 'options': {'mode': 'edit'}}},  # Make sure the form is in edit mode
         }
+    
+    def action_request_service(self):
+        self.state='requested'
+        for service in self:
+           
+                self.env['service.history'].create({
+                    'service_id': service.id,
+                    'user': self.env.user.id,
+                    'time': fields.Datetime.now(),
+                    'status': service.state,  
+                })
+                comment_content = service.comments or 'REQUESTED'
+ 
+            # Create the service.comment record
+        self.env['service.comment'].create({
+            'service_id': service.id,
+            'comment': comment_content,
+            'comment_date_and_time': fields.Datetime.now(),
+            'comment_user': self.env.user.id,
+            'comment_status': service.state,
+            })
+ 
+            # If a manual comment exists, clear the service.comments field after creating the record
+        if service.comments:
+            service.comments = False
+ 
+        return True
+
+    def action_approve_service(self):
+        self.state='initiate'
+        for service in self:
+            self.env['service.history'].create({
+                'service_id': service.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': service.state,  
+                })
+            self .env['service.comment'].create({
+                'service_id': service.id,
+                'comment' : service.comments or 'APPROVED',
+                'comment_date_and_time' : fields.Datetime.now(),
+                'comment_user': self.env.user.id,
+                'comment_status' : service.state,
+        })
+ 
 
 class ServiceComment(models.Model):
     _name = 'service.comment'
