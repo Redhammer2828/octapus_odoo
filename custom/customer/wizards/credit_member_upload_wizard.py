@@ -37,7 +37,7 @@ class CreditMemberUploadWizard(models.TransientModel):
         credit_member_lines = []
 
         # Pre-fetch necessary data to avoid redundant ORM calls
-        existing_member_codes = set(self.env['credit.member'].search([]).mapped('customer_code'))
+        existing_member_codes = set(self.env['credit.member.upload.line'].search([]).mapped('customer_code'))
 
         def process_row(index, row):
             row_errors = []
@@ -89,7 +89,7 @@ class CreditMemberUploadWizard(models.TransientModel):
                 'policy_no': row.get('policy_no'),
                 'vehicle_reg_country': row.get('vehicle_reg_country'),
                 'vehicle_emirate': row.get('vehicle_emirate'),
-                'delivery_ref_date': row.get('delivery_ref_date'),
+                'delivery_ref_date': row.get('delivery_date'),
                 'invoice_ref_date': row.get('invoice_ref_date'),
                 'member_expiry_date': row.get('member_expiry_date'),
                 'member_activate_date': row.get('member_activate_date'),
