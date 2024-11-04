@@ -178,14 +178,14 @@
                                     <field name="selected_from_location"
                                         domain="[('id', 'in', search_results)]"
                                         options="{'no_create': True}"
-                                        invisible="service_based == 'location_duration'"
+                                        invisible="service_based == 'location' or service_based == 'location_duration'"
                                         class="required_field"
                                         required="1" readonly="state in['cancel', 'done']" />
                                     <field name="is_imported" invisible="1" />
                                     <field name="from_location" invisible="is_imported != 'true'" />
                                     <field name="from_location_emirate"
                                         style="font-weight: 500;color: #28a745;"
-                                        invisible="service_based == 'location_duration'" />
+                                        invisible="service_based == 'location_duration' or service_based == 'location'"  />
 
                                     <field name="selected_to_location"
                                         domain="[('id', 'in', search_results)]"
