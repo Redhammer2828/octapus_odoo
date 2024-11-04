@@ -76,6 +76,7 @@
                         </field>
                         <group string="Status">
                             <field name="upload_log" readonly="1" />
+                            <field name="apply_log" readonly="1" />
                         </group>
                     </sheet>
                 </form>

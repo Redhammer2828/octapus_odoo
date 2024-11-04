@@ -63,6 +63,7 @@
         'wizards/schedule_service_wizard.xml',
         'data/scheduled_action.xml',
         'data/sequence_data.xml',
+        'data/server_action.xml',
         # 'views/product_packages.xml',
         # 'static/src/js/customer.js',
     ],
