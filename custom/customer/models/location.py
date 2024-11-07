@@ -16,6 +16,15 @@ class LocationExternal(models.Model):
 
     name = fields.Char(string='Location', required=True)
 
+class AaaLocation(models.Model):
+    _name = 'aaa.location'
+
+    name = fields.Char(string='Location')
+    type = fields.Selection([
+        ('internal', 'internal'),
+        ('external', 'external'),
+    ], string='type')
+
 class LocationService(models.Model):
     _name = 'location.service'
     _description = 'Service Location'

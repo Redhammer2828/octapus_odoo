@@ -2,10 +2,10 @@
 <odoo>
 
     <data>
-        <!-- Form View INTERNAL LOCATION -->
-        <record id="location_internal_view_form" model="ir.ui.view">
-            <field name="name">location.internal.view.form</field>
-            <field name="model">location.internal</field>
+        <!-- Form View AAA LOCATION -->
+        <record id="aaa_location_view_form" model="ir.ui.view">
+            <field name="name">aaa.location.view.form</field>
+            <field name="model">aaa.location</field>
             <field name="arch" type="xml">
                 <form string="Internal Location">
                     <sheet>
@@ -17,70 +17,11 @@
             </field>
         </record>
 
-        <!-- Form View EXTERNAL LOCATION -->
-        <record id="location_external_view_form" model="ir.ui.view">
-            <field name="name">location.external.view.form</field>
-            <field name="model">location.external</field>
-            <field name="arch" type="xml">
-                <form string="">
-                    <sheet>
-                        <group>
-                            <field name="name" string="Location" required="1" />
-                        </group>
-                    </sheet>
-                </form>
-            </field>
-        </record>
 
-        <!-- Form View SERVICE LOCATION -->
-        <record id="view_location_service_form" model="ir.ui.view">
-            <field name="name">location.service.form</field>
-            <field name="model">location.service</field>
-            <field name="arch" type="xml">
-                <form string="Service Location">
-                    <group>
-                        <group>
-                            <field name="from_location" />
-                            <field name="from_latitude" />
-                            <field name="from_longitude" />
-                            <field name="from_h3index" />
-                        </group>
-                        <group>
-                            <field name="to_location" />
-                            <field name="to_latitude" />
-                            <field name="to_longitude" />
-                            <field name="to_h3index" />
-                        </group>
-                    </group>
-                    <group>
-                        <field name="amount" />
-                    </group>
-                </form>
-            </field>
-        </record>
-
-        <!-- Form View LOCATION -->
-        <record id="location_from_view_form" model="ir.ui.view">
-            <field name="name">location.latlong.form</field>
-            <field name="model">location.latlong</field>
-            <field name="arch" type="xml">
-                <form string="Location From">
-                    <sheet>
-                        <group>
-                            <field name="location" />
-                            <field name="latitude" />
-                            <field name="longitude" />
-                            <!-- <field name="h3_index"/> -->
-                        </group>
-                    </sheet>
-                </form>
-            </field>
-        </record>
-
-        <!-- Tree INTERNAL -->
-        <record id="location_internal_view_tree" model="ir.ui.view">
-            <field name="name">location.internal.view.tree</field>
-            <field name="model">location.internal</field>
+        <!-- Tree aaa location -->
+        <record id="aaa_location_view_tree" model="ir.ui.view">
+            <field name="name">aaa.location.view.tree</field>
+            <field name="model">aaa.location</field>
             <field name="arch" type="xml">
                 <tree string="">
                     <field name="name" />
@@ -88,113 +29,54 @@
             </field>
         </record>
 
-        <!-- Tree EXTERNAL -->
-        <record id="location_external_view_tree" model="ir.ui.view">
-            <field name="name">location.external.view.tree</field>
-            <field name="model">location.external</field>
-            <field name="arch" type="xml">
-                <tree string="External Location">
-                    <field name="name" />
-                </tree>
-            </field>
+<!-- ............................................................................................ -->
+        <!-- AAA LOCATION INTERNAL Action -->
+        <record id="aaa_internal_location_action" model="ir.actions.act_window">
+            <field name="name">AAA INTERNAL LOCATION</field>
+            <field name="res_model">aaa.location</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_ids"
+                eval="[
+        (5, 0, 0),
+        (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.aaa_location_view_tree')}),
+        (0, 0, {'view_mode': 'form', 'view_id': ref('customer.aaa_location_view_form')})
+    ]" />
+            <!-- Add context to set 'type' to 'internal' -->
+            <field name="context">{'default_type': 'internal'}</field>
+            <field name="domain">[('type', '=', 'internal')]</field>
         </record>
 
-        <!-- Tree SERVICE LOCATION -->
-        <record id="view_location_service_tree" model="ir.ui.view">
-            <field name="name">location.service.tree</field>
-            <field name="model">location.service</field>
-            <field name="arch" type="xml">
-                <tree string="Service Location">
-                    <field name="from_location" />
-                    <field name="to_location" />
-                    <field name="amount" />
-                    <field name="from_h3index" />
-                    <field name="to_h3index" />
-                </tree>
+        <!-- AAA LOCATION EXTERNAL Action -->
+        <record id="aaa_external_location_action" model="ir.actions.act_window">
+            <field name="name">AAA EXTERNAL LOCATION</field>
+            <field name="res_model">aaa.location</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_ids"
+                eval="[
+      (5, 0, 0),
+      (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.aaa_location_view_tree')}),
+      (0, 0, {'view_mode': 'form', 'view_id': ref('customer.aaa_location_view_form')})
+    ]">
             </field>
-        </record>
-        
-        <!-- Tree LOCATION FROM -->
-        <record id="view_location_from_tree" model="ir.ui.view">
-            <field name="name">location.latlong.tree</field>
-            <field name="model">location.latlong</field>
-            <field name="arch" type="xml">
-                <tree string="Location From">
-                    <field name="location" />
-                    <field name="latitude" />
-                    <field name="longitude" />
-                    <!-- <field name="h3_index" /> -->
-                </tree>
-            </field>
-        </record>
+            <field name="context">{'default_type': 'external'}</field>
+            <field name="domain">[('type', '=', 'external')]</field>
 
-        <!-- Action -->
-        <record id="location_internal_action" model="ir.actions.act_window">
-            <field name="name">Internal</field>
-            <field name="res_model">location.internal</field>
-            <field name="view_mode">tree,form</field>
-            <field name="help" type="html">
-                <p class="oe_view_nocontent_create">
-                    Click to create a new card type.
-                </p>
-            </field>
         </record>
-
-        <record id="location_external_action" model="ir.actions.act_window">
-            <field name="name">External</field>
-            <field name="res_model">location.external</field>
-            <field name="view_mode">tree,form</field>
-            <field name="help" type="html">
-                <p class="oe_view_nocontent_create">
-                    Click to create a new card type.
-                </p>
-            </field>
-        </record>
-
-        <!-- Action to open the Tree View -->
-        <record id="action_location_service" model="ir.actions.act_window">
-            <field name="name">Service Locations</field>
-            <field name="res_model">location.service</field>
-            <field name="view_mode">tree,form</field>
-            <!-- <field name="view_id" ref="view_location_service_tree" /> -->
-        </record>
-     
-        <!-- Action to location LATLONG -->
-        <record id="action_location_latlong" model="ir.actions.act_window">
-            <field name="name">Location</field>
-            <field name="res_model">location.latlong</field>
-            <field name="view_mode">tree,form</field>
-        </record>
-       
+<!-- ............................................................................................ -->
 
         <menuitem
             id="menu_location_internal"
             name="Internal"
             parent="menu_location"
-            action="location_internal_action"
+            action="aaa_internal_location_action"
             sequence="60" />
 
         <menuitem
             id="menu_location_external"
             name="External"
             parent="menu_location"
-            action="location_external_action"
+            action="aaa_external_location_action"
             sequence="70" />
-        
-        <!-- ACTION SERVICE LOCATION -->
-        <menuitem
-            id="menu_service_location"
-            name="Service Location"
-            parent="menu_location"
-            action="action_location_service"
-            sequence="80" />
-        <!-- ACTION SERVICE LOCATION FROM -->
-        <menuitem
-            id="menu_location_from"
-            name="Location"
-            parent="menu_location"
-            action="action_location_latlong"
-            sequence="81" />
 
     </data>
 
