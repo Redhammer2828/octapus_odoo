@@ -170,31 +170,35 @@
                                     <field name="search_query"
                                         style="background-color: #e6dddd;border-radius: 9px;"
                                         placeholder="Type Location name..."
-                                        readonly="state in['cancel', 'done']" />
+                                        readonly="state in['cancel', 'done']"
+                                        invisible="(is_imported == True) or (is_imported == False and member_type == 'credit')"/>
 
                                     <field name="search_results" widget="many2many_tags"
-                                        options="{'no_create': True}" />
+                                        options="{'no_create': True}" 
+                                        invisible ="(is_imported == True) or (member_type == 'credit')"/>
 
                                     <field name="selected_from_location"
                                         domain="[('id', 'in', search_results)]"
                                         options="{'no_create': True}"
-                                        invisible="service_based == 'location' or service_based == 'location_duration'"
+                                        invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'location_duration') or (member_type == 'credit')"
                                         class="required_field"
                                         required="1" readonly="state in['cancel', 'done']" />
                                     <field name="is_imported" invisible="1" />
-                                    <field name="from_location" invisible="is_imported != 'true'" />
+                                    <field name="from_location" invisible="not (is_imported or member_type == 'credit')"/>
                                     <field name="from_location_emirate"
                                         style="font-weight: 500;color: #28a745;"
-                                        invisible="service_based == 'location_duration' or service_based == 'location'"  />
+                                        invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'location_duration') or (member_type == 'credit')"  />
 
                                     <field name="selected_to_location"
                                         domain="[('id', 'in', search_results)]"
                                         options="{'no_create': True, 'no_open': True}"
                                         class="required_field"
-                                        required="1" readonly="state in['cancel', 'done']" />
-                                    <field name="to_location" invisible="is_imported != 'true'" />
+                                        required="1" readonly="state in['cancel', 'done']"
+                                        invisible="(is_imported == True) or (member_type == 'credit')" />
+                                    <field name="to_location" invisible="not (is_imported or member_type == 'credit')" />
                                     <field name="to_location_emirate"
-                                        style="font-weight: 500;color: #28a745;" />
+                                        style="font-weight: 500;color: #28a745;" 
+                                        invisible="(is_imported == True) or (member_type == 'credit')" />
 
                                     <field name="amount" invisible="type != 'cash'" />
 

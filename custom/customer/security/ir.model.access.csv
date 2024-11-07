@@ -4,6 +4,7 @@ access_country_code,country.code,model_country_code,,1,1,1,1
 access_member_vehicle_type,member.vehicle.type,model_member_vehicle_type,,1,1,1,1
 access_member_vehicle_model,member.vehicle.model,model_member_vehicle_model,,1,1,1,1
 access_location_internal,location.internal,model_location_internal,,1,1,1,1
+access_aaa_location,aaa.location,model_aaa_location,,1,1,1,1
 access_location_external,location.external,model_location_external,,1,1,1,1
 access_location_service,location.service,model_location_service,,1,1,1,1
 access_location_latlong,location.latlong,model_location_latlong,,1,1,1,1
@@ -42,3 +43,6 @@ access_enquiry_config,enquiry.config,model_enquiry_config,base.group_user,1,1,1,
 access_enquiry_subtype,enquiry.subtype,model_enquiry_subtype,base.group_user,1,1,1,1
 access_complaint_config,complaint.config,model_complaint_config,base.group_user,1,1,1,1
 access_complaint_subtype,complaint.subtype,model_complaint_subtype,base.group_user,1,1,1,1
+access_product_pricelist,product.pricelist,model_product_pricelist,base.group_user,1,1,1,1
+access_service_rate,service.rate,model_service_rate,base.group_user,1,1,1,1
+
