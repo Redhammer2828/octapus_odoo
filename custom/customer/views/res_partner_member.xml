@@ -153,6 +153,7 @@
                                     <group>
                                         <field name="product_template_id" class="required_field"
                                             required="1"
+                                            decorators="{'readonly': [('membership_state', '=', 'confirm')]}"
                                             options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
                                             domain="[('bundle_product', '=', True)]" />
                                     </group>
