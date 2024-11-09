@@ -60,3 +60,5 @@ USER $ODOO_USER
 
 # Set the entrypoint
 CMD ["python", "odoo-bin", "-c", "odoo.conf"]
+
+
