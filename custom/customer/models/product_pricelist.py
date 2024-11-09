@@ -5,6 +5,11 @@ class ProductPricelist(models.Model):
 
     country_group_ids = fields.Many2many('res.country.group', string='Country Groups')
     pricelist_item_ids = fields.One2many('product.pricelist.item', 'pricelist_id', string='Pricelist Items')
+    customer_type = fields.Selection([
+        ('policy', 'Policy'),
+        ('credit', 'Credit'),
+        ('adhoc', 'Ad Hoc'),
+    ], string='Customer Type')
 
 
 class ProductPricelistItem(models.Model):
