@@ -17,3 +17,4 @@ from . import aaa_service
 from . import aaa_enquiry
 from . import policy_service_history
 from . import res_partner_vendor
+from . import product_pricelist

@@ -30,171 +30,117 @@ class DataUploadFile(models.Model):
         start_time = time.time()
         country_code_pattern = r'^[A-Z]{2}$'
         
+        # Collect necessary data upfront to minimize redundant queries
         customer_codes = {member_line.customer_code for member_line in self.upload_member_ids}
         chassis_numbers = {member_line.vehicle_chasis_no.strip().upper() for member_line in self.upload_member_ids if member_line.vehicle_chasis_no.strip().upper() not in ['nan', '']}
         
+        # Get partner records based on customer codes
         matching_partners = self.env['res.partner'].search([('customer_code', 'in', list(customer_codes))])
         partner_ids = matching_partners.ids
         
-        partner_chassis = self.env['res.partner'].search([('parent_customer_id', 'in', partner_ids), ('member_type', '=', 'policy'),('membership_state', '!=', 'cancel')])
-        partner_chassis_dict = {partner.vehicle_chasis_no.strip().upper(): partner for partner in partner_chassis}
+        # Create a dictionary for quick lookup by chassis number
+        partner_chassis_dict = {
+            partner.vehicle_chasis_no.strip().upper(): partner 
+            for partner in self.env['res.partner'].search([
+                ('parent_customer_id', 'in', partner_ids), 
+                ('member_type', '=', 'policy'),
+                ('membership_state', '!=', 'cancel')
+            ])
+        }
         
         for member_line in self.upload_member_ids:
             excel_chassis_no = member_line.vehicle_chasis_no.strip().upper()
             
+            # Check if chassis number exists
             if excel_chassis_no in ['nan', '']:
                 member_line.update({'upload_member_status': 'rejection', 'comment': "*Vehicle Chasis Number Does Not Exist!"})
-                print("[FAIL]")
                 continue
             
+            # Find the partner by customer code
             matching_partner = next((p for p in matching_partners if p.customer_code == member_line.customer_code), None)
             
             if not matching_partner:
                 member_line.update({'upload_member_status': 'rejection', 'comment': "*Customer not exist!"})
-                print("No matching customer found.")
                 continue
             
+            # Find the partner member by chassis number
             member = partner_chassis_dict.get(excel_chassis_no)
             
+            # Perform member checks if the member exists
             if member:
                 self.check_member_details(member, member_line)
             else:
                 expiry_date = fields.Date.from_string(member_line.member_expiry_date)
                 activate_date = fields.Date.from_string(member_line.member_activate_date) if member_line.member_activate_date else None
                 
-                if activate_date is not None and expiry_date < activate_date:
+                # Expiry date validation
+                if activate_date and expiry_date < activate_date:
                     member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date cannot be earlier than Activation Date!"})
                 else:
                     member_line.update({'upload_member_status': 'new', 'comment': "**Not exist in System*New Member"})
         
+        # Calculate processing statistics
         end_time = time.time()
         processing_time = end_time - start_time
-        
         total_count = len(self.upload_member_ids)
         status_counts = Counter(member.upload_member_status for member in self.upload_member_ids)
         
-        rejected_count = status_counts['rejection']
-        new_member_count = status_counts['new']
-        updated_member_count = status_counts['update']
-        renewal_member_count = status_counts['renewal']
-        replaced_member_count = status_counts['replace']
-        added_member_count = total_count - rejected_count
-        
-        self.upload_log = (f"Total Records: {total_count} | Rejected Records: {rejected_count} | Added Records: {added_member_count} | "
-                        f"New Records: {new_member_count} | Extension Records: {updated_member_count} | Renewal Records: {renewal_member_count} | Changed Records: {replaced_member_count} | "
-                        f"Time to Process: {processing_time} seconds")
+        # Log processing results
+        self.upload_log = (f"Total Records: {total_count} | Rejected Records: {status_counts['rejection']} | "
+                        f"Added Records: {total_count - status_counts['rejection']} | New Records: {status_counts['new']} | "
+                        f"Extension Records: {status_counts['update']} | Renewal Records: {status_counts['renewal']} | "
+                        f"Changed Records: {status_counts['replace']} | Time to Process: {processing_time} seconds")
         
         self.state = 'validate'
 
-#------NEW MEMBERCHIP EXPIRY DATE ADN ACTIVATION CHECK ADDED CODE------
     def check_member_details(self, member, member_line):
-        print("Checking details for member ID:", member.id)
-        print("CHASIS NUMBER EXCEL: ", member_line.vehicle_chasis_no)
-        print("CHASIS NUMBER DB: ", member.vehicle_chasis_no)
-        print("VEHICLE CHASIS CHECK:", end=" ")
-
-        # Assuming vehicle_chasis_no is a string, we strip whitespace and convert to uppercase for comparison
         excel_chassis_no = member_line.vehicle_chasis_no.strip().upper()
         db_chassis_no = member.vehicle_chasis_no.strip().upper()
-
+        
         if excel_chassis_no == db_chassis_no:
-            print("[PASS]")
-            print("EXCEL-CUSTOMER CODE",member_line.customer_code)
-            # matching_customer = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)], limit=1)
-            # print("PARENT CUSTOMER ID",member.parent_customer_id.id)
-            # Retrieve the parent customer record using the parent_customer_id
-            parent_customer = self.env['res.partner'].browse(member.parent_customer_id.id)
-             # Get the customer_code from the parent customer record
-            parent_customer_code = parent_customer.customer_code
-            print("DB-CUSTOMER CODE",parent_customer_code)
-            matching_partner = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)], limit=1)
-            print("RES PARTNER ID OF CUSTOMER CODE",matching_partner)
+            parent_customer_code = self.env['res.partner'].browse(member.parent_customer_id.id).customer_code
+            
             # Customer Code Check
             if member_line.customer_code == parent_customer_code:
-                print("CUSTOMER CODE CHECK: [PASS]")
                 if member.name == member_line.member_name:
-                    print("NAME CHECK: [PASS]")
                     if member.membership_state == 'temp':
-                        print("MEMBERSHIP STATE CHECK: [PASS]")
-                        member_line.update({'upload_member_status': 'exist_temp', 'comment': "Exist Under Temp,*Overwrite"})
-                        member_line.if_temp_match = member.id
+                        member_line.update({'upload_member_status': 'exist_temp', 'comment': "Exist Under Temp,*Overwrite", 'if_temp_match': member.id})
                     elif member.membership_state == 'confirm':
-                        print("MEMBER ID+_+_+__+_+_+_+__++_+_+_+", member.id)
-                        member_line.if_conf_match = member.id
-                        print("IF CONF()())(()()()((()())))", member_line.if_conf_match)
-
                         expiry_date = fields.Date.from_string(member_line.member_expiry_date)
-                        activate_date = fields.Date.from_string(member.member_expiry_date)
                         db_expiry_date = fields.Date.from_string(member.member_expiry_date)
                         difference = (expiry_date - db_expiry_date).days
-                        print("EXPIRY DATE:", expiry_date)
-                        print("DB EXPIRY DATE:", db_expiry_date)
-                        print("DIFFERENCE CALCULATED:", difference)
-                        print("EXPIRY DATE IN RES.PARTNER:", member.member_expiry_date)
-                        print("EXPIRY DATE IN EXCEL:", member_line.member_expiry_date)
                         
-                        # New check: if member_line.member_expiry_date is less than member_line.member_activate_date
-                        if expiry_date < activate_date:
-                            print("EXPIRY DATE IS LESS THAN ACTIVATION DATE: [FAIL]")
+                        if expiry_date < fields.Date.from_string(member_line.member_activate_date):
                             member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date is less than Activation Date"})
                         else:
                             if member.member_expiry_date != member_line.member_expiry_date:
                                 if difference >= 365:
-                                    print("MEMBERSHIP RENEWAL")
                                     member_line.update({'upload_member_status': 'renewal', 'comment': "*Membership Renewal"})
                                 else:
-                                    print("MEMBERSHIP EXTENSION")
                                     member_line.update({'upload_member_status': 'update', 'comment': "*Membership Extension"})
                             else:
-                                print("DUPLICATE RECORD FOUND")
                                 member_line.update({'upload_member_status': 'rejection', 'comment': "*Duplicate Record in System!"})
-                    else:
-                        print("MEMBERSHIP STATE CHECK: [FAIL]")
-                        member_line.update({'upload_member_status': 'new', 'comment': "Member Not Exist"})
                 else:
-                    print("NAME CHECK: [FAIL]")
-                    # member_line.update({'upload_member_status': 'new', 'comment': "Member Not Exist"})
-                    db_name= member.name
                     db_expiry_date = member.member_expiry_date
-                    excel_expiry_date = member_line.member_expiry_date
-                    
-                    if db_expiry_date > excel_expiry_date:
-                        member_line.update({'upload_member_status':'rejection', 'comment': 'Member with same expiry date'})
-                        print("EXPIRY DATE_CHECK FAILED!!")
-                    elif member.member_expiry_date <= member_line.member_expiry_date:
-                        member_line.update({'upload_member_status': 'replace', 'comment': "Member Replaced"})
-                        member_line.if_rep_match = member.id
-
-                        print("MEMBER REPLACEMENT PASS...")
+                    if db_expiry_date > member_line.member_expiry_date:
+                        member_line.update({'upload_member_status': 'rejection', 'comment': 'Member with same expiry date'})
+                    elif db_expiry_date <= member_line.member_expiry_date:
+                        member_line.update({'upload_member_status': 'replace', 'comment': "Member Replaced", 'if_rep_match': member.id})
             else:
-                # Search for the chassis number under another customer code
-                print("CUSTOMER CODE CHECK: [FAIL]")
-
                 other_partner = self.env['res.partner'].search([
                     ('vehicle_chasis_no', '=', excel_chassis_no),
                     ('membership_state', '!=', 'cancel')
                 ], limit=1)
-                print("OTHER PARTNER",other_partner)
+                
                 if other_partner:
-                    current_date = fields.Date.context_today(self)
-                    db_expiry_date = member.member_expiry_date
-                    if db_expiry_date >= current_date:
+                    if fields.Date.from_string(member.member_expiry_date) >= fields.Date.context_today(self):
                         member_line.update({'upload_member_status': 'company_change', 'comment': "Active Data Found Under Another Customer. Cancelling & Add as New Member"})
-                    elif db_expiry_date < current_date:
-                        member_line.update({'upload_member_status': 'company_change', 'comment': "Expired Data Found Under Another Customer. Cancelling & Add as New Member"})
-                        member_line.if_cpm_match = member.id
-                        print("MEMBER REPLACEMENT PASS...")
-                else:    
+                    else:
+                        member_line.update({'upload_member_status': 'company_change', 'comment': "Expired Data Found Under Another Customer. Cancelling & Add as New Member", 'if_cpm_match': member.id})
+                else:
                     member_line.update({'upload_member_status': 'new', 'comment': "*New Member"})
-                    print("New member: No matching chassis number found under another customer.")
-#------------------------------------------OLF FLOW------------------------------------------------------ 
         else:
-            if excel_chassis_no == 'nan' or excel_chassis_no == '':
-                member_line.update({'upload_member_status': 'rejection', 'comment': "*Vehicle Chasis Number Does Not Exist!"})
-                print("[FAIL]")
-            else:
-
-                member_line.update({'upload_member_status': 'new', 'comment': "*New Member"})
+            member_line.update({'upload_member_status': 'rejection' if excel_chassis_no in ['nan', ''] else 'new', 'comment': "*Vehicle Chasis Number Does Not Exist!" if excel_chassis_no in ['nan', ''] else "*New Member"})
 # ----------------------------------------------------------------------------------------------------------------------------------------------
     # def apply_tester(self):
     #     category_dict = {(cat.name, cat.partner_id.id): cat for cat in categories}

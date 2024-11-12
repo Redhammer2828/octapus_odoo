@@ -160,14 +160,14 @@ class AAAService(models.Model):
     search_results = fields.Many2many('location.suggestion', string='Search Results', compute='_fetch_location_suggestions')
     selected_from_location = fields.Many2one('location.suggestion', string='From Location')
     selected_to_location = fields.Many2one('location.suggestion', string='To Location')
-    from_location = fields.Char('From Location') #For Data IMPORT
-    to_location = fields.Char('to Location') #For Data IMPORT
+    from_location = fields.Many2one('aaa.location', string='From Location') #For Data IMPORT as well as CREDIT SERVICE PRICE LIST
+    to_location = fields.Many2one('aaa.location', string='To Location') #For Data IMPORT as well as CREDIT SERVICE PRICE LIST
     is_imported = fields.Boolean('Is Imported')
     amount = fields.Integer(string='Amount', compute='_compute_amount', store=True)  # Dynamically computed amount
 
     from_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
     to_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
-
+    quantity_with_days = fields.Char(string='Quantity with Days') 
     orgin_no = fields.Char('Orgin')
 
     @api.depends('search_query')
@@ -176,7 +176,7 @@ class AAAService(models.Model):
             record.search_results = [(5, 0, 0)]  # Clear existing results
             if record.search_query:
                 try:
-                    url = "https://nominatim-carhire-dev.livelocal.delivery/search.php"
+                    url = "https://nominatim.kirkos.ae/search.php"
                     params = {
                         'q': record.search_query,
                         'format': 'geocodejson',
@@ -231,36 +231,10 @@ class AAAService(models.Model):
             if record.date_time_from and record.date_time_to:
                 delta = record.date_time_to - record.date_time_from
                 record.quantity = delta.days
+                record.quantity_with_days = f"{delta.days} Days"  # Set quantity_with_days here
             else:
                 record.quantity = 0
-    # @api.depends('selected_from_location', 'selected_to_location')
-    # def _compute_amount(self):
-    #     for record in self:
-    #         if record.selected_from_location and record.selected_to_location:
-    #             # Fetch lat/long from selected locations
-    #             from_lat = record.selected_from_location.latitude
-    #             from_lon = record.selected_from_location.longitude
-    #             to_lat = record.selected_to_location.latitude
-    #             to_lon = record.selected_to_location.longitude
-
-    #             print("FROM LATITUDE",from_lat)
-    #             print("FROM LONGITUDE",from_lon)
-    #             print("TO LATITUDE ",to_lat)
-    #             print("TO Longotude ",to_lon)
-    #             # Search for matching LocationService
-    #             location_service = self.env['location.service'].search([
-    #                 ('from_latitude', '=', from_lat),
-    #                 ('from_longitude', '=', from_lon),
-    #                 ('to_latitude', '=', to_lat),
-    #                 ('to_longitude', '=', to_lon)
-    #             ], limit=1)
-    #             print("LOCATION MATCH",location_service)
-    #             if location_service:
-    #                 record.amount = location_service.amount
-    #             else:
-    #                 record.amount = 0  # No matching service found, set to 0
-    #         else:
-    #             record.amount = 0  # If locations are not selected, set amount to 0
+                record.quantity_with_days = "0 Days"
    
     @api.depends('selected_from_location', 'selected_to_location')
     def _compute_amount(self):
@@ -488,8 +462,20 @@ class AAAService(models.Model):
         self.ensure_one()
         self._generate_service_name()
        
+       
         # Check for Credit
         if self.member_id.member_type in ['credit', 'adhoc']:
+             # Calculate quantity and quantity_with_days without validation
+            if self.date_time_from and self.date_time_to:
+                delta = self.date_time_to - self.date_time_from
+                self.quantity = delta.days
+                self.quantity_with_days = f"{self.quantity} Days" if self.quantity else "0 Days"
+           
+            # Save the updated values to the database
+            self.write({
+                'quantity': self.quantity,
+                'quantity_with_days': self.quantity_with_days,
+            })
             # Directly dispatch service without any validation
             self._dispatch_service()
             return True
@@ -556,7 +542,8 @@ class AAAService(models.Model):
         if service_product_id in matching_product_tmpl_ids:
             print("SERVICE MATCHES A PRODUCT IN THE PACKAGE")
             return True
-        
+       
+ 
     def _validate_service_limits(self, product_template_id):
         parent_category_id = self.product_id.categ_id.id
         print("PARENT CATEGORY OF CHOSEN SERVICE  IN PACKAGE", parent_category_id)
@@ -606,6 +593,7 @@ class AAAService(models.Model):
                 print("REMAINING SERVICE ACCESS REACHED ZERO AFTER 24 HOURS - TRIGGERING CASH WIZARD")
                 return False  # Trigger the cash service wizard
            
+       
         if self.service_based == 'location_duration':
             period_start = fields.Datetime.now() - timedelta(days=validity_period_days)
             print("START OF LOCATION DURATION SERVICE PERIOD:", period_start)
@@ -649,13 +637,26 @@ class AAAService(models.Model):
                 )
  
             # Ensure that even if 24 hours have passed, the service is not dispatchable if the total service days exceed the limit
-            if not self._is_service_accessible_in_24_hours(parent_category_id):
-                print("SERVICE DISPATCHED WITHIN 24 HOURS - BLOCKING SERVICE DISPATCH")
-                raise ValidationError(
-                    _("A service of type 'location_duration' can only be initiated after 24 hours of the last dispatch. Remaining quantity (days): %d") % remaining_days
-                )
+            # if not self._is_service_accessible_in_24_hours(parent_category_id):
+            #     print("SERVICE DISPATCHED WITHIN 24 HOURS - BLOCKING SERVICE DISPATCH")
+            #     raise ValidationError(
+            #         _("A service of type 'location_duration' can only be initiated after 24 hours of the last dispatch. Remaining quantity (days): %d") % remaining_days
+            #     )
+ 
+             # Step 2: Update and persist `quantity_with_days`
+        if self.date_time_from and self.date_time_to:
+            delta = self.date_time_to - self.date_time_from
+            self.quantity = delta.days  # This updates `quantity`
+            self.quantity_with_days = f"{self.quantity} Days" if self.quantity else "0 Days"
+       
+        # Explicitly write `quantity_with_days` to save it in the database
+        self.write({
+            'quantity': self.quantity,
+            'quantity_with_days': self.quantity_with_days,
+        })
  
         return True
+ 
  
     def _is_service_accessible_in_24_hours(self, parent_category_id):
         last_dispatch_time = fields.Datetime.now() - timedelta(hours=24)
@@ -678,7 +679,7 @@ class AAAService(models.Model):
  
     def _trigger_cash_or_credit_service_wizard(self):
         return {
-            'name': _('Convert to Cash or Credit Service'),
+            'name': _('Convert to Cash '),
             'type': 'ir.actions.act_window',
             'res_model': 'service.dispatch.wizard',
             'view_mode': 'form',
@@ -701,7 +702,7 @@ class AAAService(models.Model):
                 'default_service_id': self.id,
             },
         }
-    
+ 
     def _dispatch_service(self):
         self.state = 'dispatch'
         self.message_post(body=_("Service dispatched successfully."))
@@ -711,9 +712,12 @@ class AAAService(models.Model):
             'time': fields.Datetime.now(),
             'status': self.state,
         })
+ 
+     
         for service in self:
             # Define the comment content based on whether a manual comment is provided
             comment_content = service.comments or 'DISPATCHED'
+           
             # Create the service.comment record
             self.env['service.comment'].create({
                 'service_id': service.id,
@@ -722,9 +726,11 @@ class AAAService(models.Model):
                 'comment_user': self.env.user.id,
                 'comment_status': service.state,
             })
+ 
             # Clear the comments field if it was manually provided
             if service.comments:
                 service.comments = False  # Clear the comments field
+ 
         return True
 # --------------------------------------------------------------------------------------------------
     def action_schedule_service_check(self):
