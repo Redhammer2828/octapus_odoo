@@ -7,20 +7,13 @@ trigger:
 - qa
 - uat
 - gama
-
+- kirkosalpha
 resources:
 - repo: self
 
 variables:
-  # Container registry service connection established during pipeline creation
-  dockerRegistryServiceConnection: '571785fc-12e8-4f30-bc07-b73e241f4e37'
-  imageRepository: 'aaaerp'
-  containerRegistry: 'carhiredev.azurecr.io'
-  dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
-  tag: '$(Build.SourceBranchName)'
 
-  # Agent VM image name
-  vmImageName: 'ubuntu-latest'
+  - group: Development
 
 stages:
 - stage: Build
@@ -36,16 +29,23 @@ stages:
       displayName: Build and push an image to container registry
       inputs:
         command: buildAndPush
-        repository: $(imageRepository)
+        repository: $(aaaerpimageRepository)
         dockerfile: $(dockerfilePath)
-        containerRegistry: $(dockerRegistryServiceConnection)
+        containerRegistry: $(ACR_CONN)
         tags: |
           $(tag)
-    
+    # - task: SSH@0
+    #   inputs:
+    #     condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'alpha'))
+    #     sshEndpoint: 'carhire-alpha'
+    #     runOptions: 'commands'
+    #     failOnStdErr: false
+    #     commands: '/startscripts/aaa-odoo.sh'
+    #     readyTimeout: '20000'
 
     - task: SSH@0
       inputs:
-        condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'development'))
+        condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'kirkosalpha'))
         sshEndpoint: 'kirkos-dev'
         runOptions: 'commands'
         failOnStdErr: false
@@ -69,4 +69,3 @@ stages:
         runOptions: 'commands'
         commands: '/startscripts/aaa-odoo.sh'
         readyTimeout: '20000'
-
