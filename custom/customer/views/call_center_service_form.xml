@@ -142,8 +142,8 @@
                                 <field name="smarto" readonly="state in ['cancel', 'discard']" />
                                 <field name="smarto_id" readonly="state in ['cancel', 'discard']"
                                     invisible="smarto != True" required="smarto == True" />
-                                <field name="comments" string="Comments" />
-                                <field name="import_comments" string="Comments" invisible="is_imported == False"/>
+                                <field name="comments" string="Comments"/>
+                                <field name="import_comments" string="Comments" invisible="is_imported == False" readonly='1'/>
                                 <field name="orgin_no" string="Orgin"
                                     invisible="state not in ('change', 'initiate')" readonly="1" />
 
