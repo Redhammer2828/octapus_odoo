@@ -9,6 +9,7 @@
                 <!-- Insert the new field after the existing currency_id field -->
                 <xpath expr="//field[@name='currency_id']" position="after">
                     <field name="country_group_ids" />
+                    <field name="customer_type"/>
                 </xpath>
             </field>
         </record>
