@@ -143,6 +143,7 @@
                                 <field name="smarto_id" readonly="state in ['cancel', 'discard']"
                                     invisible="smarto != True" required="smarto == True" />
                                 <field name="comments" string="Comments" />
+                                <field name="import_comments" string="Comments" invisible="is_imported == True"/>
                                 <field name="orgin_no" string="Orgin"
                                     invisible="state not in ('change', 'initiate')" readonly="1" />
 
@@ -200,7 +201,7 @@
                                         style="font-weight: 500;color: #28a745;" 
                                         invisible="(is_imported == True) or (member_type == 'credit')" />
 
-                                    <field name="amount" invisible="type != 'cash'" />
+                                    <field name="amount" />
 
                                     <field name="date_time_from" string="From Date time"
                                         invisible="service_based != 'location_duration'"
