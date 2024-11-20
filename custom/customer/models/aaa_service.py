@@ -349,6 +349,7 @@ class AAAService(models.Model):
                         ('name', '=', record.sequence_id.name)
                     ], limit=1)
                    
+                   
                     # Set the sequence_id to the found sequence
                     record.sequence_id = sequence.id if sequence else False
  
