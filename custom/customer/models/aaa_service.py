@@ -98,6 +98,7 @@ class AAAService(models.Model):
     smarto = fields.Boolean(string="Smarto")
     smarto_id = fields.Char(string="Smarto ID")
     comments = fields.Text(string="Comments")
+    import_comments = fields.Text('import_comments')
     vehicle_type_ok = fields.Boolean(string="Vehicle Type OK")
     vehicle_model_ok = fields.Boolean(string="Vehicle Model OK")
     vehicle = fields.Char('vehicle')
@@ -162,7 +163,7 @@ class AAAService(models.Model):
     selected_to_location = fields.Many2one('location.suggestion', string='To Location')
     from_location = fields.Many2one('aaa.location', string='From Location') #For Data IMPORT as well as CREDIT SERVICE PRICE LIST
     to_location = fields.Many2one('aaa.location', string='To Location') #For Data IMPORT as well as CREDIT SERVICE PRICE LIST
-    is_imported = fields.Boolean('Is Imported')
+    is_imported = fields.Boolean('Is Imported', default=False)
     amount = fields.Integer(string='Amount', compute='_compute_amount', store=True)  # Dynamically computed amount
 
     from_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
@@ -384,35 +385,31 @@ class AAAService(models.Model):
             'time': fields.Datetime.now(),
             'status': service.state,
         })
- 
-        # Create the service.comment record
-        self.env['service.comment'].create({
-            'service_id': service.id,
-            'comment': service.comments,
-            'comment_date_and_time': fields.Datetime.now(),
-            'comment_user': self.env.user.id,
-            'comment_status': service.state,
-        })
- 
         return service   
     def write(self, vals):
-        # Call the super method to preserve the original behavior of write
-        result = super(AAAService, self).write(vals)
-        
-        # Check if there is a comment and if the record is being updated
-        if 'comments' in vals:
-            # Search for existing comment for this service
-            existing_comment = self.env['service.comment'].search([('service_id', '=', self.id)], limit=1)
-            
-            # Update the existing comment if found, else create a new comment
-            if existing_comment:
-                existing_comment.write({
-                    'comment': vals.get('comments'),
-                    'comment_date_and_time': fields.Datetime.now(),
-                    'comment_user': self.env.user.id,
-                    'comment_status': self.state,
-                })
-        return result
+        """Override the write method to ensure comments are saved every time the comments field is updated"""
+        if 'comments' in vals and vals['comments']:
+            # Ensure the comment is appended
+            existing_comments = self.comments or ""
+            new_comment = f"{existing_comments}\n{vals['comments']}" if existing_comments else vals['comments']
+           
+            # Update the comments field in the service model
+            vals['comments'] = new_comment
+ 
+            # Create the service.comment record for each new comment
+            self.env['service.comment'].create({
+                'service_id': self.id,
+                'comment': vals['comments'],
+                'comment_date_and_time': fields.Datetime.now(),
+                'comment_user': self.env.user.id,
+                'comment_status': self.state,
+            })
+ 
+            # Clear the comments field after saving
+            vals['comments'] = ''  # Clear the comment field
+ 
+        # Call the super method to handle the actual update of the service
+        return super(AAAService, self).write(vals)
     
     def action_initiate_service(self):
         self.state = 'initiated'
