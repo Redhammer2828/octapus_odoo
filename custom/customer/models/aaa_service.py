@@ -335,28 +335,40 @@ class AAAService(models.Model):
             else:
                 self.is_driver_name_visible = True  # Show driver_name and hide driver_id
     
-    @api.onchange('customer_id','sequence_id')
+    @api.onchange('customer_id', 'sequence_id')
     def _onchange_customer_id_sequence_id(self):
         context = self.env.context
-        # Check if the specific context keys match the expected values
-        if context.get('default_member_type') == 'credit' and context.get('default_type') == 'non_cash':
-            for record in self:
-                if record.customer_id:
+        for record in self:
+            if record.customer_id:
+                member_type = context.get('default_member_type')
+                member_type_conditions = ['credit', 'adhoc']
+                type_conditions = ['non_cash', 'cash']
+ 
+                # Ensure the context has a valid combination of 'default_member_type' and 'default_type'
+                if (member_type in member_type_conditions and
+                    context.get('default_type') in type_conditions):
+ 
                     # Search for the sequence that matches the criteria
                     sequence = self.env['partner.category'].search([
                         ('partner_id', '=', record.customer_id.id),
-                        ('member_type', '=', 'credit'),
+                        ('member_type', '=', member_type),
                         ('name', '=', record.sequence_id.name)
                     ], limit=1)
-                    
-
+                   
                     # Set the sequence_id to the found sequence
                     record.sequence_id = sequence.id if sequence else False
  
                     # If sequence is found, set default_member from the category
                     if sequence:
-                         # Assign the `default_member` from the `sequence` (partner.category) to `record.member_id`
                         record.member_id = sequence.default_member.id if sequence.default_member else False
+                    else:
+                        # Search for a member associated with the customer and member_type
+                        member = self.env['res.partner'].search([
+                            ('parent_customer_id', '=', record.customer_id.id),
+                            ('member_type', '=', member_type)
+                        ], limit=1)
+                        print("MEMBERRRR", member)
+                        record.member_id = member.id if member else False
                    
     @api.model
     def create(self, vals):
@@ -386,7 +398,9 @@ class AAAService(models.Model):
             'time': fields.Datetime.now(),
             'status': service.state,
         })
-        return service   
+        return service  
+    
+     
     def write(self, vals):
         """Override the write method to ensure comments are saved every time the comments field is updated"""
         if 'comments' in vals and vals['comments']:
