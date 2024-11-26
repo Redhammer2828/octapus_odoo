@@ -39,8 +39,6 @@ class AAAService(models.Model):
     membership_num = fields.Char('Membership Number')
     created_by = fields.Many2one('res.users', string="Agent", default=lambda self: self.env.user, readonly=True)
     
-    # vehicle_type_id = fields.Many2one('member.vehicle.type', string="Vehicle Type")
-    # vehicle_model_id = fields.Many2one('member.vehicle.model', string="Vehicle Model")
     vehicle_type = fields.Char('Vehicle Type')   #Chaged to char
     vehicle_model = fields.Char('Vehicle Model')  #Changed to char
     
@@ -70,7 +68,6 @@ class AAAService(models.Model):
     route_rate = fields.Float(string="Route Rate")
     driver_name = fields.Char(string="Driver Name")
     driver_num = fields.Char(string="Driver Number")
-    # driver_id = fields.Many2one('hr.employee', string="Driver", domain=[('job_title', '=', 'Driver')])
     # ============================================================================================================================
     
     # SUMMARY---------------------------------------------------------------------------------------------------------------------
@@ -102,10 +99,8 @@ class AAAService(models.Model):
     vehicle_type_ok = fields.Boolean(string="Vehicle Type OK")
     vehicle_model_ok = fields.Boolean(string="Vehicle Model OK")
     vehicle = fields.Char('vehicle')
-    #  domain="[('id', '=', vehicle_type_id)]"
     vehicle_type = fields.Char(string="Vehicle Type")
     
-    # , domain="[('type_id', '=', vehicle_type_id)]"
     vehicle_model = fields.Char(string="Vehicle Model")
     
     vehicle_plate = fields.Char(string="Vehicle Plate")
@@ -120,8 +115,6 @@ class AAAService(models.Model):
         ('duration', 'Duration')
     ], string="Product Type")
     
-    # datetime_from = fields.Datetime(string="Datetime From")
-    # datetime_to = fields.Datetime(string="Datetime To")
     date_time_from = fields.Datetime(string= "From Date time") 
     date_time_to = fields.Datetime(string="To Date time")
     quantity = fields.Float(string="Quantity")
@@ -130,8 +123,7 @@ class AAAService(models.Model):
     
     service_time = fields.Datetime(string="Service Time")
     cash_collected_hidden = fields.Boolean(string="Cash Collected Hidden")
-    cash_collected = fields.Float(string="Cash Collected")
-    # amount=fields.Float(compute='_compute_location_amount',string="Cash To Be Collected")      
+    cash_collected = fields.Float(string="Cash Collected")     
     
     addon_ok = fields.Boolean(string="Addon OK")
     waive_off = fields.Boolean(string="Waive Off")
@@ -170,6 +162,8 @@ class AAAService(models.Model):
     to_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
     quantity_with_days = fields.Char(string='Quantity with Days') 
     orgin_no = fields.Char('Orgin')
+
+    service_quantity = fields.Float(string="Service Quantity", default="1.00")
 
     @api.depends('search_query')
     def _fetch_location_suggestions(self):
@@ -334,42 +328,61 @@ class AAAService(models.Model):
                 self.is_driver_name_visible = False  # Hide driver_name and show driver_id
             else:
                 self.is_driver_name_visible = True  # Show driver_name and hide driver_id
-    
-    @api.onchange('customer_id', 'sequence_id')
-    def _onchange_customer_id_sequence_id(self):
+        
+    @api.onchange('customer_id')
+    def _onchange_customer_id(self):
         context = self.env.context
         for record in self:
-            if record.customer_id:
-                member_type = context.get('default_member_type')
-                member_type_conditions = ['credit', 'adhoc']
-                type_conditions = ['non_cash', 'cash']
+            if not record.customer_id:
+                # Clear fields if customer_id is empty
+                record.sequence_id = False
+                record.member_id = False
+                continue
  
-                # Ensure the context has a valid combination of 'default_member_type' and 'default_type'
-                if (member_type in member_type_conditions and
-                    context.get('default_type') in type_conditions):
+            member_type = context.get('default_member_type')
+            member_type_conditions = ['credit', 'adhoc']
+            type_conditions = ['non_cash', 'cash']
  
-                    # Search for the sequence that matches the criteria
-                    sequence = self.env['partner.category'].search([
+            # Ensure the context has a valid combination of 'default_member_type' and 'default_type'
+            if (
+                member_type in member_type_conditions
+                and context.get('default_type') in type_conditions
+            ):
+                # Fetch the sequence associated with the customer_id
+                sequence = self.env['partner.category'].search(
+                    [
                         ('partner_id', '=', record.customer_id.id),
                         ('member_type', '=', member_type),
-                        ('name', '=', record.sequence_id.name)
-                    ], limit=1)
-                   
-                    # Set the sequence_id to the found sequence
-                    record.sequence_id = sequence.id if sequence else False
- 
-                    # If sequence is found, set default_member from the category
-                    if sequence:
-                        record.member_id = sequence.default_member.id if sequence.default_member else False
-                    else:
-                        # Search for a member associated with the customer and member_type
-                        member = self.env['res.partner'].search([
+                    ],
+                    limit=1,
+                )
+                if sequence:
+                    record.sequence_id = sequence.id
+                    # Update member_id based on the sequence's default_member
+                    record.member_id = sequence.default_member.id if sequence.default_member else False
+                else:
+                    # If no sequence is found, directly fetch member_id
+                    record.sequence_id = False
+                    member = self.env['res.partner'].search(
+                        [
                             ('parent_customer_id', '=', record.customer_id.id),
-                            ('member_type', '=', member_type)
-                        ], limit=1)
-                        print("MEMBERRRR", member)
-                        record.member_id = member.id if member else False
-                   
+                            ('member_type', '=', member_type),
+                        ],
+                        limit=1,
+                    )
+                    record.member_id = member.id if member else False
+ 
+    @api.onchange('sequence_id')
+    def _onchange_sequence_id(self):
+        for record in self:
+            if record.sequence_id:
+                # Update member_id based on the selected sequence_id
+                sequence = self.env['partner.category'].browse(record.sequence_id.id)
+                record.member_id = sequence.default_member.id if sequence.default_member else False
+            else:
+                # Clear member_id if sequence_id is cleared
+                record.member_id = False
+
     @api.model
     def create(self, vals):
         # Ensure the name field is set using a specific format if not provided
@@ -384,7 +397,6 @@ class AAAService(models.Model):
             # Extract only the numeric part of the sequence number
             numeric_part = sequence_number.split('-')[-1]  # Get the part after the last dash
             sequence_number = f"{int(numeric_part):08d}"  # Ensure it's zero-padded to 8 digits
- 
             # Format the service name
             vals['name'] = f"SER/{current_month}/{current_year}/{sequence_number}"
  
@@ -399,8 +411,7 @@ class AAAService(models.Model):
             'status': service.state,
         })
         return service  
-    
-     
+
     def write(self, vals):
         """Override the write method to ensure comments are saved every time the comments field is updated"""
         if 'comments' in vals and vals['comments']:
@@ -473,8 +484,6 @@ class AAAService(models.Model):
     def action_dispatch_service(self):
         self.ensure_one()
         self._generate_service_name()
-       
-       
         # Check for Credit
         if self.member_id.member_type in ['credit', 'adhoc']:
              # Calculate quantity and quantity_with_days without validation
@@ -975,15 +984,27 @@ class AAAService(models.Model):
     def action_create_enquiry(self):
         # Create a new enquiry linked to the current service
         new_enquiry = self.env['aaa.enquiry'].create({
-            'name': 'New Enquiry',  # Default or dynamic name for the enquiry
+            # 'name': 'New Enquiry',  # Default or dynamic name for the enquiry
+            'name': self.name,
+            'customer_id': self.customer_id.id,
+            'member_id': self.member_id.id,
+            'service_id': self.product_id.id,
+            'membership': self.member_type,
+            'mem_name': self.member_id.name,
+            'vehicle_chasis_no': self.vehicle_chasis_no,
+            'vehicle_plate_no': self.vehicle_plate,
+            'policy_no': self.policy_no,
             'enq_id': self.id,  # Link the enquiry to the current service
             'date': fields.Datetime.now(),
             'mobile':self.member_contact_no,
             'email': self.email,
-            'comment': self.state or 'Enquiry',
+            'comment': self.comments or'Enquiry',
             'created_by': self.env.user.id,
+            'enquiry': self.comments,
             'enquiry_type_id': self.env['enquiry.config'].search([], limit=1).id,
+            'enquiries_id': self.env['enquiry.subtype'].search([], limit=1).id,
             'complaint_type_id': self.env['complaint.config'].search([], limit=1).id,
+            'complaints_id': self.env['complaint.subtype'].search([], limit=1).id,
                     })
         view_id = self.env.ref('customer.call_center_enquiry_view_form').id
         return{
@@ -996,6 +1017,15 @@ class AAAService(models.Model):
             'context': {
                 'default_customer_id': self.customer_id.id,
                 'default_member_id': self.member_id.id,
+                'default_service_id': self.product_id.id,
+                'default_mem_name': self.member_id.name,
+                'default_membership': self.member_type,
+                'default_mobile': self.member_contact_no,
+                'default_comment': self.comments,
+                'default_vehicle_chasis_no': self.vehicle_chasis_no,
+                'default_vehicle_plate_no': self.vehicle_plate,
+                'default_policy_no': self.policy_no,
+                'default_email':self.email,
             }  
         }
     
