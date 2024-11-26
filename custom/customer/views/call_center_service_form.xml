@@ -9,7 +9,6 @@
                 <form string="Service" delete="false" duplicate="false"
                     readonly="state in['cancel', 'done']">
                     <style>
-
                         .o_form_view:not(.o_field_highlight)
                         .o_field_widget:not(.o_field_invalid):not(.o_field_highlight)
                         .o_input:not(:hover):not(:focus)
@@ -57,19 +56,15 @@
                             class="btn-primary"
                             confirm="Complete this service, do you want to proceed?"
                             invisible="state != 'reach' or service_based == 'location_duration'" />
-
                         <button name="action_cancel_service" type="object" string="Cancel"
                             confirm="Cancel this service, do you want to proceed?"
                             invisible="state not in ('initiate', 'dispatch', 'start', 'reach')" />
-
                         <button name="action_request_service" type="object" string="Request"
                             invisible="state != 'cancel'" groups="base.group_user"
                             class="btn-primary" />
-
                         <button name="action_approve_service" type="object" string="Approve"
                             groups="base.group_system" invisible="state != 'requested'"
                             class="btn-primary" />
-
                         <button name="action_new_change" type="object" string="New Change"
                             invisible="state not in ('change')" />
                         <button name="action_change" type="object" string="Change"
@@ -109,17 +104,17 @@
                                 <field name="customer_id" string="Customer"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']"
                                     class="required_field" required="1"
-                                    options="{'no_create': True}" />
+                                    options="{'no_create': True, 'no_open': True}" />
                                 <field name="credit_customer_co" string="Customer C/O"
                                     readonly="state in['cancel', 'done']" />
                                 <field name="sequence_id" string="Customer Category"
                                     class="required_field"
-                                    required="1" options="{'no_create': True}"
+                                    required="1" options="{'no_create': True, 'no_open': True}"
                                     readonly="state in['cancel', 'done']" />
                                 <field name="member_id" string="Member"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']"
                                     class="required_field" required="1"
-                                    options="{'no_create': True}" />
+                                    options="{'no_create': True, 'no_open': True}" />
                                 <field name="membership_num" readonly="state in['cancel', 'done']" />
                                 <field name="member_contact_no" string="Mobile Number"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
@@ -127,7 +122,6 @@
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="claim_membership" invisible="type != 'cash'"
                                     readonly="state not in ['initiate', 'dispatch']" />
-
                                 <field name="deposit_amount" invisible="1" />
                                 <field name="schedule_service_check" readonly="1" invisible="1" />
                                 <field name="schedule_date_time"
@@ -146,7 +140,6 @@
                                 <field name="import_comments" string="Comments" invisible="is_imported == False" readonly='1'/>
                                 <field name="orgin_no" string="Orgin"
                                     invisible="state not in ('change', 'initiate')" readonly="1" />
-
                             </group>
                             <group string="VEHICLE DETAILS" name="vehicle_details">
                                 <field name="vehicle_type" string="Vehicle Type"
@@ -162,52 +155,44 @@
                             </group>
                             <group string="SERVICE DETAILS" name="service_details">
                                 <group class="product_field">
-
                                     <field name="product_id" string="Service" class="required_field"
-                                        required="1" options="{'no_create': True}"
+                                        required="1" options="{'no_create': True, 'no_open': True}"
                                         readonly="state in['cancel', 'done']" />
                                     <field name="service_based" invisible="1" />
-
                                     <field name="search_query"
                                         style="background-color: #e6dddd;border-radius: 9px;"
                                         placeholder="Type Location name..."
                                         readonly="state in['cancel', 'done']"
                                         invisible="(is_imported == True) or (is_imported == False and member_type == 'credit')"/>
-
                                     <field name="search_results" widget="many2many_tags"
                                         options="{'no_create': True}" 
                                         invisible ="(is_imported == True) or (member_type == 'credit')"/>
-
                                     <field name="selected_from_location"
                                         domain="[('id', 'in', search_results)]"
-                                        options="{'no_create': True}"
+                                        options="{'no_create': True, 'no_open': True}"
                                         invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'location_duration') or (member_type == 'credit')"
                                         class="required_field"
                                         required="1" readonly="state in['cancel', 'done']" />
                                     <field name="is_imported" invisible="1" />
-                                    <field name="from_location" invisible="not (is_imported or member_type == 'credit')"/>
+                                    <field name="from_location" invisible="not (is_imported or member_type == 'credit')" options="{'no_create': True, 'no_open': True}"/>
                                     <field name="from_location_emirate"
                                         style="font-weight: 500;color: #28a745;"
                                         invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'location_duration') or (member_type == 'credit')"  />
-
                                     <field name="selected_to_location"
                                         domain="[('id', 'in', search_results)]"
                                         options="{'no_create': True, 'no_open': True}"
                                         class="required_field"
                                         required="1" readonly="state in['cancel', 'done']"
                                         invisible="(is_imported == True) or (member_type == 'credit')" />
-                                    <field name="to_location" invisible="not (is_imported or member_type == 'credit')" />
+                                    <field name="to_location" invisible="not (is_imported or member_type == 'credit')" options="{'no_create': True, 'no_open': True}"/>
                                     <field name="to_location_emirate"
                                         style="font-weight: 500;color: #28a745;" 
                                         invisible="(is_imported == True) or (member_type == 'credit')" />
-
                                     <field name="amount" />
-
                                     <field name="date_time_from" string="From Date time"
                                         invisible="service_based != 'location_duration'"
                                         class="required_field" required="1"
                                         readonly="state in['cancel', 'done']" />
-
                                     <field name="date_time_to" string="To Date time"
                                         invisible="service_based != 'location_duration'"
                                         class="required_field" required="1"
@@ -240,7 +225,7 @@
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']"
                                     required="1" class="required_field"
-                                    options="{'no_create': True}" />
+                                    options="{'no_create': True, 'no_open': True}" />
                                 <field name="provider_num" string="Contact No"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']" />
@@ -260,7 +245,7 @@
                                 <field name="driver_id"
                                     invisible="is_driver_name_visible == True"
                                     readonly="state in ['done', 'cancel']"
-                                    required="state in ['dispatch']" options="{'no_create': True}" />
+                                    required="state in ['dispatch']" options="{'no_create': True, 'no_open': True}" />
                                 <field name="driver_num" string="Contact No"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']" />
@@ -270,7 +255,7 @@
                                 readonly="state in ['done', 'cancel']">
                                 <field name="credit_proforma_number" string="Trip Sheet Number"
                                     invisible="state in ['draft', 'initiate', 'dispatch']"
-                                    readonly="state in ['done']" />
+                                    required="state in ['reach']" readonly="state in ['done']" />
                                 <field name="vendor_rating"
                                     widget="priority" string="Rate this service"
                                     invisible="state in ['draft', 'initiate', 'dispatch']"
@@ -283,7 +268,7 @@
                         </group>
                         <notebook>
                             <page string="Comments">
-                                <field name="comment_history_ids" readonly="1">
+                                <field name="comment_history_ids" readonly="1" nolabel="1">
                                     <tree>
                                         <field name="comment" />
                                         <field name="comment_date_and_time" />
@@ -292,10 +277,10 @@
                                     </tree>
                                     <form>
                                         <group>
-                                            <field name="comment" />
-                                            <field name="comment_date_and_time" />
-                                            <field name="comment_user" />
-                                            <field name="comment_status" />
+                                            <field name="comment"/>
+                                            <field name="comment_date_and_time"/>
+                                            <field name="comment_user" options="{'no_create': True, 'no_open': True}"/>
+                                            <field name="comment_status"/>
                                         </group>
                                     </form>
                                 </field>

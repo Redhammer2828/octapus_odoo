@@ -1,4 +1,5 @@
 from odoo import models, fields, api
+from odoo.exceptions import ValidationError , UserError
 
 class Enquiry(models.Model):
     _name = 'aaa.enquiry'
@@ -23,40 +24,91 @@ class Enquiry(models.Model):
     service_id = fields.Many2one('product.template', string='Service', domain="[('bundle_product', '=', False)]")
  
     enq_id = fields.Many2one('aaa.service',string='Enq_Service',ondelete='cascade') #IN aaa.enquiry
-    enquiry_type_id = fields.Many2one('enquiry.config', string='Enquiry Type', required=True)
+    enquiry_type_id = fields.Many2one('enquiry.config', string='Enquiry Type')
     enquiries_id = fields.Many2one('enquiry.subtype', string='Enquiry Subtype', domain="[('enquiry_type_id','=',enquiry_type_id)]")
-    complaint_type_id = fields.Many2one('complaint.config', string='Complaint Type', required=True)
+    complaint_type_id = fields.Many2one('complaint.config', string='Complaint Type')
     complaints_id = fields.Many2one('complaint.subtype', string='Complaint Subtype', domain="[('complaint_type_id','=',complaint_type_id)]" )
+    
+    # This field will control whether it's an enquiry or a complaint
+    is_enquiry = fields.Boolean("Is Enquiry?", default=True)
+    # New fields for managing visibility
+    show_enquiry_fields = fields.Boolean("Show Enquiry Fields", default=True)
+    show_complaint_fields = fields.Boolean("Show Complaint Fields", default=False)
+    
+    # @api.model
+    # def create(self, vals):
+    #     """Allow creation without validation for fields."""
+    #     # Call the parent create method
+    #     return super(Enquiry, self).create(vals)
 
-    @api.onchange('enquiry_type_id')
-    def _onchange_enquiry_type(self):
-        if self.enquiry_type_id:
-            # Log selected complaint type
-            print(f"CT id: {self.enquiry_type_id.id}")
+    # def write(self, vals):
+    #     """Ensure 'comment' is not editable once the record is saved."""
+    #     if 'comment' in vals:
+    #         for record in self:
+    #             if record.id:  # Ensures the record is already saved
+    #                 raise UserError("The comment field cannot be updated once the record is saved.")
+        
+    #     # Call the parent write method for other updates
+    #     return super(Enquiry, self).write(vals)
+
+    @api.model
+    def create(self, vals):
+        """Allow creation without validation for fields."""
+        # Call the parent create method to save the initial values
+        return super(Enquiry, self).create(vals)
+
+    def write(self, vals):
+        """Ensure no fields can be updated once the record is saved."""
+        for record in self:
+            if record.id:  # Ensures the record is already saved
+                raise UserError("This record cannot be updated. Fields are locked after saving.")
+        
+        # Call the parent write method (not reachable due to UserError)
+        return super(Enquiry, self).write(vals)
+
+
+    def action_enquiry_complaint(self):
+        # Your logic to open the wizard
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'enquiry.complaint.wizard',
+            'view_mode': 'form',
+            'view_id': self.env.ref('customer.view_enquiry_complaint_wizard_form').id,
+            'target': 'new',  # to open the wizard in a new window
+            'context': {
+                'default_enq_cm_id': self.id,
+            },
+        }
+################  ENQUIRY FORM IN READONLY AFTER SAVING  ###########
+    # @api.onchange('enquiry_type_id')
+    # def _onchange_enquiry_type(self):
+    #     if self.enquiry_type_id:
+    #         # Log selected complaint type
+    #         print(f"CT id: {self.enquiry_type_id.id}")
             
-            # Search for related complaint subtypes
-            enquiries = self.env['enquiry.subtype'].search([
-                ('enquiry_type_id', '=', self.enquiry_type_id.id)
-            ])
+    #         # Search for related complaint subtypes
+    #         enquiries = self.env['enquiry.subtype'].search([
+    #             ('enquiry_type_id', '=', self.enquiry_type_id.id)
+    #         ])
             
-            # Log found complaint subtype IDs
-            print(f"ENQUIRIES: {enquiries.ids}")
+    #         # Log found complaint subtype IDs
+    #         print(f"ENQUIRIES: {enquiries.ids}")
             
-            # Set domain if any complaints are found
-            return {
-                'domain': {
+    #         # Set domain if any complaints are found
+    #         return {
+    #             'domain': {
                     
-                    'enquiries_id': [('id', 'in', enquiries.ids)] if enquiries else []
-                }
-            }
-        else:
-            # Clear domain if no complaint_type_id is selected
-            print("No enquiry_type_id selected")
-            return {
-                'domain': {
-                    'enquiries_id': []
-                }
-            }
+    #                 'enquiries_id': [('id', 'in', enquiries.ids)] if enquiries else []
+    #             }
+    #         }
+    #     else:
+    #         # Clear domain if no complaint_type_id is selected
+    #         print("No enquiry_type_id selected")
+    #         return {
+    #             'domain': {
+    #                 'enquiries_id': []
+    #             }
+    #         }
         
     @api.onchange('complaint_type_id')
     def _onchange_complaint_type(self):

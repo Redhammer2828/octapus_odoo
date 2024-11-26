@@ -54,6 +54,8 @@
         'wizards/service_dispatch_wizard.xml',
         'wizards/service_cash_wizard.xml',
         'wizards/schedule_service_wizard.xml',
+        'wizards/service_report_wizard_view.xml',
+        'wizards/enquiry_complaint_wizard.xml',
         'data/scheduled_action.xml',
         'data/sequence_data.xml',
         'data/server_action.xml',
