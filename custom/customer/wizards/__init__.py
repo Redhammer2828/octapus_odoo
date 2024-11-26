@@ -7,3 +7,5 @@ from . import credit_member_upload_wizard
 from . import service_dispatch_wizard
 from . import service_cash_wizard
 from . import schedule_service_wizard
+from . import service_report_wizard_view
+from . import enquiry_complaint_wizard

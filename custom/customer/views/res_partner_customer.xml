@@ -385,7 +385,7 @@
     <menuitem
         id="menu_membership_root"
         name="Membership" />
-
+    
     <menuitem
         id="menu_customer"
         name="Customers"
