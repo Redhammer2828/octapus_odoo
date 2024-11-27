@@ -7,19 +7,51 @@
             <field name="model">aaa.service</field>
             <field name="arch" type="xml">
                 <tree string="" create="False" duplicate="false">
+                    <field name="name" />
+                    <field name="service_time" />
                     <field name="customer_id" />
-                    <field name="credit_customer_co" />
-                    <field name="sequence_id" />
                     <field name="member_id" />
+                    <field name="member_contact_no" />
+                    <field name="vehicle_plate" />
+                    <field name="vehicle_type" />
                     <field name="product_id" />
+                    <field name="driver_name" />
                     <field name="state" string="State" />
                 </tree>
+            </field>
+        </record>
+               <!-- Define the search view -->
+        <record id="call_center_all_service_view_search" model="ir.ui.view">
+            <field name="name">call.center.all.service.view.search</field>
+            <field name="model">aaa.service</field>
+            <field name="arch" type="xml">
+                <search>
+                    <!-- Search fields -->
+                    <field name="name" />
+                    <field name="service_time" />
+                    <field name="customer_id" />
+                    <field name="member_id" />
+                    <field name="member_contact_no" />
+                    <field name="vehicle_plate" />
+                    <field name="vehicle_type" />
+                    <field name="product_id" />
+                    <field name="driver_name" />
+                    <field name="state" string="State" />
+                    <!-- Default filter for today's records -->
+                    <filter 
+                        name="today_records" 
+                        string="Today's Records" 
+                        domain="[('service_time', '>=', (context_today())), ('service_time', '&lt;', (context_today() + 1))]"
+                        context="{'group_by': 'service_time'}"
+                    />
+                </search>
             </field>
         </record>
         <record id="call_center_all_service_action" model="ir.actions.act_window">
             <field name="name">All Service</field>
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree,form</field>
+             <field name="search_view_id" ref="call_center_all_service_view_search" />
             <field name="domain">[]</field>
             <field name="context">{}</field>
             <field name="view_ids"
@@ -30,6 +62,9 @@
                 ]">
             </field>
         </record>
+
+        
+
         <record id="call_center_to_dispatch_service_action" model="ir.actions.act_window">
             <field name="name">To Dispatch</field>
             <field name="res_model">aaa.service</field>

@@ -39,8 +39,6 @@ class AAAService(models.Model):
     membership_num = fields.Char('Membership Number')
     created_by = fields.Many2one('res.users', string="Agent", default=lambda self: self.env.user, readonly=True)
     
-    # vehicle_type_id = fields.Many2one('member.vehicle.type', string="Vehicle Type")
-    # vehicle_model_id = fields.Many2one('member.vehicle.model', string="Vehicle Model")
     vehicle_type = fields.Char('Vehicle Type')   #Chaged to char
     vehicle_model = fields.Char('Vehicle Model')  #Changed to char
     
@@ -70,7 +68,6 @@ class AAAService(models.Model):
     route_rate = fields.Float(string="Route Rate")
     driver_name = fields.Char(string="Driver Name")
     driver_num = fields.Char(string="Driver Number")
-    # driver_id = fields.Many2one('hr.employee', string="Driver", domain=[('job_title', '=', 'Driver')])
     # ============================================================================================================================
     
     # SUMMARY---------------------------------------------------------------------------------------------------------------------
@@ -98,13 +95,12 @@ class AAAService(models.Model):
     smarto = fields.Boolean(string="Smarto")
     smarto_id = fields.Char(string="Smarto ID")
     comments = fields.Text(string="Comments")
+    import_comments = fields.Text('import_comments')
     vehicle_type_ok = fields.Boolean(string="Vehicle Type OK")
     vehicle_model_ok = fields.Boolean(string="Vehicle Model OK")
     vehicle = fields.Char('vehicle')
-    #  domain="[('id', '=', vehicle_type_id)]"
     vehicle_type = fields.Char(string="Vehicle Type")
     
-    # , domain="[('type_id', '=', vehicle_type_id)]"
     vehicle_model = fields.Char(string="Vehicle Model")
     
     vehicle_plate = fields.Char(string="Vehicle Plate")
@@ -119,8 +115,6 @@ class AAAService(models.Model):
         ('duration', 'Duration')
     ], string="Product Type")
     
-    # datetime_from = fields.Datetime(string="Datetime From")
-    # datetime_to = fields.Datetime(string="Datetime To")
     date_time_from = fields.Datetime(string= "From Date time") 
     date_time_to = fields.Datetime(string="To Date time")
     quantity = fields.Float(string="Quantity")
@@ -129,8 +123,7 @@ class AAAService(models.Model):
     
     service_time = fields.Datetime(string="Service Time")
     cash_collected_hidden = fields.Boolean(string="Cash Collected Hidden")
-    cash_collected = fields.Float(string="Cash Collected")
-    # amount=fields.Float(compute='_compute_location_amount',string="Cash To Be Collected")      
+    cash_collected = fields.Float(string="Cash Collected")     
     
     addon_ok = fields.Boolean(string="Addon OK")
     waive_off = fields.Boolean(string="Waive Off")
@@ -162,13 +155,15 @@ class AAAService(models.Model):
     selected_to_location = fields.Many2one('location.suggestion', string='To Location')
     from_location = fields.Many2one('aaa.location', string='From Location') #For Data IMPORT as well as CREDIT SERVICE PRICE LIST
     to_location = fields.Many2one('aaa.location', string='To Location') #For Data IMPORT as well as CREDIT SERVICE PRICE LIST
-    is_imported = fields.Boolean('Is Imported')
+    is_imported = fields.Boolean('Is Imported', default=False)
     amount = fields.Integer(string='Amount', compute='_compute_amount', store=True)  # Dynamically computed amount
 
     from_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
     to_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
     quantity_with_days = fields.Char(string='Quantity with Days') 
     orgin_no = fields.Char('Orgin')
+
+    service_quantity = fields.Float(string="Service Quantity", default="1.00")
 
     @api.depends('search_query')
     def _fetch_location_suggestions(self):
@@ -333,29 +328,61 @@ class AAAService(models.Model):
                 self.is_driver_name_visible = False  # Hide driver_name and show driver_id
             else:
                 self.is_driver_name_visible = True  # Show driver_name and hide driver_id
-    
-    @api.onchange('customer_id','sequence_id')
-    def _onchange_customer_id_sequence_id(self):
+        
+    @api.onchange('customer_id')
+    def _onchange_customer_id(self):
         context = self.env.context
-        # Check if the specific context keys match the expected values
-        if context.get('default_member_type') == 'credit' and context.get('default_type') == 'non_cash':
-            for record in self:
-                if record.customer_id:
-                    # Search for the sequence that matches the criteria
-                    sequence = self.env['partner.category'].search([
-                        ('partner_id', '=', record.customer_id.id),
-                        ('member_type', '=', 'credit'),
-                        ('name', '=', record.sequence_id.name)
-                    ], limit=1)
-                   
-                    # Set the sequence_id to the found sequence
-                    record.sequence_id = sequence.id if sequence else False
+        for record in self:
+            if not record.customer_id:
+                # Clear fields if customer_id is empty
+                record.sequence_id = False
+                record.member_id = False
+                continue
  
-                    # If sequence is found, set default_member from the category
-                    if sequence:
-                         # Assign the `default_member` from the `sequence` (partner.category) to `record.member_id`
-                        record.member_id = sequence.default_member.id if sequence.default_member else False
-                   
+            member_type = context.get('default_member_type')
+            member_type_conditions = ['credit', 'adhoc']
+            type_conditions = ['non_cash', 'cash']
+ 
+            # Ensure the context has a valid combination of 'default_member_type' and 'default_type'
+            if (
+                member_type in member_type_conditions
+                and context.get('default_type') in type_conditions
+            ):
+                # Fetch the sequence associated with the customer_id
+                sequence = self.env['partner.category'].search(
+                    [
+                        ('partner_id', '=', record.customer_id.id),
+                        ('member_type', '=', member_type),
+                    ],
+                    limit=1,
+                )
+                if sequence:
+                    record.sequence_id = sequence.id
+                    # Update member_id based on the sequence's default_member
+                    record.member_id = sequence.default_member.id if sequence.default_member else False
+                else:
+                    # If no sequence is found, directly fetch member_id
+                    record.sequence_id = False
+                    member = self.env['res.partner'].search(
+                        [
+                            ('parent_customer_id', '=', record.customer_id.id),
+                            ('member_type', '=', member_type),
+                        ],
+                        limit=1,
+                    )
+                    record.member_id = member.id if member else False
+ 
+    @api.onchange('sequence_id')
+    def _onchange_sequence_id(self):
+        for record in self:
+            if record.sequence_id:
+                # Update member_id based on the selected sequence_id
+                sequence = self.env['partner.category'].browse(record.sequence_id.id)
+                record.member_id = sequence.default_member.id if sequence.default_member else False
+            else:
+                # Clear member_id if sequence_id is cleared
+                record.member_id = False
+
     @api.model
     def create(self, vals):
         # Ensure the name field is set using a specific format if not provided
@@ -370,7 +397,6 @@ class AAAService(models.Model):
             # Extract only the numeric part of the sequence number
             numeric_part = sequence_number.split('-')[-1]  # Get the part after the last dash
             sequence_number = f"{int(numeric_part):08d}"  # Ensure it's zero-padded to 8 digits
- 
             # Format the service name
             vals['name'] = f"SER/{current_month}/{current_year}/{sequence_number}"
  
@@ -384,35 +410,32 @@ class AAAService(models.Model):
             'time': fields.Datetime.now(),
             'status': service.state,
         })
- 
-        # Create the service.comment record
-        self.env['service.comment'].create({
-            'service_id': service.id,
-            'comment': service.comments,
-            'comment_date_and_time': fields.Datetime.now(),
-            'comment_user': self.env.user.id,
-            'comment_status': service.state,
-        })
- 
-        return service   
+        return service  
+
     def write(self, vals):
-        # Call the super method to preserve the original behavior of write
-        result = super(AAAService, self).write(vals)
-        
-        # Check if there is a comment and if the record is being updated
-        if 'comments' in vals:
-            # Search for existing comment for this service
-            existing_comment = self.env['service.comment'].search([('service_id', '=', self.id)], limit=1)
-            
-            # Update the existing comment if found, else create a new comment
-            if existing_comment:
-                existing_comment.write({
-                    'comment': vals.get('comments'),
-                    'comment_date_and_time': fields.Datetime.now(),
-                    'comment_user': self.env.user.id,
-                    'comment_status': self.state,
-                })
-        return result
+        """Override the write method to ensure comments are saved every time the comments field is updated"""
+        if 'comments' in vals and vals['comments']:
+            # Ensure the comment is appended
+            existing_comments = self.comments or ""
+            new_comment = f"{existing_comments}\n{vals['comments']}" if existing_comments else vals['comments']
+           
+            # Update the comments field in the service model
+            vals['comments'] = new_comment
+ 
+            # Create the service.comment record for each new comment
+            self.env['service.comment'].create({
+                'service_id': self.id,
+                'comment': vals['comments'],
+                'comment_date_and_time': fields.Datetime.now(),
+                'comment_user': self.env.user.id,
+                'comment_status': self.state,
+            })
+ 
+            # Clear the comments field after saving
+            vals['comments'] = ''  # Clear the comment field
+ 
+        # Call the super method to handle the actual update of the service
+        return super(AAAService, self).write(vals)
     
     def action_initiate_service(self):
         self.state = 'initiated'
@@ -461,8 +484,6 @@ class AAAService(models.Model):
     def action_dispatch_service(self):
         self.ensure_one()
         self._generate_service_name()
-       
-       
         # Check for Credit
         if self.member_id.member_type in ['credit', 'adhoc']:
              # Calculate quantity and quantity_with_days without validation
@@ -961,30 +982,53 @@ class AAAService(models.Model):
         }
 
     def action_create_enquiry(self):
-        # Create a new enquiry linked to the current service
+        # Create a new enquiry record linked to the current service
         new_enquiry = self.env['aaa.enquiry'].create({
-            'name': 'New Enquiry',  # Default or dynamic name for the enquiry
+            'name': self.name,
+            'customer_id': self.customer_id.id,
+            'member_id': self.member_id.id,
+            'service_id': self.product_id.id,
+            'membership': self.member_type,
+            'mem_name': self.member_id.name,
+            'vehicle_chasis_no': self.vehicle_chasis_no,
+            'vehicle_plate_no': self.vehicle_plate,
+            'policy_no': self.policy_no,
             'enq_id': self.id,  # Link the enquiry to the current service
             'date': fields.Datetime.now(),
-            'mobile':self.member_contact_no,
+            'mobile': self.member_contact_no,
             'email': self.email,
-            'comment': self.state or 'Enquiry',
+            'comment': self.comments or 'Enquiry',
             'created_by': self.env.user.id,
+            'enquiry': self.comments,
             'enquiry_type_id': self.env['enquiry.config'].search([], limit=1).id,
+            'enquiries_id': self.env['enquiry.subtype'].search([], limit=1).id,
             'complaint_type_id': self.env['complaint.config'].search([], limit=1).id,
-                    })
-        view_id = self.env.ref('customer.call_center_enquiry_view_form').id
-        return{
-            'name': 'Service Policy',
+            'complaints_id': self.env['complaint.subtype'].search([], limit=1).id,
+        })
+       
+        # Open the Enquiry/Complaint wizard
+        view_id = self.env.ref('customer.view_enquiry_complaint_wizard_form').id
+        return {
+            'name': 'Select Enquiry or Complaint',
             'type': 'ir.actions.act_window',
-            'res_model':'aaa.enquiry',
-            'view_mode':'form',
+            'res_model': 'enquiry.complaint.wizard',
+            'view_mode': 'form',
             'view_id': view_id,
-            #'target': 'new',
+            'target': 'new',
             'context': {
+                'default_enq_cm_id': new_enquiry.id,
                 'default_customer_id': self.customer_id.id,
                 'default_member_id': self.member_id.id,
-            }  
+                'default_service_id': self.product_id.id,
+                'default_mem_name': self.member_id.name,
+                'default_membership': self.member_type,
+                'default_mobile': self.member_contact_no,
+                'default_comment': self.comments,
+                'default_vehicle_chasis_no': self.vehicle_chasis_no,
+                'default_vehicle_plate_no': self.vehicle_plate,
+                'default_policy_no': self.policy_no,
+                'default_email': self.email,
+            }
         }
     
     def action_waive_off(self):
@@ -1113,10 +1157,56 @@ class ServiceHistory(models.Model):
 class AaaServiceAddon(models.Model):
     _name = 'aaa.service.addon'
     _description = 'Additional Service'
-
+ 
     service_id = fields.Many2one('aaa.service', string='Service')
-    product_id = fields.Many2one('product.template', string="Service",domain=[('bundle_product', '=', False)])
+    product_id = fields.Many2one(
+        'product.template',
+        string="Service",
+        domain=[('name', 'in', ['GATE PASS', 'KEY COLLECTION CHARGES', 'MECHANICAL ASSISTANCE', 'WAITING CHARGES'])]
+    )
     provider_from_location_id = fields.Many2one('location.internal', string="From Location")
     provider_to_location_id = fields.Many2one('location.internal', string="To Location")
+   
+    from_date= fields.Datetime(string="From Date")
+    to_date= fields.Datetime(string="To Date")
+    quantity= fields.Float(string="Quantity")
     description = fields.Char(' Description')
+    uom= fields.Many2one('uom.uom', string="UoM")
     price_subtotal = fields.Float('Price Subtotal')
+   
+    @api.onchange('from_date', 'to_date', 'uom')
+    def _compute_quantity_based_on_dates(self):
+        """
+        This method computes the quantity based on the difference between the `from_date`
+        and `to_date` and the `uom` (unit of measurement).
+        """
+        if self.from_date and self.to_date:
+            # Calculate the difference between the two dates
+            delta = fields.Datetime.from_string(self.to_date) - fields.Datetime.from_string(self.from_date)
+           
+            # Check if UoM is set and it is in days or hours (you can adjust this to your needs)
+            if self.uom:
+                # Example calculation: if UoM is "hours", quantity will be the difference in hours
+                if self.uom.name.lower() in ['hours', 'hr']:  # Assuming your UoM names contain 'hours'
+                    self.quantity = delta.total_seconds() / 3600  # Convert seconds to hours
+                elif self.uom.name.lower() in ['days', 'day']:  # Assuming your UoM names contain 'days'
+                    self.quantity = delta.total_seconds() / (3600 * 24)  # Convert seconds to days
+                else:
+                    # For other UoM types, you can define custom logic based on your requirements
+                    self.quantity = delta.total_seconds()  # In seconds (or any other unit you want)
+            else:
+                # Default quantity calculation in hours if UoM is not specified
+                self.quantity = delta.total_seconds() / 3600
+ 
+              # Update the 'description' field with the date range in dd/mm/yy format
+            from_date_str = fields.Datetime.to_string(self.from_date) if self.from_date else ''
+            to_date_str = fields.Datetime.to_string(self.to_date) if self.to_date else ''
+           
+            if from_date_str and to_date_str:
+                # Convert to dd/mm/yy format
+                from_date_formatted = fields.Datetime.from_string(self.from_date).strftime('%d/%m/%y')
+                to_date_formatted = fields.Datetime.from_string(self.to_date).strftime('%d/%m/%y')
+ 
+                self.description = f"{from_date_formatted} to {to_date_formatted}"
+            else:
+                self.description = ""
