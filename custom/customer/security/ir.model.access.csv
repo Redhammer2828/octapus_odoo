@@ -47,3 +47,4 @@ access_product_pricelist,product.pricelist,model_product_pricelist,base.group_us
 access_service_rate,service.rate,model_service_rate,base.group_user,1,1,1,1
 access_service_report_wizard,service.report.wizard,model_service_report_wizard,base.group_user,1,1,1,1
 access_enquiry_complaint_wizard,enquiry.complaint.wizard,model_enquiry_complaint_wizard,base.group_user,1,1,1,1
+access_create_temporary_member_wizard,create.temporary.member.wizard,model_create_temporary_member_wizard,base.group_user,1,1,1,1
