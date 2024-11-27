@@ -11,6 +11,7 @@ RUN apt-get update \
     && apt-get install -y \
         build-essential \
         python3-dev \
+        libffi-dev \
         libxml2-dev \
         libxslt1-dev \
         libevent-dev \
@@ -59,4 +60,6 @@ EXPOSE 8070
 USER $ODOO_USER
 
 # Set the entrypoint
-CMD ["python", "odoo-bin", "-c", "odoo.conf", "-d", "AAA-odoo", "-u", "all"]
+CMD ["python", "odoo-bin", "-c", "odoo.conf"]
+
+

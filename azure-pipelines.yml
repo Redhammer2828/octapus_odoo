@@ -6,7 +6,7 @@ trigger:
 - development
 - qa
 - uat
-- gama
+- master
 
 resources:
 - repo: self
