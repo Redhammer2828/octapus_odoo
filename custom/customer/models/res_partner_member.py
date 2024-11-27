@@ -398,41 +398,49 @@ class ResPartnerMembers(models.Model):
         }
 
     def action_create_service(self):
-        # self.membership_state = 'temp'
         view_id = self.env.ref('customer.call_center_service_form').id
+ 
         vehicle_model = self.env['member.vehicle.type'].search([('name', '=', self.vehicle_model)], limit=1)
-        print("VEHICLE",self.vehicle_model)
-        print("VEHICLE",vehicle_model)
-        card_type = self.env['card.type'].browse([(self.card_type_id.id)])
+        print("VEHICLE_MODEL:", self.vehicle_model)
+        print("VEHICLE_RECORD:", vehicle_model)
+ 
+        card_type = self.env['card.type'].browse(self.card_type_id.id)
         card_type_name = card_type.name
-        context = {
-            'default_customer_id': self.parent_customer_id.id,
-            'default_sequence_id': self.member_partner_category_id.id,
-            'default_card_type': card_type_name,
-            'default_member_contact_no': self.mobile,
-            'default_vehicle_chasis_no': self.vehicle_chasis_no,
-            'default_vehicle_type': self.vehicle_type,
-            'default_vehicle_model': self.vehicle_model,
-            'default_vehicle_plate': self.vehicle_plate,
-            'default_policy_no': self.policy_no,
-            'default_product_id': self.service_ids,
-            'default_member_type': self.member_type,
-            'default_member_id': self.id,
-            'default_member_activate_date': self.member_activate_date, # Pass the current record ID to member_id
-            'default_member_expiry_date': self.member_expiry_date,
-            'default_type': 'non_cash', # Pass the current record ID to member_id
-            'active_id': self.id,
-            'active_model': self._name,
+ 
+        # Fetch the res.partner record directly by name
+        partner = self.env['res.partner'].search([('name', '=', self.name)], limit=1)
+        print("DEBUG: Partner fetched:", partner)
+ 
+        # Pre-create the aaa.service record with the fetched partner ID
+        service_vals = {
+            'customer_id': self.parent_customer_id.id,
+            'sequence_id': self.member_partner_category_id.id,
+            'card_type': card_type_name,
+            'member_contact_no': self.mobile,
+            'vehicle_chasis_no': self.vehicle_chasis_no,
+            'vehicle_type': self.vehicle_type,
+            'vehicle_model': self.vehicle_model,
+            'vehicle_plate': self.vehicle_plate,
+            'policy_no': self.policy_no,
+            # 'product_id': self.service_ids.id,
+            'member_type': self.member_type,
+            'member_id': partner.id if partner else False,  # Directly assign partner ID here
+            'member_activate_date': self.member_activate_date,
+            'member_expiry_date': self.member_expiry_date,
+            'type': 'non_cash',
         }
-        # _logger.debug('Context: %s', context)
-
+ 
+        # Create the service record directly
+        service_record = self.env['aaa.service'].create(service_vals)
+ 
+        # Return the form view for the newly created record
         return {
             'name': 'Service Policy',
             'type': 'ir.actions.act_window',
             'res_model': 'aaa.service',
             'view_mode': 'form',
+            'res_id': service_record.id,  # Open the newly created record
             'view_id': view_id,
-            'context': context,
         }
     
     def action_create_enquiry(self):

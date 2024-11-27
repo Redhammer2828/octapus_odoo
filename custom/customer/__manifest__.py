@@ -56,6 +56,7 @@
         'wizards/schedule_service_wizard.xml',
         'wizards/service_report_wizard_view.xml',
         'wizards/enquiry_complaint_wizard.xml',
+        'wizards/create_temporary_member_wizard.xml',
         'data/scheduled_action.xml',
         'data/sequence_data.xml',
         'data/server_action.xml',

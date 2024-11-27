@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-     <!-- Form view for the enquiry or complaint wizard -->
-     <record id="view_enquiry_complaint_wizard_form" model="ir.ui.view">
+    <record id="view_enquiry_complaint_wizard_form" model="ir.ui.view">
         <field name="name">enquiry.complaint.wizard.form</field>
         <field name="model">enquiry.complaint.wizard</field>
         <field name="arch" type="xml">
@@ -12,20 +11,12 @@
                     <field name="is_enquiry" invisible="1"/>
                 </group>
                 <footer>
-                    <button name="action_enquiry" type="object" string="Enquiry" class="btn-primary"/>
-                    <button name="action_complaint" type="object" string="Complaint" class="btn-primary"/>
-                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                    <button string="Set Enquiry" type="object" name="action_enquiry" class="btn-primary" />
+                    <button string="Set Complaint" type="object" name="action_complaint" class="btn-danger" />
                 </footer>
             </form>
         </field>
     </record>
-
-    <!-- Action for opening the wizard -->
-    <record id="action_enquiry_complaint_wizard" model="ir.actions.act_window">
-        <field name="name">Enquiry or Complaint Wizard</field>
-        <field name="res_model">enquiry.complaint.wizard</field>
-        <field name="view_mode">form</field>
-        <field name="target">new</field>
-    </record>
+    
 
 </odoo>

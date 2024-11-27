@@ -982,9 +982,8 @@ class AAAService(models.Model):
         }
 
     def action_create_enquiry(self):
-        # Create a new enquiry linked to the current service
+        # Create a new enquiry record linked to the current service
         new_enquiry = self.env['aaa.enquiry'].create({
-            # 'name': 'New Enquiry',  # Default or dynamic name for the enquiry
             'name': self.name,
             'customer_id': self.customer_id.id,
             'member_id': self.member_id.id,
@@ -996,25 +995,28 @@ class AAAService(models.Model):
             'policy_no': self.policy_no,
             'enq_id': self.id,  # Link the enquiry to the current service
             'date': fields.Datetime.now(),
-            'mobile':self.member_contact_no,
+            'mobile': self.member_contact_no,
             'email': self.email,
-            'comment': self.comments or'Enquiry',
+            'comment': self.comments or 'Enquiry',
             'created_by': self.env.user.id,
             'enquiry': self.comments,
             'enquiry_type_id': self.env['enquiry.config'].search([], limit=1).id,
             'enquiries_id': self.env['enquiry.subtype'].search([], limit=1).id,
             'complaint_type_id': self.env['complaint.config'].search([], limit=1).id,
             'complaints_id': self.env['complaint.subtype'].search([], limit=1).id,
-                    })
-        view_id = self.env.ref('customer.call_center_enquiry_view_form').id
-        return{
-            'name': 'Service Policy',
+        })
+       
+        # Open the Enquiry/Complaint wizard
+        view_id = self.env.ref('customer.view_enquiry_complaint_wizard_form').id
+        return {
+            'name': 'Select Enquiry or Complaint',
             'type': 'ir.actions.act_window',
-            'res_model':'aaa.enquiry',
-            'view_mode':'form',
+            'res_model': 'enquiry.complaint.wizard',
+            'view_mode': 'form',
             'view_id': view_id,
-            #'target': 'new',
+            'target': 'new',
             'context': {
+                'default_enq_cm_id': new_enquiry.id,
                 'default_customer_id': self.customer_id.id,
                 'default_member_id': self.member_id.id,
                 'default_service_id': self.product_id.id,
@@ -1025,8 +1027,8 @@ class AAAService(models.Model):
                 'default_vehicle_chasis_no': self.vehicle_chasis_no,
                 'default_vehicle_plate_no': self.vehicle_plate,
                 'default_policy_no': self.policy_no,
-                'default_email':self.email,
-            }  
+                'default_email': self.email,
+            }
         }
     
     def action_waive_off(self):
@@ -1155,10 +1157,56 @@ class ServiceHistory(models.Model):
 class AaaServiceAddon(models.Model):
     _name = 'aaa.service.addon'
     _description = 'Additional Service'
-
+ 
     service_id = fields.Many2one('aaa.service', string='Service')
-    product_id = fields.Many2one('product.template', string="Service",domain=[('bundle_product', '=', False)])
+    product_id = fields.Many2one(
+        'product.template',
+        string="Service",
+        domain=[('name', 'in', ['GATE PASS', 'KEY COLLECTION CHARGES', 'MECHANICAL ASSISTANCE', 'WAITING CHARGES'])]
+    )
     provider_from_location_id = fields.Many2one('location.internal', string="From Location")
     provider_to_location_id = fields.Many2one('location.internal', string="To Location")
+   
+    from_date= fields.Datetime(string="From Date")
+    to_date= fields.Datetime(string="To Date")
+    quantity= fields.Float(string="Quantity")
     description = fields.Char(' Description')
+    uom= fields.Many2one('uom.uom', string="UoM")
     price_subtotal = fields.Float('Price Subtotal')
+   
+    @api.onchange('from_date', 'to_date', 'uom')
+    def _compute_quantity_based_on_dates(self):
+        """
+        This method computes the quantity based on the difference between the `from_date`
+        and `to_date` and the `uom` (unit of measurement).
+        """
+        if self.from_date and self.to_date:
+            # Calculate the difference between the two dates
+            delta = fields.Datetime.from_string(self.to_date) - fields.Datetime.from_string(self.from_date)
+           
+            # Check if UoM is set and it is in days or hours (you can adjust this to your needs)
+            if self.uom:
+                # Example calculation: if UoM is "hours", quantity will be the difference in hours
+                if self.uom.name.lower() in ['hours', 'hr']:  # Assuming your UoM names contain 'hours'
+                    self.quantity = delta.total_seconds() / 3600  # Convert seconds to hours
+                elif self.uom.name.lower() in ['days', 'day']:  # Assuming your UoM names contain 'days'
+                    self.quantity = delta.total_seconds() / (3600 * 24)  # Convert seconds to days
+                else:
+                    # For other UoM types, you can define custom logic based on your requirements
+                    self.quantity = delta.total_seconds()  # In seconds (or any other unit you want)
+            else:
+                # Default quantity calculation in hours if UoM is not specified
+                self.quantity = delta.total_seconds() / 3600
+ 
+              # Update the 'description' field with the date range in dd/mm/yy format
+            from_date_str = fields.Datetime.to_string(self.from_date) if self.from_date else ''
+            to_date_str = fields.Datetime.to_string(self.to_date) if self.to_date else ''
+           
+            if from_date_str and to_date_str:
+                # Convert to dd/mm/yy format
+                from_date_formatted = fields.Datetime.from_string(self.from_date).strftime('%d/%m/%y')
+                to_date_formatted = fields.Datetime.from_string(self.to_date).strftime('%d/%m/%y')
+ 
+                self.description = f"{from_date_formatted} to {to_date_formatted}"
+            else:
+                self.description = ""

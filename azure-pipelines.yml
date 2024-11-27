@@ -6,8 +6,8 @@ trigger:
 - development
 - qa
 - uat
-- gama
-- kirkosalpha
+- master
+
 resources:
 - repo: self
 
