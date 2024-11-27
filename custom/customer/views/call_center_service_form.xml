@@ -136,8 +136,9 @@
                                 <field name="smarto" readonly="state in ['cancel', 'discard']" />
                                 <field name="smarto_id" readonly="state in ['cancel', 'discard']"
                                     invisible="smarto != True" required="smarto == True" />
-                                <field name="comments" string="Comments"/>
-                                <field name="import_comments" string="Comments" invisible="is_imported == False" readonly='1'/>
+                                <field name="comments" string="Comments" />
+                                <field name="import_comments" string="Comments"
+                                    invisible="is_imported == False" readonly='1' />
                                 <field name="orgin_no" string="Orgin"
                                     invisible="state not in ('change', 'initiate')" readonly="1" />
                             </group>
@@ -149,9 +150,13 @@
                                 <field name="vehicle_plate" string="Vehicle Plate"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch'] or vehicle_chasis_no != False " />
                                 <field name="policy_no" string="Policy No"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch'] or policy_no != False" />
+                                <field name="member_activate_date"
+                                    readonly="member_activate_date != False" />
+                                <field name="member_expiry_date"
+                                    readonly="member_expiry_date != False" />
                             </group>
                             <group string="SERVICE DETAILS" name="service_details">
                                 <group class="product_field">
@@ -163,10 +168,10 @@
                                         style="background-color: #e6dddd;border-radius: 9px;"
                                         placeholder="Type Location name..."
                                         readonly="state in['cancel', 'done']"
-                                        invisible="(is_imported == True) or (is_imported == False and member_type == 'credit')"/>
+                                        invisible="(is_imported == True) or (is_imported == False and member_type == 'credit')" />
                                     <field name="search_results" widget="many2many_tags"
-                                        options="{'no_create': True}" 
-                                        invisible ="(is_imported == True) or (member_type == 'credit')"/>
+                                        options="{'no_create': True}"
+                                        invisible="(is_imported == True) or (member_type == 'credit')" />
                                     <field name="selected_from_location"
                                         domain="[('id', 'in', search_results)]"
                                         options="{'no_create': True, 'no_open': True}"
@@ -174,19 +179,23 @@
                                         class="required_field"
                                         required="1" readonly="state in['cancel', 'done']" />
                                     <field name="is_imported" invisible="1" />
-                                    <field name="from_location" invisible="not (is_imported or member_type == 'credit')" options="{'no_create': True, 'no_open': True}"/>
+                                    <field name="from_location"
+                                        invisible="not (is_imported or member_type == 'credit')"
+                                        options="{'no_create': True, 'no_open': True}" />
                                     <field name="from_location_emirate"
                                         style="font-weight: 500;color: #28a745;"
-                                        invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'location_duration') or (member_type == 'credit')"  />
+                                        invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'location_duration') or (member_type == 'credit')" />
                                     <field name="selected_to_location"
                                         domain="[('id', 'in', search_results)]"
                                         options="{'no_create': True, 'no_open': True}"
                                         class="required_field"
                                         required="1" readonly="state in['cancel', 'done']"
                                         invisible="(is_imported == True) or (member_type == 'credit')" />
-                                    <field name="to_location" invisible="not (is_imported or member_type == 'credit')" options="{'no_create': True, 'no_open': True}"/>
+                                    <field name="to_location"
+                                        invisible="not (is_imported or member_type == 'credit')"
+                                        options="{'no_create': True, 'no_open': True}" />
                                     <field name="to_location_emirate"
-                                        style="font-weight: 500;color: #28a745;" 
+                                        style="font-weight: 500;color: #28a745;"
                                         invisible="(is_imported == True) or (member_type == 'credit')" />
                                     <field name="amount" />
                                     <field name="date_time_from" string="From Date time"
@@ -213,6 +222,10 @@
                                     <form string="Additional Service">
                                         <group>
                                             <field name="product_id" />
+                                            <field name="from_date" invisible="product_id == False" />
+                                            <field name="to_date" invisible="product_id == False" />
+                                            <field name="uom" invisible="product_id == False" />
+                                            <field name="quantity" invisible="product_id == False" />
                                         </group>
                                     </form>
                                 </field>
@@ -245,7 +258,8 @@
                                 <field name="driver_id"
                                     invisible="is_driver_name_visible == True"
                                     readonly="state in ['done', 'cancel']"
-                                    required="state in ['dispatch']" options="{'no_create': True, 'no_open': True}" />
+                                    required="state in ['dispatch']"
+                                    options="{'no_create': True, 'no_open': True}" />
                                 <field name="driver_num" string="Contact No"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']" />
@@ -277,10 +291,11 @@
                                     </tree>
                                     <form>
                                         <group>
-                                            <field name="comment"/>
-                                            <field name="comment_date_and_time"/>
-                                            <field name="comment_user" options="{'no_create': True, 'no_open': True}"/>
-                                            <field name="comment_status"/>
+                                            <field name="comment" />
+                                            <field name="comment_date_and_time" />
+                                            <field name="comment_user"
+                                                options="{'no_create': True, 'no_open': True}" />
+                                            <field name="comment_status" />
                                         </group>
                                     </form>
                                 </field>
