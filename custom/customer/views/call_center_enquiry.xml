@@ -2,16 +2,20 @@
 <odoo>
 
     <data>
+        
         <!-- Main Enquiry Form View -->
         <record id="call_center_enquiry_view_form" model="ir.ui.view">
             <field name="name">aaa.enquiry.view.form</field>
             <field name="model">aaa.enquiry</field>
             <field name="arch" type="xml">
-                <form string="Enquiry" readonly="id != False">
+                <form string="Enquiry" readonly="state == 'saved'" >
+                    <div>
+                    <field name="name" />
+                    </div>
                     <header>
                         <button name="action_enquiry_complaint" string="Complaint or Enquiry" type="object"
-                                invisible="service_id == False or enquiry_type_id != False or complaint_type_id != False" />
-
+                                invisible="customer_id == False or enquiry_type_id != False or complaint_type_id != False or comment != False" />
+                      
                     </header>
                     <style>
                         .o_form_view:not(.o_field_highlight)
@@ -32,39 +36,43 @@
                         }
                     </style>
                     <sheet>
-                        <group string="Enquiry" col="3">
+                        <group string="Enquiry" col="4">
                             <group>
-                                
-                                <field name="customer_id" can_create="true" can_write="true" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
-                                <field name="member_id" invisible="customer_id == False" on_change="1" can_create="true" can_write="true" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
-                                <field name="service_id" invisible="member_id == False" can_create="true" can_write="true" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
-                                <field name="enq_id" string="Service id"/>
-                                <field name="is_enquiry" invisible="1" />
+                                <field name="state" invisible="1" />
+                                <field name="customer_id" can_create="true" can_write="true" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" readonly="state == 'saved'"  />
+                                <field name="member_id" invisible="customer_id == False" on_change="1" can_create="true" can_write="true" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" readonly="state == 'saved'" />
+                                <field name="service_id" invisible="member_id == False" can_create="true" can_write="true" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" readonly="state == 'saved'"/>
+                                <field name="enq_id" readonly="state == 'saved'"/>
+                                <field name="is_enquiry" invisible="1"  />
                                 <field name="show_enquiry_fields" invisible="1" />
                                 <field name="show_complaint_fields" invisible="1" />
-                                <!-- <button name="action_enquiry_complaint" string="Complaint or Enquiry" type="object"
-                                invisible="service_id == False or enquiry_type_id != False or complaint_type_id != False" /> -->
-
-                                <field name="enquiry_type_id" invisible="show_enquiry_fields == False" />
-                                <field name="enquiries_id" invisible="show_enquiry_fields == False" />
-                                <field name="complaint_type_id" invisible="show_complaint_fields == False" />
-                                <field name="complaints_id" invisible="show_complaint_fields == False" />
+                               
+                             
+                                <field name="enquiry_type_id" invisible="show_enquiry_fields == False " readonly="state == 'saved'"/>
+                                <field name="enquiries_id" invisible="show_enquiry_fields == False " readonly="state == 'saved'"/>
+                                <field name="complaint_type_id" invisible="show_complaint_fields == False " readonly="state == 'saved'"/>
+                                <field name="complaints_id" invisible="show_complaint_fields == False " readonly="state == 'saved'"/>
+                                
+                                
+                           
+                                
                             </group>
+                            
                             <group>
-                                <field name="mem_name" />
-                                <field name="membership" />
-                                <field name="mobile" />
+                                <field name="mem_name" readonly="state == 'saved'"/>
+                                <field name="membership" readonly="state == 'saved'"/>
+                                <field name="mobile" readonly="state == 'saved'"/>
                                 <field name="is_saved" invisible="1" />
-                                <field name="readonly_comment" invisible="1" />
-                                <field name="comment"/>
+                                
+                                <field name="comment" readonly="state == 'saved'"/>
 
                                 <field name="create_date" readonly="1" />
                             </group>
                             <group>
-                                <field name="vehicle_chasis_no" />
-                                <field name="vehicle_plate_no" />
-                                <field name="policy_no" />
-                                <field name="email" />
+                                <field name="vehicle_chasis_no" readonly="state == 'saved'"/>
+                                <field name="vehicle_plate_no" readonly="state == 'saved'"/>
+                                <field name="policy_no" readonly="state == 'saved'"/>
+                                <field name="email" readonly="state == 'saved'"/>
                                 <field name="created_by" readonly="1" can_create="true" can_write="true" />
                             </group>
                         </group>
