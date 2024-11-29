@@ -120,8 +120,9 @@ class AAAService(models.Model):
     quantity = fields.Float(string="Quantity")
     service_based = fields.Selection(related='product_id.service_based', store=True, readonly=True)
     
+    old_membership_number = fields.Char('Old Membership Number')
     
-    service_time = fields.Datetime(string="Service Time")
+    service_time = fields.Datetime(string="Service Date", default=fields.Datetime.now)
     cash_collected_hidden = fields.Boolean(string="Cash Collected Hidden")
     cash_collected = fields.Float(string="Cash Collected")     
     
@@ -139,7 +140,12 @@ class AAAService(models.Model):
     )
     # =========================================================================================================
    
-    driver_id = fields.Many2one('hr.employee', string="Driver")
+    driver_id = fields.Many2one(
+        'hr.employee',
+        string="Driver",
+        domain="[('job_id.name', '=', 'Driver')]"
+    )
+
     is_driver_name_visible = fields.Boolean(string='Display Driver Name',default=True)
     enquiry_ids = fields.One2many('aaa.enquiry','enq_id',string="Enquiries") # IN aaa.service  
     
@@ -918,31 +924,37 @@ class AAAService(models.Model):
         self.type = 'non_cash'
 
     def action_cancel_service(self):
-        self.state = 'cancel'
         for service in self:
-           
-                self.env['service.history'].create({
-                    'service_id': service.id,
-                    'user': self.env.user.id,
-                    'time': fields.Datetime.now(),
-                    'status': service.state,  
-                })
-                comment_content = service.comments or 'CANCELLED'
- 
-            # Create the service.comment record
-        self.env['service.comment'].create({
-            'service_id': service.id,
-            'comment': comment_content,
-            'comment_date_and_time': fields.Datetime.now(),
-            'comment_user': self.env.user.id,
-            'comment_status': service.state,
+            # Force setting the state to 'cancel'
+            service.sudo().write({'state': 'cancel'})
+
+            # Create a service history record
+            self.env['service.history'].sudo().create({
+                'service_id': service.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': 'cancel',  # Explicitly set the status
             })
- 
-            # If a manual comment exists, clear the service.comments field after creating the record
-        if service.comments:
-            service.comments = False
- 
+
+            # Use a default comment if no comment exists
+            comment_content = service.comments or 'CANCELLED'
+
+            # Create a service comment record
+            self.env['service.comment'].sudo().create({
+                'service_id': service.id,
+                'comment': comment_content,
+                'comment_date_and_time': fields.Datetime.now(),
+                'comment_user': self.env.user.id,
+                'comment_status': 'cancel',  # Explicitly set the status
+            })
+
+            # Clear the comments field if it had a manual comment
+            if service.comments:
+                service.sudo().write({'comments': False})
+
         return True
+
+
 
     def action_discard(self):
         self.state = 'discard'
@@ -984,7 +996,7 @@ class AAAService(models.Model):
     def action_create_enquiry(self):
         # Create a new enquiry record linked to the current service
         new_enquiry = self.env['aaa.enquiry'].create({
-            'name': self.name,
+            # 'name': self.name,
             'customer_id': self.customer_id.id,
             'member_id': self.member_id.id,
             'service_id': self.product_id.id,
