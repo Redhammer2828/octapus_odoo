@@ -19,6 +19,7 @@ class EnquiryComplaintWizard(models.TransientModel):
             'show_complaint_fields': False,
             'enquiry_type_id': False,   # Reset any potentially set fields
             'enquiries_id': False,     # Reset subtypes for enquiry
+            'state': 'draft',  # Default state is 'draft'
         })
 
         return {
@@ -42,6 +43,7 @@ class EnquiryComplaintWizard(models.TransientModel):
             'show_complaint_fields': True,
             'complaint_type_id': False,  # Reset any potentially set fields
             'complaints_id': False,      # Reset subtypes for complaints
+            'state': 'draft',  # Default state is 'draft'
         })
 
         return {

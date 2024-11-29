@@ -1,12 +1,18 @@
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError , UserError
+import datetime
+from datetime import timedelta,datetime
+import logging
+
+# Set up logging for debugging purposes
+_logger = logging.getLogger(__name__)
 
 class Enquiry(models.Model):
     _name = 'aaa.enquiry'
     _description = 'Enquiry'
 
     enquiry = fields.Char('enquiry')
-    name = fields.Char(string='Name', readonly=True)
+    name = fields.Char(string='Enq_NO.', readonly=True, default=lambda self: self._generate_enquiry_number())
     mem_name = fields.Char(string='Member Name')
     mobile = fields.Char(string='Mobile')
     email = fields.Char(string='Email')
@@ -22,8 +28,9 @@ class Enquiry(models.Model):
     customer_id = fields.Many2one('res.partner', string='Customer', domain="[('is_company', '=', True)]")
     member_id = fields.Many2one('res.partner', string='Member', domain="[('is_company', '=', False)]")
     service_id = fields.Many2one('product.template', string='Service', domain="[('bundle_product', '=', False)]")
- 
-    enq_id = fields.Many2one('aaa.service',string='Enq_Service',ondelete='cascade') #IN aaa.enquiry
+    service_no = fields.Char(string="Service Number")
+    
+    enq_id = fields.Many2one('aaa.service',string='Service Number',ondelete='cascade') #IN aaa.enquiry
     enquiry_type_id = fields.Many2one('enquiry.config', string='Enquiry Type')
     enquiries_id = fields.Many2one('enquiry.subtype', string='Enquiry Subtype', domain="[('enquiry_type_id','=',enquiry_type_id)]")
     complaint_type_id = fields.Many2one('complaint.config', string='Complaint Type')
@@ -32,27 +39,94 @@ class Enquiry(models.Model):
     # This field will control whether it's an enquiry or a complaint
     is_enquiry = fields.Boolean("Is Enquiry?", default=True)
     # New fields for managing visibility
-    show_enquiry_fields = fields.Boolean("Show Enquiry Fields", default=True)
+    show_enquiry_fields = fields.Boolean("Show Enquiry Fields", default=False)
     show_complaint_fields = fields.Boolean("Show Complaint Fields", default=False)
 
     is_saved = fields.Boolean(string="Is Saved", default=False)
-    readonly_comment = fields.Boolean(string="Readonly Comment", compute="_compute_readonly_comment", store=False)
+    #readonly_comment = fields.Boolean(string="Readonly Comment", compute="_compute_readonly_comment", store=False)
+    state = fields.Selection(
+        [('draft', 'Draft'), ('saved', 'Saved')],
+        string='State',
+        default='draft'
+    )
 
-    @api.depends('comment')
-    def _compute_readonly_comment(self):
-        """ This method will set the `readonly_comment` flag to True if the record is saved and the comment is set. """
-        for record in self:
-            # If record has a comment and is saved, set the flag to True
-            record.readonly_comment = bool(record.comment and record.id)
+    # @api.model
+    # def create(self, vals):
+    #     """Override the create method to ensure 'name' is auto-generated and open the wizard after creation."""
+    #     # Create the enquiry record
+    #     record = super(Enquiry, self).create(vals)
+
+    #     # After the record is created, trigger the wizard immediately
+    #     return self._trigger_enquiry_complaint_wizard(record)
+
+    # def _trigger_enquiry_complaint_wizard(self, record):
+    #     """Trigger the wizard after the record is created."""
+    #     return {
+    #         'type': 'ir.actions.act_window',
+    #         'res_model': 'enquiry.complaint.wizard',
+    #         'view_mode': 'form',
+    #         'view_id': self.env.ref('customer.view_enquiry_complaint_wizard_form').id,  # Replace with the correct view
+    #         'target': 'new',  # Open the wizard in a new window (modal)
+    #         'context': {
+    #             'default_enq_cm_id': record.id,  # Pass the Enquiry record ID to the wizard
+    #             'default_enquiry_type_id': False,
+    #             'default_enquiries_id': False,
+    #             'default_complaint_type_id': False,
+    #             'default_complaints_id': False,
+    #         },
+    #     }
+
+    @api.model
+    def _generate_enquiry_number(self):
+        """Generate a sequence number in the format ENQ/{current_month}/{current_year}/{sequence_number}."""
+        current_date = datetime.now()
+        current_month = current_date.strftime('%m')
+        current_year = current_date.strftime('%Y')
+
+        # Add placeholders for dynamic prefix values in ir.sequence
+        self.env['ir.sequence'].sudo().write({
+            'prefix': f"ENQ/{current_month}/{current_year}/"
+        })
+
+        sequence_number = self.env['ir.sequence'].next_by_code('aaa.enquiry.sequence') or '0001'
+        return sequence_number
 
     @api.model
     def create(self, vals):
-        """ Overridden create method to set `is_saved` field to True after the record is created """
+        """Override the create method to ensure 'name' is auto-generated."""
+        if not vals.get('name'):
+            vals['name'] = self._generate_enquiry_number()
+        return super(Enquiry, self).create(vals)
+    
+
+    @api.model
+    def default_get(self, fields):
+        res = super(Enquiry, self).default_get(fields)
+        # Ensure the state is set to 'draft' when opening the form from the Call Center form
+        if not self.env.context.get('active_id'):
+            res['state'] = 'draft'  # Default state is 'draft'
+        return res
+
+    def write(self, vals):
+        """Ensure that the state is updated to 'saved' after the form is saved."""
+        if 'state' not in vals and self.state == 'draft':
+            vals['state'] = 'saved'
+        return super(Enquiry, self).write(vals)
+    
+    @api.model
+    def create(self, vals):
+        """
+        Overridden create method to set `is_saved` to True after the record is created.
+        """
         record = super(Enquiry, self).create(vals)
-        
-        # After record creation, set is_saved to True
+        # Set is_saved to True after creation
         record.is_saved = True
         return record
+
+
+  
+
+
    
 
     def action_enquiry_complaint(self):
@@ -68,45 +142,7 @@ class Enquiry(models.Model):
                 'default_enq_cm_id': self.id,
             },
         }
-
-
-      # Compute method for readonly_comment
-    # @api.depends('comment', 'is_saved')
-    # def _compute_readonly_comment(self):
-    #     """ This method will set the `readonly_comment` flag to True if the record is saved and the comment is set. """
-    #     for record in self:
-    #         # If record has a comment and is saved, set the flag to True
-    #         record.readonly_comment = bool(record.comment and record.is_saved)
-
-    # # Overriding the create method to set `is_saved` after the record is created
-    # @api.model
-    # def create(self, vals):
-    #     """ Overridden create method to set `is_saved` field to True after the record is created """
-    #     record = super(Enquiry, self).create(vals)
-        
-    #     # After record creation, set is_saved to True
-    #     record.is_saved = True
-    #     return record
-
-    # # Action to open the wizard before creating the enquiry record
-    # def action_enquiry_complaint(self):
-    #     """ Logic to open the wizard before the enquiry record is created """
-    #     return {
-    #         'type': 'ir.actions.act_window',
-    #         'res_model': 'enquiry.complaint.wizard',
-    #         'view_mode': 'form',
-    #         'view_id': self.env.ref('customer.view_enquiry_complaint_wizard_form').id,
-    #         'target': 'new',  # To open the wizard in a new window
-    #         'context': {
-    #             'default_enq_cm_id': self.id,  # Pass the current record's ID or False initially
-    #         },
-    #     }
     
-
-    
-
-
-
     @api.onchange('enquiry_type_id')
     def _onchange_enquiry_type(self):
         if self.enquiry_type_id:

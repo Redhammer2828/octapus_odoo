@@ -102,20 +102,22 @@
                         <group col="3">
                             <group string="GENERAL INFORMATION" name="general_information">
                                 <field name="customer_id" string="Customer"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch'] or member_type == 'policy'"
                                     class="required_field" required="1"
                                     options="{'no_create': True, 'no_open': True}" />
                                 <field name="credit_customer_co" string="Customer C/O"
-                                    readonly="state in['cancel', 'done']" />
+                                    readonly="state in['cancel', 'done']"
+                                     invisible="member_type in ('policy', 'adhoc')" />
                                 <field name="sequence_id" string="Customer Category"
                                     class="required_field"
                                     required="1" options="{'no_create': True, 'no_open': True}"
-                                    readonly="state in['cancel', 'done']" />
+                                    readonly="state in['cancel', 'done'] or member_type == 'policy'" />
                                 <field name="member_id" string="Member"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']"
+                                    readonly="state not in ['draft', 'initiate', 'dispatch'] or member_type == 'policy'"
                                     class="required_field" required="1"
                                     options="{'no_create': True, 'no_open': True}" />
-                                <field name="membership_num" readonly="state in['cancel', 'done']" />
+                                <field name="membership_num"
+                                    readonly="state in['cancel', 'done'] or member_type == 'policy'" />
                                 <field name="member_contact_no" string="Mobile Number"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="email" string="Email"
@@ -128,8 +130,11 @@
                                     readonly="state not in ['draft', 'initiate', 'dispatch']"
                                     invisible="schedule_service_check == False"
                                     required="schedule_service_check == True" />
+                                <field name="service_time"
+                                    readonly="1"/>
                                 <field name="requested_date"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch']"
+                                    invisible="schedule_service_check == False" />
                                 <field name="driving_license" string="Driving License"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="claim_number" readonly="state == 'done'" />
@@ -144,19 +149,21 @@
                             </group>
                             <group string="VEHICLE DETAILS" name="vehicle_details">
                                 <field name="vehicle_type" string="Vehicle Type"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch','start','reach']" />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch','start','reach'] or member_type == 'policy'" />
                                 <field name="vehicle_model" string="Vehicle Model"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch','start','reach']" />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch','start','reach'] or member_type == 'policy'" />
                                 <field name="vehicle_plate" string="Vehicle Plate"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch'] or member_type == 'policy'" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch'] or vehicle_chasis_no != False " />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch'] or vehicle_chasis_no != False or member_type == 'policy'" />
                                 <field name="policy_no" string="Policy No"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch'] or policy_no != False" />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch'] or policy_no != False or member_type == 'policy'" />
                                 <field name="member_activate_date"
-                                    readonly="member_activate_date != False" />
+                                    readonly="member_activate_date != False or member_type == 'policy'"
+                                    invisible="member_type in ('credit', 'adhoc')" />
                                 <field name="member_expiry_date"
-                                    readonly="member_expiry_date != False" />
+                                    readonly="member_expiry_date != False or member_type == 'policy'"
+                                    invisible="member_type in ('credit', 'adhoc')" />
                             </group>
                             <group string="SERVICE DETAILS" name="service_details">
                                 <group class="product_field">
@@ -180,8 +187,9 @@
                                         required="1" readonly="state in['cancel', 'done']" />
                                     <field name="is_imported" invisible="1" />
                                     <field name="from_location"
-                                        invisible="not (is_imported or member_type == 'credit')"
-                                        options="{'no_create': True, 'no_open': True}" readonly="state in['cancel', 'done']"/>
+                                        invisible="not (is_imported or member_type == 'credit') or service_based in ('location', 'location_duration')"
+                                        options="{'no_create': True, 'no_open': True}"
+                                        readonly="state in ('cancel', 'done')" />
                                     <field name="from_location_emirate"
                                         style="font-weight: 500;color: #28a745;"
                                         invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'location_duration') or (member_type == 'credit')" />
@@ -193,7 +201,8 @@
                                         invisible="(is_imported == True) or (member_type == 'credit')" />
                                     <field name="to_location"
                                         invisible="not (is_imported or member_type == 'credit')"
-                                        options="{'no_create': True, 'no_open': True}" readonly="state in['cancel', 'done']"/>
+                                        options="{'no_create': True, 'no_open': True}"
+                                        readonly="state in['cancel', 'done']" />
                                     <field name="to_location_emirate"
                                         style="font-weight: 500;color: #28a745;"
                                         invisible="(is_imported == True) or (member_type == 'credit')" />

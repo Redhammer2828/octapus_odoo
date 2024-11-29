@@ -8,19 +8,22 @@
             <field name="arch" type="xml">
                 <tree string="" create="False" duplicate="false">
                     <field name="name" />
-                    <field name="service_time" />
+                    <field name="service_time" string="Service Date" />
                     <field name="customer_id" />
                     <field name="member_id" />
-                    <field name="member_contact_no" />
-                    <field name="vehicle_plate" />
+                    <field name="member_contact_no" string="Mobile Number" />
                     <field name="vehicle_type" />
-                    <field name="product_id" />
-                    <field name="driver_name" />
-                    <field name="state" string="State" />
+                    <!-- <field name="vehicle_plate" /> -->
+                    <field name="product_id" string="Service" />
+                    <field name="from_location" string="From" />
+                    <field name="to_location" string="To" />
+                    <field name="provider_id" string="Provider" />
+                    <field name="created_by" string="Agent" />
+                    <field name="state" string="Status" />
                 </tree>
             </field>
         </record>
-               <!-- Define the search view -->
+        <!-- Define the search view -->
         <record id="call_center_all_service_view_search" model="ir.ui.view">
             <field name="name">call.center.all.service.view.search</field>
             <field name="model">aaa.service</field>
@@ -28,19 +31,28 @@
                 <search>
                     <!-- Search fields -->
                     <field name="name" />
-                    <field name="service_time" />
-                    <field name="customer_id" />
+                    <field name="created_by" />
+                    <field name="product_id" string="Service" />
+                    <field name="requested_date" />
                     <field name="member_id" />
+                    <field name="customer_id" />
+                    <field name="membership_num" />
+                    <field name="old_membership_number" />
                     <field name="member_contact_no" />
-                    <field name="vehicle_plate" />
+                    <!-- <field name="driving_license" /> -->
                     <field name="vehicle_type" />
-                    <field name="product_id" />
+                    <field name="vehicle_model" />
+                    <field name="vehicle_plate" />
+                    <field name="vehicle_chasis_no" />
+                    <field name="policy_no" string="Policy Number" />
+                    <field name="provider_id" string="Provider" />
                     <field name="driver_name" />
                     <field name="state" string="State" />
+                    <field name="credit_proforma_number" string="Trip Sheet Number" />
                     <!-- Default filter for today's records -->
-                    <filter 
-                        name="today_records" 
-                        string="Today's Records" 
+                    <filter
+                        name="today_records"
+                        string="Today's Records"
                         domain="[('service_time', '>=', (context_today())), ('service_time', '&lt;', (context_today() + 1))]"
                         context="{'group_by': 'service_time'}"
                     />
@@ -51,7 +63,7 @@
             <field name="name">All Service</field>
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree,form</field>
-             <field name="search_view_id" ref="call_center_all_service_view_search" />
+            <field name="search_view_id" ref="call_center_all_service_view_search" />
             <field name="domain">[]</field>
             <field name="context">{}</field>
             <field name="view_ids"
@@ -63,7 +75,6 @@
             </field>
         </record>
 
-        
 
         <record id="call_center_to_dispatch_service_action" model="ir.actions.act_window">
             <field name="name">To Dispatch</field>
@@ -72,12 +83,12 @@
             <field name="domain">[('state', '=', 'dispatch')]</field>
             <field name="context">{}</field>
             <field name="view_ids"
-            eval="[
+                eval="[
               (5, 0, 0),
               (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
               (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
             ]">
-        </field>
+            </field>
         </record>
         <record id="call_center_in_progress_service_action" model="ir.actions.act_window">
             <field name="name">In Progress</field>
@@ -86,12 +97,12 @@
             <field name="domain">[('state', 'in', ['inprogress', 'start', 'reach'])]</field>
             <field name="context">{}</field>
             <field name="view_ids"
-            eval="[
+                eval="[
               (5, 0, 0),
               (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
               (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
             ]">
-        </field>
+            </field>
         </record>
         <record id="call_center_completed_service_action" model="ir.actions.act_window">
             <field name="name">Completed</field>
@@ -100,12 +111,12 @@
             <field name="domain">[('state', '=', 'done')]</field>
             <field name="context">{}</field>
             <field name="view_ids"
-            eval="[
+                eval="[
               (5, 0, 0),
               (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
               (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
             ]">
-        </field>
+            </field>
         </record>
         <record id="call_center_cancelled_service_action" model="ir.actions.act_window">
             <field name="name">Cancelled</field>
@@ -114,12 +125,12 @@
             <field name="domain">[('state', '=', 'cancel')]</field>
             <field name="context">{}</field>
             <field name="view_ids"
-            eval="[
+                eval="[
               (5, 0, 0),
               (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
               (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
             ]">
-        </field>
+            </field>
         </record>
         <record id="call_center_requested_service_action" model="ir.actions.act_window">
             <field name="name">Requested</field>
@@ -128,12 +139,27 @@
             <field name="domain">[('state', '=','requested')]</field>
             <field name="context">{}</field>
             <field name="view_ids"
-            eval="[
+                eval="[
               (5, 0, 0),
               (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
               (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
             ]">
-        </field>
+            </field>
+        </record>
+        <record id="call_center_initiate_service_action" model="ir.actions.act_window">
+            <field name="name">Scheduled</field>
+            <field name="res_model">aaa.service</field>
+            <field name="view_mode">tree</field>
+            <field name="domain">[('state', '=', 'initiate'), ('schedule_date_time', '!=', False),
+                ('requested_date', '!=', False)]</field>
+            <field name="context">{}</field>
+            <field name="view_ids"
+                eval="[ 
+                    (5, 0, 0),
+                    (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
+                    (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
+                ]">
+            </field>
         </record>
         <menuitem
             id="menu_all_service_root"
@@ -167,21 +193,28 @@
             name="Completed"
             parent="menu_all_service_root"
             action="call_center_completed_service_action"
-            sequence="4"
+            sequence="5"
         />
         <menuitem
             id="menu_cancelled_service"
             name="Cancelled"
             parent="menu_all_service_root"
             action="call_center_cancelled_service_action"
-            sequence="5"
+            sequence="6"
         />
         <menuitem
             id="menu_requested_service"
             name="Requested Services"
             parent="menu_all_service_root"
             action="call_center_requested_service_action"
-            sequence="6"
+            sequence="7"
+        />
+        <menuitem
+            id="menu_scheduled_service"
+            name="Scheduled"
+            parent="menu_all_service_root"
+            action="call_center_initiate_service_action"
+            sequence="4"
         />
     </data>
 </odoo>
