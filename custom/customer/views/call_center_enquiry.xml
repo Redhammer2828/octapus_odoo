@@ -2,82 +2,99 @@
 <odoo>
 
     <data>
-        
+
         <!-- Main Enquiry Form View -->
         <record id="call_center_enquiry_view_form" model="ir.ui.view">
             <field name="name">aaa.enquiry.view.form</field>
             <field name="model">aaa.enquiry</field>
             <field name="arch" type="xml">
-                <form string="Enquiry" readonly="state == 'saved'" >
+                <form string="Enquiry" readonly="state == 'saved'" create="False">
                     <div>
-                    <field name="name" />
+                        <field name="name" style="font-weight: bold; color: green;" />
+
                     </div>
-                    <header>
-                        <button name="action_enquiry_complaint" string="Complaint or Enquiry" type="object"
-                                invisible="customer_id == False or enquiry_type_id != False or complaint_type_id != False or comment != False" />
-                      
-                    </header>
+                    <!-- <header>
+                        <button name="action_enquiry_complaint" string="Complaint or Enquiry"
+                            type="object"
+                            invisible="customer_id == False or enquiry_type_id != False or complaint_type_id != False or
+                    comment != False" />
+
+                    </header> -->
                     <style>
                         .o_form_view:not(.o_field_highlight)
                         .o_field_widget:not(.o_field_invalid):not(.o_field_highlight)
                         .o_input:not(:hover):not(:focus)
                         {
-                            border-bottom: 1px solid #71639e2b;
+                        border-bottom: 1px solid #71639e2b;
                         }
                         .addon_tree{
-                            height:100%;
-                            width:320px !important;
+                        height:100%;
+                        width:320px !important;
                         }
                         .product_field{
-                            width: 100%;
+                        width: 100%;
                         }
                         .required_field{
-                            background-color: #b9a4ff29;
+                        background-color: #b9a4ff29;
                         }
                     </style>
                     <sheet>
                         <group string="Enquiry" col="4">
                             <group>
                                 <field name="state" invisible="1" />
-                                <field name="customer_id" can_create="true" can_write="true" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" readonly="state == 'saved'"  />
-                                <field name="member_id" invisible="customer_id == False" on_change="1" can_create="true" can_write="true" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" readonly="state == 'saved'" />
-                                <field name="service_id" invisible="member_id == False" can_create="true" can_write="true" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" readonly="state == 'saved'"/>
-                                <field name="enq_id" readonly="state == 'saved'"/>
-                                <field name="is_enquiry" invisible="1"  />
+                                <field name="customer_id" can_create="true" can_write="true"
+                                    options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
+                                    readonly="state == 'saved'" />
+                                <field name="member_id" invisible="customer_id == False"
+                                    on_change="1" can_create="true" can_write="true"
+                                    options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
+                                    readonly="state == 'saved'" />
+                                <field name="service_id" invisible="member_id == False"
+                                    can_create="true" can_write="true"
+                                    options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
+                                    readonly="state == 'saved'" />
+                                <field name="enq_id" readonly="state == 'saved'" />
+                                <field name="is_enquiry" invisible="1" />
                                 <field name="show_enquiry_fields" invisible="1" />
                                 <field name="show_complaint_fields" invisible="1" />
-                               
-                             
-                                <field name="enquiry_type_id" invisible="show_enquiry_fields == False " readonly="state == 'saved'"/>
-                                <field name="enquiries_id" invisible="show_enquiry_fields == False " readonly="state == 'saved'"/>
-                                <field name="complaint_type_id" invisible="show_complaint_fields == False " readonly="state == 'saved'"/>
-                                <field name="complaints_id" invisible="show_complaint_fields == False " readonly="state == 'saved'"/>
-                                
-                                
-                           
-                                
+
+
+                                <field name="enquiry_type_id"
+                                    invisible="show_enquiry_fields == False "
+                                    readonly="state == 'saved'" />
+                                <field name="enquiries_id" invisible="show_enquiry_fields == False "
+                                    readonly="state == 'saved'" />
+                                <field name="complaint_type_id"
+                                    invisible="show_complaint_fields == False "
+                                    readonly="state == 'saved'" />
+                                <field name="complaints_id"
+                                    invisible="show_complaint_fields == False "
+                                    readonly="state == 'saved'" />
+
+
                             </group>
-                            
+
                             <group>
-                                <field name="mem_name" readonly="state == 'saved'"/>
-                                <field name="membership" readonly="state == 'saved'"/>
-                                <field name="mobile" readonly="state == 'saved'"/>
+                                <field name="mem_name" readonly="state == 'saved'" />
+                                <field name="membership" readonly="state == 'saved'" />
+                                <field name="mobile" readonly="state == 'saved'" />
                                 <field name="is_saved" invisible="1" />
-                                
-                                <field name="comment" readonly="state == 'saved'"/>
+
+                                <field name="comment" readonly="state == 'saved'" />
 
                                 <field name="create_date" readonly="1" />
                             </group>
                             <group>
-                                <field name="vehicle_chasis_no" readonly="state == 'saved'"/>
-                                <field name="vehicle_plate_no" readonly="state == 'saved'"/>
-                                <field name="policy_no" readonly="state == 'saved'"/>
-                                <field name="email" readonly="state == 'saved'"/>
-                                <field name="created_by" readonly="1" can_create="true" can_write="true" />
+                                <field name="vehicle_chasis_no" readonly="state == 'saved'" />
+                                <field name="vehicle_plate_no" readonly="state == 'saved'" />
+                                <field name="policy_no" readonly="state == 'saved'" />
+                                <field name="email" readonly="state == 'saved'" />
+                                <field name="created_by" readonly="1" can_create="true"
+                                    can_write="true" />
                             </group>
                         </group>
 
-                        
+
                     </sheet>
                 </form>
             </field>
@@ -90,13 +107,13 @@
                 <form string="Enquiry Type">
                     <sheet>
                         <group>
-                            <field name="name"/>
+                            <field name="name" />
                         </group>
                         <group>
                             <!-- One2many field to display subtypes -->
                             <field name="subtype_ids">
                                 <tree string="Enquiry Subtypes">
-                                    <field name="name"/>
+                                    <field name="name" />
                                 </tree>
                             </field>
                         </group>
@@ -112,8 +129,8 @@
                 <form string="Enquiry Subtype">
                     <sheet>
                         <group>
-                            <field name="name"/>
-                            <field name="enquiry_type_id"/>
+                            <field name="name" />
+                            <field name="enquiry_type_id" />
                         </group>
                     </sheet>
                 </form>
@@ -127,13 +144,13 @@
                 <form string="Complaint Type">
                     <sheet>
                         <group>
-                            <field name="name"/>
+                            <field name="name" />
                         </group>
                         <group>
                             <!-- One2many field to display subtypes -->
                             <field name="subtype_ids">
                                 <tree string="Complaint Subtypes">
-                                    <field name="name"/>
+                                    <field name="name" />
                                 </tree>
                             </field>
                         </group>
@@ -149,8 +166,8 @@
                 <form string="Complaint Subtype">
                     <sheet>
                         <group>
-                            <field name="name"/>
-                            <field name="complaint_type_id"/>
+                            <field name="name" />
+                            <field name="complaint_type_id" />
                         </group>
                     </sheet>
                 </form>
@@ -160,8 +177,8 @@
             <field name="name">aaa.enquiry.view.tree</field>
             <field name="model">aaa.enquiry</field>
             <field name="arch" type="xml">
-                <tree string="Enquiry">
-                    <field name="name" />
+                <tree string="Enquiry" create="False">
+                    <field name="name" string="Enquiry No." />
                     <field name="customer_id" can_create="true" can_write="true" />
                     <field name="member_id" on_change="1" can_create="true" can_write="true" />
                     <field name="service_id" can_create="true" can_write="true" />
@@ -183,7 +200,7 @@
             <field name="model">enquiry.config</field>
             <field name="arch" type="xml">
                 <tree string="Enquiry Type">
-                    <field name="name"/>
+                    <field name="name" />
                 </tree>
             </field>
         </record>
@@ -193,8 +210,8 @@
             <field name="model">enquiry.subtype</field>
             <field name="arch" type="xml">
                 <tree string="Enquiry Subtypes">
-                    <field name="name"/>
-                    <field name="enquiry_type_id"/>
+                    <field name="name" />
+                    <field name="enquiry_type_id" />
                 </tree>
             </field>
         </record>
@@ -204,7 +221,7 @@
             <field name="arch" type="xml">
                 <tree string="Complaint Type">
 
-                    <field name="name"/>
+                    <field name="name" />
                 </tree>
             </field>
         </record>
@@ -214,29 +231,56 @@
             <field name="model">complaint.subtype</field>
             <field name="arch" type="xml">
                 <tree string="Complaint Subtypes">
-                    <field name="name"/>
-                    <field name="complaint_type_id"/>
+                    <field name="name" />
+                    <field name="complaint_type_id" />
                 </tree>
+            </field>
+        </record>
+        <!-- Define the search view -->
+        <record id="call_center_enquiry_view_search" model="ir.ui.view">
+            <field name="name">call.center.enquiry.view.search</field>
+            <field name="model">aaa.enquiry</field>
+            <field name="arch" type="xml">
+                <search>
+
+                    <field name="name" string="Enquiry No."/>
+                    <field name="customer_id" can_create="true" can_write="true" />
+                    <field name="member_id" on_change="1" can_create="true" can_write="true" />
+                    <field name="service_id" can_create="true" can_write="true" />
+                    <field name="mem_name" />
+                    <field name="membership" />
+                    <field name="create_date" />
+                    <field name="mobile" />
+                    <field name="email" />
+                    <field name="comment" />
+                    <field name="vehicle_chasis_no" />
+                    <field name="vehicle_plate_no" />
+                    <field name="policy_no" />
+                    <field name="created_by" readonly="1" can_create="true" can_write="true" />
+                </search>
             </field>
         </record>
         <record id="action_call_center_enquiry" model="ir.actions.act_window">
             <field name="name">Enquiry</field>
             <field name="res_model">aaa.enquiry</field>
             <field name="view_mode">tree,form</field>
-            <field name="view_ids" eval="[
+            <field name="search_view_id" ref="call_center_enquiry_view_search" />
+            <field name="view_ids"
+                eval="[
           (5, 0, 0),
           (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_enquiry_view_tree')}),
           (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_enquiry_view_form')})
         ]">
             </field>
-            
+
         </record>
-        
+
         <record id="action_enquiry_config" model="ir.actions.act_window">
             <field name="name">Enquiry Type</field>
             <field name="res_model">enquiry.config</field>
             <field name="view_mode">tree,form</field>
-            <field name="view_ids" eval="[
+            <field name="view_ids"
+                eval="[
           (5, 0, 0),
           (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.enquiry_config_view_tree')}),
           (0, 0, {'view_mode': 'form', 'view_id': ref('customer.enquiry_config_view_form')})
@@ -248,7 +292,8 @@
             <field name="name">Enquiry Subtypes</field>
             <field name="res_model">enquiry.subtype</field>
             <field name="view_mode">tree,form</field>
-            <field name="view_ids" eval="[
+            <field name="view_ids"
+                eval="[
         (5, 0, 0),
         (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.view_enquiry_subtype_tree')}),
         (0, 0, {'view_mode': 'form', 'view_id': ref('customer.view_enquiry_subtype_form')})
@@ -260,7 +305,8 @@
             <field name="name">Complaint</field>
             <field name="res_model">complaint.config</field>
             <field name="view_mode">tree,form</field>
-            <field name="view_ids" eval="[
+            <field name="view_ids"
+                eval="[
           (5, 0, 0),
           (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.complaint_config_view_tree')}),
           (0, 0, {'view_mode': 'form', 'view_id': ref('customer.complaint_config_view_form')})
@@ -272,7 +318,8 @@
             <field name="name">Complaint Subtypes</field>
             <field name="res_model">complaint.subtype</field>
             <field name="view_mode">tree,form</field>
-            <field name="view_ids" eval="[
+            <field name="view_ids"
+                eval="[
             (5, 0, 0),
             (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.view_complaint_subtype_tree')}),
             (0, 0, {'view_mode': 'form', 'view_id': ref('customer.view_complaint_subtype_form')})
@@ -280,12 +327,30 @@
             </field>
         </record>
 
-        <menuitem id="menu_enquiry" name="Enquiry" parent="menu_call_center_root" action="action_call_center_enquiry" sequence="10" />
-        <menuitem id="menu_call_center_configuration" name="Configuration" parent="menu_call_center_root" sequence="20" />
-        <menuitem id="menu_enquiry_config" name="Enquiry Type" parent="menu_call_center_configuration" action="action_enquiry_config" sequence="10" />
-        <menuitem id="menu_enquiry_subtype" name="Enquiry SubType" parent="menu_call_center_configuration" action="action_enquiry_subtype" sequence="10" />
-        <menuitem id="menu_complaint_config" name="Complaint Type" parent="menu_call_center_configuration" action="action_complaint_config" sequence="10" />
-        <menuitem id="menu_complaint_subtype" name="Complaint SubType" parent="menu_call_center_configuration" action="action_complaint_subtype" sequence="10" />
+        <record id="action_enquiry_complaint_wizard" model="ir.actions.act_window">
+            <field name="name">Enquiry Complaint Wizard</field>
+            <field name="res_model">enquiry.complaint.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="customer.view_enquiry_complaint_wizard_form" />
+            <field name="target">new</field>
+        </record>
+
+
+        <menuitem id="menu_enquiry_root" name="Enquiry" parent="menu_call_center_root" sequence="10" />
+        <menuitem id="menu_enquiry_complaint_wizard" name="New Enquiry" parent="menu_enquiry_root"
+            action="action_enquiry_complaint_wizard" sequence="10" />
+        <menuitem id="menu_enquiry_list" name="Enquiry List" parent="menu_enquiry_root"
+            action="action_call_center_enquiry" sequence="10" />
+        <menuitem id="menu_call_center_configuration" name="Configuration"
+            parent="menu_call_center_root" sequence="20" />
+        <menuitem id="menu_enquiry_config" name="Enquiry Type"
+            parent="menu_call_center_configuration" action="action_enquiry_config" sequence="10" />
+        <menuitem id="menu_enquiry_subtype" name="Enquiry SubType"
+            parent="menu_call_center_configuration" action="action_enquiry_subtype" sequence="10" />
+        <menuitem id="menu_complaint_config" name="Complaint Type"
+            parent="menu_call_center_configuration" action="action_complaint_config" sequence="10" />
+        <menuitem id="menu_complaint_subtype" name="Complaint SubType"
+            parent="menu_call_center_configuration" action="action_complaint_subtype" sequence="10" />
 
     </data>
 

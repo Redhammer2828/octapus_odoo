@@ -7,19 +7,19 @@ class EnquiryComplaintWizard(models.TransientModel):
     is_enquiry = fields.Boolean("Is Enquiry?", default=True)
     enq_cm_id = fields.Many2one('aaa.enquiry', string="ENQ_COMPL")
 
-    def action_enquiry(self):
-        """Open the enquiry form and ensure no default values are prefetched."""
-        active_id = self.env.context.get('default_enq_cm_id')
-        enquiry_record = self.env['aaa.enquiry'].browse(active_id)
 
-        # Set flags to ensure correct fields are shown
-        enquiry_record.write({
+
+
+    def action_enquiry(self):
+        """Open the enquiry form for a new record with no prefilled data."""
+        # Create a new enquiry record with appropriate field visibility settings
+        enquiry_record = self.env['aaa.enquiry'].create({
             'is_enquiry': True,
             'show_enquiry_fields': True,
             'show_complaint_fields': False,
-            'enquiry_type_id': False,   # Reset any potentially set fields
-            'enquiries_id': False,     # Reset subtypes for enquiry
-            'state': 'draft',  # Default state is 'draft'
+            'enquiry_type_id': False,   # Ensure these fields are empty
+            'enquiries_id': False,     # Ensure these fields are empty
+            'state': 'draft',          # Default state is 'draft'
         })
 
         return {
@@ -32,18 +32,15 @@ class EnquiryComplaintWizard(models.TransientModel):
         }
 
     def action_complaint(self):
-        """Open the complaint form and ensure no default values are prefetched."""
-        active_id = self.env.context.get('default_enq_cm_id')
-        enquiry_record = self.env['aaa.enquiry'].browse(active_id)
-
-        # Set flags to ensure correct fields are shown
-        enquiry_record.write({
+        """Open the complaint form for a new record with no prefilled data."""
+        # Create a new complaint record with appropriate field visibility settings
+        enquiry_record = self.env['aaa.enquiry'].create({
             'is_enquiry': False,
             'show_enquiry_fields': False,
             'show_complaint_fields': True,
-            'complaint_type_id': False,  # Reset any potentially set fields
-            'complaints_id': False,      # Reset subtypes for complaints
-            'state': 'draft',  # Default state is 'draft'
+            'complaint_type_id': False,  # Ensure these fields are empty
+            'complaints_id': False,      # Ensure these fields are empty
+            'state': 'draft',            # Default state is 'draft'
         })
 
         return {
@@ -63,3 +60,5 @@ class EnquiryComplaintWizard(models.TransientModel):
             'default_complaint_type_id': False,
             'default_complaints_id': False,
         }
+
+    
