@@ -335,59 +335,103 @@ class AAAService(models.Model):
             else:
                 self.is_driver_name_visible = True  # Show driver_name and hide driver_id
         
+    # @api.onchange('customer_id')
+    # def _onchange_customer_id(self):
+    #     context = self.env.context
+    #     for record in self:
+    #         if not record.customer_id:
+    #             # Clear fields if customer_id is empty
+    #             record.sequence_id = False
+    #             record.member_id = False
+    #             continue
+ 
+    #         member_type = context.get('default_member_type')
+    #         member_type_conditions = ['credit', 'adhoc']
+    #         type_conditions = ['non_cash', 'cash']
+ 
+    #         # Ensure the context has a valid combination of 'default_member_type' and 'default_type'
+    #         if (
+    #             member_type in member_type_conditions
+    #             and context.get('default_type') in type_conditions
+    #         ):
+    #             # Fetch the sequence associated with the customer_id
+    #             sequence = self.env['partner.category'].search(
+    #                 [
+    #                     ('partner_id', '=', record.customer_id.id),
+    #                     ('member_type', '=', member_type),
+    #                 ],
+    #                 limit=1,
+    #             )
+    #             if sequence:
+    #                 record.sequence_id = sequence.id
+    #                 # Update member_id based on the sequence's default_member
+    #                 record.member_id = sequence.default_member.id if sequence.default_member else False
+    #             else:
+    #                 # If no sequence is found, directly fetch member_id
+    #                 record.sequence_id = False
+    #                 member = self.env['res.partner'].search(
+    #                     [
+    #                         ('parent_customer_id', '=', record.customer_id.id),
+    #                         ('member_type', '=', member_type),
+    #                     ],
+    #                     limit=1,
+    #                 )
+    #                 record.member_id = member.id if member else False
+
     @api.onchange('customer_id')
     def _onchange_customer_id(self):
-        context = self.env.context
         for record in self:
             if not record.customer_id:
                 # Clear fields if customer_id is empty
-                record.sequence_id = False
                 record.member_id = False
+                record.sequence_id = False
                 continue
  
-            member_type = context.get('default_member_type')
-            member_type_conditions = ['credit', 'adhoc']
-            type_conditions = ['non_cash', 'cash']
+            # Filter members under the selected customer_id based on parent_customer_id and member_type == 'credit'
+            members = self.env['res.partner'].search([
+                ('parent_customer_id', '=', record.customer_id.id),
+                ('member_type', '=', 'credit'),  # Only look for 'credit' members
+            ])
  
-            # Ensure the context has a valid combination of 'default_member_type' and 'default_type'
-            if (
-                member_type in member_type_conditions
-                and context.get('default_type') in type_conditions
-            ):
-                # Fetch the sequence associated with the customer_id
-                sequence = self.env['partner.category'].search(
-                    [
-                        ('partner_id', '=', record.customer_id.id),
-                        ('member_type', '=', member_type),
-                    ],
-                    limit=1,
-                )
-                if sequence:
-                    record.sequence_id = sequence.id
-                    # Update member_id based on the sequence's default_member
-                    record.member_id = sequence.default_member.id if sequence.default_member else False
+            if members:
+                # If valid 'credit' members are found, use the first one
+                member = members[0]  # Select the first matching member
+                record.member_id = member.id  # Update member_id
+               
+                # Fetch the corresponding member_partner_category_id of the selected member
+                partner_category = member.member_partner_category_id
+                if partner_category:
+                    record.sequence_id = partner_category.id  # Update sequence_id
                 else:
-                    # If no sequence is found, directly fetch member_id
-                    record.sequence_id = False
-                    member = self.env['res.partner'].search(
-                        [
-                            ('parent_customer_id', '=', record.customer_id.id),
-                            ('member_type', '=', member_type),
-                        ],
-                        limit=1,
-                    )
-                    record.member_id = member.id if member else False
+                    record.sequence_id = False  # Clear sequence_id if no category found
+            else:
+                # If no members are found, clear the fields
+                record.member_id = False
+                record.sequence_id = False
+ 
  
     @api.onchange('sequence_id')
     def _onchange_sequence_id(self):
         for record in self:
-            if record.sequence_id:
-                # Update member_id based on the selected sequence_id
-                sequence = self.env['partner.category'].browse(record.sequence_id.id)
-                record.member_id = sequence.default_member.id if sequence.default_member else False
-            else:
+            if not record.sequence_id:
                 # Clear member_id if sequence_id is cleared
                 record.member_id = False
+                continue
+ 
+            # Fetch the corresponding member_id based on the selected sequence_id
+            partner_category = self.env['partner.category'].browse(record.sequence_id.id)
+            if partner_category:
+                # Find the member associated with this partner category
+                member = self.env['res.partner'].search([
+                    ('member_partner_category_id', '=', partner_category.id),
+                    ('member_type', '=', 'credit')  # Only look for 'credit' members
+                ], limit=1)
+                if member:
+                    record.member_id = member.id  # Update member_id with the fetched member
+                else:
+                    record.member_id = False  # Clear member_id if no member is found
+            else:
+                record.member_id = False  # Clear member_id if no valid category is found
 
     @api.model
     def create(self, vals):
