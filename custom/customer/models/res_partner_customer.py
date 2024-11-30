@@ -65,7 +65,7 @@ class ResPartnerCustomer(models.Model):
 class PartnerCategory(models.Model):
     _name = 'partner.category'
     _description = 'Partner Category'
-    _rec_name = 'description'
+    # _rec_name = 'description'
 
     partner_id = fields.Many2one('res.partner', string='Partner', inverse_name='customer_category_ids')
 
