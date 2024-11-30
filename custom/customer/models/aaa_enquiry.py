@@ -50,31 +50,7 @@ class Enquiry(models.Model):
         default='draft'
     )
 
-    # @api.model
-    # def create(self, vals):
-    #     """Override the create method to ensure 'name' is auto-generated and open the wizard after creation."""
-    #     # Create the enquiry record
-    #     record = super(Enquiry, self).create(vals)
-
-    #     # After the record is created, trigger the wizard immediately
-    #     return self._trigger_enquiry_complaint_wizard(record)
-
-    # def _trigger_enquiry_complaint_wizard(self, record):
-    #     """Trigger the wizard after the record is created."""
-    #     return {
-    #         'type': 'ir.actions.act_window',
-    #         'res_model': 'enquiry.complaint.wizard',
-    #         'view_mode': 'form',
-    #         'view_id': self.env.ref('customer.view_enquiry_complaint_wizard_form').id,  # Replace with the correct view
-    #         'target': 'new',  # Open the wizard in a new window (modal)
-    #         'context': {
-    #             'default_enq_cm_id': record.id,  # Pass the Enquiry record ID to the wizard
-    #             'default_enquiry_type_id': False,
-    #             'default_enquiries_id': False,
-    #             'default_complaint_type_id': False,
-    #             'default_complaints_id': False,
-    #         },
-    #     }
+   
 
     @api.model
     def _generate_enquiry_number(self):
@@ -99,49 +75,20 @@ class Enquiry(models.Model):
         return super(Enquiry, self).create(vals)
     
 
-    @api.model
-    def default_get(self, fields):
-        res = super(Enquiry, self).default_get(fields)
-        # Ensure the state is set to 'draft' when opening the form from the Call Center form
-        if not self.env.context.get('active_id'):
-            res['state'] = 'draft'  # Default state is 'draft'
-        return res
+
+
+
 
     def write(self, vals):
         """Ensure that the state is updated to 'saved' after the form is saved."""
         if 'state' not in vals and self.state == 'draft':
             vals['state'] = 'saved'
         return super(Enquiry, self).write(vals)
-    
-    @api.model
-    def create(self, vals):
-        """
-        Overridden create method to set `is_saved` to True after the record is created.
-        """
-        record = super(Enquiry, self).create(vals)
-        # Set is_saved to True after creation
-        record.is_saved = True
-        return record
-
-
   
 
 
    
 
-    def action_enquiry_complaint(self):
-        
-        # Your logic to open the wizard
-        return {
-            'type': 'ir.actions.act_window',
-            'res_model': 'enquiry.complaint.wizard',
-            'view_mode': 'form',
-            'view_id': self.env.ref('customer.view_enquiry_complaint_wizard_form').id,
-            'target': 'new',  # to open the wizard in a new window
-            'context': {
-                'default_enq_cm_id': self.id,
-            },
-        }
     
     @api.onchange('enquiry_type_id')
     def _onchange_enquiry_type(self):
@@ -240,3 +187,7 @@ class ComplaintSubtype(models.Model):
 
     name = fields.Char(string='Complaint Subtype', required=True)
     complaint_type_id = fields.Many2one('complaint.config', string='Complaint Type', required=True)
+
+
+
+

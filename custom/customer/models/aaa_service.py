@@ -30,11 +30,11 @@ class AAAService(models.Model):
     #MANY2ONE-------------------------------------------------------------------------------------------------------
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
     credit_customer_co = fields.Char('Customer C/O')
-    sequence_id = fields.Many2one('partner.category', string="Customer Category", domain="[('partner_id','=', customer_id)]")
+    sequence_id = fields.Many2one('partner.category', string="Customer Category", domain="[('partner_id','=', customer_id),('member_type','=','member_type')]")
     member_id = fields.Many2one(
         'res.partner', 
         string="Member", 
-        domain=[('is_company', '=', False)] 
+        domain=[('is_company', '=', False),('member_type','=','member_type')] 
     )
     membership_num = fields.Char('Membership Number')
     created_by = fields.Many2one('res.users', string="Agent", default=lambda self: self.env.user, readonly=True)
