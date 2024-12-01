@@ -6,15 +6,16 @@
             <field name="name">call.center.all.service.view.tree</field>
             <field name="model">aaa.service</field>
             <field name="arch" type="xml">
-                <tree string="" create="False" duplicate="false">
+                <tree string="Services" create="false" duplicate="false">
                     <field name="name" />
                     <field name="service_time" string="Service Date" />
                     <field name="customer_id" />
                     <field name="member_id" />
                     <field name="member_contact_no" string="Mobile Number" />
                     <field name="vehicle_type" />
-                    <!-- <field name="vehicle_plate" /> -->
                     <field name="product_id" string="Service" />
+                    <field name="selected_from_location" string="Policy From"  />
+                    <field name="selected_to_location" string=" Policy To" />
                     <field name="from_location" string="From" />
                     <field name="to_location" string="To" />
                     <field name="provider_id" string="Provider" />

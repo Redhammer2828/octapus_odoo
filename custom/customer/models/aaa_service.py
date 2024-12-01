@@ -171,6 +171,16 @@ class AAAService(models.Model):
 
     service_quantity = fields.Float(string="Service Quantity", default="1.00")
 
+    hide_selected_locations = fields.Boolean(
+        compute="_compute_hide_selected_locations",
+        store=True
+    )
+
+    @api.depends('member_type')
+    def _compute_hide_selected_locations(self):
+        for record in self:
+            record.hide_selected_locations = record.member_type == 'credit'
+
     @api.depends('search_query')
     def _fetch_location_suggestions(self):
         for record in self:
