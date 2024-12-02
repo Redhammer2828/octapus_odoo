@@ -61,15 +61,15 @@
 
                                 <field name="enquiry_type_id"
                                     invisible="show_enquiry_fields == False "
-                                    readonly="state == 'saved'" />
+                                    readonly="state == 'saved'" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
                                 <field name="enquiries_id" invisible="show_enquiry_fields == False "
-                                    readonly="state == 'saved'" />
+                                    readonly="state == 'saved'" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
                                 <field name="complaint_type_id"
                                     invisible="show_complaint_fields == False "
-                                    readonly="state == 'saved'" />
+                                    readonly="state == 'saved'" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
                                 <field name="complaints_id"
                                     invisible="show_complaint_fields == False "
-                                    readonly="state == 'saved'" />
+                                    readonly="state == 'saved'" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
 
 
                             </group>

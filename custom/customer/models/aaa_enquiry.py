@@ -75,75 +75,74 @@ class Enquiry(models.Model):
         return super(Enquiry, self).create(vals)
     
 
-
-
-
-
     def write(self, vals):
         """Ensure that the state is updated to 'saved' after the form is saved."""
         if 'state' not in vals and self.state == 'draft':
             vals['state'] = 'saved'
         return super(Enquiry, self).write(vals)
-  
-
-
-   
-
     
     @api.onchange('enquiry_type_id')
     def _onchange_enquiry_type(self):
+        # Clear the enquiriess_id field when enquiry_type_id changes
+        self.enquiries_id = False
+ 
         if self.enquiry_type_id:
-            # Log selected complaint type
+            # Log selected enquiry type
             print(f"CT id: {self.enquiry_type_id.id}")
-            
-            # Search for related complaint subtypes
+           
+            # Search for related enquiry subtypes
             enquiries = self.env['enquiry.subtype'].search([
                 ('enquiry_type_id', '=', self.enquiry_type_id.id)
             ])
-            
-            # Log found complaint subtype IDs
+           
+            # Log found enquiry subtype IDs
             print(f"ENQUIRIES: {enquiries.ids}")
-            
-            # Set domain if any complaints are found
+           
+            # Set domain if any enquiries are found
             return {
                 'domain': {
-                    
                     'enquiries_id': [('id', 'in', enquiries.ids)] if enquiries else []
                 }
             }
         else:
-            # Clear domain if no complaint_type_id is selected
+            # Log case when no enquiry_type_id is selected
             print("No enquiry_type_id selected")
+           
+            # Clear domain if no enquiry_type_id is selected
             return {
                 'domain': {
                     'enquiries_id': []
                 }
             }
-        
+       
     @api.onchange('complaint_type_id')
     def _onchange_complaint_type(self):
+        # Clear the complaints_id field when complaint_type_id changes
+        self.complaints_id = False
+ 
         if self.complaint_type_id:
             # Log selected complaint type
             print(f"CT id: {self.complaint_type_id.id}")
-            
+           
             # Search for related complaint subtypes
             complaints = self.env['complaint.subtype'].search([
                 ('complaint_type_id', '=', self.complaint_type_id.id)
             ])
-            
+           
             # Log found complaint subtype IDs
             print(f"COMPLAINTS: {complaints.ids}")
-            
+           
             # Set domain if any complaints are found
             return {
                 'domain': {
-                    
                     'complaints_id': [('id', 'in', complaints.ids)] if complaints else []
                 }
             }
         else:
-            # Clear domain if no complaint_type_id is selected
+            # Log case when no complaint_type_id is selected
             print("No complaint_type_id selected")
+           
+            # Clear domain if no complaint_type_id is selected
             return {
                 'domain': {
                     'complaints_id': []
