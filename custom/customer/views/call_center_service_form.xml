@@ -211,7 +211,7 @@
                                         style="font-weight: 500;color: #28a745;"
                                         invisible="(is_imported == True) or (member_type == 'credit')" />
                                     <field name="cash_collected" invisible="member_type != 'adhoc'" readonly="state in['cancel', 'done']" />
-                                    <field name="amount" invisible="member_type == 'adhoc'" readonly="state in['cancel', 'done']"/>
+                                    <field name="amount" invisible="member_type in ['adhoc', 'credit']"  readonly="state in['cancel', 'done']"/>
                                     <field name="date_time_from" string="From Date time"
                                         invisible="service_based != 'location_duration'"
                                         class="required_field" required="1"
