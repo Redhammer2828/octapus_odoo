@@ -175,11 +175,79 @@ class AAAService(models.Model):
         compute="_compute_hide_selected_locations",
         store=True
     )
-
+    # FOR TREE VIEW
     @api.depends('member_type')
     def _compute_hide_selected_locations(self):
         for record in self:
             record.hide_selected_locations = record.member_type == 'credit'
+
+    @api.onchange('enquiry_type_id')
+    def _onchange_enquiry_type(self):
+        # Clear the enquiriess_id field when enquiry_type_id changes
+        self.enquiries_id = False
+ 
+        if self.enquiry_type_id:
+            # Log selected enquiry type
+            print(f"CT id: {self.enquiry_type_id.id}")
+           
+            # Search for related enquiry subtypes
+            enquiries = self.env['enquiry.subtype'].search([
+                ('enquiry_type_id', '=', self.enquiry_type_id.id)
+            ])
+           
+            # Log found enquiry subtype IDs
+            print(f"ENQUIRIES: {enquiries.ids}")
+           
+            # Set domain if any enquiries are found
+            return {
+                'domain': {
+                    'enquiries_id': [('id', 'in', enquiries.ids)] if enquiries else []
+                }
+            }
+        else:
+            # Log case when no enquiry_type_id is selected
+            print("No enquiry_type_id selected")
+           
+            # Clear domain if no enquiry_type_id is selected
+            return {
+                'domain': {
+                    'enquiries_id': []
+                }
+            }
+       
+    @api.onchange('complaint_type_id')
+    def _onchange_complaint_type(self):
+        # Clear the complaints_id field when complaint_type_id changes
+        self.complaints_id = False
+ 
+        if self.complaint_type_id:
+            # Log selected complaint type
+            print(f"CT id: {self.complaint_type_id.id}")
+           
+            # Search for related complaint subtypes
+            complaints = self.env['complaint.subtype'].search([
+                ('complaint_type_id', '=', self.complaint_type_id.id)
+            ])
+           
+            # Log found complaint subtype IDs
+            print(f"COMPLAINTS: {complaints.ids}")
+           
+            # Set domain if any complaints are found
+            return {
+                'domain': {
+                    'complaints_id': [('id', 'in', complaints.ids)] if complaints else []
+                }
+            }
+        else:
+            # Log case when no complaint_type_id is selected
+            print("No complaint_type_id selected")
+           
+            # Clear domain if no complaint_type_id is selected
+            return {
+                'domain': {
+                    'complaints_id': []
+                }
+            }
 
     @api.depends('search_query')
     def _fetch_location_suggestions(self):
@@ -1050,10 +1118,11 @@ class AAAService(models.Model):
     def action_create_enquiry(self):
         # Create a new enquiry record linked to the current service
         new_enquiry = self.env['aaa.enquiry'].create({
-            # 'name': self.name,
+            #'name': self.name,
             'customer_id': self.customer_id.id,
             'member_id': self.member_id.id,
             'service_id': self.product_id.id,
+            'enq_id': self.id,
             'membership': self.member_type,
             'mem_name': self.member_id.name,
             'vehicle_chasis_no': self.vehicle_chasis_no,
@@ -1063,7 +1132,7 @@ class AAAService(models.Model):
             'date': fields.Datetime.now(),
             'mobile': self.member_contact_no,
             'email': self.email,
-            'comment': self.comments or 'Enquiry',
+            'comment': self.comments ,
             'created_by': self.env.user.id,
             'enquiry': self.comments,
             'enquiry_type_id': self.env['enquiry.config'].search([], limit=1).id,
@@ -1086,6 +1155,7 @@ class AAAService(models.Model):
                 'default_customer_id': self.customer_id.id,
                 'default_member_id': self.member_id.id,
                 'default_service_id': self.product_id.id,
+                'default_enq_id': self.id,
                 'default_mem_name': self.member_id.name,
                 'default_membership': self.member_type,
                 'default_mobile': self.member_contact_no,

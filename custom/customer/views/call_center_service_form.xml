@@ -107,7 +107,7 @@
                                     options="{'no_create': True, 'no_open': True}" />
                                 <field name="credit_customer_co" string="Customer C/O"
                                     readonly="state in['cancel', 'done']"
-                                     invisible="member_type in ('policy', 'adhoc')" />
+                                    invisible="member_type in ('policy', 'adhoc')" />
                                 <field name="sequence_id" string="Customer Category"
                                     class="required_field"
                                     required="1" options="{'no_create': True, 'no_open': True}"
@@ -131,7 +131,7 @@
                                     invisible="schedule_service_check == False"
                                     required="schedule_service_check == True" />
                                 <field name="service_time"
-                                    readonly="1"/>
+                                    readonly="1" />
                                 <field name="requested_date"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']"
                                     invisible="schedule_service_check == False" />
@@ -206,7 +206,8 @@
                                     <field name="to_location_emirate"
                                         style="font-weight: 500;color: #28a745;"
                                         invisible="(is_imported == True) or (member_type == 'credit')" />
-                                    <field name="amount" />
+                                    <field name="cash_collected" invisible="member_type != 'adhoc'" />
+                                    <field name="amount" invisible="member_type == 'adhoc'" />
                                     <field name="date_time_from" string="From Date time"
                                         invisible="service_based != 'location_duration'"
                                         class="required_field" required="1"
