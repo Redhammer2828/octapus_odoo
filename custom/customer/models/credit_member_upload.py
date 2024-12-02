@@ -162,11 +162,15 @@ class CreditMemberUpload(models.Model):
             })
 
     def apply_member_upload_wizard(self):
+        import time  # Ensure time is imported for measuring execution time
 
         # Start measuring time
         start_time = time.time()
+
         # Get the dynamically imported data after validation
-        validated_member_lines = self.upload_member_ids.filtered(lambda line: line.upload_member_status != 'rejection')
+        validated_member_lines = self.upload_member_ids.filtered(
+            lambda line: line.upload_member_status != 'rejection'
+        )
 
         # Collect customer codes and card types upfront for 'new' members
         customer_codes = {line.customer_code for line in validated_member_lines if line.upload_member_status == 'new'}
@@ -207,7 +211,7 @@ class CreditMemberUpload(models.Model):
 
                 # Collect data for new partners creation
                 new_partners_data.append({
-                    'card_type_id': card_type_record.id,  # Update with actual field names
+                    'card_type_id': card_type_record.id,
                     'old_membership_number': member_line.old_membership_number,
                     'name': member_line.member_name,
                     'street': member_line.street,
@@ -247,16 +251,23 @@ class CreditMemberUpload(models.Model):
 
         # Batch update confirmed members
         if update_data_confirmed:
-            confirmed_partners = self.env['res.partner'].browse([data[0] for data in update_data_confirmed])
-            for partner, values in update_data_confirmed:
-                partner.write(values)
+            partner_ids = [data[0] for data in update_data_confirmed]
+            confirmed_partners = self.env['res.partner'].browse(partner_ids)
+            for partner_id, values in update_data_confirmed:
+                partner = confirmed_partners.filtered(lambda p: p.id == partner_id)
+                if partner:
+                    partner.write(values)
 
         # Batch update temporary members
         if update_data_temp:
-            temp_partners = self.env['res.partner'].browse([data[0] for data in update_data_temp])
-            for partner, values in update_data_temp:
-                partner.write(values)
-                    # Measure the time taken
+            partner_ids = [data[0] for data in update_data_temp]
+            temp_partners = self.env['res.partner'].browse(partner_ids)
+            for partner_id, values in update_data_temp:
+                partner = temp_partners.filtered(lambda p: p.id == partner_id)
+                if partner:
+                    partner.write(values)
+
+        # Measure the time taken
         end_time = time.time()
         time_taken = end_time - start_time
 
@@ -267,7 +278,8 @@ class CreditMemberUpload(models.Model):
         # Update the state and log
         self.state = 'done'
         self.apply_log += f" in {time_taken:.2f} seconds."
-        print(f"State Updated to 'Done' and apply log updated with time taken: {time_taken:.2f} seconds.")
+        print(f"State updated to 'done' and apply log updated with time taken: {time_taken:.2f} seconds.")
+
 
     def action_cancel(self):
         self.state = 'draft'
