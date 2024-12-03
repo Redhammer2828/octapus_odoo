@@ -110,6 +110,9 @@ class MemberSearch(models.Model):
             'res_model': 'res.partner',
             'type': 'ir.actions.act_window',
             'domain': [('id', 'in', partner_ids.ids)],
+            'context': {
+                'default_member_type': 'credit',
+            },
             'views': [
                 (self.env.ref('customer.res_partner_credit_member_tree').id, 'tree'),
                 (self.env.ref('customer.res_partner_credit_member_form').id, 'form'),
