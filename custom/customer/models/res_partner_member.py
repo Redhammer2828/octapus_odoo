@@ -531,7 +531,6 @@ class ResPartnerMembers(models.Model):
             'context': context,
         }
 
-
     @api.depends('product_template_id')
     def _compute_service_ids(self):
         for record in self:
