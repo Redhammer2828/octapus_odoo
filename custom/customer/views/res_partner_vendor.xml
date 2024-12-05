@@ -101,7 +101,7 @@
             <field name="name">Vendors</field>
             <field name="res_model">res.partner</field>
             <field name="view_mode">tree,form</field>
-            <field name="domain">[('is_company','=',True),('is_vendor','=',True)]</field>
+            <field name="domain">[('is_vendor','=',True)]</field>
             <field name="context">{'default_is_vendor': True,
                 'default_country_id': 'AE'}</field>
             <field name="view_ids"
