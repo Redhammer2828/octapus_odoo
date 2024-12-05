@@ -6,11 +6,13 @@
         <field name="binding_model_id" ref="base.model_res_partner"/>
         <field name="state">code</field>
         <field name="code">
-
-partners = env['res.partner'].search([('product_template_id', '!=', False)])
-for partner in partners:
-    partner._onchange_product_template_id()
-
+            for record in records:
+                if record.product_template_id:
+                    services = env['product.package.service'].search([('product_template_id', '=', record.product_template_id.id)])
+                    product_ids = services.mapped('product_id').ids
+                    record.write({'service_ids': [(6, 0, product_ids)] if product_ids else [(6, 0, [])]})
+                else:
+                    record.write({'service_ids': [(6, 0, [])]})
         </field>
     </record>
 </odoo>

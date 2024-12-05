@@ -14,7 +14,7 @@
                     <field name="member_contact_no" string="Mobile Number" />
                     <field name="vehicle_type" />
                     <field name="product_id" string="Service" />
-                    <field name="selected_from_location" string="Policy From"  />
+                    <field name="selected_from_location" string="Policy From" />
                     <field name="selected_to_location" string=" Policy To" />
                     <field name="from_location" string="From" />
                     <field name="to_location" string="To" />
@@ -50,16 +50,14 @@
                     <field name="driver_name" />
                     <field name="state" string="State" />
                     <field name="credit_proforma_number" string="Trip Sheet Number" />
-                    <!-- Default filter for today's records -->
-                    <filter
-                        name="today_records"
-                        string="Today's Records"
-                        domain="[('service_time', '>=', (context_today())), ('service_time', '&lt;', (context_today() + 1))]"
-                        context="{'group_by': 'service_time'}"
-                    />
+                    <filter name="today_records" string="Today's Records"
+                        domain="[('is_today', '=', True)]" />
+
+
                 </search>
             </field>
         </record>
+
         <record id="call_center_all_service_action" model="ir.actions.act_window">
             <field name="name">All Service</field>
             <field name="res_model">aaa.service</field>

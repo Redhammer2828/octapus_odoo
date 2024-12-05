@@ -44,11 +44,13 @@
                                 <field name="state" invisible="1" />
                                 <field name="customer_id" can_create="true" can_write="true"
                                     options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
-                                    readonly="state == 'saved'" />
+                                    readonly="state == 'saved'"
+                                    required="1" />
                                 <field name="member_id" invisible="customer_id == False"
                                     on_change="1" can_create="true" can_write="true"
                                     options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
-                                    readonly="state == 'saved'" />
+                                    readonly="state == 'saved'" 
+                                    required="1" />
                                 <field name="service_id" invisible="member_id == False"
                                     can_create="true" can_write="true"
                                     options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
@@ -57,21 +59,18 @@
                                 <field name="is_enquiry" invisible="1" />
                                 <field name="show_enquiry_fields" invisible="1" />
                                 <field name="show_complaint_fields" invisible="1" />
-
-
                                 <field name="enquiry_type_id"
                                     invisible="show_enquiry_fields == False "
-                                    readonly="state == 'saved'" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
+                                    readonly="state == 'saved'" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" 
+                                    required = "1"/>
                                 <field name="enquiries_id" invisible="show_enquiry_fields == False "
-                                    readonly="state == 'saved'" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
+                                    readonly="state == 'saved'" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" required = "1"/>
                                 <field name="complaint_type_id"
                                     invisible="show_complaint_fields == False "
-                                    readonly="state == 'saved'" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
+                                    readonly="state == 'saved'" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" required = "1"/>
                                 <field name="complaints_id"
                                     invisible="show_complaint_fields == False "
-                                    readonly="state == 'saved'" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
-
-
+                                    readonly="state == 'saved'" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" required = "1"/>
                             </group>
 
                             <group>
