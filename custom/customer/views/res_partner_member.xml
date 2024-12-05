@@ -88,7 +88,7 @@
                             <label for="parent_customer_id" string="Company" />
                             <div>
                                 <field name="parent_customer_id" placeholder="select.."
-                                    class="required_field" required="1" style="width: 700px;"
+                                    class="required_field" required="1" style="width: 700px;" readonly="is_readonly"
                                     options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
                             </div>
                         </div>
@@ -98,16 +98,16 @@
                                 <!-- is_readonly Flag created when confirm is clicked to make fields
                                 readonly -->
                                 <field name="is_readonly" invisible="1" />
-                                <field name="is_duplicated" invisible="1"/>
+                                <field name="is_duplicated" invisible="1" />
                                 <!-- . -->
                                 <field name="policy_no" string="Policy No" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
                                     class="required_field" required="1" readonly="is_readonly" />
-                                <field name="old_membership_number" />
-                                <field name="member_activate_date" date_format="%d/%m/%Y" />
+                                <field name="old_membership_number" readonly="is_readonly"/>
+                                <field name="member_activate_date" date_format="%d/%m/%Y" readonly="is_readonly"/>
                                 <field name="member_expiry_date" class="required_field" required="1"
                                     date_format="%d/%m/%Y" widget="date" readonly="is_readonly" />
-                                <field name="card_type_id" class="required_field" required="1"
+                                <field name="card_type_id" class="required_field" required="1" readonly="is_readonly"
                                     options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
                                 <field name="member_partner_category_id" class="required_field"
                                     required="1" readonly="is_readonly"
@@ -136,7 +136,7 @@
                                 <field name="lang" class="custom-field" />
                                 <!-- <field name="region_code_id" /> -->
                                 <field name="invoice_ref_date" string="Invoice Date" invisible="0"
-                                    class="required_field" required="1" date_format="%d/%m/%Y" />
+                                    required="membership_state not in ['temp'] " date_format="%d/%m/%Y" />
                                 <field name="delivery_ref_date" string="Delivery Date"
                                     class="custom-field" date_format="%d/%m/%Y" />
                                 <field name="mail_ref" class="custom-field" />
@@ -153,7 +153,7 @@
                                     <group>
                                         <field name="product_template_id" class="required_field"
                                             required="1"
-                                            decorators="{'readonly': [('membership_state', '=', 'confirm')]}"
+                                            readonly="is_readonly"
                                             options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
                                             domain="[('bundle_product', '=', True)]" />
                                     </group>

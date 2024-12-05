@@ -28,7 +28,7 @@ class AAAService(models.Model):
         ('requested','Requeted')
     ], string="Status", readonly=True, default='initiate', tracking=True)
     #MANY2ONE-------------------------------------------------------------------------------------------------------
-    customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
+    customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True), ]")
     credit_customer_co = fields.Char('Customer C/O')
     sequence_id = fields.Many2one('partner.category', string="Customer Category", domain="[('partner_id','=', customer_id),('member_type','=','member_type')]")
     member_id = fields.Many2one(
@@ -50,7 +50,7 @@ class AAAService(models.Model):
     acc_payment_id = fields.Many2one('account.payment', string="Payment")
    
     # PROVIDER-------------------------------------------------------------------------------------------------------------
-    provider_id = fields.Many2one('res.partner', string="Provider" ,domain=[('is_vendor', '=', True)]) #  domain="[('supplier', '=', True)]"
+    provider_id = fields.Many2one('res.partner', string="Provider" ,domain=[('is_vendor', '=', True)])
     provider_contact = fields.Char(string="Provider Contact")
     provider_num = fields.Char('Provider Num')
     provider_rate = fields.Float(string="Provider Rate")
@@ -175,11 +175,28 @@ class AAAService(models.Model):
         compute="_compute_hide_selected_locations",
         store=True
     )
+    is_today = fields.Boolean(
+        string="Is Today",
+        compute="_compute_is_today",
+        store=True
+    )
     # FOR TREE VIEW
     @api.depends('member_type')
     def _compute_hide_selected_locations(self):
         for record in self:
             record.hide_selected_locations = record.member_type == 'credit'
+
+    @api.depends('service_time')
+    def _compute_is_today(self):
+        today = fields.Date.context_today(self)
+        start_of_day = datetime.combine(today, datetime.min.time())
+        end_of_day = start_of_day + timedelta(days=1) - timedelta(seconds=1)
+        
+        for record in self:
+            record.is_today = (
+                record.service_time and
+                start_of_day <= record.service_time <= end_of_day
+            )
 
     @api.depends('search_query')
     def _fetch_location_suggestions(self):
@@ -256,12 +273,6 @@ class AAAService(models.Model):
                 from_lon = record.selected_from_location.longitude
                 to_lat = record.selected_to_location.latitude
                 to_lon = record.selected_to_location.longitude
-
-                print("FROM LATITUDE", from_lat)
-                print("FROM LONGITUDE", from_lon)
-                print("TO LATITUDE ", to_lat)
-                print("TO LONGITUDE ", to_lon)
-
                 # Prepare API payload
                 payload = {
                     "merchant_longitude": from_lon,
@@ -269,10 +280,8 @@ class AAAService(models.Model):
                     "customer_longitude": to_lon,
                     "customer_latitude": to_lat
                 }
-
                 # API URL
                 url = 'https://gioapi-gy-dev.kirkos.ae/carhire-order/order/service/deliveryfee/aaa/delivery-fee'
-                
                 try:
                     # Make the POST request
                     headers = {'Content-Type': 'application/json'}
@@ -332,7 +341,7 @@ class AAAService(models.Model):
                 return 'Unknown Emirate'
         return ''
 
-    # -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
     @api.onchange('provider_id')
     def _onchange_provider_id(self):
             """
@@ -345,49 +354,6 @@ class AAAService(models.Model):
             else:
                 self.is_driver_name_visible = True  # Show driver_name and hide driver_id
         
-    # @api.onchange('customer_id')
-    # def _onchange_customer_id(self):
-    #     context = self.env.context
-    #     for record in self:
-    #         if not record.customer_id:
-    #             # Clear fields if customer_id is empty
-    #             record.sequence_id = False
-    #             record.member_id = False
-    #             continue
- 
-    #         member_type = context.get('default_member_type')
-    #         member_type_conditions = ['credit', 'adhoc']
-    #         type_conditions = ['non_cash', 'cash']
- 
-    #         # Ensure the context has a valid combination of 'default_member_type' and 'default_type'
-    #         if (
-    #             member_type in member_type_conditions
-    #             and context.get('default_type') in type_conditions
-    #         ):
-    #             # Fetch the sequence associated with the customer_id
-    #             sequence = self.env['partner.category'].search(
-    #                 [
-    #                     ('partner_id', '=', record.customer_id.id),
-    #                     ('member_type', '=', member_type),
-    #                 ],
-    #                 limit=1,
-    #             )
-    #             if sequence:
-    #                 record.sequence_id = sequence.id
-    #                 # Update member_id based on the sequence's default_member
-    #                 record.member_id = sequence.default_member.id if sequence.default_member else False
-    #             else:
-    #                 # If no sequence is found, directly fetch member_id
-    #                 record.sequence_id = False
-    #                 member = self.env['res.partner'].search(
-    #                     [
-    #                         ('parent_customer_id', '=', record.customer_id.id),
-    #                         ('member_type', '=', member_type),
-    #                     ],
-    #                     limit=1,
-    #                 )
-    #                 record.member_id = member.id if member else False
-
     @api.onchange('customer_id')
     def _onchange_customer_id(self):
         for record in self:
@@ -860,28 +826,37 @@ class AAAService(models.Model):
             self.member_id.member_type = self.member_type  # Set from selection in aaa.service
     
     def action_start_service(self):
-        self.state = 'start'
         for service in self:
-           
-            self.env['service.history'].create({
-                    'service_id': service.id,
-                    'user': self.env.user.id,
-                    'time': fields.Datetime.now(),
-                    'status': service.state,  
-                })
-        comment_content = service.comments or 'START'
+            # Ensure credit_proforma_number is filled
+            if not service.provider_id:
+                raise UserError("You must fill the PROVIDER before starting the service.")
+            if not service.driver_id:
+                raise UserError("You must fill the DRIVER before starting the service.")
+            # Proceed with setting the state to 'start'
+            service.state = 'start'
  
-                # Create the service.comment record
-        self.env['service.comment'].create({
+            # Create the service.history record
+            self.env['service.history'].create({
+                'service_id': service.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': service.state,
+            })
+ 
+            # Prepare the comment content
+            comment_content = service.comments or 'STARTED'
+ 
+            # Create the service.comment record
+            self.env['service.comment'].create({
                 'service_id': service.id,
                 'comment': comment_content,
                 'comment_date_and_time': fields.Datetime.now(),
                 'comment_user': self.env.user.id,
                 'comment_status': service.state,
-                })
+            })
  
-                # If a manual comment exists, clear the service.comments field after creating the record
-        if service.comments:
+            # Clear the comments field after creating the record
+            if service.comments:
                 service.comments = False
  
         return True
@@ -944,30 +919,37 @@ class AAAService(models.Model):
         return True
     
     def action_done_service(self):
-        self.state = 'done'
         for service in self:
-           
-                self.env['service.history'].create({
-                    'service_id': service.id,
-                    'user': self.env.user.id,
-                    'time': fields.Datetime.now(),
-                    'status': service.state,  
-                })
+            # Ensure credit_proforma_number is filled
+            if not service.credit_proforma_number:
+                raise UserError("You must fill the Trip Sheet Number before completing the service.")
  
-        comment_content = service.comments or 'COMPLETED'
+            # Proceed with setting the state to 'done'
+            service.state = 'done'
  
-            # Create the service.comment record
-        self.env['service.comment'].create({
-            'service_id': service.id,
-            'comment': comment_content,
-            'comment_date_and_time': fields.Datetime.now(),
-            'comment_user': self.env.user.id,
-            'comment_status': service.state,
+            # Create the service.history record
+            self.env['service.history'].create({
+                'service_id': service.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': service.state,
             })
  
-            # If a manual comment exists, clear the service.comments field after creating the record
-        if service.comments:
-            service.comments = False
+            # Prepare the comment content
+            comment_content = service.comments or 'COMPLETED'
+ 
+            # Create the service.comment record
+            self.env['service.comment'].create({
+                'service_id': service.id,
+                'comment': comment_content,
+                'comment_date_and_time': fields.Datetime.now(),
+                'comment_user': self.env.user.id,
+                'comment_status': service.state,
+            })
+ 
+            # Clear the comments field after creating the record
+            if service.comments:
+                service.comments = False
  
         return True
 

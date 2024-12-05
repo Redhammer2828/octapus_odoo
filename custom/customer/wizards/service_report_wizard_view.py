@@ -21,7 +21,7 @@ class ServiceReportWizard(models.TransientModel):
 
     from_date = fields.Datetime(string="From Date", required=True)
     to_date = fields.Datetime(string="To Date", required=True)
-    customer_id = fields.Many2one('res.partner', string="Customer")
+    customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
     member_type = fields.Selection([('policy', 'POLICY'), ('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type")
     type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type")
 
