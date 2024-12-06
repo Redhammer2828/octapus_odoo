@@ -349,8 +349,11 @@
                                         <field name="name" string="Enquiry No." />
                                         <field name="date" />
                                         <field name="mobile" />
-                                        <field name="email" />
-                                        <field name="enquiry" string="Enquiry" />
+                                        <field name="mobile" />
+                                        <!-- <field name="enquiry_type_id" /> -->
+                                        <!-- <field name="enquiry_type_id" /> -->
+                                        <!-- <field name="email" /> -->
+                                        <!-- <field name="enquiry" string="Enquiry" /> -->
                                         <field name="created_by" />
                                     </tree>
                                 </field>
