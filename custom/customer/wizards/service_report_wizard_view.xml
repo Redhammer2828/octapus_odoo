@@ -13,6 +13,7 @@
                     <group>
                         <field name="customer_id" />
                         <field name="member_type" />
+                        <field name="sequence_id" />
                         <field name="type" />
                     </group>
                 </group>

@@ -1031,7 +1031,7 @@ class AAAService(models.Model):
 
     def action_create_enquiry(self):
         # Create a new enquiry record linked to the current service
-        new_enquiry = self.env['aaa.enquiry'].create({
+        new_enquiry = self.env['aaa.enquiry'].write({
             #'name': self.name,
             'customer_id': self.customer_id.id,
             'member_id': self.member_id.id,
@@ -1053,6 +1053,7 @@ class AAAService(models.Model):
             'enquiries_id': self.env['enquiry.subtype'].search([], limit=1).id,
             'complaint_type_id': self.env['complaint.config'].search([], limit=1).id,
             'complaints_id': self.env['complaint.subtype'].search([], limit=1).id,
+            #'enquiry_state': self.state
         })
        
         # Open the Enquiry/Complaint wizard
@@ -1065,7 +1066,7 @@ class AAAService(models.Model):
             'view_id': view_id,
             'target': 'new',
             'context': {
-                'default_enq_cm_id': new_enquiry.id,
+                #'default_enq_cm_id': new_enquiry.id,
                 'default_customer_id': self.customer_id.id,
                 'default_member_id': self.member_id.id,
                 'default_service_id': self.product_id.id,
@@ -1078,8 +1079,10 @@ class AAAService(models.Model):
                 'default_vehicle_plate_no': self.vehicle_plate,
                 'default_policy_no': self.policy_no,
                 'default_email': self.email,
+                #'default_enquiry_state': self.state
             }
         }
+   
     
     def action_waive_off(self):
         # self.waive_off = True

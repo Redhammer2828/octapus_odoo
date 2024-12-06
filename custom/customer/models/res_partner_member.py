@@ -445,18 +445,20 @@ class ResPartnerMembers(models.Model):
     
     def action_create_enquiry(self):
         view_id = self.env.ref('customer.call_center_enquiry_view_form').id
-
+ 
         # Fetch the service IDs from res.partner
         member = self.env['res.partner'].browse(self.id)
         service_ids = member.service_ids.ids  # Assuming 'service_ids' is a One2many or Many2many field in res.partner
-
+        view_id = self.env.ref('customer.view_enquiry_complaint_wizard_form').id
         return {
-            'name': 'Service Enquiry',
+            'name': 'Select Enquiry or Complaint',
             'type': 'ir.actions.act_window',
-            'res_model': 'aaa.enquiry',
+            'res_model':'enquiry.complaint.wizard',
             'view_mode': 'form',
             'view_id': view_id,
+            'target': 'new',
             'context': {
+                #'default_enq_cm_id ':,
                 'default_member_id': self.id,
                 'default_customer_id': self.parent_customer_id.id,
                 'default_policy_no': self.policy_no,

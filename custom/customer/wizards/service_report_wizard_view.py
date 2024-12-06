@@ -23,17 +23,25 @@ class ServiceReportWizard(models.TransientModel):
     to_date = fields.Datetime(string="To Date", required=True)
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
     member_type = fields.Selection([('policy', 'POLICY'), ('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type")
+    sequence_id = fields.Many2one('partner.category', string="Customer Category",
+    domain="[('partner_id','=', customer_id), ('member_type', '=', member_type)]")
     type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type")
 
     def _fetch_service_records(self):
         """Fetches service records based on the wizard's filter criteria."""
-        domain = [('schedule_date_time', '>=', self.from_date), ('schedule_date_time', '<=', self.to_date)]
+        domain = []
         if self.customer_id:
             domain.append(('customer_id', '=', self.customer_id.id))
         if self.member_type:
             domain.append(('member_type', '=', self.member_type))
         if self.type:
             domain.append(('type', '=', self.type))
+        if self.sequence_id:
+            domain.append(('sequence_id', '=', self.sequence_id.id))
+
+               # Filter by Service Time (Date Range)
+        domain.append(('service_time', '>=', self.from_date))
+        domain.append(('service_time', '<=', self.to_date))
 
         service_records = self.env['aaa.service'].search(domain)
         _logger.debug("Fetched %d records from the aaa.service model", len(service_records))
@@ -227,15 +235,15 @@ class ServiceReportWizard(models.TransientModel):
         # Initialize buffer for Excel generation
         buffer = io.BytesIO()
         service_records = self._fetch_service_records()
- 
+
         # If no records found, log warning and still generate an empty sheet
         if not service_records:
             _logger.warning("No records found for the specified filter criteria.")
- 
+
         # Prepare Excel export
         workbook = xlsxwriter.Workbook(buffer)
         worksheet = workbook.add_worksheet('Proforma Statement')
- 
+
         # Define the header formats
         bold_format = workbook.add_format({
             'bold': True,
@@ -244,7 +252,7 @@ class ServiceReportWizard(models.TransientModel):
             'bg_color': '#00007A',
             'color': 'white'
         })
- 
+
         header_format = workbook.add_format({
             'bold': True,
             'align': 'center',
@@ -252,112 +260,115 @@ class ServiceReportWizard(models.TransientModel):
             'bg_color': '#00007A',
             'color': 'white'
         })
- 
+
         total_format = workbook.add_format({
             'bold': True,
             'align': 'right',
             'valign': 'vcenter',
             'color': 'black'
         })
- 
+
         # Merge cells for the main title
         worksheet.merge_range('A1:D1', 'SERVICE STATEMENT', bold_format)
- 
+
         # Merge cells for "Date Range", "Customer", and "Category"
         worksheet.merge_range('A2:B2', 'Date Range', header_format)
         worksheet.merge_range('C2:D2', 'Customer', header_format)
         worksheet.merge_range('E2:F2', 'Category', header_format)
         worksheet.merge_range('E3:F3', '', header_format)
- 
+
         # Get formatted date range
         date_range = f"{self.from_date.strftime('%d/%m/%Y')}-{self.to_date.strftime('%d/%m/%Y')}"
         customer_name = self.customer_id.name if self.customer_id else ''
- 
+
         # Write date range and customer details
         worksheet.merge_range('A3:B3', date_range, header_format)
         worksheet.merge_range('C3:D3', customer_name, header_format)
- 
-        # Define the main headers
+
+        # Define the main headers conditionally
         headers = [
-            'Service Date', 'Service Number', 'Customer C/O', 'Type', 'Vehicle Type',
-            'Vehicle Model', 'Vehicle Plate', 'Chassis No', 'Service',
+            'Service Date', 'Service Number', 'Customer C/O',
+            # Include 'Type' only if customer_id is "AL MASAOOD AUTOMOBILES COMPANY LLC"
+            *(['Type'] if self.customer_id and self.customer_id.name == 'AL MASAOOD AUTOMOBILES COMPANY LLC' else []),
+            'Vehicle Type', 'Vehicle Model', 'Vehicle Plate', 'Chassis No', 'Service',
             'From Location', 'To Location', 'Trip Sheet No.', 'Quantity', 'Rate', 'Amount',
             'Tax', 'Total'
         ]
- 
+
         # Write main headers
         for col_num, header in enumerate(headers):
             worksheet.write(7, col_num, header, header_format)
- 
-        # Adjust column widths based on header and data length
+
+        # Adjust column widths based on headers
         column_widths = [len(header) + 2 for header in headers]
- 
+
         # If no records, still generate the Excel with headers and empty data
         if not service_records:
-            # Write empty rows (after header)
             worksheet.write(8, 0, 'No data available', bold_format)
-            # Adjust column widths for better readability
             for col_num, width in enumerate(column_widths):
                 worksheet.set_column(col_num, col_num, width)
         else:
-            # Iterate through the service records to populate data
             row = 8
             total_service_amount_sum = 0
             total_tax_sum = 0
             total_sum = 0
- 
+
             for record in service_records:
-                # Initialize variables for 'Amount', 'Tax', and 'Total'
+                # Initialize variables
                 rate = 0.00
                 amount = 0.00
                 tax = 0.00
                 total = 0.00
- 
+
                 # Write data for each column
-                for col_num, header in enumerate(headers):
+                col_index = 0  # Tracks the column index dynamically
+                for header in headers:
                     field_value = ''
-                    if col_num == 0:  # 'Service Date'
-                        field_value = record.schedule_date_time.strftime('%d/%m/%Y') if record.schedule_date_time else ''
-                    elif col_num == 1:  # 'Service Number'
+                    if header == 'Service Date':
+                        if record.service_time and self.from_date <= record.service_time <= self.to_date:
+                            field_value = record.service_time.strftime('%d/%m/%Y')
+                        else:
+                            field_value = ''
+
+                    
+                    elif header == 'Service Number':
                         field_value = record.name or ''
-                    elif col_num == 2:  # 'Customer C/O'
+                    elif header == 'Customer C/O':
                         field_value = record.credit_customer_co or ''
-                    elif col_num == 3:  # 'Type'
+                    elif header == 'Type':
+                        # This column exists only if the customer is "AL MASAOOD AUTOMOBILES COMPANY LLC"
                         field_value = record.member_id.name or ''
-                    elif col_num == 4:  # 'Vehicle Type'
+                    elif header == 'Vehicle Type':
                         field_value = record.vehicle_type or ''
-                    elif col_num == 5:  # 'Vehicle Model'
+                    elif header == 'Vehicle Model':
                         field_value = record.vehicle_model or ''
-                    elif col_num == 6:  # 'Vehicle Plate'
+                    elif header == 'Vehicle Plate':
                         field_value = record.vehicle_plate or ''
-                    elif col_num == 7:  # 'Chassis No'
+                    elif header == 'Chassis No':
                         field_value = record.vehicle_chasis_no or ''
-                    elif col_num == 8:  # 'Service'
+                    elif header == 'Service':
                         field_value = record.product_id.name or ''
-                    elif col_num == 9:  # 'From Location'
+                    elif header == 'From Location':
                         if record.member_id.member_type in ['credit', 'adhoc']:
                             field_value = record.from_location.name if record.from_location else ''
                         else:
                             field_value = record.selected_from_location.name if record.selected_from_location else ''
-                           
-                    elif col_num == 10:  # 'To Location'
+                    elif header == 'To Location':
                         if record.member_id.member_type in ['credit', 'adhoc']:
                             field_value = record.to_location.name if record.to_location else ''
                         else:
                             field_value = record.selected_to_location.name if record.selected_to_location else ''
- 
-                    elif col_num == 11:  # 'Trip Sheet No.'
+                    elif header == 'Trip Sheet No.':
                         field_value = record.credit_proforma_number or ''
-                    elif col_num == 12:  # 'Quantity'
+                    elif header == 'Quantity':
                         field_value = str(record.service_quantity) or ''
-                    elif col_num == 13:  # 'Rate'
+                    elif header == 'Rate':
                         if record.member_id.member_type == 'policy':
-                            # Fetch rate from product.pricelist.item (fixed_price)
                             pricelist_item = self.env['product.pricelist.item'].search([
-                                ('product_tmpl_id', '=', record.product_id.id)
+                                ('product_tmpl_id', '=', record.member_id.product_template_id.id)
                             ], limit=1)
                             rate = pricelist_item.fixed_price if pricelist_item else 0.00
-                        else:  # 'credit' or 'adhoc'
+                        else:
                             service_rate = self.env['service.rate'].search([
                                 ('product_pricelist_item_id.product_tmpl_id', '=', record.product_id.id),
                                 ('from_loc_id', '=', record.from_location.id),
@@ -365,40 +376,40 @@ class ServiceReportWizard(models.TransientModel):
                             ], limit=1)
                             rate = service_rate.price if service_rate else 0.00
                         field_value = rate
-                    elif col_num == 14:  # 'Amount'
-                        amount = rate  # Use the same value for 'Rate' and 'Amount'
+                    elif header == 'Amount':
+                        amount = rate
                         field_value = amount
-                    elif col_num == 15:  # 'Tax'
-                        tax = amount * 0.05  # Calculate 5% of 'Amount'
+                    elif header == 'Tax':
+                        tax = amount * 0.05
                         field_value = tax
-                    elif col_num == 16:  # 'Total'
-                        total = amount + tax  # Calculate 'Total'
+                    elif header == 'Total':
+                        total = amount + tax
                         field_value = total
- 
+
                     # Write field value and adjust column width
-                    worksheet.write(row, col_num, field_value)
-                    column_widths[col_num] = max(column_widths[col_num], len(str(field_value)) + 2)
- 
+                    worksheet.write(row, col_index, field_value)
+                    column_widths[col_index] = max(column_widths[col_index], len(str(field_value)) + 2)
+                    col_index += 1
+
                 # Accumulate totals
                 total_service_amount_sum += amount
                 total_tax_sum += tax
                 total_sum += total
- 
                 row += 1
- 
+
             # Adjust column widths for better readability
             for col_num, width in enumerate(column_widths):
                 worksheet.set_column(col_num, col_num, width)
- 
-            # Write the totals at the end of the respective columns
-            worksheet.write(row, 13, 'Total', total_format)
-            worksheet.write(row, 14, total_service_amount_sum, total_format)
-            worksheet.write(row, 15, total_tax_sum, total_format)
-            worksheet.write(row, 16, total_sum, total_format)
- 
+
+            # Write totals at the end
+            worksheet.write(row, len(headers) - 4, 'Total', total_format)
+            worksheet.write(row, len(headers) - 3, total_service_amount_sum, total_format)
+            worksheet.write(row, len(headers) - 2, total_tax_sum, total_format)
+            worksheet.write(row, len(headers) - 1, total_sum, total_format)
+
         # Close the workbook and prepare for download
         workbook.close()
- 
+
         # Create Excel attachment
         buffer.seek(0)
         file_data = {
@@ -407,7 +418,7 @@ class ServiceReportWizard(models.TransientModel):
             'type': 'binary',
         }
         attachment = self.env['ir.attachment'].create(file_data)
- 
+
         return {
             'type': 'ir.actions.act_window',
             'res_model': 'ir.attachment',
