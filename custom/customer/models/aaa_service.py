@@ -266,35 +266,36 @@ class AAAService(models.Model):
    
     @api.depends('selected_from_location', 'selected_to_location')
     def _compute_amount(self):
-        for record in self:
-            if record.selected_from_location and record.selected_to_location:
-                # Fetch lat/long from selected locations
-                from_lat = record.selected_from_location.latitude
-                from_lon = record.selected_from_location.longitude
-                to_lat = record.selected_to_location.latitude
-                to_lon = record.selected_to_location.longitude
-                # Prepare API payload
-                payload = {
-                    "merchant_longitude": from_lon,
-                    "merchant_latitude": from_lat,
-                    "customer_longitude": to_lon,
-                    "customer_latitude": to_lat
-                }
-                # API URL
-                url = 'https://gioapi-gy-dev.kirkos.ae/carhire-order/order/service/deliveryfee/aaa/delivery-fee'
-                try:
-                    # Make the POST request
-                    headers = {'Content-Type': 'application/json'}
-                    response = requests.post(url, headers=headers, data=json.dumps(payload))
+        pass
+        # for record in self:
+        #     if record.selected_from_location and record.selected_to_location:
+        #         # Fetch lat/long from selected locations
+        #         from_lat = record.selected_from_location.latitude
+        #         from_lon = record.selected_from_location.longitude
+        #         to_lat = record.selected_to_location.latitude
+        #         to_lon = record.selected_to_location.longitude
+        #         # Prepare API payload
+        #         payload = {
+        #             "merchant_longitude": from_lon,
+        #             "merchant_latitude": from_lat,
+        #             "customer_longitude": to_lon,
+        #             "customer_latitude": to_lat
+        #         }
+        #         # API URL
+        #         url = 'https://gioapi-gy-dev.kirkos.ae/carhire-order/order/service/deliveryfee/aaa/delivery-fee'
+        #         try:
+        #             # Make the POST request
+        #             headers = {'Content-Type': 'application/json'}
+        #             response = requests.post(url, headers=headers, data=json.dumps(payload))
 
-                    # Check if the request was successful
-                    if response.status_code == 200:
-                        print("API Response:", response.json())  # Print JSON response
-                    else:
-                        print(f"Failed to fetch data. Status code: {response.status_code}, Response: {response.text}")
+        #             # Check if the request was successful
+        #             if response.status_code == 200:
+        #                 print("API Response:", response.json())  # Print JSON response
+        #             else:
+        #                 print(f"Failed to fetch data. Status code: {response.status_code}, Response: {response.text}")
                 
-                except Exception as e:
-                    print(f"Error occurred while making the API request: {str(e)}")
+        #         except Exception as e:
+        #             print(f"Error occurred while making the API request: {str(e)}")
 
 
     @api.depends('selected_from_location', 'selected_to_location')
@@ -1031,7 +1032,7 @@ class AAAService(models.Model):
 
     def action_create_enquiry(self):
         # Create a new enquiry record linked to the current service
-        new_enquiry = self.env['aaa.enquiry'].create({
+        new_enquiry = self.env['aaa.enquiry'].write({
             #'name': self.name,
             'customer_id': self.customer_id.id,
             'member_id': self.member_id.id,
@@ -1053,6 +1054,7 @@ class AAAService(models.Model):
             'enquiries_id': self.env['enquiry.subtype'].search([], limit=1).id,
             'complaint_type_id': self.env['complaint.config'].search([], limit=1).id,
             'complaints_id': self.env['complaint.subtype'].search([], limit=1).id,
+            #'enquiry_state': self.state
         })
        
         # Open the Enquiry/Complaint wizard
@@ -1065,7 +1067,7 @@ class AAAService(models.Model):
             'view_id': view_id,
             'target': 'new',
             'context': {
-                'default_enq_cm_id': new_enquiry.id,
+                #'default_enq_cm_id': new_enquiry.id,
                 'default_customer_id': self.customer_id.id,
                 'default_member_id': self.member_id.id,
                 'default_service_id': self.product_id.id,
@@ -1078,8 +1080,10 @@ class AAAService(models.Model):
                 'default_vehicle_plate_no': self.vehicle_plate,
                 'default_policy_no': self.policy_no,
                 'default_email': self.email,
+                #'default_enquiry_state': self.state
             }
         }
+   
     
     def action_waive_off(self):
         # self.waive_off = True
