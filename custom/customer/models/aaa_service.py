@@ -831,8 +831,8 @@ class AAAService(models.Model):
             # Ensure credit_proforma_number is filled
             if not service.provider_id:
                 raise UserError("You must fill the PROVIDER before starting the service.")
-            if not service.driver_id:
-                raise UserError("You must fill the DRIVER before starting the service.")
+            # if not service.driver_id:
+            #     raise UserError("You must fill the DRIVER before starting the service.")
             # Proceed with setting the state to 'start'
             service.state = 'start'
  
