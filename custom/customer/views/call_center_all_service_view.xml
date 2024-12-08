@@ -80,7 +80,7 @@
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
             <field name="domain">[('state', '=', 'dispatch')]</field>
-            <field name="context">{}</field>
+            <field name="context">{'default_created_by': uid}</field>
             <field name="view_ids"
                 eval="[
               (5, 0, 0),
@@ -94,7 +94,7 @@
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
             <field name="domain">[('state', 'in', ['inprogress', 'start', 'reach'])]</field>
-            <field name="context">{}</field>
+            <field name="context">{'default_created_by': uid}</field>
             <field name="view_ids"
                 eval="[
               (5, 0, 0),
@@ -108,7 +108,7 @@
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
             <field name="domain">[('state', '=', 'done')]</field>
-            <field name="context">{}</field>
+            <field name="context">{'default_created_by': uid}</field>
             <field name="view_ids"
                 eval="[
               (5, 0, 0),
@@ -122,7 +122,7 @@
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
             <field name="domain">[('state', '=', 'cancel')]</field>
-            <field name="context">{}</field>
+            <field name="context">{'default_created_by': uid}</field>
             <field name="view_ids"
                 eval="[
               (5, 0, 0),
@@ -136,7 +136,7 @@
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
             <field name="domain">[('state', '=','requested')]</field>
-            <field name="context">{}</field>
+            <field name="context">{'default_created_by': uid}</field>
             <field name="view_ids"
                 eval="[
               (5, 0, 0),
@@ -151,7 +151,7 @@
             <field name="view_mode">tree</field>
             <field name="domain">[('state', '=', 'initiate'), ('schedule_date_time', '!=', False),
                 ('requested_date', '!=', False)]</field>
-            <field name="context">{}</field>
+            <field name="context">{'default_created_by': uid}</field>
             <field name="view_ids"
                 eval="[ 
                     (5, 0, 0),
