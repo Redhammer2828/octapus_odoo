@@ -147,7 +147,6 @@ class DataUploadFile(models.Model):
     #     matching_category = category_dict.get((member_line.sequence_code, matching_partner.id))
 
     def apply_member_upload_wizard(self):
-    
             # Start measuring time
             start_time = time.time()
             # Get the dynamically imported data after validation
@@ -164,7 +163,6 @@ class DataUploadFile(models.Model):
             card_type_records = self.env['card.type'].search([('code', 'in', list(card_types))])
             card_type_dict = {card.code: card for card in card_type_records}
             
-    
             sequence_codes = {line.sequence_code for line in validated_member_lines}
             categories = self.env['partner.category'].search([('name', 'in', list(sequence_codes))])
             category_dict = {(cat.name, cat.partner_id.id): cat for cat in categories}
