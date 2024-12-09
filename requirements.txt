@@ -79,3 +79,4 @@ pandas
 openpyxl
 xlrd
 numpy==1.26.4
+python-dotenv==1.0.1
