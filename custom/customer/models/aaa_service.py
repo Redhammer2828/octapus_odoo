@@ -4,6 +4,10 @@ import datetime
 from datetime import timedelta,datetime
 import requests
 import json
+from dotenv import load_dotenv
+import os
+load_dotenv()
+base_url = os.getenv("BASE_URL")
 
 class AAAService(models.Model):
     _name = 'aaa.service'
@@ -37,7 +41,15 @@ class AAAService(models.Model):
         domain=[('is_company', '=', False),('member_type','=','member_type')] 
     )
     membership_num = fields.Char('Membership Number')
-    created_by = fields.Many2one('res.users', string="Agent", default=lambda self: self.env.user, readonly=True)
+    created_by = fields.Many2one(
+        'res.users',
+        string="Agent",
+        default=lambda self: self.env.user,
+        compute='_compute_created_by',
+        store=False,
+        readonly=False
+    )
+    
     
     vehicle_type = fields.Char('Vehicle Type')   #Chaged to char
     vehicle_model = fields.Char('Vehicle Model')  #Changed to char
@@ -170,7 +182,6 @@ class AAAService(models.Model):
     orgin_no = fields.Char('Orgin')
 
     service_quantity = fields.Float(string="Service Quantity", default="1.00")
-
     hide_selected_locations = fields.Boolean(
         compute="_compute_hide_selected_locations",
         store=True
@@ -180,6 +191,20 @@ class AAAService(models.Model):
         compute="_compute_is_today",
         store=True
     )
+
+    is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
+ 
+    @api.depends('created_by')
+    def _compute_is_agent_user(self):
+        """Compute is_agent_user based on the created_by user's group membership."""
+        for record in self:
+            # Default to False if no `created_by` is set
+            record.is_agent_user = False
+            if record.created_by:
+                # Check if `created_by` belongs to the 'new_agents' group
+                user_groups = record.created_by.groups_id
+                record.is_agent_user = any(group.name == 'agent_user' for group in user_groups)
+
     # FOR TREE VIEW
     @api.depends('member_type')
     def _compute_hide_selected_locations(self):
@@ -412,9 +437,9 @@ class AAAService(models.Model):
 
     @api.model
     def create(self, vals):
+        """Override create method to set the name field and dynamically update created_by field."""
         # Ensure the name field is set using a specific format if not provided
         if vals.get('name', _('New')) == _('New'):
-            # Get the current month and year for formatting
             current_month = datetime.now().strftime('%m')  # 2-digit month
             current_year = datetime.now().strftime('%Y')   # 4-digit year
  
@@ -424,8 +449,13 @@ class AAAService(models.Model):
             # Extract only the numeric part of the sequence number
             numeric_part = sequence_number.split('-')[-1]  # Get the part after the last dash
             sequence_number = f"{int(numeric_part):08d}"  # Ensure it's zero-padded to 8 digits
+ 
             # Format the service name
             vals['name'] = f"SER/{current_month}/{current_year}/{sequence_number}"
+ 
+        # Dynamically set the created_by field if not set already
+        if not vals.get('created_by'):
+            vals['created_by'] = self.env.user.id
  
         # Create the aaa.service record
         service = super(AAAService, self).create(vals)
@@ -437,15 +467,34 @@ class AAAService(models.Model):
             'time': fields.Datetime.now(),
             'status': service.state,
         })
-        return service  
-
+ 
+        return service
+ 
+    # @api.depends('state')
+    # def _compute_created_by(self):
+    #     """Dynamically update created_by when the record is in dispatch state."""
+    #     for record in self:
+    #         if record.state == 'dispatch' and record.created_by != self.env.user:
+    #             record.created_by = self.env.user
+ 
+    @api.depends('state')
+    def _compute_created_by(self):
+        """Dynamically update created_by when the record is in specified states."""
+        for record in self:
+            if record.state in {'initiate','dispatch', 'start', 'reach', 'completed_by_driver_done'} and record.created_by != self.env.user:
+                record.created_by = self.env.user
+ 
     def write(self, vals):
-        """Override the write method to ensure comments are saved every time the comments field is updated"""
+        """Override the write method to ensure comments are saved and created_by is updated."""
+        # If the record is in dispatch state, dynamically update created_by
+        if self.state == 'dispatch' and not vals.get('created_by'):
+            vals['created_by'] = self.env.user.id
+ 
+        # Handle comment appending and record creation
         if 'comments' in vals and vals['comments']:
-            # Ensure the comment is appended
             existing_comments = self.comments or ""
             new_comment = f"{existing_comments}\n{vals['comments']}" if existing_comments else vals['comments']
-           
+ 
             # Update the comments field in the service model
             vals['comments'] = new_comment
  
@@ -463,12 +512,24 @@ class AAAService(models.Model):
  
         # Call the super method to handle the actual update of the service
         return super(AAAService, self).write(vals)
+ 
+    # @api.onchange('state')
+    # def _onchange_state(self):
+    #     """Dynamically update created_by when state changes to 'dispatch'."""
+    #     if self.state == 'dispatch' and self.created_by != self.env.user:
+    #         self.created_by = self.env.user
+ 
+    @api.onchange('state')
+    def _onchange_state(self):
+        """Dynamically update created_by when state changes to specific values."""
+        if self.state in {'initiate','dispatch', 'start', 'reach', 'completed_by_driver_done'} and self.created_by != self.env.user:
+            self.created_by = self.env.user
     
     def action_initiate_service(self):
         self.state = 'initiated'
    
     def action_order_response(self, order_number, status, phone_number, vehicle_chasis_no):
-        url = "https://gioapi-gy-dev.kirkos.ae/aaa-customer/whatsapp/whatsapp-Notification"
+        url = f"{base_url}/aaa-customer/whatsapp/whatsapp-Notification"
         payload = json.dumps({
             "order_number": order_number,
             "status": status,
@@ -479,10 +540,8 @@ class AAAService(models.Model):
         headers = {'Content-Type': 'application/json'}
         try:
             response = requests.post(url, headers=headers, data=payload)
-            
             # Debug: Print raw response text
             print("Response Text:", response.text)
-
             if response.status_code == 200:
                 try:
                     response_text = response.json()
@@ -501,7 +560,7 @@ class AAAService(models.Model):
             print("Request failed:", str(e))
 
     def action_order_create(self, order_number):
-        url = f"https://gioapi-gy-dev.kirkos.ae/aaa-customer/consumers/create/road_side_service/{order_number}"
+        url = f"{base_url}/aaa-customer/consumers/create/road_side_service/{order_number}"
         
         response = requests.post(url)
 
@@ -831,8 +890,8 @@ class AAAService(models.Model):
             # Ensure credit_proforma_number is filled
             if not service.provider_id:
                 raise UserError("You must fill the PROVIDER before starting the service.")
-            if not service.driver_id:
-                raise UserError("You must fill the DRIVER before starting the service.")
+            # if not service.driver_id:
+            #     raise UserError("You must fill the DRIVER before starting the service.")
             # Proceed with setting the state to 'start'
             service.state = 'start'
  
@@ -843,7 +902,6 @@ class AAAService(models.Model):
                 'time': fields.Datetime.now(),
                 'status': service.state,
             })
- 
             # Prepare the comment content
             comment_content = service.comments or 'STARTED'
  
@@ -855,11 +913,9 @@ class AAAService(models.Model):
                 'comment_user': self.env.user.id,
                 'comment_status': service.state,
             })
- 
             # Clear the comments field after creating the record
             if service.comments:
                 service.comments = False
- 
         return True
     
     def action_reach_service(self):
