@@ -560,9 +560,12 @@ class AAAService(models.Model):
             print("Request failed:", str(e))
 
     def action_order_create(self, order_number):
-        url = f"{base_url}/aaa-customer/consumers/create/road_side_service/{order_number}"
+        url = f"{base_url}/aaa-customer/consumers/create/road_side_service"
+        payload = json.dumps({
+            "erp_order_number": order_number,  
+        })
         
-        response = requests.post(url)
+        response = requests.post(url,data=payload)
 
         print("API RESPONSE-ORDER CREATED",response.text)
         
