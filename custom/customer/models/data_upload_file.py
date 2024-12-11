@@ -85,79 +85,109 @@ class DataUploadFile(models.Model):
 
 #------NEW MEMBERCHIP EXPIRY DATE ADN ACTIVATION CHECK ADDED CODE------
     def check_member_details(self, member, member_line):
-        # Assuming vehicle_chasis_no is a string, we strip whitespace and convert to uppercase for comparison
         excel_chassis_no = member_line.vehicle_chasis_no.strip().upper()
         db_chassis_no = member.vehicle_chasis_no.strip().upper()
+        parent_customer = self.env['res.partner'].browse(member.parent_customer_id.id)
+        parent_customer_code = parent_customer.customer_code
 
         if excel_chassis_no == db_chassis_no:
-            # Retrieve the parent customer record using the parent_customer_id
-            parent_customer = self.env['res.partner'].browse(member.parent_customer_id.id)
-             # Get the customer_code from the parent customer record
-            parent_customer_code = parent_customer.customer_code
             matching_partner = self.env['res.partner'].search([('customer_code', '=', member_line.customer_code)], limit=1)
-            # Customer Code Check
+            
             if member_line.customer_code == parent_customer_code:
                 if member.name == member_line.member_name:
                     if member.membership_state == 'temp':
-                        
-                        member_line.update({'upload_member_status': 'exist_temp', 'comment': "Exist Under Temp,*Overwrite"})
+                        member_line.update({
+                            'upload_member_status': 'exist_temp',
+                            'comment': "Exist Under Temp,*Overwrite"
+                        })
                         member_line.if_temp_match = member.id
                     elif member.membership_state == 'confirm':
-                        
                         member_line.if_conf_match = member.id
-                        
-
                         expiry_date = fields.Date.from_string(member_line.member_expiry_date)
                         activate_date = fields.Date.from_string(member.member_expiry_date)
                         db_expiry_date = fields.Date.from_string(member.member_expiry_date)
-                        difference = (expiry_date - db_expiry_date).days
-                        # New check: if member_line.member_expiry_date is less than member_line.member_activate_date
+
                         if expiry_date < activate_date:
-                            member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date is less than Activation Date"})
+                            member_line.update({
+                                'upload_member_status': 'rejection',
+                                'comment': "*Expiry Date is less than Activation Date"
+                            })
                         else:
                             if member.member_expiry_date != member_line.member_expiry_date:
-                                if difference >= 365:
-                                    member_line.update({'upload_member_status': 'renewal', 'comment': "*Membership Renewal"})
+                                if (expiry_date - db_expiry_date).days >= 365:
+                                    member_line.update({
+                                        'upload_member_status': 'renewal',
+                                        'comment': "*Membership Renewal"
+                                    })
                                 else:
-                                    member_line.update({'upload_member_status': 'update', 'comment': "*Membership Extension"})
+                                    member_line.update({
+                                        'upload_member_status': 'update',
+                                        'comment': "*Membership Extension"
+                                    })
                             else:
-                                member_line.update({'upload_member_status': 'rejection', 'comment': "*Duplicate Record in System!"})
+                                member_line.update({
+                                    'upload_member_status': 'rejection',
+                                    'comment': "*Duplicate Record in System!"
+                                })
                     else:
-                        member_line.update({'upload_member_status': 'new', 'comment': "Member Not Exist"})
+                        member_line.update({
+                            'upload_member_status': 'new',
+                            'comment': "Member Not Exist"
+                        })
                 else:
-                    # member_line.update({'upload_member_status': 'new', 'comment': "Member Not Exist"})
-                    db_name= member.name
                     db_expiry_date = member.member_expiry_date
                     excel_expiry_date = member_line.member_expiry_date
-                    
+
                     if db_expiry_date >= excel_expiry_date:
-                        member_line.update({'upload_member_status':'rejection', 'comment': 'Member with same expiry date'})
-                    elif member.member_expiry_date < member_line.member_expiry_date:
-                        member_line.update({'upload_member_status': 'replace', 'comment': "Member Replaced"})
+                        member_line.update({
+                            'upload_member_status': 'rejection',
+                            'comment': 'Member with same expiry date'
+                        })
+                    elif db_expiry_date < excel_expiry_date:
+                        member_line.update({
+                            'upload_member_status': 'replace',
+                            'comment': "Member Replaced"
+                        })
                         member_line.if_rep_match = member.id
             else:
-                # Search for the chassis number under another customer code
                 other_partner = self.env['res.partner'].search([
                     ('vehicle_chasis_no', '=', excel_chassis_no),
                     ('membership_state', '!=', 'cancel')
                 ], limit=1)
+
                 if other_partner:
                     current_date = fields.Date.context_today(self)
                     db_expiry_date = member.member_expiry_date
+
                     if db_expiry_date >= current_date:
-                        member_line.update({'upload_member_status': 'company_change', 'comment': "Active Data Found Under Another Customer. Cancelling & Add as New Member"})
-                    elif db_expiry_date < current_date:
-                        member_line.update({'upload_member_status': 'company_change', 'comment': "Expired Data Found Under Another Customer. Cancelling & Add as New Member"})
+                        member_line.update({
+                            'upload_member_status': 'company_change',
+                            'comment': "Active Data Found Under Another Customer. Cancelling & Add as New Member"
+                        })
+                    else:
+                        member_line.update({
+                            'upload_member_status': 'company_change',
+                            'comment': "Expired Data Found Under Another Customer. Cancelling & Add as New Member"
+                        })
                         member_line.if_cpm_match = member.id
-                else:    
-                    member_line.update({'upload_member_status': 'new', 'comment': "*New Member"})
-#------------------------------------------OLF FLOW------------------------------------------------------ 
+                else:
+                    member_line.update({
+                        'upload_member_status': 'new',
+                        'comment': "*New Member"
+                    })
         else:
-            if excel_chassis_no == 'nan' or excel_chassis_no == '':
-                member_line.update({'upload_member_status': 'rejection', 'comment': "*Vehicle Chasis Number Does Not Exist!"})
+            if excel_chassis_no in ('NAN', ''):
+                member_line.update({
+                    'upload_member_status': 'rejection',
+                    'comment': "*Vehicle Chasis Number Does Not Exist!"
+                })
             else:
-                member_line.update({'upload_member_status': 'new', 'comment': "*New Member"})
-# ----------------------------------------------------------------------------------------------------------------------------------------------
+                member_line.update({
+                    'upload_member_status': 'new',
+                    'comment': "*New Member"
+                })
+
+
     def apply_member_upload_wizard(self):
             # Start measuring time
             start_time = time.time()
