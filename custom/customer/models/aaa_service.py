@@ -564,8 +564,11 @@ class AAAService(models.Model):
         payload = json.dumps({
             "erp_order_number": order_number,  
         })
+        header = {
+            'content-type':'application/json'
+        }
         
-        response = requests.post(url,data=payload)
+        response = requests.post(url,data=payload,headers=header)
         if response.status_code == 200:
             print(f"API RESPONSE-ORDER CREATED,{response.text}")
         else:
