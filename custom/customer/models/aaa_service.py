@@ -567,9 +567,9 @@ class AAAService(models.Model):
         
         response = requests.post(url,data=payload)
         if response.status_code == 200:
-            logger.info(f"API RESPONSE-ORDER CREATED,{response.text}")
+            print(f"API RESPONSE-ORDER CREATED,{response.text}")
         else:
-            logger.info(f"API RESPONSE-ORDER NOT CREATED,{response.text},{response.status_code}")
+            print(f"API RESPONSE-ORDER NOT CREATED,{response.text},{response.status_code}")
         
 # ---------------------------------------------------NEW A CODE-----------------------------------------------
     def action_dispatch_service(self):
