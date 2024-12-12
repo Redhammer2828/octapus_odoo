@@ -1,7 +1,7 @@
 from odoo import models, fields, api
 import datetime
 from datetime import timedelta
-from datetime import datetime
+from pytz import timezone
 import io
 import xlsxwriter
 import base64
@@ -10,6 +10,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from io import BytesIO
 from reportlab.lib.utils import ImageReader  # Import ImageReader
+from datetime import datetime, time
 
 import logging
 # Set up logging for debugging purposes
@@ -21,6 +22,34 @@ class ServiceReportWizard(models.TransientModel):
 
     from_date = fields.Datetime(string="From Date", required=True)
     to_date = fields.Datetime(string="To Date", required=True)
+   
+
+    from_date = fields.Datetime(
+        string="From Date",
+        required=True,
+        default=lambda self: self._get_datetime_with_midnight()
+    )
+
+    to_date = fields.Datetime(
+        string="To Date",
+        required=True,
+        default=lambda self: self._get_datetime_with_midnight()
+    )
+
+    def _get_datetime_with_midnight(self):
+        # Get today's date in the user's time zone
+        user_tz = timezone(self.env.user.tz or 'UTC')  # Default to UTC if no timezone is set
+        today_date = datetime.now(user_tz).date()  # Get today's date in user's time zone
+        
+        # Combine today's date with midnight time (00:00:00)
+        midnight = datetime.combine(today_date, time(0, 0, 0))
+
+        # Localize this time to the user's time zone and then convert to naive datetime
+        midnight_user_tz = user_tz.localize(midnight)
+        naive_midnight = midnight_user_tz.astimezone(timezone('UTC')).replace(tzinfo=None)
+
+        return naive_midnight
+    
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
     member_type = fields.Selection([('policy', 'POLICY'), ('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type")
     sequence_id = fields.Many2one('partner.category', string="Customer Category",
@@ -46,9 +75,28 @@ class ServiceReportWizard(models.TransientModel):
         service_records = self.env['aaa.service'].search(domain)
         _logger.debug("Fetched %d records from the aaa.service model", len(service_records))
         return service_records
-    
+    def _calculate_amount(self, record):
+        """Calculate the amount for a membership record."""
+        amount = 0.0
+        if record.member_type == 'credit':
+            if record.from_location and record.to_location and record.product_id:
+                service_rate = self.env['service.rate'].search([
+                    ('product_pricelist_item_id.product_tmpl_id', '=', record.product_id.id),
+                    ('from_loc_id', '=', record.from_location.id),
+                    ('to_loc_id', '=', record.to_location.id)
+                ], limit=1)
+                amount = service_rate.price if service_rate else 0.0
+        elif record.member_type == 'policy':
+            if record.name and record.product_template_id:
+                pricelist_item = self.env['product.pricelist.item'].search([
+                    ('product_tmpl_id', '=', record.product_template_id.id)
+                ], limit=1)
+                amount = pricelist_item.fixed_price if pricelist_item else 0.0
+        return f"{float(amount or 0):.2f}"
+   
+
     def action_print_pdf(self):
-        """Generate Membership Details PDF."""
+        """Generate Membership Details PDF with renewals and extensions."""
         import textwrap
         from reportlab.lib.pagesizes import landscape, A4
         from reportlab.pdfgen import canvas
@@ -56,37 +104,86 @@ class ServiceReportWizard(models.TransientModel):
         from reportlab.lib.units import inch
         import io
         import base64
- 
-        # Prepare domain filters
+
+        # Prepare domain filters for policy members within the specified date range
         domain = []
         if self.customer_id:
-            domain.append(('customer_id', '=', self.customer_id.id))
-        if self.member_type:
-            domain.append(('member_type', '=', self.member_type))
- 
-        # Fetch data
-        service_records = self.env['aaa.service'].search(domain)
- 
+            domain.append(('parent_customer_id', '=', self.customer_id.id))
+
+        if self.member_type == 'policy':
+            domain.append(('member_type', '=', 'policy'))
+        
+        if self.sequence_id:
+            domain.append(('member_partner_category_id', '=', self.sequence_id.id))
+
+        if self.from_date:
+            domain.append(('invoice_ref_date', '>=', self.from_date))
+
+        if self.to_date:
+            domain.append(('invoice_ref_date', '<=', self.to_date))
+
+        service_records = self.env['res.partner'].search(domain)
+
+        # Fetch renewals/extensions from membership.history
+        all_data = []  # This will store all rows for the PDF
+        for record in service_records:
+            # Add the original policy
+            all_data.append({
+                'membership_no': record.old_membership_number or '',
+                'name': record.name or '',
+                'plate_no': record.vehicle_plate or '',
+                'chasis_no': record.vehicle_chasis_no or '',
+                'policy_no': record.policy_no or '',
+                'start_date': record.member_activate_date.strftime('%d-%m-%Y') if record.member_activate_date else '',
+                'expiry_date': record.member_expiry_date.strftime('%d-%m-%Y') if record.member_expiry_date else '',
+                'car_make': record.vehicle_type or '',
+                'amount': self._calculate_amount(record),
+            })
+
+            # Check related history for renewals/extensions
+            history_records = self.env['membership.history'].search([('history_id', '=', record.id)])
+            for history in history_records:
+                expiry_diff = (record.member_expiry_date - history.member_expiry_date).days
+                if expiry_diff >= 365:  # Renewal
+                    renewal_type = "Renewal"
+                elif expiry_diff < 365:  # Extension
+                    renewal_type = "Extension"
+                else:
+                    continue  # Skip if it doesn't match renewal/extension criteria
+
+                # Add renewal/extension to the report
+                all_data.append({
+                    'membership_no': f"{record.old_membership_number} ({renewal_type})",
+                    'name': record.name or '',
+                    'plate_no': record.vehicle_plate or '',
+                    'chasis_no': record.vehicle_chasis_no or '',
+                    'policy_no': record.policy_no or '',
+                    'start_date': history.member_expiry_date.strftime('%d-%m-%Y') if history.member_expiry_date else '',
+                    'expiry_date': record.member_expiry_date.strftime('%d-%m-%Y') if record.member_expiry_date else '',
+                    'car_make': record.vehicle_type or '',
+                    'amount': self._calculate_amount(record),
+                })
+
         # PDF buffer
         buffer = io.BytesIO()
         pdf = canvas.Canvas(buffer, pagesize=landscape(A4))
         width, height = landscape(A4)
         margin = 20
         table_y_start = height - 120  # Table starts after title/logo
- 
+
         # Company logo setup
         company = self.env['res.company'].search([], limit=1)
         logo_width, logo_height = 1.2 * inch, 1.2 * inch
- 
+
         # Define headers and column widths
         headers = [
             'MEMBERSHIP\nNO.', 'NAME', 'PLATE\nNO.', 'CHASIS\nNO.', 'POLICY\nNO.',
             'START\nDATE', 'EXPIRY\nDATE', 'CAR\nMAKE', 'AMOUNT'
         ]
         col_widths = [85, 130, 85, 115, 95, 75, 75, 85, 65]  # Adjusted widths
-        header_height = 40  # Increased height for header row
-        row_height = 30    # Standard height for data rows
- 
+        header_height = 40
+        row_height = 30
+
         def draw_header(pdf):
             """Draw header with company logo and tagline."""
             if company.logo:
@@ -99,130 +196,149 @@ class ServiceReportWizard(models.TransientModel):
                     width=logo_width,
                     height=logo_height,
                 )
- 
+
             # Center the title in the header
             pdf.setFont("Helvetica-Bold", 12)
             title = "Membership Details"
             pdf.drawString((width - pdf.stringWidth(title, "Helvetica-Bold", 12)) / 2, height - 40, title)
- 
+
+            # Display the date range below the title
+            pdf.setFont("Helvetica", 10)
+            date_range = f"From: {self.from_date.strftime('%d-%m-%Y')} To: {self.to_date.strftime('%d-%m-%Y')}"
+            pdf.drawString((width - pdf.stringWidth(date_range, "Helvetica", 10)) / 2, height - 55, date_range)
+
             # Draw the tagline below the logo
             pdf.setFont("Helvetica", 8)
             tagline_y_position = height - logo_height - 15
             pdf.drawRightString(width - margin, tagline_y_position, "We guarantee to get you moving...")
- 
+
         def draw_table_header(pdf, y_position):
             """Draw table headers with proper spacing."""
             x_offset = margin
-            pdf.setFont("Helvetica-Bold", 8)  # Slightly larger font for headers
-           
-            # Draw header cells
+            pdf.setFont("Helvetica-Bold", 8)
             for i, header in enumerate(headers):
-                # Draw the cell rectangle
                 pdf.rect(x_offset, y_position - header_height, col_widths[i], header_height)
-               
-                # Calculate center position for text
                 text_lines = header.split('\n')
-                total_text_height = len(text_lines) * 10  # 10 points per line
+                total_text_height = len(text_lines) * 10
                 starting_y = y_position - (header_height / 2) + (total_text_height / 2)
-               
-                # Draw each line of text centered in its cell
                 for line in text_lines:
                     text_width = pdf.stringWidth(line, "Helvetica-Bold", 8)
                     x_text = x_offset + (col_widths[i] - text_width) / 2
                     pdf.drawString(x_text, starting_y - 10, line)
                     starting_y -= 10
-                   
                 x_offset += col_widths[i]
-           
             return y_position - header_height
- 
-        def draw_data_row(pdf, record, y_position):
-            """Draw each record row with proper text wrapping."""
+
+    
+
+
+        def draw_data_row(pdf, data, y_position):
+            """
+            Draw each record row with advanced text wrapping and cell fitting.
+            
+            Args:
+                pdf (Canvas): The PDF canvas to draw on
+                data (dict): Dictionary containing row data
+                y_position (float): Y-coordinate to start drawing the row
+            
+            Returns:
+                float: Updated y-position after drawing the row
+            """
             x_offset = margin
-            pdf.setFont("Helvetica", 7)  # Consistent font size for data
-           
-            # Prepare data
-            data = [
-                record.member_id.old_membership_number or '',
-                record.member_id.name or '',
-                record.vehicle_plate or '',
-                record.vehicle_chasis_no or '',
-                record.policy_no or '',
-                record.member_id.member_activate_date.strftime('%d-%m-%Y') if record.member_id.member_activate_date else '',
-                record.member_id.member_expiry_date.strftime('%d-%m-%Y') if record.member_id.member_expiry_date else '',
-                record.vehicle_type or '',
-            ]
- 
-            # Calculate amount
-            if record.member_type == 'credit':
-                if record.from_location and record.to_location and record.product_id:
-                    service_rate = self.env['service.rate'].search([
-                        ('product_pricelist_item_id.product_tmpl_id', '=', record.product_id.id),
-                        ('from_loc_id', '=', record.from_location.id),
-                        ('to_loc_id', '=', record.to_location.id)
-                    ], limit=1)
-                    amount = service_rate.price if service_rate else 0.0
-                else:
-                    amount = 0.0
-            elif record.member_type == 'policy':
-                if record.member_id and record.member_id.product_template_id:
-                    pricelist_item = self.env['product.pricelist.item'].search([
-                        ('product_tmpl_id', '=', record.member_id.product_template_id.id)
-                    ], limit=1)
-                    amount = pricelist_item.fixed_price if pricelist_item else 0.0
-                else:
-                    amount = 0.0
-            data.append(f"{float(amount or 0):.2f}")
- 
-            # Draw cells
-            for i, value in enumerate(data):
-                # Draw cell rectangle
-                pdf.rect(x_offset, y_position - row_height, col_widths[i], row_height)
-               
-                # Handle text wrapping and positioning
-                wrapped_text = textwrap.fill(str(value), width=int(col_widths[i]/5))
-                text_lines = wrapped_text.split('\n')
-               
-                # Calculate vertical position for text
-                line_height = 10
-                total_text_height = len(text_lines) * line_height
-                text_y = y_position - (row_height/2) + (total_text_height/2) - line_height
-               
-                for line in text_lines:
-                    if i == 8:  # Amount column - right aligned
-                        pdf.drawRightString(x_offset + col_widths[i] - 5, text_y, line)
-                    else:  # Other columns - left aligned
-                        pdf.drawString(x_offset + 5, text_y, line)
-                    text_y -= line_height
-               
+            pdf.setFont("Helvetica", 7)
+            line_height = 8  # Manual line height instead of setLeading
+
+            def wrap_text(text, width, font_name, font_size):
+                """
+                Wrap text to fit within a specific width.
+                
+                Args:
+                    text (str): Text to wrap
+                    width (float): Maximum width of the cell
+                    font_name (str): Font name
+                    font_size (int): Font size
+                
+                Returns:
+                    list: List of wrapped text lines
+                """
+                # Convert to string and handle None
+                text = str(text) if text is not None else ''
+                
+                # If text is empty, return empty list
+                if not text:
+                    return ['']
+                
+                # Calculate approximate characters per line based on width
+                max_chars = int(width / (font_size * 0.5))  # Adjust multiplier as needed
+                
+                # Use textwrap to split the text
+                import textwrap
+                wrapped_lines = textwrap.wrap(text, width=max_chars)
+                
+                # Ensure at least one line, even if empty
+                return wrapped_lines if wrapped_lines else ['']
+
+            # Prepare to track maximum lines across all columns
+            max_lines = 1
+            column_lines = []
+
+            # First pass: wrap text and determine maximum lines
+            for i, value in enumerate(data.values()):
+                wrapped = wrap_text(value, col_widths[i], "Helvetica", 7)
+                column_lines.append(wrapped)
+                max_lines = max(max_lines, len(wrapped))
+
+            # Adjust row height based on max lines
+            adjusted_row_height = row_height * (max_lines + 0.5)
+
+            # Draw row rectangles
+            x_offset = margin
+            for i, lines in enumerate(column_lines):
+                pdf.rect(x_offset, y_position - adjusted_row_height, col_widths[i], adjusted_row_height)
                 x_offset += col_widths[i]
-           
-            return y_position - row_height
- 
+
+            # Second pass: draw text
+            x_offset = margin
+            for i, lines in enumerate(column_lines):
+                # Center text vertically and horizontally within the cell
+                start_y = y_position - (adjusted_row_height / 2) + (line_height * (max_lines / 2))
+                
+                for j, line in enumerate(lines):
+                    text_width = pdf.stringWidth(line, "Helvetica", 7)
+                    x_text = x_offset + (col_widths[i] - text_width) / 2
+                    y_text = start_y - (j * line_height)
+                    pdf.drawString(x_text, y_text, line)
+                
+                x_offset += col_widths[i]
+
+            return y_position - adjusted_row_height
+
+       
+
+
         # Generate PDF
         draw_header(pdf)
         y_position = table_y_start
         y_position = draw_table_header(pdf, y_position)
- 
-        for record in service_records:
+
+        for row_data in all_data:
             if y_position < 50:  # Start new page if needed
                 pdf.showPage()
                 draw_header(pdf)
                 y_position = table_y_start
                 y_position = draw_table_header(pdf, y_position)
- 
-            y_position = draw_data_row(pdf, record, y_position)
- 
+            y_position = draw_data_row(pdf, row_data, y_position)
+
         pdf.save()
         buffer.seek(0)
- 
+
         # Create attachment
         attachment = self.env['ir.attachment'].create({
             'name': f"Membership Details_{self.id}.pdf",
             'datas': base64.b64encode(buffer.read()),
             'type': 'binary',
         })
- 
+
         return {
             'type': 'ir.actions.act_window',
             'res_model': 'ir.attachment',
@@ -230,6 +346,10 @@ class ServiceReportWizard(models.TransientModel):
             'view_mode': 'form',
             'target': 'new',
         }
+
+
+
+
 
     def action_export_excel(self):
         # Initialize buffer for Excel generation
@@ -288,11 +408,13 @@ class ServiceReportWizard(models.TransientModel):
         # Define the main headers conditionally
         headers = [
             'Service Date', 'Service Number', 'Customer C/O',
-            # Include 'Type' only if customer_id is "AL MASAOOD AUTOMOBILES COMPANY LLC"
+            # Include 'Type' and 'Customer category' only if customer_id is "AL MASAOOD AUTOMOBILES COMPANY LLC"
+            *(['Customer Category'] if self.customer_id and self.customer_id.name == 'AL MASAOOD AUTOMOBILES COMPANY LLC' else []),
             *(['Type'] if self.customer_id and self.customer_id.name == 'AL MASAOOD AUTOMOBILES COMPANY LLC' else []),
+           
             'Vehicle Type', 'Vehicle Model', 'Vehicle Plate', 'Chassis No', 'Service',
             'From Location', 'To Location', 'Trip Sheet No.', 'Quantity', 'Rate', 'Amount',
-            'Tax', 'Total'
+            'VAT(5%)', 'Total'
         ]
 
         # Write main headers
@@ -309,16 +431,23 @@ class ServiceReportWizard(models.TransientModel):
                 worksheet.set_column(col_num, col_num, width)
         else:
             row = 8
+           
+
+
+           # Initialize totals
             total_service_amount_sum = 0
-            total_tax_sum = 0
+            total_vat_sum = 0
             total_sum = 0
+            total_service_quantity = 0  # Track total quantity
+            total_rate_sum = 0  # Track total rate
 
             for record in service_records:
                 # Initialize variables
                 rate = 0.00
                 amount = 0.00
-                tax = 0.00
+                vat = 0.00
                 total = 0.00
+                quantity = 0.00  # Ensure quantity is reset per record
 
                 # Write data for each column
                 col_index = 0  # Tracks the column index dynamically
@@ -329,8 +458,6 @@ class ServiceReportWizard(models.TransientModel):
                             field_value = record.service_time.strftime('%d/%m/%Y')
                         else:
                             field_value = ''
-
-                    
                     elif header == 'Service Number':
                         field_value = record.name or ''
                     elif header == 'Customer C/O':
@@ -338,6 +465,9 @@ class ServiceReportWizard(models.TransientModel):
                     elif header == 'Type':
                         # This column exists only if the customer is "AL MASAOOD AUTOMOBILES COMPANY LLC"
                         field_value = record.member_id.name or ''
+                    elif header == 'Customer Category':
+                        # This column exists only if the customer is "AL MASAOOD AUTOMOBILES COMPANY LLC"
+                        field_value = record.sequence_id.description or ''
                     elif header == 'Vehicle Type':
                         field_value = record.vehicle_type or ''
                     elif header == 'Vehicle Model':
@@ -361,7 +491,9 @@ class ServiceReportWizard(models.TransientModel):
                     elif header == 'Trip Sheet No.':
                         field_value = record.credit_proforma_number or ''
                     elif header == 'Quantity':
-                        field_value = str(record.service_quantity) or ''
+                        quantity = 1.00
+                        total_service_quantity += quantity  # Add to total quantity
+                        field_value = str(quantity)
                     elif header == 'Rate':
                         if record.member_id.member_type == 'policy':
                             pricelist_item = self.env['product.pricelist.item'].search([
@@ -375,15 +507,20 @@ class ServiceReportWizard(models.TransientModel):
                                 ('to_loc_id', '=', record.to_location.id)
                             ], limit=1)
                             rate = service_rate.price if service_rate else 0.00
+                        total_rate_sum += rate  # Add to total rate
                         field_value = rate
                     elif header == 'Amount':
+                        # Ensure rate and amount are the same
                         amount = rate
+                        total_service_amount_sum += amount
                         field_value = amount
-                    elif header == 'Tax':
-                        tax = amount * 0.05
-                        field_value = tax
+                    elif header == 'VAT(5%)':
+                        vat = amount * 0.05
+                        total_vat_sum += vat
+                        field_value = vat
                     elif header == 'Total':
-                        total = amount + tax
+                        total = amount + vat
+                        total_sum += total
                         field_value = total
 
                     # Write field value and adjust column width
@@ -391,22 +528,22 @@ class ServiceReportWizard(models.TransientModel):
                     column_widths[col_index] = max(column_widths[col_index], len(str(field_value)) + 2)
                     col_index += 1
 
-                # Accumulate totals
-                total_service_amount_sum += amount
-                total_tax_sum += tax
-                total_sum += total
                 row += 1
 
             # Adjust column widths for better readability
             for col_num, width in enumerate(column_widths):
                 worksheet.set_column(col_num, col_num, width)
 
-            # Write totals at the end
-            worksheet.write(row, len(headers) - 4, 'Total', total_format)
-            worksheet.write(row, len(headers) - 3, total_service_amount_sum, total_format)
-            worksheet.write(row, len(headers) - 2, total_tax_sum, total_format)
-            worksheet.write(row, len(headers) - 1, total_sum, total_format)
+            
+            total_row_label_col = headers.index('Trip Sheet No.')  # Find column for "Trip Sheet No."
+            worksheet.write(row, total_row_label_col, 'TOTAL', total_format)  # Write "TOTAL" header
+            worksheet.write(row, headers.index('Quantity'), total_service_quantity, total_format)  # Total Quantity
+            worksheet.write(row, headers.index('Rate'), total_rate_sum, total_format)             # Total Rate
+            worksheet.write(row, headers.index('Amount'), total_service_amount_sum, total_format)  # Total Amount
+            worksheet.write(row, headers.index('VAT(5%)'), total_vat_sum, total_format)           # Total VAT
+            worksheet.write(row, headers.index('Total'), total_sum, total_format)                 # Grand Total
 
+            row += 1  # Move to next row after totals
         # Close the workbook and prepare for download
         workbook.close()
 

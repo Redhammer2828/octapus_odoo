@@ -85,13 +85,13 @@
                                 <field name="sequence_id" string="Customer Category"
                                     class="required_field"
                                     required="1" options="{'no_create': True, 'no_open': True}"
-                                    readonly="state in['cancel', 'done'] or member_type == 'policy'" />
+                                    readonly="state in['start','reach','cancel', 'done'] or member_type == 'policy'" />
                                 <field name="member_id" string="Member"
                                     readonly="state not in ['draft', 'initiate', 'dispatch'] or member_type == 'policy'"
                                     class="required_field" required="1"
                                     options="{'no_create': True, 'no_open': True}" />
                                 <field name="membership_num"
-                                    readonly="state in['cancel', 'done'] or member_type == 'policy'" />
+                                    readonly="1" invisible="member_type in ['credit','adhoc']" />
                                 <field name="member_contact_no" string="Mobile Number"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="email" string="Email"
@@ -122,12 +122,9 @@
                                     invisible="state not in ('change', 'initiate')" readonly="1" />
                             </group>
                             <group string="VEHICLE DETAILS" name="vehicle_details">
-                                <field name="vehicle_type" string="Vehicle Type"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch','start','reach'] or member_type == 'policy'" />
-                                <field name="vehicle_model" string="Vehicle Model"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch','start','reach'] or member_type == 'policy'" />
-                                <field name="vehicle_plate" string="Vehicle Plate"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch'] or member_type == 'policy'" />
+                                <field name="vehicle_type" string="Vehicle Type" readonly="state not in ['draft', 'initiate', 'dispatch', 'start'] or (state == 'reach' and member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" />
+                                <field name="vehicle_model" string="Vehicle Model" readonly="state not in ['draft', 'initiate', 'dispatch', 'start'] or (state == 'reach' and member_type == 'policy') or (state in ('dispatch','start') and is_agent_user) " />
+                                <field name="vehicle_plate" string="Vehicle Plate" readonly="state not in ['draft', 'initiate', 'dispatch', 'start'] or (state == 'reach' and member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
                                     readonly="state not in ['draft', 'initiate', 'dispatch'] or vehicle_chasis_no != False or member_type == 'policy'" />
                                 <field name="policy_no" string="Policy No"

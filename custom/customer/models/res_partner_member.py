@@ -5,6 +5,7 @@ from lxml import etree
 from odoo.exceptions import UserError, ValidationError
 import json
 from datetime import date
+import random
 
 
 logger = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ class ResPartnerMembers(models.Model):
     is_driver_available = fields.Boolean('Is Driver Available',default='False')
     is_duplicated = fields.Boolean(string='Duplicated Record', default=False)
     # Basic Fields
-    ref_num = fields.Char('Membership Number')
+    ref_num = fields.Char(string='Membership Number', compute='_compute_member_ref_no', store=True)
     policy_no = fields.Char(string='Policy Number')
     vehicle_chasis_no = fields.Char(string='Vehicle Chasis No')
     old_membership_number = fields.Char(string='Old Membership Number')
@@ -107,6 +108,18 @@ class ResPartnerMembers(models.Model):
         
         new_partner = super(ResPartnerMembers, self).create(vals)
         return new_partner
+    
+    @api.depends('parent_customer_id', 'member_partner_category_id', 'card_type_id')
+    def _compute_member_ref_no(self):
+        for record in self:
+            if record.parent_customer_id and record.member_partner_category_id and record.card_type_id:
+                customer_code = record.parent_customer_id.customer_code or ''
+                category_name = record.member_partner_category_id.name or ''
+                card_code = record.card_type_id.code or ''
+                random_digits = str(random.randint(10000, 99999))
+                record.ref_num = f"{customer_code}{category_name}{card_code}{random_digits}"
+            else:
+                record.ref_num = False
 
     def action_confirm_membership(self):
             for record in self:
