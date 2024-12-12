@@ -85,13 +85,13 @@
                                 <field name="sequence_id" string="Customer Category"
                                     class="required_field"
                                     required="1" options="{'no_create': True, 'no_open': True}"
-                                    readonly="state in['cancel', 'done'] or member_type == 'policy'" />
+                                    readonly="state in['start','reach','cancel', 'done'] or member_type == 'policy'" />
                                 <field name="member_id" string="Member"
                                     readonly="state not in ['draft', 'initiate', 'dispatch'] or member_type == 'policy'"
                                     class="required_field" required="1"
                                     options="{'no_create': True, 'no_open': True}" />
                                 <field name="membership_num"
-                                    readonly="state in['cancel', 'done'] or member_type == 'policy'" />
+                                    readonly="1" invisible="member_type in ['credit','adhoc']" />
                                 <field name="member_contact_no" string="Mobile Number"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="email" string="Email"
