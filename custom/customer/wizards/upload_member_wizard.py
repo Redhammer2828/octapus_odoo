@@ -45,6 +45,9 @@ class UploadMemberWizard(models.TransientModel):
         errors = []
         member_lines = []
 
+        # Fetching relevant product.template records where bundle_product = True
+        bundle_product_ids = self.env['product.template'].search([('bundle_product', '=', True)]).ids
+        
         def process_row(row, index):
             row_errors = []
             mobile_str = ""
@@ -58,28 +61,17 @@ class UploadMemberWizard(models.TransientModel):
             for field in required_fields:
                 if pd.isna(row.get(field)) or row.get(field) == '':
                     row_errors.append(f'Field "{field}" is required and cannot be empty. Row: {index + 2}.')
-
-            # Step 1: Fetch customer_code from Excel and search in res.partner
-            # customer_code = row.get('customer_code')
-            # print("CUSTOMER CODE-------",customer_code)
-            # customer = self.env['res.partner'].search([('customer_code', '=', customer_code)], limit=1)
-            # print("customer_Code---------",customer.id)
             
-            # if customer:
-            #     # Step 2: Fetch sequence_code from Excel and validate it against partner.category
-            #     category_code = row.get('category_code')
-            #     print("CATEGORY CODE------",category_code)
-            #     category = self.env['partner.category'].search([
-            #         ('name', '=', category_code),
-            #         ('partner_id', '=', customer.id)  # Filter by partner_id
-            #     ])
-            #     print("CATEGORYRRR",category)
-                
-            #     if not category:
-            #         row_errors.append(f'Sequence code "{category_code}" not found for customer "{customer_code}". Row: {index + 2}.')
+            # Validate category code
             category_code = row.get('category_code')
             if category_code and category_code not in valid_category_codes:
                 row_errors.append(f'Invalid category code "{category_code}" in row {index + 2}.')
+            
+            # Validate package_id against bundle_product_ids
+            package_id = row.get('package_id')
+            if package_id and int(package_id) not in bundle_product_ids:
+                row_errors.append(f'Invalid package_id "{package_id}" in row {index + 2}. Must be one of the package id in Package list.')
+            
             # Date fields to be converted
             date_fields = ['delivery_ref_date', 'member_expiry_date', 'invoice_ref_date', 'member_activate_date']
 
