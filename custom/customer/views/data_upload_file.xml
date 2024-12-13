@@ -8,18 +8,19 @@
             <field name="arch" type="xml">
                 <form string="Policy Members Data" create="false" edit="false" copy="false">
                     <style>
-                            .field_width [data-id="member_name"]{width: 2000px !important;}
-                        
+                        .field_width [data-id="member_name"]{width: 2000px !important;}
+
                     </style>
                     <header>
                         <button name="action_validate_policy_data" string="Validate" type="object"
                             invisible="state not in ['draft']" class="btn-primary" />
                         <button name="apply_member_upload_wizard" string="Apply" type="object"
                             invisible="state not in ['validate']" class="btn-primary" />
-                        <!-- <button name="apply_tester" string="TEST" type="object" class="btn-primary" /> -->
+                        <!-- <button name="apply_tester" string="TEST" type="object"
+                        class="btn-primary" /> -->
                         <button name="action_view_rejected_records" string="Rejected Records"
                             type="object" class="btn-default"
-                            invisible="state not in ['validate','done']" icon="fa-times-circle"/>
+                            invisible="state not in ['validate','done']" icon="fa-times-circle" />
                         <button name="action_view_added_records" string="Added Records"
                             type="object" class="btn-default"
                             invisible="state not in ['validate','done']" icon="fa-check-circle" />
@@ -57,7 +58,7 @@
                                 decoration-warning="upload_member_status == 'exist_temp'"
                                 decoration-primary="upload_member_status == 'renewal' or upload_member_status == 'update'">
 
-                                <field name="member_name" class="my_field"/>
+                                <field name="member_name" class="my_field" />
                                 <field name="mobile" />
                                 <field name="vehicle_plate" />
                                 <field name="vehicle_chasis_no" />
@@ -136,6 +137,85 @@
                 </tree>
             </field>
         </record>
+
+        <record id="upload_member_line_form_view" model="ir.ui.view">
+            <field name="name">upload.member.line.form.view</field>
+            <field name="model">upload.member.line</field>
+            <field name="arch" type="xml">
+                <form string="Upload Member Line" readonly="1">
+                    <sheet bgcolor="lightblue">
+                        <group string="Member Details" colspan="3">
+                            <group>
+                                <field name="member_name" string="Member Name" readonly="1" />
+                                <field name="mobile" string="Mobile" readonly="1" />
+                                <field name="package" string="Package ID" readonly="1" />
+                            </group>
+                            <group>
+                                <field name="member_type" string="Member Type" readonly="1" />
+                                <field name="old_membership_number" string="Old Membership Number"
+                                    readonly="1" />
+                                <field name="policy_no" string="Policy Number" readonly="1" />
+                            </group>
+                            <group>
+                                <field name="sequence_code" string="Sequence Code" readonly="1" />
+                                <field name="upload_member_status" string="Upload Member Status"
+                                    readonly="1" />
+                                <field name="card_type" string="Card Type" readonly="1" />
+                            </group>
+                        </group>
+                        <group string="Vehicle Details" colspan="3">
+                            <group>
+                                <field name="vehicle_plate" string="Vehicle Plate" readonly="1" />
+                                <field name="vehicle_chasis_no" string="Vehicle Chassis Number"
+                                    readonly="1" />
+                                <field name="vehicle_mfg_year" string="Vehicle Manufacturing Year"
+                                    readonly="1" />
+                            </group>
+                            <group>
+                                <field name="vehicle_reg_country"
+                                    string="Vehicle Registration Country" readonly="1" />
+                                <field name="vehicle_emirate" string="Vehicle Emirate" readonly="1" />
+                                <field name="vehicle_reg_code" string="Vehicle Registration Code"
+                                    readonly="1" />
+                            </group>
+                            <group>
+                                <field name="street" string="Street" readonly="1" />
+                                <field name="state" string="State" readonly="1" />
+                                <field name="region_code" string="Region Code" readonly="1" />
+                            </group>
+                        </group>
+                        <group string="Membership Dates" colspan="3">
+                            <group>
+                                <field name="member_activate_date" string="Member Activation Date"
+                                    readonly="1" />
+                                <field name="member_expiry_date" string="Member Expiry Date"
+                                    readonly="1" />
+                            </group>
+                            <group>
+                                <field name="invoice_ref_date" string="Invoice Reference Date"
+                                    readonly="1" />
+                                <field name="customer_ref_date" string="Customer Reference Date"
+                                    readonly="1" />
+                            </group>
+                            <group>
+                                <field name="delivery_ref_date" string="Delivery Reference Date"
+                                    readonly="1" />
+                                <field name="customer_code" string="Customer Code" readonly="1" />
+                            </group>
+                        </group>
+                        <group string="Additional Information" colspan="3">
+                            <group>
+                                <field name="comment" string="Comment" readonly="1" />
+                            </group>
+                            <group>
+                                <field name="remarks" string="Remarks" readonly="1" />
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
 
         <!-- Action -->
         <record id="action_policy_data_upload_file" model="ir.actions.act_window">
