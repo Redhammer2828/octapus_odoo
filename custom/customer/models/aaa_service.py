@@ -32,13 +32,13 @@ class AAAService(models.Model):
         ('requested','Requeted')
     ], string="Status", readonly=True, default='initiate', tracking=True)
     #MANY2ONE-------------------------------------------------------------------------------------------------------
-    customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True), ]")
+    customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True) ]")
     credit_customer_co = fields.Char('Customer C/O')
-    sequence_id = fields.Many2one('partner.category', string="Customer Category", domain="[('partner_id','=', customer_id),('member_type','=','member_type')]")
+    sequence_id = fields.Many2one('partner.category', string="Customer Category", domain="[('partner_id','=', customer_id),('member_type','=',member_type)]")
     member_id = fields.Many2one(
         'res.partner', 
         string="Member", 
-        domain=[('is_company', '=', False),('member_type','=','member_type')] 
+        domain=[('is_company', '=', False),('member_type','=',member_type)] 
     )
     membership_num = fields.Char('Membership Number')
     created_by = fields.Many2one(
@@ -292,36 +292,6 @@ class AAAService(models.Model):
     @api.depends('selected_from_location', 'selected_to_location')
     def _compute_amount(self):
         pass
-        # for record in self:
-        #     if record.selected_from_location and record.selected_to_location:
-        #         # Fetch lat/long from selected locations
-        #         from_lat = record.selected_from_location.latitude
-        #         from_lon = record.selected_from_location.longitude
-        #         to_lat = record.selected_to_location.latitude
-        #         to_lon = record.selected_to_location.longitude
-        #         # Prepare API payload
-        #         payload = {
-        #             "merchant_longitude": from_lon,
-        #             "merchant_latitude": from_lat,
-        #             "customer_longitude": to_lon,
-        #             "customer_latitude": to_lat
-        #         }
-        #         # API URL
-        #         url = 'https://gioapi-gy-dev.kirkos.ae/carhire-order/order/service/deliveryfee/aaa/delivery-fee'
-        #         try:
-        #             # Make the POST request
-        #             headers = {'Content-Type': 'application/json'}
-        #             response = requests.post(url, headers=headers, data=json.dumps(payload))
-
-        #             # Check if the request was successful
-        #             if response.status_code == 200:
-        #                 print("API Response:", response.json())  # Print JSON response
-        #             else:
-        #                 print(f"Failed to fetch data. Status code: {response.status_code}, Response: {response.text}")
-                
-        #         except Exception as e:
-        #             print(f"Error occurred while making the API request: {str(e)}")
-
 
     @api.depends('selected_from_location', 'selected_to_location')
     def _compute_emirates(self):
