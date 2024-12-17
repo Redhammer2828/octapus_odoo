@@ -185,7 +185,11 @@ class AAAService(models.Model):
         compute="_compute_hide_selected_locations",
         store=True
     )
-
+    is_today = fields.Boolean(
+        string="Is Today",
+        compute="_compute_is_today",
+        store=True
+    )
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
     
@@ -225,6 +229,18 @@ class AAAService(models.Model):
     def _compute_hide_selected_locations(self):
         for record in self:
             record.hide_selected_locations = record.member_type == 'credit'
+
+    @api.depends('service_time')
+    def _compute_is_today(self):
+        today = fields.Date.context_today(self)
+        start_of_day = datetime.combine(today, datetime.min.time())
+        end_of_day = start_of_day + timedelta(days=1) - timedelta(seconds=1)
+        
+        for record in self:
+            record.is_today = (
+                record.service_time and
+                start_of_day <= record.service_time <= end_of_day
+            )
 # --------------------------------------------API SEARCH LOCATION-------------------------------------------------------------------
     @api.depends('search_query')
     def _fetch_location_suggestions(self):
