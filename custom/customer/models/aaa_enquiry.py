@@ -60,7 +60,7 @@ class Enquiry(models.Model):
 
         if any(group.name in restricted_groups for group in user_groups):
             raise UserError(
-                "You cannot delete this record as you belong to a restricted group: 'new_agents' or 'new_dispatchers'."
+                "You cannot delete this record."
             )
         return super(Enquiry, self).unlink()
     
