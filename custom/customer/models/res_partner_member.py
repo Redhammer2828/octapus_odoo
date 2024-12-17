@@ -85,6 +85,19 @@ class ResPartnerMembers(models.Model):
     # ----------------------------
     membership_history_ids= fields.One2many('membership.history','history_id', string='Membership History')
     
+    def unlink(self):
+        """Restrict deletion for users in groups named 'new_agents' or 'new_dispatchers'."""
+        current_user = self.env.user  # Get the currently logged-in user
+        # Check if the user belongs to groups with specific names
+        user_groups = current_user.groups_id  # Get all groups of the current user
+        restricted_groups = ['new_agents', 'new_dispatchers']
+
+        if any(group.name in restricted_groups for group in user_groups):
+            raise UserError(
+                "You cannot delete this record as you belong to a restricted group: 'new_agents' or 'new_dispatchers'."
+            )
+        return super(ResPartnerMembers, self).unlink()
+    
     @api.model
     def create(self, vals):
         if self.env.context.get('from_res_partner_member_form'):
