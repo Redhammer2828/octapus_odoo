@@ -50,8 +50,20 @@ class Enquiry(models.Model):
         default='draft'
     )
 
-   
+    def unlink(self):
+        """Restrict deletion for users in groups named 'Agent' or 'Dispatcher'."""
+        current_user = self.env.user  # Get the currently logged-in user
 
+        # Check if the user belongs to groups with specific names
+        user_groups = current_user.groups_id  # Get all groups of the current user
+        restricted_groups = ['Agent', 'Dispatcher']
+
+        if any(group.name in restricted_groups for group in user_groups):
+            raise UserError(
+                "You cannot delete this record."
+            )
+        return super(Enquiry, self).unlink()
+    
     @api.model
     def _generate_enquiry_number(self):
         """Generate a sequence number in the format ENQ/{current_month}/{current_year}/{sequence_number}."""
@@ -74,7 +86,6 @@ class Enquiry(models.Model):
             vals['name'] = self._generate_enquiry_number()
         return super(Enquiry, self).create(vals)
     
-
     def write(self, vals):
         """Ensure that the state is updated to 'saved' after the form is saved."""
         if 'state' not in vals and self.state == 'draft':
@@ -88,16 +99,13 @@ class Enquiry(models.Model):
  
         if self.enquiry_type_id:
             # Log selected enquiry type
-            print(f"CT id: {self.enquiry_type_id.id}")
-           
+            print(f"CT id: {self.enquiry_type_id.id}")  
             # Search for related enquiry subtypes
             enquiries = self.env['enquiry.subtype'].search([
                 ('enquiry_type_id', '=', self.enquiry_type_id.id)
             ])
-           
             # Log found enquiry subtype IDs
             print(f"ENQUIRIES: {enquiries.ids}")
-           
             # Set domain if any enquiries are found
             return {
                 'domain': {
@@ -107,7 +115,6 @@ class Enquiry(models.Model):
         else:
             # Log case when no enquiry_type_id is selected
             print("No enquiry_type_id selected")
-           
             # Clear domain if no enquiry_type_id is selected
             return {
                 'domain': {
@@ -186,7 +193,3 @@ class ComplaintSubtype(models.Model):
 
     name = fields.Char(string='Complaint Subtype', required=True)
     complaint_type_id = fields.Many2one('complaint.config', string='Complaint Type', required=True)
-
-
-
-
