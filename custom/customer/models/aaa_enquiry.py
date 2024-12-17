@@ -51,7 +51,20 @@ class Enquiry(models.Model):
     )
 
    
+    def unlink(self):
+        """Restrict deletion for users in groups named 'Agent' or 'Dispatcher'."""
+        current_user = self.env.user  # Get the currently logged-in user
 
+        # Check if the user belongs to groups with specific names
+        user_groups = current_user.groups_id  # Get all groups of the current user
+        restricted_groups = ['Agent', 'Dispatcher']
+
+        if any(group.name in restricted_groups for group in user_groups):
+            raise UserError(
+                "You cannot delete this record as you belong to a restricted group: 'new_agents' or 'new_dispatchers'."
+            )
+        return super(Enquiry, self).unlink()
+    
     @api.model
     def _generate_enquiry_number(self):
         """Generate a sequence number in the format ENQ/{current_month}/{current_year}/{sequence_number}."""

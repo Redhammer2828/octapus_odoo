@@ -12,6 +12,7 @@
                     <field name="customer_id" />
                     <field name="member_id" />
                     <field name="member_contact_no" string="Mobile Number" />
+                    <field name="vehicle_plate" />
                     <field name="vehicle_type" />
                     <field name="product_id" string="Service" />
                     <field name="selected_from_location" string="Policy From" />
@@ -34,7 +35,7 @@
                     <field name="name" />
                     <field name="created_by" />
                     <field name="product_id" string="Service" />
-                    <field name="requested_date" />
+                    <field name="service_time" />
                     <field name="member_id" />
                     <field name="customer_id" />
                     <field name="membership_num" />
@@ -51,9 +52,8 @@
                     <field name="state" string="State" />
                     <field name="credit_proforma_number" string="Trip Sheet Number" />
                     <filter name="today_records" string="Today's Records"
-                        domain="[('is_today', '=', True)]" />
-
-
+                                 domain="[('service_time', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00')), 
+                  ('service_time', '&lt;=', context_today().strftime('%Y-%m-%d 23:59:59'))]"/>
                 </search>
             </field>
         </record>
@@ -149,8 +149,7 @@
             <field name="name">Scheduled</field>
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
-            <field name="domain">[('state', '=', 'initiate'), ('schedule_date_time', '!=', False),
-                ('requested_date', '!=', False)]</field>
+            <field name="domain">[('state', '=', 'initiate'), ('schedule_date_time', '!=', False)]</field>
             <field name="context">{'default_created_by': uid}</field>
             <field name="view_ids"
                 eval="[ 

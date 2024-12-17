@@ -1,7 +1,7 @@
 from odoo import models, fields, api ,_
 from odoo.exceptions import ValidationError
 from collections import defaultdict, Counter
-from datetime import datetime
+from datetime import datetime, date
 import time
 import re
 
@@ -65,7 +65,7 @@ class DataUploadFile(models.Model):
                 self.check_member_details(member, member_line)
             else:
                 expiry_date = fields.Date.from_string(member_line.member_expiry_date)
-                activate_date = fields.Date.from_string(member_line.member_activate_date)
+                activate_date = fields.Date.from_string(member_line.member_activate_date) if member_line.member_activate_date else date(1970, 1, 1)
 
                 if expiry_date < activate_date:
                     member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date cannot be earlier than Activation Date!"})
@@ -111,7 +111,8 @@ class DataUploadFile(models.Model):
                         db_expiry_date = fields.Date.from_string(member.member_expiry_date)
                         difference = (expiry_date - db_expiry_date).days
 
-                        if expiry_date < fields.Date.from_string(member_line.member_activate_date):
+                        activate_date = fields.Date.from_string(member_line.member_activate_date) if member_line.member_activate_date else date(1970, 1, 1)
+                        if expiry_date < activate_date:
                             member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date is less than Activation Date"})
                         else:
                             if member.member_expiry_date != member_line.member_expiry_date:
@@ -216,6 +217,7 @@ class DataUploadFile(models.Model):
                         'member_type': 'policy',
                         'membership_state': 'confirm',
                         'member_partner_category_id': matching_category.id if matching_category else None,
+                        'product_template_id': member_line.package,
                         # Add more fields to create as needed
                     })
                 # Handle 'renewal' or 'update' status
