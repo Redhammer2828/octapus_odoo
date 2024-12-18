@@ -38,7 +38,7 @@ class AAAService(models.Model):
     member_id = fields.Many2one(
         'res.partner', 
         string="Member", 
-        domain=[('is_company', '=', False),('member_type','=',member_type)] 
+        domain="[('is_company', '=', False),('member_type','=',member_type)] "
     )
     membership_num = fields.Char('Membership Number')
     created_by = fields.Many2one(
@@ -49,7 +49,6 @@ class AAAService(models.Model):
         store=False,
         readonly=False
     )
-    
     
     vehicle_type = fields.Char('Vehicle Type')   #Chaged to char
     vehicle_model = fields.Char('Vehicle Model')  #Changed to char
@@ -101,7 +100,7 @@ class AAAService(models.Model):
     deposit_amount = fields.Float(string="Deposit Amount")
     schedule_service_check = fields.Boolean(string="Schedule Service Check")
     schedule_date_time = fields.Datetime(string="Schedule Date Time")
-    requested_date = fields.Datetime(string="Requested Date")
+    requested_date = fields.Datetime(string="Action Date Time")
     driving_license = fields.Char(string="Driving License")
     claim_number = fields.Char(string="Claim Number")
     smarto = fields.Boolean(string="Smarto")
@@ -134,7 +133,7 @@ class AAAService(models.Model):
     
     old_membership_number = fields.Char('Old Membership Number')
     
-    service_time = fields.Datetime(string="Service Date", default=fields.Datetime.now)
+    service_time = fields.Datetime(string="Service Date Time", default=fields.Datetime.now)
     cash_collected_hidden = fields.Boolean(string="Cash Collected Hidden")
     cash_collected = fields.Float(string="Cash Collected")     
     
@@ -191,9 +190,18 @@ class AAAService(models.Model):
         compute="_compute_is_today",
         store=True
     )
-
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
- 
+    is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
+    
+    # ----------------------------DELETE RESTRICTION-------------------------------------------------------------------
+    def unlink(self):
+        for record in self:
+            if record.is_agent_user:
+                raise UserError("You cannot delete this record.")
+            if record.is_dispatch_user:
+                raise UserError("You cannot delete this record.")
+        return super(AAAService, self).unlink()
+    # -----------------------------------------------------------------------------------------------------------------
     @api.depends('created_by')
     def _compute_is_agent_user(self):
         """Compute is_agent_user based on the created_by user's group membership."""
@@ -203,8 +211,19 @@ class AAAService(models.Model):
             if record.created_by:
                 # Check if `created_by` belongs to the 'new_agents' group
                 user_groups = record.created_by.groups_id
-                record.is_agent_user = any(group.name == 'agent_user' for group in user_groups)
-
+                record.is_agent_user = any(group.name == 'Agent' for group in user_groups)
+    
+    @api.depends('created_by')
+    def _compute_is_dispatch_user(self):
+        """Compute is_dispatch_user based on the created_by user's group membership."""
+        for record in self:
+            # Default to False if no `created_by` is set
+            record.is_dispatch_user = False
+            if record.created_by:
+                # Check if `created_by` belongs to the 'new_agents' group
+                user_groups = record.created_by.groups_id
+                record.is_dispatch_user = any(group.name == 'Dispatcher' for group in user_groups)
+    
     # FOR TREE VIEW
     @api.depends('member_type')
     def _compute_hide_selected_locations(self):
@@ -222,7 +241,7 @@ class AAAService(models.Model):
                 record.service_time and
                 start_of_day <= record.service_time <= end_of_day
             )
-
+# --------------------------------------------API SEARCH LOCATION-------------------------------------------------------------------
     @api.depends('search_query')
     def _fetch_location_suggestions(self):
         for record in self:
@@ -437,7 +456,7 @@ class AAAService(models.Model):
                     record.sequence_id = False
  
             elif record.member_type == 'adhoc':
-                # For 'adhoc' members, fetch and auto-update sequence_id only
+                # For 'adhoc' members, fetch and auto-update sequence_id and member_id
                 partner_categories = self.env['partner.category'].search([
                     ('partner_id', '=', record.customer_id.id),
                     ('member_type', '=', 'adhoc'),
@@ -449,8 +468,17 @@ class AAAService(models.Model):
                     # Clear sequence_id if no 'adhoc' categories are found
                     record.sequence_id = False
  
-                # Do not auto-update member_id, but filter 'adhoc' members in the dropdown
-                record.member_id = False
+                # Fetch 'adhoc' members and update member_id
+                members = self.env['res.partner'].search([
+                    ('parent_customer_id', '=', record.customer_id.id),
+                    ('member_type', '=', 'adhoc'),
+                ])
+                if members:
+                    # Update member_id with the first matching 'adhoc' member
+                    record.member_id = members[0].id
+                else:
+                    # Clear member_id if no 'adhoc' members are found
+                    record.member_id = False
  
     @api.onchange('sequence_id')
     def _onchange_sequence_id(self):
@@ -473,8 +501,17 @@ class AAAService(models.Model):
                     record.member_id = False
  
             elif record.member_type == 'adhoc':
-                # Do not auto-update member_id for 'adhoc', just ensure the field is cleared
-                record.member_id = False
+                # For 'adhoc', ensure the corresponding member_id matches the sequence_id
+                partner_category = self.env['partner.category'].browse(record.sequence_id.id)
+                if partner_category:
+                    member = self.env['res.partner'].search([
+                        ('parent_customer_id', '=', record.customer_id.id),
+                        ('member_partner_category_id', '=', partner_category.id),
+                        ('member_type', '=', 'adhoc'),
+                    ], limit=1)
+                    record.member_id = member.id if member else False
+                else:
+                    record.member_id = False
  
     @api.model
     def create(self, vals):
@@ -510,14 +547,7 @@ class AAAService(models.Model):
         })
  
         return service
- 
-    # @api.depends('state')
-    # def _compute_created_by(self):
-    #     """Dynamically update created_by when the record is in dispatch state."""
-    #     for record in self:
-    #         if record.state == 'dispatch' and record.created_by != self.env.user:
-    #             record.created_by = self.env.user
- 
+  
     @api.depends('state')
     def _compute_created_by(self):
         """Dynamically update created_by when the record is in specified states."""
@@ -616,6 +646,279 @@ class AAAService(models.Model):
             print(f"API RESPONSE-ORDER NOT CREATED,{response.text},{response.status_code}")
         
 # ---------------------------------------------------NEW A CODE-----------------------------------------------
+    # def action_dispatch_service(self):
+    #     self.ensure_one()
+    #     self._generate_service_name()
+    #     # Check for Credit
+    #     if self.member_id.member_type in ['credit', 'adhoc']:
+    #          # Calculate quantity and quantity_with_days without validation
+    #         if self.date_time_from and self.date_time_to:
+    #             delta = self.date_time_to - self.date_time_from
+    #             self.quantity = delta.days
+    #             self.quantity_with_days = f"{self.quantity} Days" if self.quantity else "0 Days"
+           
+    #         # Save the updated values to the database
+    #         self.write({
+    #             'quantity': self.quantity,
+    #             'quantity_with_days': self.quantity_with_days,
+    #         })
+    #         # Directly dispatch service without any validation
+    #         self._dispatch_service()
+    #         return True
+    #     if not self.member_id:
+    #         raise ValidationError(_("Member not found in the service record."))
+ 
+    #     member = self.member_id
+    #     print("POLICY MEMBER = res_partner id =", member.id)
+    #     product_template_id = member.product_template_id.id
+    #     print("PACKAGE ID OF POLICY MEMBER = product.package.servide", product_template_id)
+ 
+    #     if not product_template_id:
+    #         raise ValidationError(_("Package not found for the member."))
+ 
+    #     if not self._is_service_in_package(product_template_id):
+    #         print("SERVICE NOT IN PACKAGE - TRIGGERING CASH/CREDIT WIZARD")
+    #         return self._trigger_cash_or_credit_service_wizard()
+ 
+    #     if not self._validate_service_limits(product_template_id):
+    #         print("SERVICE VALIDITY REACHED THE CATEGORY LIMITS - TRIGGERING CASH WIZARD")
+    #         return self._trigger_cash_service_wizard()
+ 
+    #     self._dispatch_service()
+    #     return True
+ 
+    # def _generate_service_name(self):
+    #     if not self.name:
+    #         if not self.service_sequence:
+    #             date_str = datetime.today().strftime('%Y%m%d')
+    #             sequence = self.env['ir.sequence'].next_by_code('aaa.service')
+    #             self.name = f'SERV-{date_str}-{sequence[-4:]}'
+    #     self.schedule_date_time = fields.Datetime.now()
+    #     # -----------API------------------------------------------------------------------------------------
+    #     order_number = self.name
+    #     status = self.state
+    #     phone_number = self.member_contact_no
+    #     vehicle_chasis_no = self.vehicle_chasis_no  # Corrected field name
+ 
+    #     self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
+    #     self.action_order_create(order_number)
+    #     print(f"checking value of order:{order_number},{status}, {phone_number}, {vehicle_chasis_no}")
+    #     # -----------------------------------------------------------------------------------------------
+ 
+    # def _is_service_in_package(self, product_template_id):
+    #     # Search for services within the package
+    #     package_services = self.env['product.package.service'].search([
+    #         ('product_template_id', '=', product_template_id)
+    #     ])
+    #     print("SERVICES IN THE PACKAGE", package_services)
+    #     print("PRODUCT PACKAGE SERVICE - Service ids", package_services.product_id.ids)
+ 
+    #     service_product_id = self.product_id.id  # The service the member is trying to avail
+    #     print("SERVICE TAKEN BY THE MEMBER", service_product_id)
+ 
+    #     # Search for matching products in product.product
+    #     matching_products = self.env['product.product'].search([('id', 'in', package_services.product_id.ids)])
+    #     print("MATCHING PRODUCTS", matching_products)
+ 
+    #     # Get product_tmpl_id from the matching products
+    #     matching_product_tmpl_ids = matching_products.mapped('product_tmpl_id.id')
+    #     print("MATCHING PRODUCT TEMPLATE IDS", matching_product_tmpl_ids)
+ 
+    #     # Check if the service product matches any of the product templates
+    #     if service_product_id in matching_product_tmpl_ids:
+    #         print("SERVICE MATCHES A PRODUCT IN THE PACKAGE")
+    #         return True
+       
+ 
+    # def _validate_service_limits(self, product_template_id):
+    #     parent_category_id = self.product_id.categ_id.id
+    #     print("PARENT CATEGORY OF CHOSEN SERVICE  IN PACKAGE", parent_category_id)
+ 
+    #     if not parent_category_id:
+    #         return True
+ 
+    #     category_limits = self.env['product.category.limit'].search([
+    #         ('categ_id', '=', parent_category_id),
+    #         ('category_id', '=', product_template_id)
+    #     ])
+    #     print("VAL_LIMITS OF PARENT_CAT", category_limits)
+ 
+    #     if not category_limits:
+    #         return True
+ 
+    #     quantity_limit = 10  # Default value
+    #     validity_period_days = 365  # Default value
+ 
+    #     for limit in category_limits:
+    #         quantity_limit = float(limit.quantity)
+    #         print("NO OF SERVICE_ACCESS IN CAT_DURATION",quantity_limit)
+    #         validity_period_days = limit.hours if limit.uom_id.name == 'Days' else (limit.hours * 24)
+    #         print("CAT_DURATION", validity_period_days)
+ 
+    #     # Check for services that need to adhere to the 24-hour rule
+    #     if any(limit.hours == 24 and limit.quantity == 1 for limit in category_limits):
+    #         if not self._is_service_accessible_in_24_hours(parent_category_id):
+    #             print("SERVICE DISPATCHED BEFORE 24 HOURS - TRIGGERING CASH WIZARD")
+    #             return False # Trigger the cash service wizard
+    #         else:
+    #             return True
+   
+    #     if self.service_based != 'location_duration':
+    #         if not self._is_service_accessible_in_24_hours(parent_category_id):
+    #             remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
+    #             print("REMAINING SERVICE ACCESS in the CAT_DURATION", remaining_quantity)
+    #             if remaining_quantity <= 0:
+    #                 print("REMAINING SERVICE ACCESS REACHED ZERO - TRIGGERING CASH WIZARD")
+    #                 return False  # Trigger the cash service wizard
+    #             raise ValidationError(
+    #                 _("A service can only be initiated after 24 hours of the last dispatch. Remaining quantity: %d") % remaining_quantity
+    #             )
+    #          # Additional validation to check if the service is within the category limits, even if more than 24 hours have passed
+    #         remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
+    #         if remaining_quantity <= 0:
+    #             print("REMAINING SERVICE ACCESS REACHED ZERO AFTER 24 HOURS - TRIGGERING CASH WIZARD")
+    #             return False  # Trigger the cash service wizard
+           
+       
+    #     if self.service_based == 'location_duration':
+    #         period_start = fields.Datetime.now() - timedelta(days=validity_period_days)
+    #         print("START OF LOCATION DURATION SERVICE PERIOD:", period_start)
+ 
+    #         total_days = 0
+    #         # Fetch all services in the same category within the validity period
+    #         member_services_in_category = self.env['aaa.service'].search([
+    #             ('member_id', '=', self.member_id.id),
+    #             ('product_id.categ_id', '=', parent_category_id),
+    #             ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+    #             ('date_time_to', '>=', period_start),
+    #         ])
+    #         print("MEMBER SERVICES IN CATEGORY:", member_services_in_category)
+ 
+    #         # Calculate the total days accessed in the category
+    #         for service in member_services_in_category:
+    #             if service.service_based == 'location_duration' and service.date_time_to and service.date_time_from:
+    #                 service_duration = (service.date_time_to - service.date_time_from).total_seconds() / (3600 * 24)
+    #                 print("SERVICE DURATION FOR LOCATION DURATION SERVICE:", service_duration)
+    #                 total_days += service_duration
+    #                 print("TOTAL SERVICE DAYS ACCESSED:", total_days)
+ 
+    #         # Calculate remaining days from the quantity limit
+    #         remaining_days = quantity_limit - total_days
+    #         print("REMAINING SERVICE DAYS ALLOWED:", remaining_days)
+ 
+    #         # Update the 'quantity' field with the remaining days
+    #         # self.quantity = remaining_days
+    #         # print("UPDATED QUANTITY FIELD WITH REMAINING DAYS:", self.quantity)
+ 
+    #         # If remaining_days is less than or equal to 0, trigger the cash service wizard
+    #         if remaining_days <= 0:
+    #             print("SERVICE LIMIT EXCEEDED - TRIGGERING CASH WIZARD")
+    #             return False
+ 
+    #         # Check if the new service duration exceeds the remaining days
+    #         new_service_duration = (self.date_time_to - self.date_time_from).total_seconds() / (3600 * 24)
+    #         if new_service_duration > remaining_days:
+    #             raise ValidationError(
+    #                 _("The service can only be accessed for the remaining %d days. Please adjust the service duration.") % remaining_days
+    #             )
+ 
+    #         # Ensure that even if 24 hours have passed, the service is not dispatchable if the total service days exceed the limit
+    #         # if not self._is_service_accessible_in_24_hours(parent_category_id):
+    #         #     print("SERVICE DISPATCHED WITHIN 24 HOURS - BLOCKING SERVICE DISPATCH")
+    #         #     raise ValidationError(
+    #         #         _("A service of type 'location_duration' can only be initiated after 24 hours of the last dispatch. Remaining quantity (days): %d") % remaining_days
+    #         #     )
+ 
+    #          # Step 2: Update and persist `quantity_with_days`
+    #     if self.date_time_from and self.date_time_to:
+    #         delta = self.date_time_to - self.date_time_from
+    #         self.quantity = delta.days  # This updates `quantity`
+    #         self.quantity_with_days = f"{self.quantity} Days" if self.quantity else "0 Days"
+       
+    #     # Explicitly write `quantity_with_days` to save it in the database
+    #     self.write({
+    #         'quantity': self.quantity,
+    #         'quantity_with_days': self.quantity_with_days,
+    #     })
+ 
+    #     return True
+ 
+ 
+    # def _is_service_accessible_in_24_hours(self, parent_category_id):
+    #     last_dispatch_time = fields.Datetime.now() - timedelta(hours=24)
+    #     recent_services = self.env['aaa.service'].search_count([
+    #         ('member_id', '=', self.member_id.id),
+    #         ('product_id.categ_id', '=', parent_category_id),
+    #         # ('state', '=', 'dispatch'),
+    #         ('state', 'in', ['dispatch','start', 'reach', 'completed_by_driver', 'done']),
+    #         ('create_date', '>=', last_dispatch_time),
+    #     ])
+    #     return recent_services == 0
+ 
+    # def _count_services_in_category(self, parent_category_id):
+    #     return self.env['aaa.service'].search_count([
+    #         ('member_id', '=', self.member_id.id),
+    #         ('product_id.categ_id', '=', parent_category_id),
+    #         # ('state', '=', 'dispatch'),
+    #         ('state', 'in', ['dispatch','start', 'reach','completed_by_driver', 'done']),
+    #     ])
+ 
+    # def _trigger_cash_or_credit_service_wizard(self):
+    #     return {
+    #         'name': _('Convert to Cash '),
+    #         'type': 'ir.actions.act_window',
+    #         'res_model': 'service.dispatch.wizard',
+    #         'view_mode': 'form',
+    #         'view_id': self.env.ref('customer.view_service_dispatch_wizard_form').id,
+    #         'target': 'new',
+    #         'context': {
+    #             'default_service_id': self.id,
+    #         },
+    #     }
+ 
+    # def _trigger_cash_service_wizard(self):
+    #     return {
+    #         'name': _('Convert to Cash'),
+    #         'type': 'ir.actions.act_window',
+    #         'res_model': 'service.cash.wizard',
+    #         'view_mode': 'form',
+    #         'view_id': self.env.ref('customer.view_service_cash_wizard_form').id,
+    #         'target': 'new',
+    #         'context': {
+    #             'default_service_id': self.id,
+    #         },
+    #     }
+ 
+    # def _dispatch_service(self):
+    #     self.state = 'dispatch'
+    #     self.message_post(body=_("Service dispatched successfully."))
+    #     self.env['service.history'].create({
+    #         'service_id': self.id,
+    #         'user': self.env.user.id,
+    #         'time': fields.Datetime.now(),
+    #         'status': self.state,
+    #     })
+ 
+     
+    #     for service in self:
+    #         # Define the comment content based on whether a manual comment is provided
+    #         comment_content = service.comments or 'DISPATCHED'
+           
+    #         # Create the service.comment record
+    #         self.env['service.comment'].create({
+    #             'service_id': service.id,
+    #             'comment': comment_content,
+    #             'comment_date_and_time': fields.Datetime.now(),
+    #             'comment_user': self.env.user.id,
+    #             'comment_status': service.state,
+    #         })
+ 
+    #         # Clear the comments field if it was manually provided
+    #         if service.comments:
+    #             service.comments = False  # Clear the comments field
+ 
+    #     return True
+
     def action_dispatch_service(self):
         self.ensure_one()
         self._generate_service_name()
@@ -670,8 +973,8 @@ class AAAService(models.Model):
         phone_number = self.member_contact_no
         vehicle_chasis_no = self.vehicle_chasis_no  # Corrected field name
  
-        self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
-        self.action_order_create(order_number)
+        # self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
+        # self.action_order_create(order_number)
         print(f"checking value of order:{order_number},{status}, {phone_number}, {vehicle_chasis_no}")
         # -----------------------------------------------------------------------------------------------
  
@@ -702,7 +1005,7 @@ class AAAService(models.Model):
  
     def _validate_service_limits(self, product_template_id):
         parent_category_id = self.product_id.categ_id.id
-        print("PARENT CATEGORY OF CHOSEN SERVICE  IN PACKAGE", parent_category_id)
+        print(f"PARENT CATEGORY OF CHOSEN SERVICE IN PACKAGE: {parent_category_id}")
  
         if not parent_category_id:
             return True
@@ -711,7 +1014,7 @@ class AAAService(models.Model):
             ('categ_id', '=', parent_category_id),
             ('category_id', '=', product_template_id)
         ])
-        print("VAL_LIMITS OF PARENT_CAT", category_limits)
+        print(f"VAL_LIMITS OF PARENT_CAT: {category_limits}")
  
         if not category_limits:
             return True
@@ -721,38 +1024,67 @@ class AAAService(models.Model):
  
         for limit in category_limits:
             quantity_limit = float(limit.quantity)
-            print("NO OF SERVICE_ACCESS IN CAT_DURATION",quantity_limit)
-            validity_period_days = limit.hours if limit.uom_id.name == 'Days' else (limit.hours * 24)
-            print("CAT_DURATION", validity_period_days)
+            print(f"NO OF SERVICE ACCESS IN CAT_DURATION: {quantity_limit}")
+           
+            # Fix: Correct handling of hours vs. days
+            validity_period_days = (
+                limit.hours if limit.uom_id.name == 'Days' else limit.hours
+            )
+            print(f"CAT_DURATION (validity in hours or days): {validity_period_days}")
  
-        # Check for services that need to adhere to the 24-hour rule
-        if any(limit.hours == 24 and limit.quantity == 1 for limit in category_limits):
-            if not self._is_service_accessible_in_24_hours(parent_category_id):
-                print("SERVICE DISPATCHED BEFORE 24 HOURS - TRIGGERING CASH WIZARD")
-                return False # Trigger the cash service wizard
-            else:
-                return True
-   
-        if self.service_based != 'location_duration':
-            if not self._is_service_accessible_in_24_hours(parent_category_id):
+        # Logic for 24-hour validation
+            if validity_period_days == 24:
+                # Fetch the last service in the same category
+                last_service = self.env['aaa.service'].search([
+                    ('member_id', '=', self.member_id.id),
+                    ('product_id.categ_id', '=', parent_category_id),
+                    ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done'])
+                ], order='service_time desc', limit=1)  # Use 'service_time' for ordering
+ 
+                if last_service and last_service.service_time:
+                    time_since_last_service = fields.Datetime.now() - last_service.service_time
+                    hours_since_last_service = time_since_last_service.total_seconds() / 3600
+                    print(f"HOURS SINCE LAST SERVICE: {hours_since_last_service}")
+ 
+                    # If less than 24 hours, calculate remaining quantity
+                    if hours_since_last_service < 24:
+                        remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
+                        print(f"REMAINING SERVICE ACCESS IN THE CAT_DURATION (24 hours): {remaining_quantity}")
+ 
+                        if remaining_quantity > 0:
+                            print("SERVICE WITHIN 24 HOURS - TRIGGERING CASH WIZARD")
+                            self._trigger_cash_service_wizard()
+                            raise ValidationError(
+                                _("You can only access a new service 24 hours after the last one. Remaining quantity: %d") % remaining_quantity
+                            )
+                        elif remaining_quantity <= 0:
+                            print("NO REMAINING SERVICE ACCESS - TRIGGERING CASH WIZARD")
+                            self._trigger_cash_service_wizard()
+                            return False
+                else:
+                    print("No last service found or missing service_time")
+            else:  # Logic for validity_period_days = 365 or other cases
                 remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
-                print("REMAINING SERVICE ACCESS in the CAT_DURATION", remaining_quantity)
+                print(f"REMAINING SERVICE ACCESS IN THE CAT_DURATION ({validity_period_days} days): {remaining_quantity}")
+ 
                 if remaining_quantity <= 0:
                     print("REMAINING SERVICE ACCESS REACHED ZERO - TRIGGERING CASH WIZARD")
-                    return False  # Trigger the cash service wizard
-                raise ValidationError(
-                    _("A service can only be initiated after 24 hours of the last dispatch. Remaining quantity: %d") % remaining_quantity
-                )
-             # Additional validation to check if the service is within the category limits, even if more than 24 hours have passed
+                    self._trigger_cash_service_wizard()
+                    return False
+                elif remaining_quantity > 0:
+                    print(f"Remaining quantity is still available: {remaining_quantity}")
+ 
+        else:  # Logic for validity_period_days = 365 or other cases
             remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
+            print(f"REMAINING SERVICE ACCESS IN THE CAT_DURATION ({validity_period_days} days): {remaining_quantity}")
             if remaining_quantity <= 0:
-                print("REMAINING SERVICE ACCESS REACHED ZERO AFTER 24 HOURS - TRIGGERING CASH WIZARD")
-                return False  # Trigger the cash service wizard
-           
-       
+                print("REMAINING SERVICE ACCESS REACHED ZERO - TRIGGERING CASH WIZARD")
+                self._trigger_cash_service_wizard()
+                return False
+ 
         if self.service_based == 'location_duration':
             period_start = fields.Datetime.now() - timedelta(days=validity_period_days)
-            print("START OF LOCATION DURATION SERVICE PERIOD:", period_start)
+            print(f"START OF LOCATION DURATION SERVICE PERIOD: {period_start}")
  
             total_days = 0
             # Fetch all services in the same category within the validity period
@@ -762,25 +1094,20 @@ class AAAService(models.Model):
                 ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
                 ('date_time_to', '>=', period_start),
             ])
-            print("MEMBER SERVICES IN CATEGORY:", member_services_in_category)
+            print(f"MEMBER SERVICES IN CATEGORY: {member_services_in_category}")
  
             # Calculate the total days accessed in the category
             for service in member_services_in_category:
                 if service.service_based == 'location_duration' and service.date_time_to and service.date_time_from:
                     service_duration = (service.date_time_to - service.date_time_from).total_seconds() / (3600 * 24)
-                    print("SERVICE DURATION FOR LOCATION DURATION SERVICE:", service_duration)
+                    print(f"SERVICE DURATION FOR LOCATION DURATION SERVICE: {service_duration}")
                     total_days += service_duration
-                    print("TOTAL SERVICE DAYS ACCESSED:", total_days)
+                    print(f"TOTAL SERVICE DAYS ACCESSED: {total_days}")
  
             # Calculate remaining days from the quantity limit
             remaining_days = quantity_limit - total_days
-            print("REMAINING SERVICE DAYS ALLOWED:", remaining_days)
+            print(f"REMAINING SERVICE DAYS ALLOWED: {remaining_days}")
  
-            # Update the 'quantity' field with the remaining days
-            # self.quantity = remaining_days
-            # print("UPDATED QUANTITY FIELD WITH REMAINING DAYS:", self.quantity)
- 
-            # If remaining_days is less than or equal to 0, trigger the cash service wizard
             if remaining_days <= 0:
                 print("SERVICE LIMIT EXCEEDED - TRIGGERING CASH WIZARD")
                 return False
@@ -792,19 +1119,11 @@ class AAAService(models.Model):
                     _("The service can only be accessed for the remaining %d days. Please adjust the service duration.") % remaining_days
                 )
  
-            # Ensure that even if 24 hours have passed, the service is not dispatchable if the total service days exceed the limit
-            # if not self._is_service_accessible_in_24_hours(parent_category_id):
-            #     print("SERVICE DISPATCHED WITHIN 24 HOURS - BLOCKING SERVICE DISPATCH")
-            #     raise ValidationError(
-            #         _("A service of type 'location_duration' can only be initiated after 24 hours of the last dispatch. Remaining quantity (days): %d") % remaining_days
-            #     )
- 
-             # Step 2: Update and persist `quantity_with_days`
         if self.date_time_from and self.date_time_to:
             delta = self.date_time_to - self.date_time_from
             self.quantity = delta.days  # This updates `quantity`
             self.quantity_with_days = f"{self.quantity} Days" if self.quantity else "0 Days"
-       
+ 
         # Explicitly write `quantity_with_days` to save it in the database
         self.write({
             'quantity': self.quantity,
@@ -813,14 +1132,12 @@ class AAAService(models.Model):
  
         return True
  
- 
     def _is_service_accessible_in_24_hours(self, parent_category_id):
         last_dispatch_time = fields.Datetime.now() - timedelta(hours=24)
         recent_services = self.env['aaa.service'].search_count([
             ('member_id', '=', self.member_id.id),
             ('product_id.categ_id', '=', parent_category_id),
-            # ('state', '=', 'dispatch'),
-            ('state', 'in', ['dispatch','start', 'reach', 'completed_by_driver', 'done']),
+            ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
             ('create_date', '>=', last_dispatch_time),
         ])
         return recent_services == 0
@@ -829,8 +1146,7 @@ class AAAService(models.Model):
         return self.env['aaa.service'].search_count([
             ('member_id', '=', self.member_id.id),
             ('product_id.categ_id', '=', parent_category_id),
-            # ('state', '=', 'dispatch'),
-            ('state', 'in', ['dispatch','start', 'reach','completed_by_driver', 'done']),
+            ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
         ])
  
     def _trigger_cash_or_credit_service_wizard(self):
@@ -869,12 +1185,8 @@ class AAAService(models.Model):
             'status': self.state,
         })
  
-     
         for service in self:
-            # Define the comment content based on whether a manual comment is provided
             comment_content = service.comments or 'DISPATCHED'
-           
-            # Create the service.comment record
             self.env['service.comment'].create({
                 'service_id': service.id,
                 'comment': comment_content,
@@ -883,9 +1195,8 @@ class AAAService(models.Model):
                 'comment_status': service.state,
             })
  
-            # Clear the comments field if it was manually provided
             if service.comments:
-                service.comments = False  # Clear the comments field
+                service.comments = False
  
         return True
 # --------------------------------------------------------------------------------------------------
