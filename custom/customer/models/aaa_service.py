@@ -194,12 +194,17 @@ class AAAService(models.Model):
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
     
     # ----------------------------DELETE RESTRICTION-------------------------------------------------------------------
+
     def unlink(self):
-        for record in self:
-            if record.is_agent_user:
-                raise UserError("You cannot delete this record.")
-            if record.is_dispatch_user:
-                raise UserError("You cannot delete this record.")
+        """Restrict deletion for users in groups named 'Agent' or 'Dispatcher'."""
+        current_user = self.env.user  # Get the currently logged-in user
+        user_groups = current_user.groups_id  # Get all groups of the current user
+        restricted_groups = ['Agent', 'Dispatcher']
+
+        if any(group.name in restricted_groups for group in user_groups):
+            raise UserError(
+                "You cannot delete this record"
+            )
         return super(AAAService, self).unlink()
     # -----------------------------------------------------------------------------------------------------------------
     @api.depends('created_by')
