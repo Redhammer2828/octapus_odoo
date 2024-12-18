@@ -65,7 +65,7 @@ class DataUploadFile(models.Model):
                 self.check_member_details(member, member_line)
             else:
                 expiry_date = fields.Date.from_string(member_line.member_expiry_date)
-                activate_date = fields.Date.from_string(member_line.member_activate_date) if member_line.member_activate_date else date(1970, 1, 1)
+                activate_date = fields.Date.from_string(member_line.member_activate_date)
 
                 if expiry_date < activate_date:
                     member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date cannot be earlier than Activation Date!"})
@@ -111,7 +111,7 @@ class DataUploadFile(models.Model):
                         db_expiry_date = fields.Date.from_string(member.member_expiry_date)
                         difference = (expiry_date - db_expiry_date).days
 
-                        activate_date = fields.Date.from_string(member_line.member_activate_date) if member_line.member_activate_date else date(1970, 1, 1)
+                        activate_date = fields.Date.from_string(member_line.member_activate_date)
                         if expiry_date < activate_date:
                             member_line.update({'upload_member_status': 'rejection', 'comment': "*Expiry Date is less than Activation Date"})
                         else:
