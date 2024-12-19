@@ -193,13 +193,21 @@ class AAAService(models.Model):
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
     
+    # --------------------LOCATION TEST----------------
+
+
     # ----------------------------DELETE RESTRICTION-------------------------------------------------------------------
+
     def unlink(self):
-        for record in self:
-            if record.is_agent_user:
-                raise UserError("You cannot delete this record.")
-            if record.is_dispatch_user:
-                raise UserError("You cannot delete this record.")
+        """Restrict deletion for users in groups named 'Agent' or 'Dispatcher'."""
+        current_user = self.env.user  # Get the currently logged-in user
+        user_groups = current_user.groups_id  # Get all groups of the current user
+        restricted_groups = ['Agent', 'Dispatcher']
+
+        if any(group.name in restricted_groups for group in user_groups):
+            raise UserError(
+                "You cannot delete this record"
+            )
         return super(AAAService, self).unlink()
     # -----------------------------------------------------------------------------------------------------------------
     @api.depends('created_by')
@@ -973,8 +981,8 @@ class AAAService(models.Model):
         phone_number = self.member_contact_no
         vehicle_chasis_no = self.vehicle_chasis_no  # Corrected field name
  
-        # self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
-        # self.action_order_create(order_number)
+        self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
+        self.action_order_create(order_number)
         print(f"checking value of order:{order_number},{status}, {phone_number}, {vehicle_chasis_no}")
         # -----------------------------------------------------------------------------------------------
  
