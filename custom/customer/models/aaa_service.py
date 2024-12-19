@@ -193,6 +193,9 @@ class AAAService(models.Model):
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
     
+    # --------------------LOCATION TEST----------------
+
+
     # ----------------------------DELETE RESTRICTION-------------------------------------------------------------------
 
     def unlink(self):
@@ -978,8 +981,8 @@ class AAAService(models.Model):
         phone_number = self.member_contact_no
         vehicle_chasis_no = self.vehicle_chasis_no  # Corrected field name
  
-        # self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
-        # self.action_order_create(order_number)
+        self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
+        self.action_order_create(order_number)
         print(f"checking value of order:{order_number},{status}, {phone_number}, {vehicle_chasis_no}")
         # -----------------------------------------------------------------------------------------------
  
