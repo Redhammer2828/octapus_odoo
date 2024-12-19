@@ -23,39 +23,30 @@
                     </style>
                     <sheet bgcolor="lightblue">
                         <div class="oe_button_box" name="button_box">
-                            <button name="action_view_adhoc_service" type="object"
-                                class="oe_stat_button" icon="fa-pencil-square-o">
-                                <field name="adhoc_member_service_count" widget="statinfo"
-                                    string="Adhoc Services" />
+                            <button name="action_view_adhoc_service" type="object" class="oe_stat_button" icon="fa-pencil-square-o">
+                                <field name="adhoc_member_service_count" widget="statinfo" string="Adhoc Services" />
                             </button>
                         </div>
-                        <!-- <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
-                        invisible="active"/> -->
+                        <!-- <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/> -->
                         <field name="avatar_128" invisible="1" />
-                        <field name="image_1920" widget="image" class="oe_avatar"
-                            options="{&quot;preview_image&quot;: &quot;avatar_128&quot;}" />
+                        <field name="image_1920" widget="image" class="oe_avatar" options="{&quot;preview_image&quot;: &quot;avatar_128&quot;}" />
                         <div class="oe_title">
                             <!-- <h4>Name:</h4> -->
-                            <!-- <field name="ref_num" placeholder="Membership Number" readonly="1"
-                            style="font-size: 64%;" /> -->
+                            <!-- <field name="ref_num" placeholder="Membership Number" readonly="1" style="font-size: 64%;" /> -->
                             <label for="name" string="Name" />
                             <div>
-                                <field name="name" placeholder="Type.." class="required_field"
-                                    required="1" />
+                                <field name="name" placeholder="Type.." class="required_field" required="1" />
                             </div>
                             <!-- <h4>Company:</h4> -->
                             <label for="parent_customer_id" string="Company" />
                             <div>
-                                <field name="parent_customer_id" placeholder="select.."
-                                    class="required_field" required="1"
-                                    options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
+                                <field name="parent_customer_id" placeholder="select.." class="required_field" required="1" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
                             </div>
                         </div>
                         <group col="3">
                             <group>
                                 <field name="policy_no" string="Policy No" class="custom-field" />
-                                <field name="vehicle_chasis_no" string="Vehicle Chasis No"
-                                    class="required_field" required="1" />
+                                <field name="vehicle_chasis_no" string="Vehicle Chasis No" class="required_field" required="1" />
                                 <field name="old_membership_number" class="custom-field" />
                                 <field name="member_activate_date" class="custom-field" />
                                 <field name="member_expiry_date" class="custom-field" />
@@ -70,16 +61,11 @@
                                 <!-- <field name="create_uid" string="Created By" readonly="1"/> -->
                             </group>
                             <group>
-                                <field name="vehicle_type" string="Vehicle Type"
-                                    class="custom-field" />
-                                <field name="vehicle_model" string="Vehicle Model"
-                                    class="custom-field" />
-                                <field name="vehicle_reg_code" string="Vehicle Reg. Code"
-                                    class="custom-field" />
-                                <field name="vehicle_plate" string="Vehicle Plate"
-                                    class="custom-field" />
-                                <field name="vehicle_mfg_year" string="Vehicle Mfg Year"
-                                    class="custom-field" />
+                                <field name="vehicle_type" string="Vehicle Type" class="custom-field" />
+                                <field name="vehicle_model" string="Vehicle Model" class="custom-field" />
+                                <field name="vehicle_reg_code" string="Vehicle Reg. Code" class="custom-field" />
+                                <field name="vehicle_plate" string="Vehicle Plate" class="custom-field" />
+                                <field name="vehicle_mfg_year" string="Vehicle Mfg Year" class="custom-field" />
                                 <!-- <field name="vehicle_emirate_id" string="Vehicle Emirate"/> -->
                                 <!-- <field name="vehcle_reg_country_id" string="Vehicle Reg.
                                 Country"/> -->
@@ -89,42 +75,27 @@
                                 <!-- <field name="type" invisible="1" groups="base.group_no_one"/> -->
                                 <label for="street" string="Address" />
                                 <div class="o_address_format">
-                                    <field name="street" placeholder="Street..."
-                                        class="o_address_street custom-field" />
-                                    <field name="street2" placeholder="Street 2..."
-                                        class="o_address_street custom-field" />
-                                    <field name="city" placeholder="City"
-                                        class="o_address_city custom-field" />
-                                    <!-- <field name="state_id" class="o_address_state"
-                                    placeholder="State" options="{&quot;no_open&quot;: True}"
-                                    context="{'country_id': country_id, 'zip': zip}"/> -->
-                                    <field name="zip" placeholder="ZIP"
-                                        class="o_address_zip custom-field" />
-                                    <!-- <field name="country_id" placeholder="Country"
-                                    class="o_address_country" options="{&quot;no_open&quot;: True,
+                                    <field name="street" placeholder="Street..." class="o_address_street custom-field" />
+                                    <field name="street2" placeholder="Street 2..." class="o_address_street custom-field" />
+                                    <field name="city" placeholder="City" class="o_address_city custom-field" />
+                                    <!-- <field name="state_id" class="o_address_state" placeholder="State" options="{&quot;no_open&quot;: True}" context="{'country_id': country_id, 'zip': zip}"/> -->
+                                    <field name="zip" placeholder="ZIP" class="o_address_zip custom-field" />
+                                    <!-- <field name="country_id" placeholder="Country" class="o_address_country" options="{&quot;no_open&quot;: True,
                                     &quot;no_create&quot;: True}"/> -->
                                 </div>
-                                <field name="function" placeholder="e.g. Sales Director"
-                                    class="custom-field" />
+                                <field name="function" placeholder="e.g. Sales Director" class="custom-field" />
                                 <field name="phone" widget="phone" class="custom-field" />
                                 <field name="mobile" widget="phone" class="custom-field" />
                                 <field name="user_ids" invisible="1" class="custom-field" />
                                 <field name="email" widget="email" class="custom-field" />
-                                <field name="website" widget="url"
-                                    placeholder="e.g. www.bizweaver.in" class="custom-field" />
-                                <!-- <field name="category_id" widget="many2many_tags"
-                                placeholder="Tags..." options="{'no_create_edit': True}"/> -->
+                                <field name="website" widget="url" placeholder="e.g. www.bizweaver.in" class="custom-field" />
+                                <!-- <field name="category_id" widget="many2many_tags" placeholder="Tags..." options="{'no_create_edit': True}"/> -->
                                 <field name="lang" class="custom-field" />
                                 <!-- <field name="region_code_id" /> -->
-                                <field name="invoice_ref_date" string="Invoice Date" invisible="0"
-                                    class="custom-field" />
-                                <field name="delivery_ref_date" string="Delivery Date"
-                                    class="custom-field" />
+                                <field name="invoice_ref_date" string="Invoice Date" invisible="0" class="custom-field" />
+                                <field name="delivery_ref_date" string="Delivery Date" class="custom-field" />
                                 <field name="mail_ref" class="custom-field" />
-                                <field name="related_company_customer_code"
-                                    placeholder="Related Customer Code"
-                                    string="Related Customer Code" invisible="1"
-                                    class="custom-field" />
+                                <field name="related_company_customer_code" placeholder="Related Customer Code" string="Related Customer Code" invisible="1" class="custom-field" />
                                 <field name="adhoc_member" invisible="1" />
                                 <field name="credit_member_ok" invisible="1" />
                                 <field name="active" invisible="1" />
@@ -163,18 +134,13 @@
                 'default_member_type': 'adhoc' }
             </field>
             <field name="domain">[('is_customer','=',True),('adhoc_member','=',True)]</field>
-            <field name="view_ids"
-                eval="[
+            <field name="view_ids" eval="[
           (5, 0, 0),
           (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.res_partner_adhoc_member_tree')}),
           (0, 0, {'view_mode': 'form', 'view_id': ref('customer.res_partner_adhoc_member_form')})
         ]">
             </field>
         </record>
-        <menuitem
-            id="menu_adhoc_member"
-            name="Ad-hoc Members"
-            parent="menu_membership_root"
-            action="action_res_partner_adhoc_member" />
+        <menuitem id="menu_adhoc_member" name="Ad-hoc Members" parent="menu_membership_root" action="action_res_partner_adhoc_member" />
     </data>
 </odoo>

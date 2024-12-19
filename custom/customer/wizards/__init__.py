@@ -10,3 +10,5 @@ from . import schedule_service_wizard
 from . import service_report_wizard_view
 from . import enquiry_complaint_wizard
 from . import create_temporary_member_wizard
+from . import aaa_report_wizard
+from . import aaa_timeline_wizard
