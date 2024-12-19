@@ -438,7 +438,8 @@ class ServiceReportWizard(models.TransientModel):
             'MEMBERSHIP\nNO.', 'NAME', 'CUSTOMER', 'PLATE\nNO.', 'CHASIS\nNO.', 'POLICY\nNO.',
             'START\nDATE', 'EXPIRY\nDATE', 'CAR\nMAKE', 'AMOUNT'
         ]
-        col_widths = [80, 130, 130, 80, 110, 100, 75, 75, 85, 70]  # Adjusted widths to include the Customer column
+       
+        col_widths = [65, 115, 115, 65, 95, 85, 65, 65, 75, 60]
         header_height = 40
         row_height = 30
 
@@ -514,6 +515,10 @@ class ServiceReportWizard(models.TransientModel):
                     start_y -= line_height
                 x_offset += col_widths[i]
             return y_position - adjusted_row_height
+
+        
+
+        
 
         # Generate PDF content
         draw_header(pdf)
