@@ -372,6 +372,17 @@ class ResPartnerMembers(models.Model):
         }
 # ----------------------------------------------------------------------------------------------------- 
     def action_membership_renewal(self):
+        mem_renewal= self.env['membership.history'].create({
+            'policy_no':self.policy_no,
+            'vehicle_chasis_no': self.vehicle_chasis_no,
+            'vehicle_plate': self.vehicle_plate,
+            'vehicle_type': self.vehicle_type,
+            'member_activate_date': self.member_activate_date,
+            'member_expiry_date': self.member_expiry_date,
+            'card_type_id': self.card_type_id.id,
+            'history_id': self.id
+            
+        })
         view_id = self.env.ref('customer.membership_renewal_wizard_form').id
         return {
             'name': 'Membership Renewal',
@@ -392,6 +403,17 @@ class ResPartnerMembers(models.Model):
         }
         
     def action_membership_extension(self):
+        mem_extension= self.env['membership.history'].create({
+            'policy_no':self.policy_no,
+            'vehicle_chasis_no': self.vehicle_chasis_no,
+            'vehicle_plate': self.vehicle_plate,
+            'vehicle_type': self.vehicle_type,
+            'member_activate_date': self.member_activate_date,
+            'member_expiry_date': self.member_expiry_date,
+            'card_type_id': self.card_type_id.id,
+            'history_id': self.id
+            
+        })
         view_id = self.env.ref('customer.membership_extension_wizard_form').id
         return {
             'name': 'Membership Extension',

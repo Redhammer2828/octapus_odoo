@@ -4,6 +4,7 @@ import datetime
 from datetime import timedelta,datetime
 import requests
 import json
+import re
 from dotenv import load_dotenv
 import os
 load_dotenv()
@@ -39,6 +40,7 @@ class AAAService(models.Model):
         'res.partner', 
         string="Member", 
         domain="[('is_company', '=', False),('member_type','=',member_type)] "
+        
     )
     membership_num = fields.Char('Membership Number')
     created_by = fields.Many2one(
@@ -432,6 +434,77 @@ class AAAService(models.Model):
     #         else:
     #             record.member_id = False  # Clear member_id if no valid category is found
 #--------------------------------------------------BACKUP CODE OF ON CATEGORY FETCHING----------------------------- 
+    # @api.onchange('customer_id', 'member_type')
+    # def _onchange_customer_id_member_type(self):
+    #     for record in self:
+    #         if not record.customer_id:
+    #             # Clear fields if customer_id is empty
+    #             record.member_id = False
+    #             record.sequence_id = False
+    #             continue
+ 
+    #         if record.member_type == 'credit':
+    #             # For 'credit' members, fetch and auto-update member_id and sequence_id
+    #             members = self.env['res.partner'].search([
+    #                 ('parent_customer_id', '=', record.customer_id.id),
+    #                 ('member_type', '=', 'credit'),
+    #             ])
+    #             if members:
+    #                 # Update member_id with the first matching 'credit' member
+    #                 member = members[0]
+    #                 record.member_id = member.id
+ 
+    #                 # Fetch and update the corresponding sequence_id
+    #                 partner_category = member.member_partner_category_id
+    #                 if partner_category:
+    #                     record.sequence_id = partner_category.id
+    #                 else:
+    #                     record.sequence_id = False
+    #             else:
+    #                 # Clear fields if no 'credit' members are found
+    #                 record.member_id = False
+    #                 record.sequence_id = False
+ 
+    #         elif record.member_type == 'adhoc':
+    #             # For 'adhoc' members, fetch and auto-update sequence_id only
+    #             partner_categories = self.env['partner.category'].search([
+    #                 ('partner_id', '=', record.customer_id.id),
+    #                 ('member_type', '=', 'adhoc'),
+    #             ])
+    #             if partner_categories:
+    #                 # Update sequence_id with the first matching 'adhoc' category
+    #                 record.sequence_id = partner_categories[0].id
+    #             else:
+    #                 # Clear sequence_id if no 'adhoc' categories are found
+    #                 record.sequence_id = False
+ 
+    #             # Do not auto-update member_id, but filter 'adhoc' members in the dropdown
+    #             record.member_id = False
+ 
+    # @api.onchange('sequence_id')
+    # def _onchange_sequence_id(self):
+    #     for record in self:
+    #         if not record.sequence_id:
+    #             # Clear member_id if sequence_id is cleared
+    #             record.member_id = False
+    #             continue
+ 
+    #         if record.member_type == 'credit':
+    #             # Fetch member based on the sequence_id and update member_id
+    #             partner_category = self.env['partner.category'].browse(record.sequence_id.id)
+    #             if partner_category:
+    #                 member = self.env['res.partner'].search([
+    #                     ('member_partner_category_id', '=', partner_category.id),
+    #                     ('member_type', '=', 'credit'),
+    #                 ], limit=1)
+    #                 record.member_id = member.id if member else False
+    #             else:
+    #                 record.member_id = False
+ 
+    #         elif record.member_type == 'adhoc':
+    #             # Do not auto-update member_id for 'adhoc', just ensure the field is cleared
+    #             record.member_id = False
+
     @api.onchange('customer_id', 'member_type')
     def _onchange_customer_id_member_type(self):
         for record in self:
@@ -440,7 +513,7 @@ class AAAService(models.Model):
                 record.member_id = False
                 record.sequence_id = False
                 continue
- 
+
             if record.member_type == 'credit':
                 # For 'credit' members, fetch and auto-update member_id and sequence_id
                 members = self.env['res.partner'].search([
@@ -451,7 +524,7 @@ class AAAService(models.Model):
                     # Update member_id with the first matching 'credit' member
                     member = members[0]
                     record.member_id = member.id
- 
+
                     # Fetch and update the corresponding sequence_id
                     partner_category = member.member_partner_category_id
                     if partner_category:
@@ -462,7 +535,7 @@ class AAAService(models.Model):
                     # Clear fields if no 'credit' members are found
                     record.member_id = False
                     record.sequence_id = False
- 
+
             elif record.member_type == 'adhoc':
                 # For 'adhoc' members, fetch and auto-update sequence_id and member_id
                 partner_categories = self.env['partner.category'].search([
@@ -495,7 +568,7 @@ class AAAService(models.Model):
                 # Clear member_id if sequence_id is cleared
                 record.member_id = False
                 continue
- 
+
             if record.member_type == 'credit':
                 # Fetch member based on the sequence_id and update member_id
                 partner_category = self.env['partner.category'].browse(record.sequence_id.id)
@@ -507,7 +580,7 @@ class AAAService(models.Model):
                     record.member_id = member.id if member else False
                 else:
                     record.member_id = False
- 
+
             elif record.member_type == 'adhoc':
                 # For 'adhoc', ensure the corresponding member_id matches the sequence_id
                 partner_category = self.env['partner.category'].browse(record.sequence_id.id)
@@ -533,7 +606,8 @@ class AAAService(models.Model):
             sequence_number = self.env['ir.sequence'].next_by_code('aaa.service')
  
             # Extract only the numeric part of the sequence number
-            numeric_part = sequence_number.split('-')[-1]  # Get the part after the last dash
+            # numeric_part = sequence_number.split('-')[-1]  # Get the part after the last dash
+            numeric_part = ''.join(filter(str.isdigit, sequence_number))
             sequence_number = f"{int(numeric_part):08d}"  # Ensure it's zero-padded to 8 digits
  
             # Format the service name
