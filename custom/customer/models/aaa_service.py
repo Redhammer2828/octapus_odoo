@@ -505,94 +505,149 @@ class AAAService(models.Model):
     #             # Do not auto-update member_id for 'adhoc', just ensure the field is cleared
     #             record.member_id = False
 
+    # @api.onchange('customer_id', 'member_type')
+    # def _onchange_customer_id_member_type(self):
+    #     for record in self:
+    #         if not record.customer_id:
+    #             # Clear fields if customer_id is empty
+    #             record.member_id = False
+    #             record.sequence_id = False
+    #             continue
+
+    #         if record.member_type == 'credit':
+    #             # For 'credit' members, fetch and auto-update member_id and sequence_id
+    #             members = self.env['res.partner'].search([
+    #                 ('parent_customer_id', '=', record.customer_id.id),
+    #                 ('member_type', '=', 'credit'),
+    #             ])
+    #             if members:
+    #                 # Update member_id with the first matching 'credit' member
+    #                 member = members[0]
+    #                 record.member_id = member.id
+
+    #                 # Fetch and update the corresponding sequence_id
+    #                 partner_category = member.member_partner_category_id
+    #                 if partner_category:
+    #                     record.sequence_id = partner_category.id
+    #                 else:
+    #                     record.sequence_id = False
+    #             else:
+    #                 # Clear fields if no 'credit' members are found
+    #                 record.member_id = False
+    #                 record.sequence_id = False
+
+    #         elif record.member_type == 'adhoc':
+    #             # For 'adhoc' members, fetch and auto-update sequence_id and member_id
+    #             partner_categories = self.env['partner.category'].search([
+    #                 ('partner_id', '=', record.customer_id.id),
+    #                 ('member_type', '=', 'adhoc'),
+    #             ])
+    #             if partner_categories:
+    #                 # Update sequence_id with the first matching 'adhoc' category
+    #                 record.sequence_id = partner_categories[0].id
+    #             else:
+    #                 # Clear sequence_id if no 'adhoc' categories are found
+    #                 record.sequence_id = False
+ 
+    #             # Fetch 'adhoc' members and update member_id
+    #             members = self.env['res.partner'].search([
+    #                 ('parent_customer_id', '=', record.customer_id.id),
+    #                 ('member_type', '=', 'adhoc'),
+    #             ])
+    #             if members:
+    #                 # Update member_id with the first matching 'adhoc' member
+    #                 record.member_id = members[0].id
+    #             else:
+    #                 # Clear member_id if no 'adhoc' members are found
+    #                 record.member_id = False
+ 
+    # @api.onchange('sequence_id')
+    # def _onchange_sequence_id(self):
+    #     for record in self:
+    #         if not record.sequence_id:
+    #             # Clear member_id if sequence_id is cleared
+    #             record.member_id = False
+    #             continue
+
+    #         if record.member_type == 'credit':
+    #             # Fetch member based on the sequence_id and update member_id
+    #             partner_category = self.env['partner.category'].browse(record.sequence_id.id)
+    #             if partner_category:
+    #                 member = self.env['res.partner'].search([
+    #                     ('member_partner_category_id', '=', partner_category.id),
+    #                     ('member_type', '=', 'credit'),
+    #                 ], limit=1)
+    #                 record.member_id = member.id if member else False
+    #             else:
+    #                 record.member_id = False
+
+    #         elif record.member_type == 'adhoc':
+    #             # For 'adhoc', ensure the corresponding member_id matches the sequence_id
+    #             partner_category = self.env['partner.category'].browse(record.sequence_id.id)
+    #             if partner_category:
+    #                 member = self.env['res.partner'].search([
+    #                     ('parent_customer_id', '=', record.customer_id.id),
+    #                     ('member_partner_category_id', '=', partner_category.id),
+    #                     ('member_type', '=', 'adhoc'),
+    #                 ], limit=1)
+    #                 record.member_id = member.id if member else False
+    #             else:
+    #                 record.member_id = False
+
     @api.onchange('customer_id', 'member_type')
     def _onchange_customer_id_member_type(self):
         for record in self:
             if not record.customer_id:
-                # Clear fields if customer_id is empty
                 record.member_id = False
                 record.sequence_id = False
                 continue
 
             if record.member_type == 'credit':
-                # For 'credit' members, fetch and auto-update member_id and sequence_id
+                # Fetch 'credit' members ordered by ID (you can specify a different field to order by if needed)
                 members = self.env['res.partner'].search([
                     ('parent_customer_id', '=', record.customer_id.id),
                     ('member_type', '=', 'credit'),
-                ])
+                ], order='id')  # Assuming 'id' is the field to sort by; change if another field is preferred
+                
                 if members:
-                    # Update member_id with the first matching 'credit' member
-                    member = members[0]
-                    record.member_id = member.id
-
-                    # Fetch and update the corresponding sequence_id
-                    partner_category = member.member_partner_category_id
-                    if partner_category:
-                        record.sequence_id = partner_category.id
-                    else:
-                        record.sequence_id = False
+                    record.member_id = members[0].id
+                    record.sequence_id = members[0].member_partner_category_id.id if members[0].member_partner_category_id else False
                 else:
-                    # Clear fields if no 'credit' members are found
                     record.member_id = False
                     record.sequence_id = False
 
             elif record.member_type == 'adhoc':
-                # For 'adhoc' members, fetch and auto-update sequence_id and member_id
                 partner_categories = self.env['partner.category'].search([
                     ('partner_id', '=', record.customer_id.id),
                     ('member_type', '=', 'adhoc'),
-                ])
+                ], order='id')  # Order by ID or another field as required
+
                 if partner_categories:
-                    # Update sequence_id with the first matching 'adhoc' category
                     record.sequence_id = partner_categories[0].id
                 else:
-                    # Clear sequence_id if no 'adhoc' categories are found
                     record.sequence_id = False
- 
-                # Fetch 'adhoc' members and update member_id
-                members = self.env['res.partner'].search([
-                    ('parent_customer_id', '=', record.customer_id.id),
-                    ('member_type', '=', 'adhoc'),
-                ])
-                if members:
-                    # Update member_id with the first matching 'adhoc' member
-                    record.member_id = members[0].id
-                else:
-                    # Clear member_id if no 'adhoc' members are found
-                    record.member_id = False
- 
+
+                record.member_id = False  # Do not auto-update member_id for 'adhoc'
+
+
     @api.onchange('sequence_id')
     def _onchange_sequence_id(self):
         for record in self:
             if not record.sequence_id:
-                # Clear member_id if sequence_id is cleared
                 record.member_id = False
                 continue
 
             if record.member_type == 'credit':
-                # Fetch member based on the sequence_id and update member_id
-                partner_category = self.env['partner.category'].browse(record.sequence_id.id)
-                if partner_category:
-                    member = self.env['res.partner'].search([
-                        ('member_partner_category_id', '=', partner_category.id),
-                        ('member_type', '=', 'credit'),
-                    ], limit=1)
-                    record.member_id = member.id if member else False
-                else:
-                    record.member_id = False
+                member = self.env['res.partner'].search([
+                    ('member_partner_category_id', '=', record.sequence_id.id),
+                    ('member_type', '=', 'credit'),
+                ], order='id', limit=1)  # Order can be specified as needed
+
+                record.member_id = member.id if member else False
 
             elif record.member_type == 'adhoc':
-                # For 'adhoc', ensure the corresponding member_id matches the sequence_id
-                partner_category = self.env['partner.category'].browse(record.sequence_id.id)
-                if partner_category:
-                    member = self.env['res.partner'].search([
-                        ('parent_customer_id', '=', record.customer_id.id),
-                        ('member_partner_category_id', '=', partner_category.id),
-                        ('member_type', '=', 'adhoc'),
-                    ], limit=1)
-                    record.member_id = member.id if member else False
-                else:
-                    record.member_id = False
+                # Clear member_id as it should not be auto-updated for 'adhoc'
+                record.member_id = False
  
     @api.model
     def create(self, vals):
@@ -1136,6 +1191,7 @@ class AAAService(models.Model):
                         if remaining_quantity > 0:
                             print("SERVICE WITHIN 24 HOURS - TRIGGERING CASH WIZARD")
                             self._trigger_cash_service_wizard()
+                            
                             raise ValidationError(
                                 _("You can only access a new service 24 hours after the last one. Remaining quantity: %d") % remaining_quantity
                             )
