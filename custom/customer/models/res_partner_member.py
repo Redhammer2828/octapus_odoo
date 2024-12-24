@@ -476,7 +476,10 @@ class ResPartnerMembers(models.Model):
             'member_activate_date': self.member_activate_date,
             'member_expiry_date': self.member_expiry_date,
             'type': 'non_cash',
-        }
+            'is_member_from_partner': bool(partner),
+            'is_customer_from_partner': bool(self.parent_customer_id),
+            'is_sequence_from_partner': bool(self.member_partner_category_id),
+            }
  
         # Create the service record directly
         service_record = self.env['aaa.service'].create(service_vals)
