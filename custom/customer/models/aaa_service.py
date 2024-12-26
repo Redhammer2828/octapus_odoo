@@ -604,53 +604,64 @@ class AAAService(models.Model):
                 record.member_id = False
                 record.sequence_id = False
                 continue
-
+ 
             if record.member_type == 'credit':
-                # Fetch 'credit' members ordered by ID (you can specify a different field to order by if needed)
+                # Fetch 'credit' members ordered by ID
                 members = self.env['res.partner'].search([
                     ('parent_customer_id', '=', record.customer_id.id),
                     ('member_type', '=', 'credit'),
-                ], order='id')  # Assuming 'id' is the field to sort by; change if another field is preferred
-                
+                ], order='id')  # Specify another field to order by if needed
+ 
                 if members:
                     record.member_id = members[0].id
                     record.sequence_id = members[0].member_partner_category_id.id if members[0].member_partner_category_id else False
                 else:
                     record.member_id = False
                     record.sequence_id = False
-
+ 
             elif record.member_type == 'adhoc':
+                # Fetch 'adhoc' member categories ordered by ID
                 partner_categories = self.env['partner.category'].search([
                     ('partner_id', '=', record.customer_id.id),
                     ('member_type', '=', 'adhoc'),
                 ], order='id')  # Order by ID or another field as required
-
+ 
                 if partner_categories:
                     record.sequence_id = partner_categories[0].id
+                    # Fetch member linked to the fetched sequence_id
+                    member = self.env['res.partner'].search([
+                        ('member_partner_category_id', '=', partner_categories[0].id),
+                        ('member_type', '=', 'adhoc'),
+                    ], order='id', limit=1)  # Limit to 1 member, ordered by ID
+ 
+                    record.member_id = member.id if member else False
                 else:
                     record.sequence_id = False
-
-                record.member_id = False  # Do not auto-update member_id for 'adhoc'
-
-
+                    record.member_id = False
+    
     @api.onchange('sequence_id')
     def _onchange_sequence_id(self):
         for record in self:
             if not record.sequence_id:
                 record.member_id = False
                 continue
-
+ 
             if record.member_type == 'credit':
                 member = self.env['res.partner'].search([
                     ('member_partner_category_id', '=', record.sequence_id.id),
                     ('member_type', '=', 'credit'),
                 ], order='id', limit=1)  # Order can be specified as needed
-
+ 
                 record.member_id = member.id if member else False
-
+ 
             elif record.member_type == 'adhoc':
-                # Clear member_id as it should not be auto-updated for 'adhoc'
-                record.member_id = False
+                member = self.env['res.partner'].search([
+                    ('member_partner_category_id', '=', record.sequence_id.id),
+                    ('member_type', '=', 'adhoc'),
+                ], order='id', limit=1)  # Order can be specified as needed
+ 
+                record.member_id = member.id if member else False
+ 
  
     # @api.model
     # def create(self, vals):
@@ -685,7 +696,6 @@ class AAAService(models.Model):
     #         'time': fields.Datetime.now(),
     #         'status': service.state,
     #     })
- 
     #     return service
 
     @api.model
