@@ -141,6 +141,18 @@
             ]">
             </field>
         </record>
+         <!-- Create a specific tree view for scheduled services -->
+        <record id="call_center_scheduled_service_view_tree" model="ir.ui.view">
+            <field name="name">call.center.scheduled.service.view.tree</field>
+            <field name="model">aaa.service</field>
+            <field name="inherit_id" ref="customer.call_center_all_service_view_tree"/>
+            <field name="mode">primary</field>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='service_time']" position="after">
+                    <field name="requested_date" string="Action Date Time"/>
+                </xpath>
+            </field>
+        </record>
         <record id="call_center_initiate_service_action" model="ir.actions.act_window">
             <field name="name">Scheduled</field>
             <field name="res_model">aaa.service</field>
@@ -149,7 +161,7 @@
             <field name="context">{'default_created_by': uid}</field>
             <field name="view_ids" eval="[ 
                     (5, 0, 0),
-                    (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
+                    (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_scheduled_service_view_tree')}),
                     (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
                 ]">
             </field>

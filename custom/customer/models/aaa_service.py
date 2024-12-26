@@ -42,6 +42,11 @@ class AAAService(models.Model):
         domain="[('is_company', '=', False),('member_type','=',member_type)] "
         
     )
+      # Fields to track if values came from res.partner
+    is_member_from_partner = fields.Boolean(string='Member from Partner', default=False)
+    is_customer_from_partner = fields.Boolean(string='Customer from Partner', default=False)
+    is_sequence_from_partner = fields.Boolean(string='Sequence from Partner', default=False)
+
     membership_num = fields.Char('Membership Number')
     created_by = fields.Many2one(
         'res.users',
@@ -647,9 +652,53 @@ class AAAService(models.Model):
                 # Clear member_id as it should not be auto-updated for 'adhoc'
                 record.member_id = False
  
+    # @api.model
+    # def create(self, vals):
+    #     """Override create method to set the name field and dynamically update created_by field."""
+    #     # Ensure the name field is set using a specific format if not provided
+    #     if vals.get('name', _('New')) == _('New'):
+    #         current_month = datetime.now().strftime('%m')  # 2-digit month
+    #         current_year = datetime.now().strftime('%Y')   # 4-digit year
+ 
+    #         # Get the next sequence number (without the prefix)
+    #         sequence_number = self.env['ir.sequence'].next_by_code('aaa.service')
+ 
+    #         # Extract only the numeric part of the sequence number
+    #         # numeric_part = sequence_number.split('-')[-1]  # Get the part after the last dash
+    #         numeric_part = ''.join(filter(str.isdigit, sequence_number))
+    #         sequence_number = f"{int(numeric_part):08d}"  # Ensure it's zero-padded to 8 digits
+ 
+    #         # Format the service name
+    #         vals['name'] = f"SER/{current_month}/{current_year}/{sequence_number}"
+ 
+    #     # Dynamically set the created_by field if not set already
+    #     if not vals.get('created_by'):
+    #         vals['created_by'] = self.env.user.id
+ 
+    #     # Create the aaa.service record
+    #     service = super(AAAService, self).create(vals)
+ 
+    #     # Create the service.history record
+    #     self.env['service.history'].create({
+    #         'service_id': service.id,
+    #         'user': self.env.user.id,
+    #         'time': fields.Datetime.now(),
+    #         'status': service.state,
+    #     })
+ 
+    #     return service
+
     @api.model
     def create(self, vals):
         """Override create method to set the name field and dynamically update created_by field."""
+        # Set the tracking fields for readonly behavior
+        if vals.get('member_id'):
+            vals['is_member_from_partner'] = True
+        if vals.get('customer_id'):
+            vals['is_customer_from_partner'] = True
+        if vals.get('sequence_id'):
+            vals['is_sequence_from_partner'] = True
+
         # Ensure the name field is set using a specific format if not provided
         if vals.get('name', _('New')) == _('New'):
             current_month = datetime.now().strftime('%m')  # 2-digit month
@@ -659,7 +708,6 @@ class AAAService(models.Model):
             sequence_number = self.env['ir.sequence'].next_by_code('aaa.service')
  
             # Extract only the numeric part of the sequence number
-            # numeric_part = sequence_number.split('-')[-1]  # Get the part after the last dash
             numeric_part = ''.join(filter(str.isdigit, sequence_number))
             sequence_number = f"{int(numeric_part):08d}"  # Ensure it's zero-padded to 8 digits
  
@@ -690,8 +738,45 @@ class AAAService(models.Model):
             if record.state in {'initiate','dispatch', 'start', 'reach', 'completed_by_driver_done'} and record.created_by != self.env.user:
                 record.created_by = self.env.user
  
+    # def write(self, vals):
+    #     """Override the write method to ensure comments are saved and created_by is updated."""
+    #     # If the record is in dispatch state, dynamically update created_by
+    #     if self.state == 'dispatch' and not vals.get('created_by'):
+    #         vals['created_by'] = self.env.user.id
+ 
+    #     # Handle comment appending and record creation
+    #     if 'comments' in vals and vals['comments']:
+    #         existing_comments = self.comments or ""
+    #         new_comment = f"{existing_comments}\n{vals['comments']}" if existing_comments else vals['comments']
+ 
+    #         # Update the comments field in the service model
+    #         vals['comments'] = new_comment
+ 
+    #         # Create the service.comment record for each new comment
+    #         self.env['service.comment'].create({
+    #             'service_id': self.id,
+    #             'comment': vals['comments'],
+    #             'comment_date_and_time': fields.Datetime.now(),
+    #             'comment_user': self.env.user.id,
+    #             'comment_status': self.state,
+    #         })
+ 
+    #         # Clear the comments field after saving
+    #         vals['comments'] = ''  # Clear the comment field
+ 
+    #     # Call the super method to handle the actual update of the service
+    #     return super(AAAService, self).write(vals)
+
     def write(self, vals):
         """Override the write method to ensure comments are saved and created_by is updated."""
+        # Update tracking fields if values are being changed
+        if 'member_id' in vals:
+            vals['is_member_from_partner'] = bool(vals['member_id'])
+        if 'customer_id' in vals:
+            vals['is_customer_from_partner'] = bool(vals['customer_id'])
+        if 'sequence_id' in vals:
+            vals['is_sequence_from_partner'] = bool(vals['sequence_id'])
+
         # If the record is in dispatch state, dynamically update created_by
         if self.state == 'dispatch' and not vals.get('created_by'):
             vals['created_by'] = self.env.user.id
