@@ -57,6 +57,8 @@
         'wizards/service_report_wizard_view.xml',
         'wizards/enquiry_complaint_wizard.xml',
         'wizards/create_temporary_member_wizard.xml',
+        'wizards/aaa_report_wizard.xml',
+        'wizards/aaa_timeline_wizard.xml',
         'data/scheduled_action.xml',
         'data/sequence_data.xml',
         'data/server_action.xml',
