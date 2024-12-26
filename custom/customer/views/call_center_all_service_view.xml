@@ -9,6 +9,7 @@
                 <tree string="Services" create="false" duplicate="false">
                     <field name="name" />
                     <field name="service_time" string="Service Date" />
+                    <!-- <field name="action_date" string="Service Date" /> -->
                     <field name="customer_id" />
                     <field name="member_id" />
                     <field name="member_contact_no" string="Mobile Number" />
