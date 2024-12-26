@@ -9,6 +9,12 @@ class ResPartnerCustomer(models.Model):
     function = fields.Char(string='Function')
 
     member_count = fields.Integer(compute='_compute_member_count', string='Member Count')
+    customer_service_count = fields.Integer(
+        compute='_compute_service_count', 
+        string="Service Count", 
+        store=True
+    )
+
 
     customer = fields.Binary('customer')  #Field (Flag) for Members (is_customer)
     
@@ -44,6 +50,31 @@ class ResPartnerCustomer(models.Model):
                 record.member_count = member_count
             else:
                 record.member_count = 0
+
+    def action_view_customer_service(self):
+        return {
+            'name': 'Services',
+            'type': 'ir.actions.act_window',
+            'res_model': 'aaa.service',
+            'view_mode': 'tree,form',
+            'domain': [('customer_id', '=', self.id)],
+            'context': {
+                'from_res_partner_member_form': True,
+                'default_parent_customer_id': self.id,  # Pre-select the parent customer
+            },
+            'views': [
+                (self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
+                (self.env.ref('customer.call_center_service_form').id, 'form'),
+            ],
+        }
+
+    @api.depends('customer')  # Triggered by changes to the partner record
+    def _compute_service_count(self):
+        for partner in self:
+            # Count the number of `aaa.service` records related to this partner
+            partner.customer_service_count = self.env['aaa.service'].search_count([
+                ('customer_id', '=', partner.id)
+            ])
     
     def waive_off_history(self):
         pass
