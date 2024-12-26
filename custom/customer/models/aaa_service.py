@@ -196,8 +196,6 @@ class AAAService(models.Model):
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
     
     # --------------------LOCATION TEST----------------
-
-
     # ----------------------------DELETE RESTRICTION-------------------------------------------------------------------
 
     def unlink(self):
