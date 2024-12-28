@@ -242,13 +242,17 @@ class AaaReportWizard(models.TransientModel):
 
                 elif header == 'From - Location':
                     if record.member_id.member_type in ['policy', 'adhoc']:
-                        field_value = record.selected_from_location.name if record.selected_from_location else ''
+                        # field_value = record.selected_from_location.name if record.selected_from_location else ''
+                        # If selected_from_location is not set, fallback to from_location
+                        field_value = record.selected_from_location.name if record.selected_from_location else (record.from_location.name if record.from_location else '')
                         
                     else:
                         field_value = record.from_location.name if record.from_location else ''
                 elif header == 'To - Location':
                     if record.member_id.member_type in ['policy', 'adhoc']:
-                        field_value = record.selected_to_location.name if record.selected_to_location else ''
+                        #field_value = record.selected_to_location.name if record.selected_to_location else ''
+                        # If selected_to_location is not set, fallback to to_location
+                        field_value = record.selected_to_location.name if record.selected_to_location else (record.to_location.name if record.to_location else '')
                         
                     else:
                         field_value = record.to_location.name if record.to_location else ''
