@@ -169,7 +169,7 @@
                                 </page>
                                 <page name="membership_history" string="Membership History">
                                     <field name="membership_history_ids">
-                                        <tree create="false">
+                                        <tree create="false" delete="False">
                                             <field name="vehicle_chasis_no" />
                                             <field name="vehicle_type" />
                                             <field name="vehicle_plate" />
