@@ -178,7 +178,9 @@ class AaaTimelineWizard(models.TransientModel):
                 
                 elif header == 'User Location':
                     if record.member_id.member_type in ['policy', 'adhoc']:
-                        field_value = record.selected_from_location.name if record.selected_from_location else ''
+                        #field_value = record.selected_from_location.name if record.selected_from_location else ''
+                        # If selected_from_location is not set, fallback to from_location
+                        field_value = record.selected_from_location.name if record.selected_from_location else (record.from_location.name if record.from_location else '')
                         
                     else:
                         field_value = record.from_location.name if record.from_location else ''

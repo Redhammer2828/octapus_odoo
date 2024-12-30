@@ -12,7 +12,7 @@ class ResPartnerCustomer(models.Model):
     customer_service_count = fields.Integer(
         compute='_compute_service_count', 
         string="Service Count", 
-        store=True
+        store=False
     )
 
 

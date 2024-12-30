@@ -150,6 +150,12 @@ class AAAService(models.Model):
     # One to Many -------------------------------------------------------------------------------------------
     comment_history_ids = fields.One2many('service.comment', 'service_id', string="Comment History")
     service_history_ids = fields.One2many('service.history', 'service_id', string="Service History")
+    user_from_history = fields.Many2one(
+        'res.users', 
+        string="Agent (From History)", 
+        compute='_compute_user_from_history', 
+        store=True
+    )
     enquiry_ids = fields.One2many('aaa.enquiry', 'service_id', string="Enquiries")
     addon_service_ids = fields.One2many(
         'aaa.service.addon',
@@ -382,220 +388,8 @@ class AAAService(models.Model):
             else:
                 self.is_driver_name_visible = True  # Show driver_name and hide driver_id
 #--------------------------------------------------BACKUP CODE OF ON CATEGORY FETCHING----------------------------- 
-    # @api.onchange('customer_id')
-    # def _onchange_customer_id(self):
-    #     for record in self:
-    #         if not record.customer_id:
-    #             # Clear fields if customer_id is empty
-    #             record.member_id = False
-    #             record.sequence_id = False
-    #             continue
- 
-    #         # Filter members under the selected customer_id based on parent_customer_id and member_type == 'credit'
-    #         members = self.env['res.partner'].search([
-    #             ('parent_customer_id', '=', record.customer_id.id),
-    #             ('member_type', '=', 'credit'),  # Only look for 'credit' members
-    #         ])
- 
-    #         if members:
-    #             # If valid 'credit' members are found, use the first one
-    #             member = members[0]  # Select the first matching member
-    #             record.member_id = member.id  # Update member_id
-               
-    #             # Fetch the corresponding member_partner_category_id of the selected member
-    #             partner_category = member.member_partner_category_id
-    #             if partner_category:
-    #                 record.sequence_id = partner_category.id  # Update sequence_id
-    #             else:
-    #                 record.sequence_id = False  # Clear sequence_id if no category found
-    #         else:
-    #             # If no members are found, clear the fields
-    #             record.member_id = False
-    #             record.sequence_id = False
- 
- 
-    # @api.onchange('sequence_id')
-    # def _onchange_sequence_id(self):
-    #     for record in self:
-    #         if not record.sequence_id:
-    #             # Clear member_id if sequence_id is cleared
-    #             record.member_id = False
-    #             continue
- 
-    #         # Fetch the corresponding member_id based on the selected sequence_id
-    #         partner_category = self.env['partner.category'].browse(record.sequence_id.id)
-    #         if partner_category:
-    #             # Find the member associated with this partner category
-    #             member = self.env['res.partner'].search([
-    #                 ('member_partner_category_id', '=', partner_category.id),
-    #                 ('member_type', '=', 'credit')  # Only look for 'credit' members
-    #             ], limit=1)
-    #             if member:
-    #                 record.member_id = member.id  # Update member_id with the fetched member
-    #             else:
-    #                 record.member_id = False  # Clear member_id if no member is found
-    #         else:
-    #             record.member_id = False  # Clear member_id if no valid category is found
-#--------------------------------------------------BACKUP CODE OF ON CATEGORY FETCHING----------------------------- 
-    # @api.onchange('customer_id', 'member_type')
-    # def _onchange_customer_id_member_type(self):
-    #     for record in self:
-    #         if not record.customer_id:
-    #             # Clear fields if customer_id is empty
-    #             record.member_id = False
-    #             record.sequence_id = False
-    #             continue
- 
-    #         if record.member_type == 'credit':
-    #             # For 'credit' members, fetch and auto-update member_id and sequence_id
-    #             members = self.env['res.partner'].search([
-    #                 ('parent_customer_id', '=', record.customer_id.id),
-    #                 ('member_type', '=', 'credit'),
-    #             ])
-    #             if members:
-    #                 # Update member_id with the first matching 'credit' member
-    #                 member = members[0]
-    #                 record.member_id = member.id
- 
-    #                 # Fetch and update the corresponding sequence_id
-    #                 partner_category = member.member_partner_category_id
-    #                 if partner_category:
-    #                     record.sequence_id = partner_category.id
-    #                 else:
-    #                     record.sequence_id = False
-    #             else:
-    #                 # Clear fields if no 'credit' members are found
-    #                 record.member_id = False
-    #                 record.sequence_id = False
- 
-    #         elif record.member_type == 'adhoc':
-    #             # For 'adhoc' members, fetch and auto-update sequence_id only
-    #             partner_categories = self.env['partner.category'].search([
-    #                 ('partner_id', '=', record.customer_id.id),
-    #                 ('member_type', '=', 'adhoc'),
-    #             ])
-    #             if partner_categories:
-    #                 # Update sequence_id with the first matching 'adhoc' category
-    #                 record.sequence_id = partner_categories[0].id
-    #             else:
-    #                 # Clear sequence_id if no 'adhoc' categories are found
-    #                 record.sequence_id = False
- 
-    #             # Do not auto-update member_id, but filter 'adhoc' members in the dropdown
-    #             record.member_id = False
- 
-    # @api.onchange('sequence_id')
-    # def _onchange_sequence_id(self):
-    #     for record in self:
-    #         if not record.sequence_id:
-    #             # Clear member_id if sequence_id is cleared
-    #             record.member_id = False
-    #             continue
- 
-    #         if record.member_type == 'credit':
-    #             # Fetch member based on the sequence_id and update member_id
-    #             partner_category = self.env['partner.category'].browse(record.sequence_id.id)
-    #             if partner_category:
-    #                 member = self.env['res.partner'].search([
-    #                     ('member_partner_category_id', '=', partner_category.id),
-    #                     ('member_type', '=', 'credit'),
-    #                 ], limit=1)
-    #                 record.member_id = member.id if member else False
-    #             else:
-    #                 record.member_id = False
- 
-    #         elif record.member_type == 'adhoc':
-    #             # Do not auto-update member_id for 'adhoc', just ensure the field is cleared
-    #             record.member_id = False
+  
 
-    # @api.onchange('customer_id', 'member_type')
-    # def _onchange_customer_id_member_type(self):
-    #     for record in self:
-    #         if not record.customer_id:
-    #             # Clear fields if customer_id is empty
-    #             record.member_id = False
-    #             record.sequence_id = False
-    #             continue
-
-    #         if record.member_type == 'credit':
-    #             # For 'credit' members, fetch and auto-update member_id and sequence_id
-    #             members = self.env['res.partner'].search([
-    #                 ('parent_customer_id', '=', record.customer_id.id),
-    #                 ('member_type', '=', 'credit'),
-    #             ])
-    #             if members:
-    #                 # Update member_id with the first matching 'credit' member
-    #                 member = members[0]
-    #                 record.member_id = member.id
-
-    #                 # Fetch and update the corresponding sequence_id
-    #                 partner_category = member.member_partner_category_id
-    #                 if partner_category:
-    #                     record.sequence_id = partner_category.id
-    #                 else:
-    #                     record.sequence_id = False
-    #             else:
-    #                 # Clear fields if no 'credit' members are found
-    #                 record.member_id = False
-    #                 record.sequence_id = False
-
-    #         elif record.member_type == 'adhoc':
-    #             # For 'adhoc' members, fetch and auto-update sequence_id and member_id
-    #             partner_categories = self.env['partner.category'].search([
-    #                 ('partner_id', '=', record.customer_id.id),
-    #                 ('member_type', '=', 'adhoc'),
-    #             ])
-    #             if partner_categories:
-    #                 # Update sequence_id with the first matching 'adhoc' category
-    #                 record.sequence_id = partner_categories[0].id
-    #             else:
-    #                 # Clear sequence_id if no 'adhoc' categories are found
-    #                 record.sequence_id = False
- 
-    #             # Fetch 'adhoc' members and update member_id
-    #             members = self.env['res.partner'].search([
-    #                 ('parent_customer_id', '=', record.customer_id.id),
-    #                 ('member_type', '=', 'adhoc'),
-    #             ])
-    #             if members:
-    #                 # Update member_id with the first matching 'adhoc' member
-    #                 record.member_id = members[0].id
-    #             else:
-    #                 # Clear member_id if no 'adhoc' members are found
-    #                 record.member_id = False
- 
-    # @api.onchange('sequence_id')
-    # def _onchange_sequence_id(self):
-    #     for record in self:
-    #         if not record.sequence_id:
-    #             # Clear member_id if sequence_id is cleared
-    #             record.member_id = False
-    #             continue
-
-    #         if record.member_type == 'credit':
-    #             # Fetch member based on the sequence_id and update member_id
-    #             partner_category = self.env['partner.category'].browse(record.sequence_id.id)
-    #             if partner_category:
-    #                 member = self.env['res.partner'].search([
-    #                     ('member_partner_category_id', '=', partner_category.id),
-    #                     ('member_type', '=', 'credit'),
-    #                 ], limit=1)
-    #                 record.member_id = member.id if member else False
-    #             else:
-    #                 record.member_id = False
-
-    #         elif record.member_type == 'adhoc':
-    #             # For 'adhoc', ensure the corresponding member_id matches the sequence_id
-    #             partner_category = self.env['partner.category'].browse(record.sequence_id.id)
-    #             if partner_category:
-    #                 member = self.env['res.partner'].search([
-    #                     ('parent_customer_id', '=', record.customer_id.id),
-    #                     ('member_partner_category_id', '=', partner_category.id),
-    #                     ('member_type', '=', 'adhoc'),
-    #                 ], limit=1)
-    #                 record.member_id = member.id if member else False
-    #             else:
-    #                 record.member_id = False
 
     @api.onchange('customer_id', 'member_type')
     def _onchange_customer_id_member_type(self):
@@ -606,6 +400,7 @@ class AAAService(models.Model):
                 continue
  
             if record.member_type == 'credit':
+                # Fetch 'credit' members ordered by ID
                 # Fetch 'credit' members ordered by ID
                 members = self.env['res.partner'].search([
                     ('parent_customer_id', '=', record.customer_id.id),
@@ -620,6 +415,7 @@ class AAAService(models.Model):
                     record.sequence_id = False
  
             elif record.member_type == 'adhoc':
+                # Fetch 'adhoc' member categories ordered by ID
                 # Fetch 'adhoc' member categories ordered by ID
                 partner_categories = self.env['partner.category'].search([
                     ('partner_id', '=', record.customer_id.id),
@@ -663,41 +459,7 @@ class AAAService(models.Model):
                 record.member_id = member.id if member else False
  
  
-    # @api.model
-    # def create(self, vals):
-    #     """Override create method to set the name field and dynamically update created_by field."""
-    #     # Ensure the name field is set using a specific format if not provided
-    #     if vals.get('name', _('New')) == _('New'):
-    #         current_month = datetime.now().strftime('%m')  # 2-digit month
-    #         current_year = datetime.now().strftime('%Y')   # 4-digit year
- 
-    #         # Get the next sequence number (without the prefix)
-    #         sequence_number = self.env['ir.sequence'].next_by_code('aaa.service')
- 
-    #         # Extract only the numeric part of the sequence number
-    #         # numeric_part = sequence_number.split('-')[-1]  # Get the part after the last dash
-    #         numeric_part = ''.join(filter(str.isdigit, sequence_number))
-    #         sequence_number = f"{int(numeric_part):08d}"  # Ensure it's zero-padded to 8 digits
- 
-    #         # Format the service name
-    #         vals['name'] = f"SER/{current_month}/{current_year}/{sequence_number}"
- 
-    #     # Dynamically set the created_by field if not set already
-    #     if not vals.get('created_by'):
-    #         vals['created_by'] = self.env.user.id
- 
-    #     # Create the aaa.service record
-    #     service = super(AAAService, self).create(vals)
- 
-    #     # Create the service.history record
-    #     self.env['service.history'].create({
-    #         'service_id': service.id,
-    #         'user': self.env.user.id,
-    #         'time': fields.Datetime.now(),
-    #         'status': service.state,
-    #     })
-    #     return service
-
+   
     @api.model
     def create(self, vals):
         """Override create method to set the name field and dynamically update created_by field."""
@@ -747,35 +509,19 @@ class AAAService(models.Model):
         for record in self:
             if record.state in {'initiate','dispatch', 'start', 'reach', 'completed_by_driver_done'} and record.created_by != self.env.user:
                 record.created_by = self.env.user
+
+    @api.depends('state', 'service_history_ids.user')
+    def _compute_user_from_history(self):
+        """Fetch the exact user from the related service.history."""
+        for service in self:
+            # Find the first related service.history record with a matching state
+            relevant_history = service.service_history_ids.filtered(
+                lambda history: history.status == service.state
+            )
+            # Get the `user` from the first relevant service.history record, if any
+            service.user_from_history = relevant_history[:1].user if relevant_history else False
  
-    # def write(self, vals):
-    #     """Override the write method to ensure comments are saved and created_by is updated."""
-    #     # If the record is in dispatch state, dynamically update created_by
-    #     if self.state == 'dispatch' and not vals.get('created_by'):
-    #         vals['created_by'] = self.env.user.id
- 
-    #     # Handle comment appending and record creation
-    #     if 'comments' in vals and vals['comments']:
-    #         existing_comments = self.comments or ""
-    #         new_comment = f"{existing_comments}\n{vals['comments']}" if existing_comments else vals['comments']
- 
-    #         # Update the comments field in the service model
-    #         vals['comments'] = new_comment
- 
-    #         # Create the service.comment record for each new comment
-    #         self.env['service.comment'].create({
-    #             'service_id': self.id,
-    #             'comment': vals['comments'],
-    #             'comment_date_and_time': fields.Datetime.now(),
-    #             'comment_user': self.env.user.id,
-    #             'comment_status': self.state,
-    #         })
- 
-    #         # Clear the comments field after saving
-    #         vals['comments'] = ''  # Clear the comment field
- 
-    #     # Call the super method to handle the actual update of the service
-    #     return super(AAAService, self).write(vals)
+   
 
     def write(self, vals):
         """Override the write method to ensure comments are saved and created_by is updated."""
@@ -814,11 +560,7 @@ class AAAService(models.Model):
         # Call the super method to handle the actual update of the service
         return super(AAAService, self).write(vals)
  
-    # @api.onchange('state')
-    # def _onchange_state(self):
-    #     """Dynamically update created_by when state changes to 'dispatch'."""
-    #     if self.state == 'dispatch' and self.created_by != self.env.user:
-    #         self.created_by = self.env.user
+    
  
     @api.onchange('state')
     def _onchange_state(self):
@@ -876,9 +618,44 @@ class AAAService(models.Model):
             print(f"API RESPONSE-ORDER NOT CREATED,{response.text},{response.status_code}")
         
 # ---------------------------------------------------NEW A CODE-----------------------------------------------
+
+
     # def action_dispatch_service(self):
     #     self.ensure_one()
     #     self._generate_service_name()
+    #     if not self.product_id:
+    #         raise UserError(_("Provide the service details."))
+    #      # Determine visible fields based on service_based and member_type
+    #     if self.service_based in ['location', 'location_duration', 'none']:
+    #         # `from_location` and `selected_from_location` are invisible
+    #         from_location_visible = False
+    #         to_location_visible = True
+    #     else:
+    #         # Both `from_location` and `selected_from_location` are visible
+    #         from_location_visible = True
+    #         to_location_visible = True
+
+    #     # Adjust field visibility based on member_type
+    #     if self.member_type in ['policy', 'adhoc']:
+    #         # Use `selected_from_location` and `selected_to_location`
+    #         from_location_field = self.selected_from_location
+    #         to_location_field = self.selected_to_location
+    #     elif self.member_type == 'credit':
+    #         # Use `from_location` and `to_location`
+    #         from_location_field = self.from_location
+    #         to_location_field = self.to_location
+    #     else:
+    #         raise UserError(_("Invalid member type specified."))
+
+    #     # Check visibility and raise appropriate errors
+    #     if from_location_visible and not from_location_field:
+    #         if to_location_visible and not to_location_field:
+    #             raise UserError(_("Please provide both From Location and To Location details."))
+    #         else:
+    #             raise UserError(_("Please provide the From Location detail."))
+    #     elif to_location_visible and not to_location_field:
+    #         raise UserError(_("Please provide the To Location detail."))
+        
     #     # Check for Credit
     #     if self.member_id.member_type in ['credit', 'adhoc']:
     #          # Calculate quantity and quantity_with_days without validation
@@ -962,7 +739,7 @@ class AAAService(models.Model):
  
     # def _validate_service_limits(self, product_template_id):
     #     parent_category_id = self.product_id.categ_id.id
-    #     print("PARENT CATEGORY OF CHOSEN SERVICE  IN PACKAGE", parent_category_id)
+    #     print(f"PARENT CATEGORY OF CHOSEN SERVICE IN PACKAGE: {parent_category_id}")
  
     #     if not parent_category_id:
     #         return True
@@ -971,7 +748,7 @@ class AAAService(models.Model):
     #         ('categ_id', '=', parent_category_id),
     #         ('category_id', '=', product_template_id)
     #     ])
-    #     print("VAL_LIMITS OF PARENT_CAT", category_limits)
+    #     print(f"VAL_LIMITS OF PARENT_CAT: {category_limits}")
  
     #     if not category_limits:
     #         return True
@@ -981,38 +758,79 @@ class AAAService(models.Model):
  
     #     for limit in category_limits:
     #         quantity_limit = float(limit.quantity)
-    #         print("NO OF SERVICE_ACCESS IN CAT_DURATION",quantity_limit)
-    #         validity_period_days = limit.hours if limit.uom_id.name == 'Days' else (limit.hours * 24)
-    #         print("CAT_DURATION", validity_period_days)
+    #         print(f"NO OF SERVICE ACCESS IN CAT_DURATION: {quantity_limit}")
+           
+    #         # Fix: Correct handling of hours vs. days
+    #         validity_period_days = (
+    #             limit.hours if limit.uom_id.name == 'Days' else limit.hours
+    #         )
+    #         print(f"CAT_DURATION (validity in hours or days): {validity_period_days}")
  
-    #     # Check for services that need to adhere to the 24-hour rule
-    #     if any(limit.hours == 24 and limit.quantity == 1 for limit in category_limits):
-    #         if not self._is_service_accessible_in_24_hours(parent_category_id):
-    #             print("SERVICE DISPATCHED BEFORE 24 HOURS - TRIGGERING CASH WIZARD")
-    #             return False # Trigger the cash service wizard
-    #         else:
-    #             return True
-   
-    #     if self.service_based != 'location_duration':
-    #         if not self._is_service_accessible_in_24_hours(parent_category_id):
+    #     # # Logic for 24-hour validation
+    #     #     if validity_period_days == 24:
+    #     #         # Fetch the last service in the same category
+    #     #         last_service = self.env['aaa.service'].search([
+    #     #             ('member_id', '=', self.member_id.id),
+    #     #             ('product_id.categ_id', '=', parent_category_id),
+    #     #             ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done'])
+    #     #         ], order='service_time desc', limit=1)  # Use 'service_time' for ordering
+
+    #     # Logic for 24-hour validation
+    #         if validity_period_days == 24:
+    #             # Fetch the last service in the same category
+    #             last_service = self.env['aaa.service'].search([
+    #                 ('member_id', '=', self.member_id.id),
+    #                 ('product_id.categ_id', '=', parent_category_id),
+    #                 ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+    #                 ('service_time', '>=', self.member_id.member_activate_date),
+    #                 ('service_time', '<=', self.member_id.member_expiry_date),
+    #             ], order='service_time desc', limit=1)
+ 
+    #             if last_service and last_service.service_time:
+    #                 time_since_last_service = fields.Datetime.now() - last_service.service_time
+    #                 hours_since_last_service = time_since_last_service.total_seconds() / 3600
+    #                 print(f"HOURS SINCE LAST SERVICE: {hours_since_last_service}")
+ 
+    #                 # If less than 24 hours, calculate remaining quantity
+    #                 if hours_since_last_service < 24:
+    #                     remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
+    #                     print(f"REMAINING SERVICE ACCESS IN THE CAT_DURATION (24 hours): {remaining_quantity}")
+ 
+    #                     if remaining_quantity > 0:
+    #                         print("SERVICE WITHIN 24 HOURS - TRIGGERING CASH WIZARD")
+    #                         self._trigger_cash_service_wizard()
+                            
+    #                         raise ValidationError(
+    #                             _("You can only access a new service 24 hours after the last one. Remaining quantity: %d") % remaining_quantity
+    #                         )
+    #                     elif remaining_quantity <= 0:
+    #                         print("NO REMAINING SERVICE ACCESS - TRIGGERING CASH WIZARD")
+    #                         self._trigger_cash_service_wizard()
+    #                         return False
+    #             else:
+    #                 print("No last service found or missing service_time")
+    #         else:  # Logic for validity_period_days = 365 or other cases
     #             remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
-    #             print("REMAINING SERVICE ACCESS in the CAT_DURATION", remaining_quantity)
+    #             print(f"REMAINING SERVICE ACCESS IN THE CAT_DURATION ({validity_period_days} days): {remaining_quantity}")
+ 
     #             if remaining_quantity <= 0:
     #                 print("REMAINING SERVICE ACCESS REACHED ZERO - TRIGGERING CASH WIZARD")
-    #                 return False  # Trigger the cash service wizard
-    #             raise ValidationError(
-    #                 _("A service can only be initiated after 24 hours of the last dispatch. Remaining quantity: %d") % remaining_quantity
-    #             )
-    #          # Additional validation to check if the service is within the category limits, even if more than 24 hours have passed
+    #                 self._trigger_cash_service_wizard()
+    #                 return False
+    #             elif remaining_quantity > 0:
+    #                 print(f"Remaining quantity is still available: {remaining_quantity}")
+ 
+    #     else:  # Logic for validity_period_days = 365 or other cases
     #         remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
+    #         print(f"REMAINING SERVICE ACCESS IN THE CAT_DURATION ({validity_period_days} days): {remaining_quantity}")
     #         if remaining_quantity <= 0:
-    #             print("REMAINING SERVICE ACCESS REACHED ZERO AFTER 24 HOURS - TRIGGERING CASH WIZARD")
-    #             return False  # Trigger the cash service wizard
-           
-       
+    #             print("REMAINING SERVICE ACCESS REACHED ZERO - TRIGGERING CASH WIZARD")
+    #             self._trigger_cash_service_wizard()
+    #             return False
+ 
     #     if self.service_based == 'location_duration':
     #         period_start = fields.Datetime.now() - timedelta(days=validity_period_days)
-    #         print("START OF LOCATION DURATION SERVICE PERIOD:", period_start)
+    #         print(f"START OF LOCATION DURATION SERVICE PERIOD: {period_start}")
  
     #         total_days = 0
     #         # Fetch all services in the same category within the validity period
@@ -1022,25 +840,20 @@ class AAAService(models.Model):
     #             ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
     #             ('date_time_to', '>=', period_start),
     #         ])
-    #         print("MEMBER SERVICES IN CATEGORY:", member_services_in_category)
+    #         print(f"MEMBER SERVICES IN CATEGORY: {member_services_in_category}")
  
     #         # Calculate the total days accessed in the category
     #         for service in member_services_in_category:
     #             if service.service_based == 'location_duration' and service.date_time_to and service.date_time_from:
     #                 service_duration = (service.date_time_to - service.date_time_from).total_seconds() / (3600 * 24)
-    #                 print("SERVICE DURATION FOR LOCATION DURATION SERVICE:", service_duration)
+    #                 print(f"SERVICE DURATION FOR LOCATION DURATION SERVICE: {service_duration}")
     #                 total_days += service_duration
-    #                 print("TOTAL SERVICE DAYS ACCESSED:", total_days)
+    #                 print(f"TOTAL SERVICE DAYS ACCESSED: {total_days}")
  
     #         # Calculate remaining days from the quantity limit
     #         remaining_days = quantity_limit - total_days
-    #         print("REMAINING SERVICE DAYS ALLOWED:", remaining_days)
+    #         print(f"REMAINING SERVICE DAYS ALLOWED: {remaining_days}")
  
-    #         # Update the 'quantity' field with the remaining days
-    #         # self.quantity = remaining_days
-    #         # print("UPDATED QUANTITY FIELD WITH REMAINING DAYS:", self.quantity)
- 
-    #         # If remaining_days is less than or equal to 0, trigger the cash service wizard
     #         if remaining_days <= 0:
     #             print("SERVICE LIMIT EXCEEDED - TRIGGERING CASH WIZARD")
     #             return False
@@ -1052,19 +865,11 @@ class AAAService(models.Model):
     #                 _("The service can only be accessed for the remaining %d days. Please adjust the service duration.") % remaining_days
     #             )
  
-    #         # Ensure that even if 24 hours have passed, the service is not dispatchable if the total service days exceed the limit
-    #         # if not self._is_service_accessible_in_24_hours(parent_category_id):
-    #         #     print("SERVICE DISPATCHED WITHIN 24 HOURS - BLOCKING SERVICE DISPATCH")
-    #         #     raise ValidationError(
-    #         #         _("A service of type 'location_duration' can only be initiated after 24 hours of the last dispatch. Remaining quantity (days): %d") % remaining_days
-    #         #     )
- 
-    #          # Step 2: Update and persist `quantity_with_days`
     #     if self.date_time_from and self.date_time_to:
     #         delta = self.date_time_to - self.date_time_from
     #         self.quantity = delta.days  # This updates `quantity`
     #         self.quantity_with_days = f"{self.quantity} Days" if self.quantity else "0 Days"
-       
+ 
     #     # Explicitly write `quantity_with_days` to save it in the database
     #     self.write({
     #         'quantity': self.quantity,
@@ -1073,25 +878,36 @@ class AAAService(models.Model):
  
     #     return True
  
- 
     # def _is_service_accessible_in_24_hours(self, parent_category_id):
     #     last_dispatch_time = fields.Datetime.now() - timedelta(hours=24)
     #     recent_services = self.env['aaa.service'].search_count([
     #         ('member_id', '=', self.member_id.id),
     #         ('product_id.categ_id', '=', parent_category_id),
-    #         # ('state', '=', 'dispatch'),
-    #         ('state', 'in', ['dispatch','start', 'reach', 'completed_by_driver', 'done']),
+    #         ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
     #         ('create_date', '>=', last_dispatch_time),
     #     ])
     #     return recent_services == 0
  
+    # # def _count_services_in_category(self, parent_category_id):
+    # #     return self.env['aaa.service'].search_count([
+    # #         ('member_id', '=', self.member_id.id),
+    # #         ('product_id.categ_id', '=', parent_category_id),
+    # #         ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+    # #     ])
     # def _count_services_in_category(self, parent_category_id):
-    #     return self.env['aaa.service'].search_count([
+    #     domain = [
     #         ('member_id', '=', self.member_id.id),
     #         ('product_id.categ_id', '=', parent_category_id),
-    #         # ('state', '=', 'dispatch'),
-    #         ('state', 'in', ['dispatch','start', 'reach','completed_by_driver', 'done']),
-    #     ])
+    #         ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+    #     ]
+        
+    #     # Only add these criteria if the partner actually has activation/expiry dates
+    #     if self.member_id.member_activate_date:
+    #         domain.append(('service_time', '>=', self.member_id.member_activate_date))
+    #     if self.member_id.member_expiry_date:
+    #         domain.append(('service_time', '<=', self.member_id.member_expiry_date))
+        
+    #     return self.env['aaa.service'].search_count(domain)
  
     # def _trigger_cash_or_credit_service_wizard(self):
     #     return {
@@ -1129,12 +945,8 @@ class AAAService(models.Model):
     #         'status': self.state,
     #     })
  
-     
     #     for service in self:
-    #         # Define the comment content based on whether a manual comment is provided
     #         comment_content = service.comments or 'DISPATCHED'
-           
-    #         # Create the service.comment record
     #         self.env['service.comment'].create({
     #             'service_id': service.id,
     #             'comment': comment_content,
@@ -1143,15 +955,48 @@ class AAAService(models.Model):
     #             'comment_status': service.state,
     #         })
  
-    #         # Clear the comments field if it was manually provided
     #         if service.comments:
-    #             service.comments = False  # Clear the comments field
+    #             service.comments = False
  
     #     return True
 
     def action_dispatch_service(self):
         self.ensure_one()
         self._generate_service_name()
+
+        if not self.product_id:
+            raise UserError(_("Provide the service details."))
+         # Determine visible fields based on service_based and member_type
+        if self.service_based in ['location', 'location_duration', 'none']:
+            # `from_location` and `selected_from_location` are invisible
+            from_location_visible = False
+            to_location_visible = True
+        else:
+            # Both `from_location` and `selected_from_location` are visible
+            from_location_visible = True
+            to_location_visible = True
+
+        # Adjust field visibility based on member_type
+        if self.member_type in ['policy', 'adhoc']:
+            # Use `selected_from_location` and `selected_to_location`
+            from_location_field = self.selected_from_location
+            to_location_field = self.selected_to_location
+        elif self.member_type == 'credit':
+            # Use `from_location` and `to_location`
+            from_location_field = self.from_location
+            to_location_field = self.to_location
+        else:
+            raise UserError(_("Invalid member type specified."))
+
+        # Check visibility and raise appropriate errors
+        if from_location_visible and not from_location_field:
+            if to_location_visible and not to_location_field:
+                raise UserError(_("Please provide both From Location and To Location details."))
+            else:
+                raise UserError(_("Please provide the From Location detail."))
+        elif to_location_visible and not to_location_field:
+            raise UserError(_("Please provide the To Location detail."))
+       
         # Check for Credit
         if self.member_id.member_type in ['credit', 'adhoc']:
              # Calculate quantity and quantity_with_days without validation
@@ -1268,8 +1113,11 @@ class AAAService(models.Model):
                 last_service = self.env['aaa.service'].search([
                     ('member_id', '=', self.member_id.id),
                     ('product_id.categ_id', '=', parent_category_id),
-                    ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done'])
-                ], order='service_time desc', limit=1)  # Use 'service_time' for ordering
+                    ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+                    ('service_time', '>=', self.member_id.member_activate_date),
+                    ('service_time', '<=', self.member_id.member_expiry_date),
+                ], order='service_time desc', limit=1)
+
  
                 if last_service and last_service.service_time:
                     time_since_last_service = fields.Datetime.now() - last_service.service_time
@@ -1373,12 +1221,28 @@ class AAAService(models.Model):
         ])
         return recent_services == 0
  
+    # def _count_services_in_category(self, parent_category_id):
+    #     return self.env['aaa.service'].search_count([
+    #         ('member_id', '=', self.member_id.id),
+    #         ('product_id.categ_id', '=', parent_category_id),
+    #         ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+    #     ])
     def _count_services_in_category(self, parent_category_id):
-        return self.env['aaa.service'].search_count([
+        domain = [
             ('member_id', '=', self.member_id.id),
             ('product_id.categ_id', '=', parent_category_id),
             ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-        ])
+        ]
+        
+        # Only add these criteria if the partner actually has activation/expiry dates
+        if self.member_id.member_activate_date:
+            domain.append(('service_time', '>=', self.member_id.member_activate_date))
+        if self.member_id.member_expiry_date:
+            domain.append(('service_time', '<=', self.member_id.member_expiry_date))
+        
+        return self.env['aaa.service'].search_count(domain)
+
+    
  
     def _trigger_cash_or_credit_service_wizard(self):
         return {
@@ -1481,8 +1345,8 @@ class AAAService(models.Model):
             # Ensure credit_proforma_number is filled
             if not service.provider_id:
                 raise UserError("You must fill the PROVIDER before starting the service.")
-            # if not service.driver_id:
-            #     raise UserError("You must fill the DRIVER before starting the service.")
+            if not service.driver_id:
+                raise UserError("You must fill the DRIVER before starting the service.")
             # Proceed with setting the state to 'start'
             service.state = 'start'
  
