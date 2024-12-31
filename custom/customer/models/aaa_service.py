@@ -389,8 +389,6 @@ class AAAService(models.Model):
                 self.is_driver_name_visible = True  # Show driver_name and hide driver_id
 #--------------------------------------------------BACKUP CODE OF ON CATEGORY FETCHING----------------------------- 
   
-
-
     @api.onchange('customer_id', 'member_type')
     def _onchange_customer_id_member_type(self):
         for record in self:
@@ -1345,8 +1343,8 @@ class AAAService(models.Model):
             # Ensure credit_proforma_number is filled
             if not service.provider_id:
                 raise UserError("You must fill the PROVIDER before starting the service.")
-            if not service.driver_id:
-                raise UserError("You must fill the DRIVER before starting the service.")
+            # if not service.driver_id:
+            #     raise UserError("You must fill the DRIVER before starting the service.")
             # Proceed with setting the state to 'start'
             service.state = 'start'
  
