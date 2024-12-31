@@ -15,14 +15,14 @@
                     <field name="member_contact_no" string="Mobile Number" />
                     <field name="vehicle_plate" />
                     <field name="vehicle_type" />
-                    <field name="vehicle_plate" />
                     <field name="product_id" string="Service" />
                     <field name="selected_from_location" string="Policy From" />
                     <field name="selected_to_location" string=" Policy To" />
                     <field name="from_location" string="From" />
                     <field name="to_location" string="To" />
                     <field name="provider_id" string="Provider" />
-                    <field name="created_by" string="Agent" />
+                    <!-- <field name="created_by" string="Agent" /> -->
+                    <field name="user_from_history" string="Agent" />
                     <field name="state" string="Status" />
                 </tree>
             </field>
@@ -157,7 +157,7 @@
             <field name="name">Scheduled</field>
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
-            <field name="domain">[('state', '=', 'initiate'), ('schedule_date_time', '!=', False)]</field>
+            <field name="domain">[('state', '=', 'initiate'), ('schedule_date_time', '!=', False),('requested_date', '!=', False)]</field>
             <field name="context">{'default_created_by': uid}</field>
             <field name="view_ids" eval="[ 
                     (5, 0, 0),

@@ -30,9 +30,9 @@
                             icon="fa-users" string="Members">
                             <field name="member_count" widget="statinfo" string="Members" />
                         </button>
-                        <button name="action_view_policy_service" type="object"
+                        <button name="action_view_customer_service" type="object"
                             class="oe_stat_button" icon="fa-pencil-square-o">
-                            <field name="policy_member_service_count" widget="statinfo"
+                            <field name="customer_service_count" widget="statinfo"
                                 string="Services" />
                         </button>
                         <button string="Waive-off History" name="waive_off_history" type="object"
