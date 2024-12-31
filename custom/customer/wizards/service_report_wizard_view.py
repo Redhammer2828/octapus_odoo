@@ -95,267 +95,7 @@ class ServiceReportWizard(models.TransientModel):
         return f"{float(amount or 0):.2f}"
    
 
-    # def action_print_pdf(self):
-    #     """Generate Membership Details PDF with renewals and extensions."""
-    #     import textwrap
-    #     from reportlab.lib.pagesizes import landscape, A4
-    #     from reportlab.pdfgen import canvas
-    #     from reportlab.lib.utils import ImageReader
-    #     from reportlab.lib.units import inch
-    #     import io
-    #     import base64
-
-    #     # Prepare domain filters for policy members within the specified date range
-    #     domain = []
-    #     if self.customer_id:
-    #         domain.append(('parent_customer_id', '=', self.customer_id.id))
-
-    #     if self.member_type == 'policy':
-    #         domain.append(('member_type', '=', 'policy'))
-        
-    #     if self.sequence_id:
-    #         domain.append(('member_partner_category_id', '=', self.sequence_id.id))
-
-    #     if self.from_date:
-    #         domain.append(('invoice_ref_date', '>=', self.from_date))
-
-    #     if self.to_date:
-    #         domain.append(('invoice_ref_date', '<=', self.to_date))
-
-    #     service_records = self.env['res.partner'].search(domain)
-
-    #     # Fetch renewals/extensions from membership.history
-    #     all_data = []  # This will store all rows for the PDF
-    #     for record in service_records:
-    #         # Add the original policy
-    #         all_data.append({
-    #             'membership_no': record.old_membership_number or '',
-    #             'name': record.name or '',
-    #             'plate_no': record.vehicle_plate or '',
-    #             'chasis_no': record.vehicle_chasis_no or '',
-    #             'policy_no': record.policy_no or '',
-    #             'start_date': record.member_activate_date.strftime('%d-%m-%Y') if record.member_activate_date else '',
-    #             'expiry_date': record.member_expiry_date.strftime('%d-%m-%Y') if record.member_expiry_date else '',
-    #             'car_make': record.vehicle_type or '',
-    #             'amount': self._calculate_amount(record),
-    #         })
-
-    #         # Check related history for renewals/extensions
-    #         history_records = self.env['membership.history'].search([('history_id', '=', record.id)])
-    #         for history in history_records:
-    #             expiry_diff = (record.member_expiry_date - history.member_expiry_date).days
-    #             if expiry_diff >= 365:  # Renewal
-    #                 renewal_type = "Renewal"
-    #             elif expiry_diff < 365:  # Extension
-    #                 renewal_type = "Extension"
-    #             else:
-    #                 continue  # Skip if it doesn't match renewal/extension criteria
-
-    #             # Add renewal/extension to the report
-    #             all_data.append({
-    #                 'membership_no': f"{record.old_membership_number} ({renewal_type})",
-    #                 'name': record.name or '',
-    #                 'plate_no': record.vehicle_plate or '',
-    #                 'chasis_no': record.vehicle_chasis_no or '',
-    #                 'policy_no': record.policy_no or '',
-    #                 'start_date': history.member_expiry_date.strftime('%d-%m-%Y') if history.member_expiry_date else '',
-    #                 'expiry_date': record.member_expiry_date.strftime('%d-%m-%Y') if record.member_expiry_date else '',
-    #                 'car_make': record.vehicle_type or '',
-    #                 'amount': self._calculate_amount(record),
-    #             })
-
-    #     # PDF buffer
-    #     buffer = io.BytesIO()
-    #     pdf = canvas.Canvas(buffer, pagesize=landscape(A4))
-    #     width, height = landscape(A4)
-    #     margin = 20
-    #     table_y_start = height - 120  # Table starts after title/logo
-
-    #     # Company logo setup
-    #     company = self.env['res.company'].search([], limit=1)
-    #     logo_width, logo_height = 1.2 * inch, 1.2 * inch
-
-    #     # Define headers and column widths
-    #     headers = [
-    #         'MEMBERSHIP\nNO.', 'NAME', 'PLATE\nNO.', 'CHASIS\nNO.', 'POLICY\nNO.',
-    #         'START\nDATE', 'EXPIRY\nDATE', 'CAR\nMAKE', 'AMOUNT'
-    #     ]
-    #     col_widths = [85, 130, 85, 115, 95, 75, 75, 85, 65]  # Adjusted widths
-        
-
-    #     header_height = 40
-    #     row_height = 30
-
-    #     def draw_header(pdf):
-    #         """Draw header with company logo and tagline."""
-    #         if company.logo:
-    #             logo_data = base64.b64decode(company.logo)
-    #             logo_image = ImageReader(io.BytesIO(logo_data))
-    #             pdf.drawImage(
-    #                 logo_image,
-    #                 width - margin - logo_width,
-    #                 height - logo_height - 10,
-    #                 width=logo_width,
-    #                 height=logo_height,
-    #             )
-
-    #         # Center the title in the header
-    #         pdf.setFont("Helvetica-Bold", 12)
-    #         title = "Membership Details"
-    #         pdf.drawString((width - pdf.stringWidth(title, "Helvetica-Bold", 12)) / 2, height - 40, title)
-
-    #         # Display the date range below the title
-    #         pdf.setFont("Helvetica", 10)
-    #         date_range = f"From: {self.from_date.strftime('%d-%m-%Y')} To: {self.to_date.strftime('%d-%m-%Y')}"
-    #         pdf.drawString((width - pdf.stringWidth(date_range, "Helvetica", 10)) / 2, height - 55, date_range)
-
-    #         # Display the customer's name below the date range
-    #         if self.customer_id:  # Check if a customer is selected
-    #             customer_name = f"Customer: {self.customer_id.name}"
-    #             pdf.drawString((width - pdf.stringWidth(customer_name, "Helvetica", 10)) / 2, height - 70, customer_name)
-
-    #         # Draw the tagline below the logo
-    #         pdf.setFont("Helvetica", 8)
-    #         tagline_y_position = height - logo_height - 15
-    #         pdf.drawRightString(width - margin, tagline_y_position, "We guarantee to get you moving...")
-
-    #     def draw_table_header(pdf, y_position):
-    #         """Draw table headers with proper spacing."""
-    #         x_offset = margin
-    #         pdf.setFont("Helvetica-Bold", 8)
-    #         for i, header in enumerate(headers):
-    #             pdf.rect(x_offset, y_position - header_height, col_widths[i], header_height)
-    #             text_lines = header.split('\n')
-    #             total_text_height = len(text_lines) * 10
-    #             starting_y = y_position - (header_height / 2) + (total_text_height / 2)
-    #             for line in text_lines:
-    #                 text_width = pdf.stringWidth(line, "Helvetica-Bold", 8)
-    #                 x_text = x_offset + (col_widths[i] - text_width) / 2
-    #                 pdf.drawString(x_text, starting_y - 10, line)
-    #                 starting_y -= 10
-    #             x_offset += col_widths[i]
-    #         return y_position - header_height
-
-    
-
-
-    #     def draw_data_row(pdf, data, y_position):
-    #         """
-    #         Draw each record row with advanced text wrapping and cell fitting.
-            
-    #         Args:
-    #             pdf (Canvas): The PDF canvas to draw on
-    #             data (dict): Dictionary containing row data
-    #             y_position (float): Y-coordinate to start drawing the row
-            
-    #         Returns:
-    #             float: Updated y-position after drawing the row
-    #         """
-    #         x_offset = margin
-    #         pdf.setFont("Helvetica", 7)
-    #         line_height = 8  # Manual line height instead of setLeading
-
-    #         def wrap_text(text, width, font_name, font_size):
-    #             """
-    #             Wrap text to fit within a specific width.
-                
-    #             Args:
-    #                 text (str): Text to wrap
-    #                 width (float): Maximum width of the cell
-    #                 font_name (str): Font name
-    #                 font_size (int): Font size
-                
-    #             Returns:
-    #                 list: List of wrapped text lines
-    #             """
-    #             # Convert to string and handle None
-    #             text = str(text) if text is not None else ''
-                
-    #             # If text is empty, return empty list
-    #             if not text:
-    #                 return ['']
-                
-    #             # Calculate approximate characters per line based on width
-    #             max_chars = int(width / (font_size * 0.5))  # Adjust multiplier as needed
-                
-    #             # Use textwrap to split the text
-    #             import textwrap
-    #             wrapped_lines = textwrap.wrap(text, width=max_chars)
-                
-    #             # Ensure at least one line, even if empty
-    #             return wrapped_lines if wrapped_lines else ['']
-
-    #         # Prepare to track maximum lines across all columns
-    #         max_lines = 1
-    #         column_lines = []
-
-    #         # First pass: wrap text and determine maximum lines
-    #         for i, value in enumerate(data.values()):
-    #             wrapped = wrap_text(value, col_widths[i], "Helvetica", 7)
-    #             column_lines.append(wrapped)
-    #             max_lines = max(max_lines, len(wrapped))
-
-    #         # Adjust row height based on max lines
-    #         adjusted_row_height = row_height * (max_lines + 0.5)
-
-    #         # Draw row rectangles
-    #         x_offset = margin
-    #         for i, lines in enumerate(column_lines):
-    #             pdf.rect(x_offset, y_position - adjusted_row_height, col_widths[i], adjusted_row_height)
-    #             x_offset += col_widths[i]
-
-    #         # Second pass: draw text
-    #         x_offset = margin
-    #         for i, lines in enumerate(column_lines):
-    #             # Center text vertically and horizontally within the cell
-    #             start_y = y_position - (adjusted_row_height / 2) + (line_height * (max_lines / 2))
-                
-    #             for j, line in enumerate(lines):
-    #                 text_width = pdf.stringWidth(line, "Helvetica", 7)
-    #                 x_text = x_offset + (col_widths[i] - text_width) / 2
-    #                 y_text = start_y - (j * line_height)
-    #                 pdf.drawString(x_text, y_text, line)
-                
-    #             x_offset += col_widths[i]
-
-    #         return y_position - adjusted_row_height
-
-        
-
-
-       
-
-
-    #     # Generate PDF
-    #     draw_header(pdf)
-    #     y_position = table_y_start
-    #     y_position = draw_table_header(pdf, y_position)
-
-    #     for row_data in all_data:
-    #         if y_position < 50:  # Start new page if needed
-    #             pdf.showPage()
-    #             draw_header(pdf)
-    #             y_position = table_y_start
-    #             y_position = draw_table_header(pdf, y_position)
-    #         y_position = draw_data_row(pdf, row_data, y_position)
-
-    #     pdf.save()
-    #     buffer.seek(0)
-
-    #     # Create attachment
-    #     attachment = self.env['ir.attachment'].create({
-    #         'name': f"Membership Details_{self.id}.pdf",
-    #         'datas': base64.b64encode(buffer.read()),
-    #         'type': 'binary',
-    #     })
-
-    #     return {
-    #         'type': 'ir.actions.act_window',
-    #         'res_model': 'ir.attachment',
-    #         'res_id': attachment.id,
-    #         'view_mode': 'form',
-    #         'target': 'new',
-    #     }
+   
 
     def action_print_pdf(self):
         """Generate Membership Details PDF with renewals and extensions."""
@@ -680,16 +420,34 @@ class ServiceReportWizard(models.TransientModel):
                         field_value = record.vehicle_chasis_no or ''
                     elif header == 'Service':
                         field_value = record.product_id.name or ''
+                    # elif header == 'From Location':
+                    #     if record.member_id.member_type in ['credit', 'adhoc']:
+                    #         field_value = record.from_location.name if record.from_location else ''
+                    #     else:
+                    #         field_value = record.selected_from_location.name if record.selected_from_location else ''
+                    # elif header == 'To Location':
+                    #     if record.member_id.member_type in ['credit', 'adhoc']:
+                    #         field_value = record.to_location.name if record.to_location else ''
+                    #     else:
+                    #         field_value = record.selected_to_location.name if record.selected_to_location else ''
                     elif header == 'From Location':
-                        if record.member_id.member_type in ['credit', 'adhoc']:
+                        if record.member_id.member_type in ['policy', 'adhoc']:
+                            # If selected_from_location is not set, fallback to from_location
+                            field_value = record.selected_from_location.name if record.selected_from_location else (record.from_location.name if record.from_location else '')
+                            
+                        else:
                             field_value = record.from_location.name if record.from_location else ''
-                        else:
-                            field_value = record.selected_from_location.name if record.selected_from_location else ''
+                           
+
                     elif header == 'To Location':
-                        if record.member_id.member_type in ['credit', 'adhoc']:
-                            field_value = record.to_location.name if record.to_location else ''
+                        if record.member_id.member_type in ['policy', 'adhoc']:
+                            # If selected_to_location is not set, fallback to to_location
+                            field_value = record.selected_to_location.name if record.selected_to_location else (record.to_location.name if record.to_location else '')
+                           
                         else:
-                            field_value = record.selected_to_location.name if record.selected_to_location else ''
+                             field_value = record.to_location.name if record.to_location else ''
+                           
+
                     elif header == 'Trip Sheet No.':
                         field_value = record.credit_proforma_number or ''
                     elif header == 'Quantity':
