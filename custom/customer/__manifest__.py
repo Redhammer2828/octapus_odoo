@@ -2,14 +2,15 @@
 {
     'name': 'Customer',
     'version': '1.0',
-    'depends': ['base', 'web','product','hr'],
+    'depends': ['web','base','product','hr','mail'],
+    # 'assets': {
+    #     'web.assets_backend': [
+    #         'customer/static/src/js/place_autocomplete_field.js',
+    #     ],
+    # },
     'author': 'Sasoft',
     'category': 'Customer',
     'description': 'Customers Management',
-    'assets': {
-        'web.assets_backend': [
-        ],
-    },
     'data': [
         'security/ir.model.access.csv',
         'views/res_partner_customer.xml',
@@ -45,6 +46,8 @@
         'views/policy_member_service_history.xml',
         'views/res_partner_vendor.xml',
         'views/product_pricelist.xml',
+        'views/service_dashboard.xml',
+        # 'views/assets.xml',
         'wizards/upload_member_wizard.xml',
         'wizards/membership_extension_wizard.xml',
         'wizards/membership_renewal_wizard.xml',
@@ -62,9 +65,16 @@
         'data/scheduled_action.xml',
         'data/sequence_data.xml',
         'data/server_action.xml',
-        # 'views/product_packages.xml',
-        # 'static/src/js/customer.js',
     ],
+    # 'assets': {
+    #     'web.assets_backend': [
+    #         'customer/static/src/js/location_autocomplete.js',
+    #         'customer/static/src/xml/location_autocomplete_template.xml',
+    #     ],
+    # },
+
+
+
     'installable': True,
     'application': True,
     'sequence': 2,

@@ -51,6 +51,7 @@
                     <field name="policy_no" string="Policy Number" />
                     <field name="provider_id" string="Provider" />
                     <field name="driver_name" />
+                    <field name="claim_number" />
                     <field name="state" string="State" />
                     <field name="credit_proforma_number" string="Trip Sheet Number" />
                     <filter name="today_records" string="Today's Records"
