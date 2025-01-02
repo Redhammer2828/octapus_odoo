@@ -987,14 +987,15 @@ class AAAService(models.Model):
     #             'comment_status' : record.state,
            
     #     })
+
     @api.model
     def check_and_update_state(self):
-        now=fields.Datetime.now()
-        records = self.search([('state', '=', 'initiate'), ('requested_date', '<=', fields.Datetime.now())])
-        print("NOW-------------------",now)
-        print("RECORDS------------------------------------------",records)
-        records.write({'state':'dispatch'})
-    
+        now = fields.Datetime.now()
+        records = self.search([('state', '=', 'initiate'), ('requested_date', '<=', now)])
+        _logger.info("NOW------------------- %s", now)
+        _logger.info("RECORDS------------------------------------------ %s", records)
+
+        records.write({'state': 'dispatch'})
         for record in records:
             self.env['service.history'].create({
                 'service_id': record.id,
@@ -1002,14 +1003,14 @@ class AAAService(models.Model):
                 'time': fields.Datetime.now(),
                 'status': record.state,
             })
-            self .env['service.comment'].create({
+            self.env['service.comment'].create({
                 'service_id': record.id,
-                'comment' : record.comments or 'Scheduled to dispatch',
-                'comment_date_and_time' : fields.Datetime.now(),
+                'comment': record.comments or 'Scheduled to dispatch',
+                'comment_date_and_time': fields.Datetime.now(),
                 'comment_user': self.env.user.id,
-                'comment_status' : record.state,
-           
-        })
+                'comment_status': record.state,
+            })
+            _logger.info("Record %s dispatched and history/comment created.", record.id)
 
     @api.onchange('member_id')
     def _onchange_member_id(self):
