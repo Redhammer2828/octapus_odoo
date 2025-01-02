@@ -19,4 +19,4 @@ from . import policy_service_history
 from . import res_partner_vendor
 from . import product_pricelist
 from . import service_dashboard
-# from . import location_api
+from . import location_api
