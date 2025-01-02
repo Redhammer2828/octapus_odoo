@@ -990,6 +990,7 @@ class AAAService(models.Model):
 
     @api.model
     def check_and_update_state(self):
+        _logger.info("...............Cron: check_and_update_state called.............")
         now = fields.Datetime.now()
         records = self.search([('state', '=', 'initiate'), ('requested_date', '<=', now)])
         _logger.info("NOW------------------- %s", now)
