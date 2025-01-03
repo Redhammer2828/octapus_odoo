@@ -109,7 +109,11 @@ class AAAService(models.Model):
     deposit_amount = fields.Float(string="Deposit Amount")
     schedule_service_check = fields.Boolean(string="Schedule Service Check")
     schedule_date_time = fields.Datetime(string="Schedule Date Time")
-    requested_date = fields.Datetime(string="Action Date Time")
+    
+    # SCHEDUDELE TEST- ADDED next_check_time as new field
+    requested_date = fields.Datetime(string="Action Date Time",index=True)
+    # next_check_time = fields.Datetime(string='Next Check Time', compute='_compute_next_check_time', store=True, index=True)
+    
     driving_license = fields.Char(string="Driving License")
     claim_number = fields.Char(string="Claim Number")
     smarto = fields.Boolean(string="Smarto")
@@ -950,6 +954,7 @@ class AAAService(models.Model):
  
         return True
 # --------------------------------------------------------------------------------------------------
+    # Wizard of Schedule service - 
     def action_schedule_service_check(self):
         self.schedule_service_check = True
         self.state= 'initiate'
@@ -987,31 +992,46 @@ class AAAService(models.Model):
     #             'comment_status' : record.state,
            
     #     })
-
     @api.model
     def check_and_update_state(self):
-        _logger.info("...............Cron: check_and_update_state called.............")
+        """Cron method to find 'initiate' records whose requested_date <= now, 
+        then update them to 'dispatch' and create a history/comment entry."""
+        
         now = fields.Datetime.now()
-        records = self.search([('state', '=', 'initiate'), ('requested_date', '<=', now)])
-        _logger.info("NOW------------------- %s", now)
-        _logger.info("RECORDS------------------------------------------ %s", records)
-
-        records.write({'state': 'dispatch'})
-        for record in records:
+        _logger.info("------------------Cron check_and_update_state triggered at %s", now)
+        print("-------NOW--------",now)
+        # Search for all records in 'initiate' state with requested_date <= now
+        records = self.search([
+            ('state', '=', 'initiate'),
+            ('requested_date', '<=', now)
+        ])
+        _logger.info("----------------Found %d record(s) to update.", self.requested_date)
+        _logger.info("----------------Found %d record(s) to update.", len(records))
+        print("=======RECORDS=====",records)
+        print("=======REQUESTED DATE=====",self.requested_date)
+        # Process each record individually (no singleton error this way)
+        for rec in records:
+            rec.write({'state': 'dispatch'})
+            _logger.info("Record %d state changed to 'dispatch'.", rec.id)
+            # Example: create a 'service.history' record
             self.env['service.history'].create({
-                'service_id': record.id,
+                'service_id': rec.id,        # Adjust with your field names
                 'user': self.env.user.id,
                 'time': fields.Datetime.now(),
-                'status': record.state,
+                'status': rec.state,
             })
+
+            # Example: create a 'service.comment' record
             self.env['service.comment'].create({
-                'service_id': record.id,
-                'comment': record.comments or 'Scheduled to dispatch',
+                'service_id': rec.id,  # Adjust with your field names
+                'comment': rec.comments or 'Scheduled to dispatch',
                 'comment_date_and_time': fields.Datetime.now(),
                 'comment_user': self.env.user.id,
-                'comment_status': record.state,
+                'comment_status': rec.state,
             })
-            _logger.info("Record %s dispatched and history/comment created.", record.id)
+
+        _logger.info("Completed check_and_update_state for all matching records.")
+
 
     @api.onchange('member_id')
     def _onchange_member_id(self):
