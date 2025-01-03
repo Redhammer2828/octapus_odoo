@@ -22,7 +22,9 @@
                     <field name="to_location" string="To" />
                     <field name="provider_id" string="Provider" />
                     <!-- <field name="created_by" string="Agent" /> -->
-                    <field name="user_from_history" string="Agent" />
+                    <!-- <field name="user_from_history" string="Agent" /> -->
+                    <field name="create_uid" string="Agent" />
+                    <field name="dispatcher_from_history" string="Dispatcher" />
                     <field name="state" string="Status" />
                 </tree>
             </field>
@@ -54,6 +56,7 @@
                     <field name="claim_number" />
                     <field name="state" string="State" />
                     <field name="credit_proforma_number" string="Trip Sheet Number" />
+                    <field name="dispatcher_from_history" string="Dispatcher" />
                     <filter name="today_records" string="Today's Records"
                                  domain="[('service_time', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00')), 
                   ('service_time', '&lt;=', context_today().strftime('%Y-%m-%d 23:59:59'))]"/>
@@ -75,7 +78,6 @@
                 ]">
             </field>
         </record>
-
 
         <record id="call_center_to_dispatch_service_action" model="ir.actions.act_window">
             <field name="name">To Dispatch</field>

@@ -44,14 +44,17 @@
                         <button name="action_membership_extension" string="Membership Extension"
                             type="object" icon="fa-lightbulb-o"
                             invisible="membership_state == 'cancel' or membership_state == 'temp'" />
-                        <!-- MEMBERSHIP CANCEL -->
+                        <!-- MEMBERSHIP CANCEL  -->
+                        <!-- MEMBERSHIP CANCEL UPDATED BASED ON USER - USER BASED HIDING -->
                         <button name="action_membership_cancel" string="Membership Cancel"
                             type="object" icon="fa-lightbulb-o"
-                            invisible="membership_state == 'cancel' or membership_state == 'temp'" />
+                            invisible="membership_state == 'cancel' or membership_state == 'temp' or is_agent_user or is_dispatch_user" />
                         <!-- MEMBERSHIP STATE -->
                         <field name="member_expired" invisible="1" readonly="1" />
                         <field name="membership_state" widget="statusbar" nolabel="1"
                             statusbar_visible="temp,confirm,cancel" />
+                        <field name="is_agent_user" invisible="1"/>
+                        <field name="is_dispatch_user" invisible="1"/>
                         <!-- POLICY EXPIRED ALERT FLAG -->
                     </header>
                     <sheet bgcolor="lightblue">
