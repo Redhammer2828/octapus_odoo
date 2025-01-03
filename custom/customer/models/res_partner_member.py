@@ -57,7 +57,7 @@ class ResPartnerMembers(models.Model):
     vehcle_reg_country_id = fields.Many2one('res.country', string='Vehicle Reg. Country') #changed country to res.country
     # readonly fields
     membership_cancel_date = fields.Date(string='Membership Cancel Date')
-    create_uid = fields.Many2one('res.users', string='Created By')
+    # create_uid = fields.Many2one('res.users', string='Created By')
     card_type_id = fields.Many2one('card.type', string='Card Type') #Created card.type model 
     member_type = fields.Selection([ ('policy', 'Policy Member'),
                                     ('credit', 'Credit Member'),
@@ -84,6 +84,18 @@ class ResPartnerMembers(models.Model):
     cancellation_comment = fields.Text('Cancelation Comment')
     # ----------------------------
     membership_history_ids= fields.One2many('membership.history','history_id', string='Membership History')
+
+    # USER BASED BUTTON HIDING 
+    is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
+    is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
+    create_uid = fields.Many2one(
+        'res.users',
+        string="Agent",
+        default=lambda self: self.env.user,
+        compute='_compute_created_by',
+        store=False,
+        readonly=False
+    )
     
     def unlink(self):
         """Restrict deletion for users in groups named '' or 'new_dispatchers'."""
@@ -119,9 +131,41 @@ class ResPartnerMembers(models.Model):
             vals['adhoc_member'] = True
             vals['member_type'] = 'adhoc'
         
+        if not vals.get('create_uid'):
+            vals['create_uid'] = self.env.user.id
+        
         new_partner = super(ResPartnerMembers, self).create(vals)
         return new_partner
     
+    # USER BASED BUTTON HIDING
+    @api.depends('create_uid')
+    def _compute_is_agent_user(self):
+        """Compute is_agent_user based on the create_uid user's group membership."""
+        for record in self:
+            # Default to False if no `created_by` is set
+            record.is_agent_user = False
+            if record.create_uid:
+                # Check if `created_by` belongs to the 'new_agents' group
+                user_groups = record.create_uid.groups_id
+                record.is_agent_user = any(group.name == 'Agent' for group in user_groups)
+ 
+    @api.depends('create_uid')
+    def _compute_is_dispatch_user(self):
+        """Compute is_dispatch_user based on the ccreate_uid user's group membership."""
+        for record in self:
+            # Default to False if no `created_by` is set
+            record.is_dispatch_user = False
+            if record.create_uid:
+                # Check if `created_by` belongs to the 'new_agents' group
+                user_groups = record.create_uid.groups_id
+                record.is_dispatch_user = any(group.name == 'Dispatcher' for group in user_groups)
+    @api.depends('membership_state')
+    def _compute_created_by(self):
+        """Dynamically update create_uid when the record is in specified states."""
+        for record in self:
+            if record.membership_state in {'temp', 'confirm', 'cancel'} and record.create_uid != self.env.user:
+                record.create_uid = self.env.user
+
     @api.depends('parent_customer_id', 'member_partner_category_id', 'card_type_id')
     def _compute_member_ref_no(self):
         for record in self:
@@ -243,8 +287,7 @@ class ResPartnerMembers(models.Model):
     def _compute_is_readonly(self):
         for record in self:
             record.is_readonly = record.membership_state == 'confirm'
-    
-        
+     
     is_readonly = fields.Boolean(string='Read-Only', compute='_compute_is_readonly', store=True)
    
     @api.depends('member_expiry_date')
