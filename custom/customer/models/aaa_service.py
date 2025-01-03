@@ -156,12 +156,14 @@ class AAAService(models.Model):
     # One to Many -------------------------------------------------------------------------------------------
     comment_history_ids = fields.One2many('service.comment', 'service_id', string="Comment History")
     service_history_ids = fields.One2many('service.history', 'service_id', string="Service History")
-    user_from_history = fields.Many2one(
-        'res.users', 
-        string="Agent (From History)", 
-        compute='_compute_user_from_history', 
-        store=True
-    )
+    
+    # user_from_history = fields.Many2one(
+    #     'res.users', 
+    #     string="Agent (From History)", 
+    #     compute='_compute_user_from_history', 
+    #     store=True
+    # )
+    
     enquiry_ids = fields.One2many('aaa.enquiry', 'service_id', string="Enquiries")
     addon_service_ids = fields.One2many(
         'aaa.service.addon',
@@ -182,6 +184,14 @@ class AAAService(models.Model):
     completion_time = fields.Datetime(string="Completion Time")
     member_activate_date = fields.Date('Member Activate Date')
     member_expiry_date = fields.Date('Member Expiry Date')
+
+    #For disptacher code in AAA.service
+    dispatcher_from_history = fields.Many2one(
+        'res.users',
+        string="Dispatcher",
+        compute='_compute_dispatcher_from_history',
+        store=True
+    )
 
     # # -----------LOCATION- API TESTINGs--------------------------------------------------
     
@@ -249,6 +259,19 @@ class AAAService(models.Model):
                 user_groups = record.created_by.groups_id
                 record.is_dispatch_user = any(group.name == 'Dispatcher' for group in user_groups)
     
+    #computing the dispatcher in AAA.SERVICE
+    @api.depends('state', 'service_history_ids.user')
+    def _compute_dispatcher_from_history(self):
+        """Fetch the exact user from the related service.history."""
+        for service in self:
+            # Find the first related service.history record with a matching state
+            relevant_history = service.service_history_ids.filtered(
+                lambda history: history.status == 'dispatch'
+            )
+            # Get the `user` from the first relevant service.history record, if any
+            service.dispatcher_from_history = relevant_history[:1].user if relevant_history else False
+            print("DISPATCHER",relevant_history)
+
     # FOR TREE VIEW
     @api.depends('member_type')
     def _compute_hide_selected_locations(self):
@@ -514,19 +537,17 @@ class AAAService(models.Model):
             if record.state in {'initiate','dispatch', 'start', 'reach', 'completed_by_driver_done'} and record.created_by != self.env.user:
                 record.created_by = self.env.user
 
-    @api.depends('state', 'service_history_ids.user')
-    def _compute_user_from_history(self):
-        """Fetch the exact user from the related service.history."""
-        for service in self:
-            # Find the first related service.history record with a matching state
-            relevant_history = service.service_history_ids.filtered(
-                lambda history: history.status == service.state
-            )
-            # Get the `user` from the first relevant service.history record, if any
-            service.user_from_history = relevant_history[:1].user if relevant_history else False
+    # @api.depends('state', 'service_history_ids.user')
+    # def _compute_user_from_history(self):
+    #     """Fetch the exact user from the related service.history."""
+    #     for service in self:
+    #         # Find the first related service.history record with a matching state
+    #         relevant_history = service.service_history_ids.filtered(
+    #             lambda history: history.status == service.state
+    #         )
+    #         # Get the `user` from the first relevant service.history record, if any
+    #         service.user_from_history = relevant_history[:1].user if relevant_history else False
  
-   
-
     def write(self, vals):
         """Override the write method to ensure comments are saved and created_by is updated."""
         # Update tracking fields if values are being changed
@@ -621,7 +642,7 @@ class AAAService(models.Model):
         else:
             print(f"API RESPONSE-ORDER NOT CREATED,{response.text},{response.status_code}") 
 # ---------------------------------------------------NEW A CODE-----------------------------------------------
-
+# -----------------------------CATEOGRY LIMIT CHECK----------------------------------------------------------------------------------------
     def action_dispatch_service(self):
         self.ensure_one()
         self._generate_service_name()
@@ -1305,7 +1326,7 @@ class AAAService(models.Model):
 
     def history(self):
         pass
-    
+    # -------CHANGE BUTTON IN CALL CENTER SERVICE FORM----------
     def action_new_change(self):
         new_service = False  # Initialize variable to avoid unbound error in case of multiple records
         for service in self:
@@ -1327,6 +1348,14 @@ class AAAService(models.Model):
                     'vehicle_plate': service.vehicle_plate,
                     'vehicle_chasis_no': service.vehicle_chasis_no,
                     'policy_no': service.policy_no,
+                    'member_type': service.member_type,
+                    'type': service.type,
+                    'card_type': service.card_type,
+                    'product_id': service.product_id.id,
+                    'selected_from_location': service.selected_from_location.id,
+                    'selected_to_location': service.selected_to_location.id,
+                    'from_location': service.from_location.id,
+                    'to_location': service.to_location.id,
                 })
                 # Debugging: Ensure the new service is created
                 print("NEW SERVICE ID:", new_service.id)
