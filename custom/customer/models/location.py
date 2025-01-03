@@ -68,3 +68,7 @@ class LocationSuggestion(models.Model):
     # longitude = fields.Float(string='Longitude', digits=(16, 14))
     latitude = fields.Char('latitude')
     longitude = fields.Char('longitude')
+
+
+    # --------------TEST------------------------------
+    # models/location_search.py
