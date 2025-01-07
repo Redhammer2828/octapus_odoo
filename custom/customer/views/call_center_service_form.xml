@@ -39,7 +39,7 @@
                         <button name="action_dispatch_service" string="To Dispatch" type="object"
                             class="oe_highlight" invisible="state != 'initiate'" />
                         <button name="action_schedule_service_check" string="Schedule Service"
-                            type="object" class="btn-default" invisible="state not in ('initiate')" />
+                            type="object" class="btn-default" invisible="state not in ('initiate' , 'dispatch')" />
                         <button name="action_start_service" string="Start" type="object"
                             class="btn-primary" invisible="state != 'dispatch' or is_agent_user " />
                         <button name="action_reach_service" string="Reach" type="object"
@@ -135,12 +135,9 @@
                                     readonly="state not in ['initiate', 'dispatch']" />
                                 <field name="deposit_amount" invisible="1" />
                                 <field name="schedule_service_check" readonly="1" invisible="1" />
-                                <field name="schedule_date_time" readonly="1"
-                                    invisible="schedule_service_check == False"
-                                    required="schedule_service_check == True" />
+                                <field name="schedule_date_time" readonly="1" invisible="schedule_service_check == False or schedule_date_time == False" required="schedule_service_check == True " />        
                                 <field name="service_time" readonly="1" />
-                                <field name="requested_date" readonly="1"
-                                    invisible="schedule_service_check == False" />
+                                <field name="requested_date" readonly="1" invisible="schedule_service_check == False or requested_date == False" />
                                 <field name="driving_license" string="Driving License"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="claim_number" readonly="state == 'done'" />
