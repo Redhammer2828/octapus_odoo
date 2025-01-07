@@ -6,10 +6,9 @@
             <field name="name">call.center.all.service.view.tree</field>
             <field name="model">aaa.service</field>
             <field name="arch" type="xml">
-                <tree string="Services" create="false" duplicate="false">
+                <tree string="Services" create="false" duplicate="false" js_class="MyListRenderer">
                     <field name="name" />
                     <field name="service_time" string="Service Date" />
-                    <!-- <field name="action_date" string="Service Date" /> -->
                     <field name="customer_id" />
                     <field name="member_id" />
                     <field name="member_contact_no" string="Mobile Number" />
@@ -21,8 +20,6 @@
                     <field name="from_location" string="From" />
                     <field name="to_location" string="To" />
                     <field name="provider_id" string="Provider" />
-                    <!-- <field name="created_by" string="Agent" /> -->
-                    <!-- <field name="user_from_history" string="Agent" /> -->
                     <field name="create_uid" string="Agent" />
                     <field name="dispatcher_from_history" string="Dispatcher" />
                     <field name="state" string="Status" />
@@ -58,8 +55,8 @@
                     <field name="credit_proforma_number" string="Trip Sheet Number" />
                     <field name="dispatcher_from_history" string="Dispatcher" />
                     <filter name="today_records" string="Today's Records"
-                                 domain="[('service_time', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00')), 
-                  ('service_time', '&lt;=', context_today().strftime('%Y-%m-%d 23:59:59'))]"/>
+                        domain="[('service_time', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00')), 
+                  ('service_time', '&lt;=', context_today().strftime('%Y-%m-%d 23:59:59'))]" />
                 </search>
             </field>
         </record>
@@ -71,7 +68,8 @@
             <field name="search_view_id" ref="call_center_all_service_view_search" />
             <field name="domain">[]</field>
             <field name="context">{}</field>
-            <field name="view_ids" eval="[
+            <field name="view_ids"
+                eval="[
                   (5, 0, 0),
                   (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
                   (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
@@ -85,7 +83,8 @@
             <field name="view_mode">tree</field>
             <field name="domain">[('state', '=', 'dispatch')]</field>
             <field name="context">{'default_created_by': uid}</field>
-            <field name="view_ids" eval="[
+            <field name="view_ids"
+                eval="[
               (5, 0, 0),
               (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
               (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
@@ -98,7 +97,8 @@
             <field name="view_mode">tree</field>
             <field name="domain">[('state', 'in', ['inprogress', 'start', 'reach'])]</field>
             <field name="context">{'default_created_by': uid}</field>
-            <field name="view_ids" eval="[
+            <field name="view_ids"
+                eval="[
               (5, 0, 0),
               (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
               (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
@@ -111,7 +111,8 @@
             <field name="view_mode">tree</field>
             <field name="domain">[('state', '=', 'done')]</field>
             <field name="context">{'default_created_by': uid}</field>
-            <field name="view_ids" eval="[
+            <field name="view_ids"
+                eval="[
               (5, 0, 0),
               (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
               (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
@@ -124,7 +125,8 @@
             <field name="view_mode">tree</field>
             <field name="domain">[('state', '=', 'cancel')]</field>
             <field name="context">{'default_created_by': uid}</field>
-            <field name="view_ids" eval="[
+            <field name="view_ids"
+                eval="[
               (5, 0, 0),
               (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
               (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
@@ -137,22 +139,23 @@
             <field name="view_mode">tree</field>
             <field name="domain">[('state', '=','requested')]</field>
             <field name="context">{'default_created_by': uid}</field>
-            <field name="view_ids" eval="[
+            <field name="view_ids"
+                eval="[
               (5, 0, 0),
               (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
               (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
             ]">
             </field>
         </record>
-         <!-- Create a specific tree view for scheduled services -->
+        <!-- Create a specific tree view for scheduled services -->
         <record id="call_center_scheduled_service_view_tree" model="ir.ui.view">
             <field name="name">call.center.scheduled.service.view.tree</field>
             <field name="model">aaa.service</field>
-            <field name="inherit_id" ref="customer.call_center_all_service_view_tree"/>
+            <field name="inherit_id" ref="customer.call_center_all_service_view_tree" />
             <field name="mode">primary</field>
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='service_time']" position="after">
-                    <field name="requested_date" string="Action Date Time"/>
+                    <field name="requested_date" string="Action Date Time" />
                 </xpath>
             </field>
         </record>
@@ -160,22 +163,33 @@
             <field name="name">Scheduled</field>
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
-            <field name="domain">[('state', '=', 'initiate'), ('schedule_date_time', '!=', False),('requested_date', '!=', False)]</field>
+            <field name="domain">[('state', '=', 'initiate'), ('schedule_date_time', '!=',
+                False),('requested_date', '!=', False)]</field>
             <field name="context">{'default_created_by': uid}</field>
-            <field name="view_ids" eval="[ 
+            <field name="view_ids"
+                eval="[ 
                     (5, 0, 0),
                     (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_scheduled_service_view_tree')}),
                     (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
                 ]">
             </field>
         </record>
-        <menuitem id="menu_all_service_root" name="All Services" parent="menu_call_center_root" sequence="3" />
-        <menuitem id="menu_all_service" name="All" parent="menu_all_service_root" action="call_center_all_service_action" sequence="1" />
-        <menuitem id="menu_to_dispatch_service" name="To Dispatch" parent="menu_all_service_root" action="call_center_to_dispatch_service_action" sequence="2" />
-        <menuitem id="menu_in_progress_service" name="In Progress" parent="menu_all_service_root" action="call_center_in_progress_service_action" sequence="3" />
-        <menuitem id="menu_completed_service" name="Completed" parent="menu_all_service_root" action="call_center_completed_service_action" sequence="5" />
-        <menuitem id="menu_cancelled_service" name="Cancelled" parent="menu_all_service_root" action="call_center_cancelled_service_action" sequence="6" />
-        <menuitem id="menu_requested_service" name="Requested Services" parent="menu_all_service_root" action="call_center_requested_service_action" sequence="7" />
-        <menuitem id="menu_scheduled_service" name="Scheduled" parent="menu_all_service_root" action="call_center_initiate_service_action" sequence="4" />
+        <menuitem id="menu_all_service_root" name="All Services" parent="menu_call_center_root"
+            sequence="3" />
+        <menuitem id="menu_all_service" name="All" parent="menu_all_service_root"
+            action="call_center_all_service_action" sequence="1" />
+        <menuitem id="menu_to_dispatch_service" name="To Dispatch" parent="menu_all_service_root"
+            action="call_center_to_dispatch_service_action" sequence="2" />
+        <menuitem id="menu_in_progress_service" name="In Progress" parent="menu_all_service_root"
+            action="call_center_in_progress_service_action" sequence="3" />
+        <menuitem id="menu_completed_service" name="Completed" parent="menu_all_service_root"
+            action="call_center_completed_service_action" sequence="5" />
+        <menuitem id="menu_cancelled_service" name="Cancelled" parent="menu_all_service_root"
+            action="call_center_cancelled_service_action" sequence="6" />
+        <menuitem id="menu_requested_service" name="Requested Services"
+            parent="menu_all_service_root" action="call_center_requested_service_action"
+            sequence="7" />
+        <menuitem id="menu_scheduled_service" name="Scheduled" parent="menu_all_service_root"
+            action="call_center_initiate_service_action" sequence="4" />
     </data>
 </odoo>
