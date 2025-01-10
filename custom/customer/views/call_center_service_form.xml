@@ -163,10 +163,10 @@
                                     readonly="state not in ['draft', 'initiate', 'dispatch']  or member_type == 'policy'" />
                                 <field name="member_activate_date"
                                     readonly="member_activate_date != False or member_type == 'policy'"
-                                    invisible="member_type in ('credit', 'adhoc')" />
+                                    invisible="member_type in ('credit', 'adhoc') or state == 'change'" />
                                 <field name="member_expiry_date"
                                     readonly="member_expiry_date != False or member_type == 'policy'"
-                                    invisible="member_type in ('credit', 'adhoc')" />
+                                    invisible="member_type in ('credit', 'adhoc') or state == 'change'" />
                             </group>
                             <group string="SERVICE DETAILS" name="service_details">
                                 <group class="product_field">
