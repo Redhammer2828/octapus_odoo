@@ -88,7 +88,8 @@ class ResPartnerMembers(models.Model):
     # USER BASED BUTTON HIDING 
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
-    create_uid = fields.Many2one(
+    is_it_user = fields.Boolean(string="Is IT User", compute='_compute_is_it_user', store=False)
+    create_user = fields.Many2one(
         'res.users',
         string="Agent",
         default=lambda self: self.env.user,
@@ -96,6 +97,7 @@ class ResPartnerMembers(models.Model):
         store=False,
         readonly=False
     )
+    confirmed_by = fields.Many2one('res.users', string="Confirm By")
     
     def unlink(self):
         """Restrict deletion for users in groups named '' or 'new_dispatchers'."""
@@ -138,33 +140,51 @@ class ResPartnerMembers(models.Model):
         return new_partner
     
     # USER BASED BUTTON HIDING
-    @api.depends('create_uid')
+    @api.depends('create_user')
     def _compute_is_agent_user(self):
         """Compute is_agent_user based on the create_uid user's group membership."""
         for record in self:
             # Default to False if no `created_by` is set
             record.is_agent_user = False
-            if record.create_uid:
+            if record.create_user:
                 # Check if `created_by` belongs to the 'new_agents' group
-                user_groups = record.create_uid.groups_id
+                user_groups = record.create_user.groups_id
                 record.is_agent_user = any(group.name == 'Agent' for group in user_groups)
  
-    @api.depends('create_uid')
+    @api.depends('create_user')
     def _compute_is_dispatch_user(self):
         """Compute is_dispatch_user based on the ccreate_uid user's group membership."""
         for record in self:
             # Default to False if no `created_by` is set
             record.is_dispatch_user = False
-            if record.create_uid:
+            if record.create_user:
                 # Check if `created_by` belongs to the 'new_agents' group
-                user_groups = record.create_uid.groups_id
+                user_groups = record.create_user.groups_id
                 record.is_dispatch_user = any(group.name == 'Dispatcher' for group in user_groups)
+ 
+    @api.depends('create_user')
+    def _compute_is_it_user(self):
+        """Compute is_it_user based on the ccreate_uid user's group membership."""
+        for record in self:
+            # Default to False if no `created_by` is set
+            record.is_it_user = False
+            if record.create_user:
+                # Check if `created_by` belongs to the 'new_agents' group
+                user_groups = record.create_user.groups_id
+                record.is_it_user = any(group.name == 'IT Group' for group in user_groups)
+ 
+ 
     @api.depends('membership_state')
     def _compute_created_by(self):
         """Dynamically update create_uid when the record is in specified states."""
         for record in self:
-            if record.membership_state in {'temp', 'confirm', 'cancel'} and record.create_uid != self.env.user:
-                record.create_uid = self.env.user
+            if record.membership_state in {'temp', 'confirm', 'cancel'} and record.create_user != self.env.user:
+                record.create_user = self.env.user
+    @api.onchange('membership_state')
+    def _onchange_membership_state(self):
+        """Automatically set the current user when membership is confirmed."""
+        if self.membership_state == 'confirm':
+            self.confirmed_by = self.env.user.id
 
     @api.depends('parent_customer_id', 'member_partner_category_id', 'card_type_id')
     def _compute_member_ref_no(self):
@@ -180,6 +200,7 @@ class ResPartnerMembers(models.Model):
 
     def action_confirm_membership(self):
             for record in self:
+                record.confirmed_by = self.env.user.id
                 company = record.parent_customer_id  # Get the company directly
             
                 if company:
