@@ -24,7 +24,7 @@
                     <header>
                         <button name="action_confirm_membership" string="Confirm" type="object"
                             class="oe_highlight"
-                            invisible="membership_state == 'cancel' or membership_state != 'temp'" />
+                            invisible="membership_state == 'cancel' or membership_state != 'temp' or not is_it_user" />
                         <!-- CREATE SERVICE -->
                         <button name="action_create_service" string="Create Service"
                             type="object" icon="fa-wrench o_button_icon"
@@ -53,8 +53,9 @@
                         <field name="member_expired" invisible="1" readonly="1" />
                         <field name="membership_state" widget="statusbar" nolabel="1"
                             statusbar_visible="temp,confirm,cancel" />
-                        <field name="is_agent_user" invisible="1"/>
-                        <field name="is_dispatch_user" invisible="1"/>
+                        <field name="is_agent_user" invisible="1" />
+                        <field name="is_dispatch_user" invisible="1" />
+                        <field name="is_it_user" invisible="1" />
                         <!-- POLICY EXPIRED ALERT FLAG -->
                     </header>
                     <sheet bgcolor="lightblue">
@@ -91,7 +92,8 @@
                             <label for="parent_customer_id" string="Company" />
                             <div>
                                 <field name="parent_customer_id" placeholder="select.."
-                                    class="required_field" required="1" style="width: 700px;" readonly="is_readonly"
+                                    class="required_field" required="1" style="width: 700px;"
+                                    readonly="is_readonly"
                                     options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
                             </div>
                         </div>
@@ -106,11 +108,13 @@
                                 <field name="policy_no" string="Policy No" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
                                     class="required_field" required="1" readonly="is_readonly" />
-                                <field name="old_membership_number" readonly="is_readonly"/>
-                                <field name="member_activate_date" date_format="%d/%m/%Y" readonly="is_readonly"/>
+                                <field name="old_membership_number" readonly="is_readonly" />
+                                <field name="member_activate_date" date_format="%d/%m/%Y"
+                                    readonly="is_readonly" />
                                 <field name="member_expiry_date" class="required_field" required="1"
                                     date_format="%d/%m/%Y" widget="date" readonly="is_readonly" />
-                                <field name="card_type_id" class="required_field" required="1" readonly="is_readonly"
+                                <field name="card_type_id" class="required_field" required="1"
+                                    readonly="is_readonly"
                                     options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
                                 <field name="member_partner_category_id" class="required_field"
                                     required="1" readonly="is_readonly"
@@ -118,7 +122,10 @@
                                 <field name="driving_license" />
                                 <field name="member_type" widget="radio" readonly="1" />
                                 <!-- <field name="membership_cancel_date" readonly="1" /> -->
+                                <field name="create_user" string="Logged By" readonly="1" />
                                 <field name="create_uid" string="Created By" readonly="1" />
+                                <field name="confirmed_by" string="Confirmed By" readonly="1"
+                                    invisible="membership_state == 'temp'" />
                             </group>
                             <group>
                                 <field name="vehicle_type" string="Vehicle Type" />
@@ -139,7 +146,7 @@
                                 <field name="lang" class="custom-field" />
                                 <!-- <field name="region_code_id" /> -->
                                 <field name="invoice_ref_date" string="Invoice Date" invisible="0"
-                                     date_format="%d/%m/%Y" />
+                                    date_format="%d/%m/%Y" />
                                 <field name="delivery_ref_date" string="Delivery Date"
                                     class="custom-field" date_format="%d/%m/%Y" />
                                 <field name="mail_ref" class="custom-field" />
@@ -208,6 +215,8 @@
                     <field name="vehicle_model" />
                     <field name="member_expiry_date" />
                     <field name="create_date" />
+                    <field name="create_user" string="Logged By" readonly="1" />
+                    <field name="create_uid" string="Created By" readonly="1" />
                 </tree>
             </field>
         </record>
@@ -233,6 +242,8 @@
                     <field name="member_partner_category_id" />
                     <!-- <field name="member_expiry_date" /> -->
                     <field name="create_date" />
+                    <field name="create_user" string="Logged By" readonly="1" />
+                    <field name="create_uid" string="Created By" readonly="1" />
                 </search>
             </field>
         </record>
@@ -244,7 +255,7 @@
             <field name="search_view_id" ref="view_res_partner_member_search" />
             <field name="context">{'from_res_partner_member_form': True ,
                 'default_member_type': 'policy' }</field>
-            <field name="domain">[('is_company','=',False),('member_type','=','policy'),
+            <field name="domain">[('is_company','=',false),('member_type','=','policy'),
                 ('membership_state','=','confirm')]</field>
             <field name="view_ids"
                 eval="[

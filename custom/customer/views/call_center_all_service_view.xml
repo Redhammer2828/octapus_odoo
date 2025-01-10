@@ -34,7 +34,7 @@
                 <search>
                     <!-- Search fields -->
                     <field name="name" />
-                    <field name="created_by" />
+                    <!-- <field name="created_by" /> -->
                     <field name="product_id" string="Service" />
                     <field name="service_time" />
                     <field name="member_id" />
@@ -53,6 +53,7 @@
                     <field name="claim_number" />
                     <field name="state" string="State" />
                     <field name="credit_proforma_number" string="Trip Sheet Number" />
+                    <field name="create_uid" string="Agent" />
                     <field name="dispatcher_from_history" string="Dispatcher" />
                     <filter name="today_records" string="Today's Records"
                         domain="[('service_time', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00')), 
