@@ -22,79 +22,52 @@
                         }
                     </style>
                     <header>
-                        <button name="action_confirm_membership" string="Confirm" type="object"
-                            class="oe_highlight"
-                            invisible="membership_state == 'cancel' or membership_state != 'temp' or not is_it_user" />
+                        <button name="action_confirm_membership" string="Confirm" type="object" class="oe_highlight" invisible="membership_state == 'cancel' or membership_state != 'temp' or not is_it_user " />
                         <!-- CREATE SERVICE -->
-                        <button name="action_create_service" string="Create Service"
-                            type="object" icon="fa-wrench o_button_icon"
-                            invisible="membership_state == 'cancel' or member_expired == True" />
+                        <button name="action_create_service" string="Create Service" type="object" icon="fa-wrench o_button_icon" invisible="membership_state == 'cancel' or member_expired == True" />
                         <!-- CREATE SERVICE -->
-                        <button name="action_create_enquiry" string="Enquiry"
-                            type="object" icon="fa-pencil"
-                            invisible="membership_state == 'cancel' or membership_state == 'cancel'" />
+                        <button name="action_create_enquiry" string="Enquiry" type="object" icon="fa-pencil" invisible="membership_state == 'cancel' or membership_state == 'cancel'" />
                         <!-- POLICY SERVICE HISTORY -->
-                        <button name="action_policy_service_history" string="Service History"
-                            icon="fa-book" type="object" invisible="0" />
+                        <button name="action_policy_service_history" string="Service History" icon="fa-book" type="object" invisible="0" />
                         <!-- MEMBERSHIP RENEWAL -->
-                        <button name="action_membership_renewal" string="Membership Renewal"
-                            type="object" icon="fa-lightbulb-o"
-                            invisible="membership_state == 'cancel' or membership_state == 'temp'" />
+                        <button name="action_membership_renewal" string="Membership Renewal" type="object" icon="fa-lightbulb-o" invisible="membership_state == 'cancel' or membership_state == 'temp'" />
                         <!-- MEMBERSHIP EXTENSION -->
-                        <button name="action_membership_extension" string="Membership Extension"
-                            type="object" icon="fa-lightbulb-o"
-                            invisible="membership_state == 'cancel' or membership_state == 'temp'" />
-                        <!-- MEMBERSHIP CANCEL  -->
-                        <!-- MEMBERSHIP CANCEL UPDATED BASED ON USER - USER BASED HIDING -->
-                        <button name="action_membership_cancel" string="Membership Cancel"
-                            type="object" icon="fa-lightbulb-o"
-                            invisible="membership_state == 'cancel' or membership_state == 'temp' or is_agent_user or is_dispatch_user" />
+                        <button name="action_membership_extension" string="Membership Extension" type="object" icon="fa-lightbulb-o" invisible="membership_state == 'cancel' or membership_state == 'temp'" />
+                        <!-- MEMBERSHIP CANCEL -->
+                        <button name="action_membership_cancel" string="Membership Cancel" type="object" icon="fa-lightbulb-o" invisible="membership_state == 'cancel' or membership_state == 'temp' or is_agent_user or is_dispatch_user" />
                         <!-- MEMBERSHIP STATE -->
                         <field name="member_expired" invisible="1" readonly="1" />
-                        <field name="membership_state" widget="statusbar" nolabel="1"
-                            statusbar_visible="temp,confirm,cancel" />
                         <field name="is_agent_user" invisible="1" />
                         <field name="is_dispatch_user" invisible="1" />
                         <field name="is_it_user" invisible="1" />
+
+                        <field name="membership_state" widget="statusbar" nolabel="1" statusbar_visible="temp,confirm,cancel" />
                         <!-- POLICY EXPIRED ALERT FLAG -->
                     </header>
                     <sheet bgcolor="lightblue">
                         <div class="oe_button_box" name="button_box">
-                            <label for="ref_num" string="Policy Expired !"
-                                invisible="member_expired != True"
-                                style="color: white;border: solid #71639e 1px;padding: 5px;background-color: #dc3545;/* border-radius: 10px; */border-top-left-radius: 5px;border-bottom-left-radius: 5px;" />
-                            <button name="action_view_policy_service" type="object"
-                                class="oe_stat_button" icon="fa-pencil-square-o">
-                                <field name="policy_member_service_count" widget="statinfo"
-                                    string="Policy Services" />
+                            <label for="ref_num" string="Policy Expired !" invisible="member_expired != True" style="color: white;border: solid #71639e 1px;padding: 5px;background-color: #dc3545;/* border-radius: 10px; */border-top-left-radius: 5px;border-bottom-left-radius: 5px;" />
+                            <button name="action_view_policy_service" type="object" class="oe_stat_button" icon="fa-pencil-square-o">
+                                <field name="policy_member_service_count" widget="statinfo" string="Policy Services" />
                             </button>
-                            <button name="action_view_cash_service" type="object"
-                                class="oe_stat_button" icon="fa-pencil-square-o">
-                                <field name="policy_member_cash_service_count" widget="statinfo"
-                                    string="Cash Services" />
+                            <button name="action_view_cash_service" type="object" class="oe_stat_button" icon="fa-pencil-square-o">
+                                <field name="policy_member_cash_service_count" widget="statinfo" string="Cash Services" />
                             </button>
                         </div>
-                        <!-- <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
-                            invisible="active" /> -->
+                        <!-- <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active" /> -->
                         <field name="avatar_128" invisible="1" />
-                        <field name="image_1920" widget="image" class="oe_avatar"
-                            options="{&quot;preview_image&quot;: &quot;avatar_128&quot;}" />
+                        <field name="image_1920" widget="image" class="oe_avatar" options="{&quot;preview_image&quot;: &quot;avatar_128&quot;}" />
                         <div class="oe_title">
                             <!-- <h4>Name:</h4> -->
-                            <field name="ref_num" placeholder="Membership Number" readonly="1"
-                                style="font-size: 64%;" modifiers="{'readonly':true}" />
+                            <field name="ref_num" placeholder="Membership Number" readonly="1" style="font-size: 64%;" modifiers="{'readonly':true}" />
                             <label for="name" string="Name" />
                             <div>
-                                <field name="name" placeholder="Type.." class="required_field"
-                                    required="1" />
+                                <field name="name" placeholder="Type.." class="required_field" required="1" />
                             </div>
                             <!-- <h4>Company:</h4> -->
                             <label for="parent_customer_id" string="Company" />
                             <div>
-                                <field name="parent_customer_id" placeholder="select.."
-                                    class="required_field" required="1" style="width: 700px;"
-                                    readonly="is_readonly"
-                                    options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
+                                <field name="parent_customer_id" placeholder="select.." class="required_field" required="1" style="width: 700px;" readonly="is_readonly" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
                             </div>
                         </div>
                         <br></br>
@@ -106,26 +79,18 @@
                                 <field name="is_duplicated" invisible="1" />
                                 <!-- . -->
                                 <field name="policy_no" string="Policy No" />
-                                <field name="vehicle_chasis_no" string="Vehicle Chasis No"
-                                    class="required_field" required="1" readonly="is_readonly" />
-                                <field name="old_membership_number" readonly="is_readonly" />
-                                <field name="member_activate_date" date_format="%d/%m/%Y"
-                                    readonly="is_readonly" />
-                                <field name="member_expiry_date" class="required_field" required="1"
-                                    date_format="%d/%m/%Y" widget="date" readonly="is_readonly" />
-                                <field name="card_type_id" class="required_field" required="1"
-                                    readonly="is_readonly"
-                                    options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
-                                <field name="member_partner_category_id" class="required_field"
-                                    required="1" readonly="is_readonly"
-                                    options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
+                                <field name="vehicle_chasis_no" string="Vehicle Chasis No" class="required_field" required="1" readonly="is_readonly" />
+                                <field name="old_membership_number" readonly="is_readonly"/>
+                                <field name="member_activate_date" date_format="%d/%m/%Y" readonly="is_readonly"/>
+                                <field name="member_expiry_date" class="required_field" required="1" date_format="%d/%m/%Y" widget="date" readonly="is_readonly" />
+                                <field name="card_type_id" class="required_field" required="1" readonly="is_readonly" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
+                                <field name="member_partner_category_id" class="required_field" required="1" readonly="is_readonly" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
                                 <field name="driving_license" />
                                 <field name="member_type" widget="radio" readonly="1" />
                                 <!-- <field name="membership_cancel_date" readonly="1" /> -->
                                 <field name="create_user" string="Logged By" readonly="1" />
-                                <field name="create_uid" string="Created By" readonly="1" />
-                                <field name="confirmed_by" string="Confirmed By" readonly="1"
-                                    invisible="membership_state == 'temp'" />
+                                <field name="create_uid" string="Created By" readonly="1"/>
+                                <field name="confirmed_by" string="Confirmed By" readonly="1" invisible="membership_state == 'temp'" />
                             </group>
                             <group>
                                 <field name="vehicle_type" string="Vehicle Type" />
@@ -139,21 +104,14 @@
                                 <field name="mobile" widget="phone" />
                                 <field name="user_ids" invisible="1" />
                                 <field name="email" widget="email" />
-                                <field name="website" widget="url"
-                                    placeholder="e.g. www.bizweaver.in" />
-                                <!-- <field name="category_id" widget="many2many_tags"
-                                placeholder="Tags..." options="{'no_create_edit': True}"/> -->
+                                <field name="website" widget="url" placeholder="e.g. www.bizweaver.in" />
+                                <!-- <field name="category_id" widget="many2many_tags" placeholder="Tags..." options="{'no_create_edit': True}"/> -->
                                 <field name="lang" class="custom-field" />
                                 <!-- <field name="region_code_id" /> -->
-                                <field name="invoice_ref_date" string="Invoice Date" invisible="0"
-                                    date_format="%d/%m/%Y" />
-                                <field name="delivery_ref_date" string="Delivery Date"
-                                    class="custom-field" date_format="%d/%m/%Y" />
+                                <field name="invoice_ref_date" string="Invoice Date" invisible="0" required="membership_state not in ['temp'] " date_format="%d/%m/%Y" />
+                                <field name="delivery_ref_date" string="Delivery Date" class="custom-field" date_format="%d/%m/%Y" />
                                 <field name="mail_ref" class="custom-field" />
-                                <field name="related_company_customer_code"
-                                    placeholder="Related Customer Code"
-                                    string="Related Customer Code" invisible="1"
-                                    class="custom-field" />
+                                <field name="related_company_customer_code" placeholder="Related Customer Code" string="Related Customer Code" invisible="1" class="custom-field" />
                                 <field name="adhoc_member" invisible="1" />
                                 <field name="credit_member_ok" invisible="1" />
                                 <field name="active" invisible="1" />
@@ -161,17 +119,10 @@
                             <notebook colspan="4">
                                 <page name="package" string="Package">
                                     <group>
-                                        <field name="product_template_id" class="required_field"
-                                            required="1"
-                                            readonly="is_readonly"
-                                            options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
-                                            domain="[('bundle_product', '=', True)]" />
+                                        <field name="product_template_id" class="required_field" required="1" readonly="is_readonly" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" domain="[('bundle_product', '=', True)]" />
                                     </group>
                                     <group>
-                                        <field name="service_ids" widget="many2many_tags"
-                                            options="{'no_create':False,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
-                                            domain="[('bundle_product', '=', False)]"
-                                            readonly="is_readonly" />
+                                        <field name="service_ids" widget="many2many_tags" options="{'no_create':False,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" domain="[('bundle_product', '=', False)]" readonly="is_readonly" />
                                     </group>
                                 </page>
                                 <page name="internal_notes" string="Internal Notes">
@@ -180,14 +131,20 @@
                                 <page name="membership_history" string="Membership History">
                                     <field name="membership_history_ids">
                                         <tree create="false" delete="False">
+                                            <field name="parent_customer_id" />
+                                            <field name="name" />
+                                            <field name="old_membership_number" />
+                                            <field name="member_partner_category_id" />
+                                            <field name="product_template_id" />
+                                            <field name="member_type" />
                                             <field name="vehicle_chasis_no" />
                                             <field name="vehicle_type" />
                                             <field name="vehicle_plate" />
                                             <field name="policy_no" />
                                             <field name="member_activate_date" />
                                             <field name="member_expiry_date" />
-                                            <field name="card_type_id"
-                                                options="{'no_create_edit':1}" />
+                                            <field name="invoice_ref_date" />
+                                            <field name="card_type_id" options="{'no_create_edit':1}" />
                                         </tree>
                                     </field>
                                 </page>
@@ -216,7 +173,7 @@
                     <field name="member_expiry_date" />
                     <field name="create_date" />
                     <field name="create_user" string="Logged By" readonly="1" />
-                    <field name="create_uid" string="Created By" readonly="1" />
+                    <field name="create_uid" string="Created By" readonly="1"/>
                 </tree>
             </field>
         </record>
@@ -243,7 +200,8 @@
                     <!-- <field name="member_expiry_date" /> -->
                     <field name="create_date" />
                     <field name="create_user" string="Logged By" readonly="1" />
-                    <field name="create_uid" string="Created By" readonly="1" />
+                    <field name="create_uid" string="Created By" readonly="1"/>
+                    
                 </search>
             </field>
         </record>
@@ -255,10 +213,8 @@
             <field name="search_view_id" ref="view_res_partner_member_search" />
             <field name="context">{'from_res_partner_member_form': True ,
                 'default_member_type': 'policy' }</field>
-            <field name="domain">[('is_company','=',false),('member_type','=','policy'),
-                ('membership_state','=','confirm')]</field>
-            <field name="view_ids"
-                eval="[
+            <field name="domain">[('is_company','=',false),('member_type','=','policy'), ('membership_state','=','confirm')]</field>
+            <field name="view_ids" eval="[
           (5, 0, 0),
           (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.res_partner_member_tree')}),
           (0, 0, {'view_mode': 'form', 'view_id': ref('customer.res_partner_member_form')})
@@ -266,16 +222,7 @@
             </field>
         </record>
 
-        <menuitem
-            id="menu_member"
-            name="Policy Members"
-            parent="menu_membership_root"
-        />
-        <menuitem
-            id="menu_confirmed_policy_member"
-            name="Confirmed"
-            parent="menu_member"
-            action="action_res_partner_member"
-        />
+        <menuitem id="menu_member" name="Policy Members" parent="menu_membership_root" />
+        <menuitem id="menu_confirmed_policy_member" name="Confirmed" parent="menu_member" action="action_res_partner_member" />
     </data>
 </odoo>
