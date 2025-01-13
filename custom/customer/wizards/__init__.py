@@ -12,3 +12,5 @@ from . import enquiry_complaint_wizard
 from . import create_temporary_member_wizard
 from . import aaa_report_wizard
 from . import aaa_timeline_wizard
+#from . import twentyfour_cash_wizard
+from . import policy_report_wizard_view
