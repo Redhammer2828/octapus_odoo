@@ -8,8 +8,8 @@ import re
 from dotenv import load_dotenv
 import os
 import logging
-_logger = logging.getLogger(__name__)
 load_dotenv()
+_logger = logging.getLogger(__name__)
 base_url = os.getenv("BASE_URL")
 
 class AAAService(models.Model):
@@ -52,7 +52,7 @@ class AAAService(models.Model):
     membership_num = fields.Char('Membership Number')
     created_by = fields.Many2one(
         'res.users',
-        string="Agent",
+        string="User",
         default=lambda self: self.env.user,
         compute='_compute_created_by',
         store=False,
@@ -108,12 +108,11 @@ class AAAService(models.Model):
     claim_membership = fields.Boolean(string="Claim Membership")
     deposit_amount = fields.Float(string="Deposit Amount")
     schedule_service_check = fields.Boolean(string="Schedule Service Check")
+    cancel_service_check = fields.Boolean(string="Cancel Service Check")
     schedule_date_time = fields.Datetime(string="Schedule Date Time")
-    
-    # SCHEDUDELE TEST- ADDED next_check_time as new field
-    requested_date = fields.Datetime(string="Action Date Time",index=True)
-    # next_check_time = fields.Datetime(string='Next Check Time', compute='_compute_next_check_time', store=True, index=True)
-    
+    # requested_date = fields.Datetime(string="Action Date Time")
+    requested_date = fields.Datetime(string="Action Date Time", index=True)
+    next_check_time = fields.Datetime(string='Next Check Time', compute='_compute_next_check_time', store=True, index=True)
     driving_license = fields.Char(string="Driving License")
     claim_number = fields.Char(string="Claim Number")
     smarto = fields.Boolean(string="Smarto")
@@ -156,14 +155,18 @@ class AAAService(models.Model):
     # One to Many -------------------------------------------------------------------------------------------
     comment_history_ids = fields.One2many('service.comment', 'service_id', string="Comment History")
     service_history_ids = fields.One2many('service.history', 'service_id', string="Service History")
-    
     # user_from_history = fields.Many2one(
     #     'res.users', 
     #     string="Agent (From History)", 
     #     compute='_compute_user_from_history', 
     #     store=True
     # )
-    
+    dispatcher_from_history = fields.Many2one(
+        'res.users', 
+        string="Dispatcher", 
+        compute='_compute_dispatcher_from_history', 
+        store=True
+    )
     enquiry_ids = fields.One2many('aaa.enquiry', 'service_id', string="Enquiries")
     addon_service_ids = fields.One2many(
         'aaa.service.addon',
@@ -207,7 +210,12 @@ class AAAService(models.Model):
     from_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
     to_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
     quantity_with_days = fields.Char(string='Quantity with Days') 
-    orgin_no = fields.Char('Orgin')
+    orgin_no = fields.Text('Orgin')
+    origin_no = fields.Many2one('aaa.service', string='Origin Service', help='References the original service before changes were made.', readonly=True)
+    
+
+    #orgin_no = fields.Char(string="Orgin No", help="Link to the original service record")
+    
 
     service_quantity = fields.Float(string="Service Quantity", default="1.00")
     hide_selected_locations = fields.Boolean(
@@ -221,10 +229,8 @@ class AAAService(models.Model):
     )
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
-    
-    # --------------------LOCATION TEST----------------
-    # ----------------------------DELETE RESTRICTION-------------------------------------------------------------------
 
+# ----------------------------DELETE RESTRICTION-------------------------------------------------------------------
     def unlink(self):
         """Restrict deletion for users in groups named 'Agent' or 'Dispatcher'."""
         current_user = self.env.user  # Get the currently logged-in user
@@ -236,7 +242,7 @@ class AAAService(models.Model):
                 "You cannot delete this record"
             )
         return super(AAAService, self).unlink()
-    # -----------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------
     @api.depends('created_by')
     def _compute_is_agent_user(self):
         """Compute is_agent_user based on the created_by user's group membership."""
@@ -341,7 +347,6 @@ class AAAService(models.Model):
         if self.selected_to_location:
             self.search_query = ''
             self.search_results = [(5, 0, 0)]  # Clear existing results
-
         # Trigger computation of the amount when locations are selected
         self._compute_amount()
 
@@ -429,6 +434,7 @@ class AAAService(models.Model):
             if record.member_type == 'credit':
                 # Fetch 'credit' members ordered by ID
                 # Fetch 'credit' members ordered by ID
+                # Fetch 'credit' members ordered by ID
                 members = self.env['res.partner'].search([
                     ('parent_customer_id', '=', record.customer_id.id),
                     ('member_type', '=', 'credit'),
@@ -442,6 +448,7 @@ class AAAService(models.Model):
                     record.sequence_id = False
  
             elif record.member_type == 'adhoc':
+                # Fetch 'adhoc' member categories ordered by ID
                 # Fetch 'adhoc' member categories ordered by ID
                 # Fetch 'adhoc' member categories ordered by ID
                 partner_categories = self.env['partner.category'].search([
@@ -484,8 +491,6 @@ class AAAService(models.Model):
                 ], order='id', limit=1)  # Order can be specified as needed
  
                 record.member_id = member.id if member else False
- 
- 
    
     @api.model
     def create(self, vals):
@@ -547,6 +552,30 @@ class AAAService(models.Model):
     #         )
     #         # Get the `user` from the first relevant service.history record, if any
     #         service.user_from_history = relevant_history[:1].user if relevant_history else False
+
+
+    # @api.depends('create_uid')
+    # def _compute_user_from_history(self):
+    #     """Fetch the user who initially created the service record."""
+    #     for service in self:
+    #         # Set the user_from_history field to the user who created the record
+    #         service.user_from_history = service.create_uid.login
+    #         print("Setting user_from_history to:", service.create_uid.login)
+
+
+
+
+    @api.depends('state', 'service_history_ids.user')
+    def _compute_dispatcher_from_history(self):
+        """Fetch the exact user from the related service.history."""
+        for service in self:
+            # Find the first related service.history record with a matching state
+            relevant_history = service.service_history_ids.filtered(
+                lambda history: history.status == 'dispatch'
+            )
+            # Get the `user` from the first relevant service.history record, if any
+            service.dispatcher_from_history = relevant_history[:1].user if relevant_history else False
+            print("DISPATCHER",relevant_history)
  
     def write(self, vals):
         """Override the write method to ensure comments are saved and created_by is updated."""
@@ -584,8 +613,6 @@ class AAAService(models.Model):
  
         # Call the super method to handle the actual update of the service
         return super(AAAService, self).write(vals)
- 
-    
  
     @api.onchange('state')
     def _onchange_state(self):
@@ -635,7 +662,6 @@ class AAAService(models.Model):
         header = {
             'content-type':'application/json'
         }
-        
         response = requests.post(url,data=payload,headers=header)
         if response.status_code == 200:
             print(f"API RESPONSE-ORDER CREATED,{response.text}")
@@ -793,15 +819,24 @@ class AAAService(models.Model):
         # Logic for 24-hour validation
             if validity_period_days == 24:
                 # Fetch the last service in the same category
-                last_service = self.env['aaa.service'].search([
+                # last_service = self.env['aaa.service'].search([
+                #     ('member_id', '=', self.member_id.id),
+                #     ('product_id.categ_id', '=', parent_category_id),
+                #     ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+                #     ('service_time', '>=', self.member_id.member_activate_date),
+                #     ('service_time', '<=', self.member_id.member_expiry_date),
+                # ], order='service_time desc', limit=1)
+                domain_one = [
                     ('member_id', '=', self.member_id.id),
                     ('product_id.categ_id', '=', parent_category_id),
                     ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-                ], order='service_time desc', limit=1)
-
-                print(f"LAST SERVICEL:{last_service}")
-                print("PRODUCT CATEGORY ID CHOOSES:",self.product_id.categ_id)
-                print("MEMBER ACTIVATION DATE",self.member_id.member_expiry_date)
+                ]
+                # Conditionally add filters for member_activate_date/member_expiry_date
+                if self.member_id.member_activate_date:
+                    domain_one.append(('service_time', '>=', self.member_id.member_activate_date))
+                if self.member_id.member_expiry_date:
+                    domain_one.append(('service_time', '<=', self.member_id.member_expiry_date))
+                last_service = self.env['aaa.service'].search(domain_one, order='service_time desc', limit=1)
                 if last_service and last_service.service_time:
                     time_since_last_service = fields.Datetime.now() - last_service.service_time
                     hours_since_last_service = time_since_last_service.total_seconds() / 3600
@@ -850,12 +885,25 @@ class AAAService(models.Model):
  
             total_days = 0
             # Fetch all services in the same category within the validity period
-            member_services_in_category = self.env['aaa.service'].search([
-                ('member_id', '=', self.member_id.id),
-                ('product_id.categ_id', '=', parent_category_id),
-                ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-                ('date_time_to', '>=', period_start),
-            ])
+            # member_services_in_category = self.env['aaa.service'].search([
+            #     ('member_id', '=', self.member_id.id),
+            #     ('product_id.categ_id', '=', parent_category_id),
+            #     ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+            #     ('date_time_to', '>=', period_start),
+            # ])
+
+            domain_two = [
+            ('member_id', '=', self.member_id.id),
+            ('product_id.categ_id', '=', parent_category_id),
+            ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+            ('date_time_to', '>=', period_start),]
+
+             # Conditionally append membership activation/expiry filters, if set
+            if self.member_id.member_activate_date:
+                domain_two.append(('service_time', '>=', self.member_id.member_activate_date))
+            if self.member_id.member_expiry_date:
+                domain_two.append(('service_time', '<=', self.member_id.member_expiry_date))
+            member_services_in_category = self.env['aaa.service'].search(domain_two)
             print(f"MEMBER SERVICES IN CATEGORY: {member_services_in_category}")
  
             # Calculate the total days accessed in the category
@@ -896,33 +944,49 @@ class AAAService(models.Model):
  
     def _is_service_accessible_in_24_hours(self, parent_category_id):
         last_dispatch_time = fields.Datetime.now() - timedelta(hours=24)
-        recent_services = self.env['aaa.service'].search_count([
-            ('member_id', '=', self.member_id.id),
+        # recent_services = self.env['aaa.service'].search_count([
+        #     ('member_id', '=', self.member_id.id),
+        #     ('product_id.categ_id', '=', parent_category_id),
+        #     ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+        #     ('create_date', '>=', last_dispatch_time),
+        # ])
+            # Base domain for checking recent services (within the last 24 hours)
+        domain_three = [('member_id', '=', self.member_id.id),
             ('product_id.categ_id', '=', parent_category_id),
             ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-            ('create_date', '>=', last_dispatch_time),
-        ])
+            ('create_date', '>=', last_dispatch_time),]
+        # Conditionally add membership activation/expiry filters if they exist
+        if self.member_id.member_activate_date:
+            domain_three.append(('service_time', '>=', self.member_id.member_activate_date))
+        if self.member_id.member_expiry_date:
+            domain_three.append(('service_time', '<=', self.member_id.member_expiry_date))
+        recent_services = self.env['aaa.service'].search_count(domain_three)
         return recent_services == 0
  
+    # def _count_services_in_category(self, parent_category_id):
+    #     return self.env['aaa.service'].search_count([
+    #         ('member_id', '=', self.member_id.id),
+    #         ('product_id.categ_id', '=', parent_category_id),
+    #         ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+    #     ])
+    # def _count_services_in_category(self, parent_category_id):
+    #     return self.env['aaa.service'].search_count([
+    #         ('member_id', '=', self.member_id.id),
+    #         ('product_id.categ_id', '=', parent_category_id),
+    #         ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+    #     ])
     def _count_services_in_category(self, parent_category_id):
         return self.env['aaa.service'].search_count([
             ('member_id', '=', self.member_id.id),
             ('product_id.categ_id', '=', parent_category_id),
             ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
         ])
-    # def _count_services_in_category(self, parent_category_id):
-    #     domain = [
-    #         ('member_id', '=', self.member_id.id),
-    #         ('product_id.categ_id', '=', parent_category_id),
-    #         ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-    #     ]
-    #     # Only add these criteria if the partner actually has activation/expiry dates
-    #     if self.member_id.member_activate_date:
-    #         domain.append(('service_time', '>=', self.member_id.member_activate_date))
-    #     if self.member_id.member_expiry_date:
-    #         domain.append(('service_time', '<=', self.member_id.member_expiry_date))
-        
-    #     return self.env['aaa.service'].search_count(domain)
+        # Only add these criteria if the partner actually has activation/expiry dates
+        if self.member_id.member_activate_date:
+            domain.append(('service_time', '>=', self.member_id.member_activate_date))
+        if self.member_id.member_expiry_date:
+            domain.append(('service_time', '<=', self.member_id.member_expiry_date))
+        return self.env['aaa.service'].search_count(domain)
 
     def _trigger_cash_or_credit_service_wizard(self):
         return {
@@ -975,22 +1039,121 @@ class AAAService(models.Model):
  
         return True
 # --------------------------------------------------------------------------------------------------
-    # Wizard of Schedule service - 
+    @api.depends('requested_date')
+    def _compute_next_check_time(self):
+        """Compute the next check time when the record should be processed"""
+        for record in self:
+            if record.requested_date:
+                # Round down to the nearest minute
+                record.next_check_time = record.requested_date.replace(second=0, microsecond=0)
+            else:
+                record.next_check_time = False
+
     def action_schedule_service_check(self):
         self.schedule_service_check = True
-        self.state= 'initiate'
+        self.state = 'initiate'
         print("Scheduling the Service - Triggering Wizard")
         return {
-                        'name': _('Schedule Service'),
-                        'type': 'ir.actions.act_window',
-                        'res_model': 'schedule.service.wizard',
-                        'view_mode': 'form',
-                        'view_id': self.env.ref('customer.schedule_service_wizard_view_form').id,
-                        'target': 'new',
-                        'context': {
-                            'default_service_id': self.id,
-                            },
-                }
+            'name': _('Schedule Service'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'schedule.service.wizard',
+            'view_mode': 'form',
+            'view_id': self.env.ref('customer.schedule_service_wizard_view_form').id,
+            'target': 'new',
+            'context': {
+                'default_service_id': self.id,
+            },
+        }
+
+    @api.model
+    def check_and_update_state(self):
+        current_minute = fields.Datetime.now().replace(second=0, microsecond=0)
+        
+        # Find records scheduled for the current minute
+        domain = [
+            ('state', '=', 'initiate'),
+            ('next_check_time', '=', current_minute),
+            ('requested_date', '<=', fields.Datetime.now())
+        ]
+        
+        services = self.search(domain)
+        
+        for service in services:
+            service.write({'state': 'dispatch'})
+            
+            # Create history entry
+            self.env['service.history'].create({
+                'service_id': service.id,
+                'user': self.env.user.id,
+                'time': service.requested_date,  # Use the original requested time
+                'status': 'dispatch'
+            })
+            
+            # Create comment entry
+            self.env['service.comment'].create({
+                'service_id': service.id,
+                'comment': service.comments or 'Scheduled to dispatch',
+                'comment_date_and_time': service.requested_date,  # Use the original requested time
+                'comment_user': self.env.user.id,
+                'comment_status': 'dispatch'
+            })
+            
+        return True
+
+  
+  
+    # def action_schedule_service_check(self):
+    #     self.schedule_service_check = True
+    #     self.state= 'initiate'
+    #     print("Scheduling the Service - Triggering Wizard")
+    #     return {
+    #                     'name': _('Schedule Service'),
+    #                     'type': 'ir.actions.act_window',
+    #                     'res_model': 'schedule.service.wizard',
+    #                     'view_mode': 'form',
+    #                     'view_id': self.env.ref('customer.schedule_service_wizard_view_form').id,
+    #                     'target': 'new',
+    #                     'context': {
+    #                         'default_service_id': self.id,
+    #                         },
+    #             }
+    
+
+    # @api.model
+    # def check_and_update_state(self):
+    #     now = fields.Datetime.now()
+        
+    #     # Search for records where requested_date is within the last minute
+    #     # This ensures we catch records right at their requested time
+    #     one_minute_ago = now - timedelta(minutes=1)
+        
+    #     records = self.search([
+    #         ('state', '=', 'initiate'),
+    #         ('requested_date', '>=', one_minute_ago),
+    #         ('requested_date', '<=', now)
+    #     ])
+        
+    #     for record in records:
+    #         # Only update if we're at or past the exact requested time
+    #         if record.requested_date <= now:
+    #             record.write({'state': 'dispatch'})
+                
+    #             # Create service history entry
+    #             self.env['service.history'].create({
+    #                 'service_id': record.id,
+    #                 'user': self.env.user.id,
+    #                 'time': fields.Datetime.now(),
+    #                 'status': 'dispatch',
+    #             })
+                
+    #             # Create service comment entry
+    #             self.env['service.comment'].create({
+    #                 'service_id': record.id,
+    #                 'comment': record.comments or 'Scheduled to dispatch',
+    #                 'comment_date_and_time': fields.Datetime.now(),
+    #                 'comment_user': self.env.user.id,
+    #                 'comment_status': 'dispatch',
+    #             })
             
     # @api.model
     # def check_and_update_state(self):
@@ -1013,46 +1176,6 @@ class AAAService(models.Model):
     #             'comment_status' : record.state,
            
     #     })
-    @api.model
-    def check_and_update_state(self):
-        """Cron method to find 'initiate' records whose requested_date <= now, 
-        then update them to 'dispatch' and create a history/comment entry."""
-        
-        now = fields.Datetime.now()
-        _logger.info("------------------Cron check_and_update_state triggered at %s", now)
-        print("-------NOW--------",now)
-        # Search for all records in 'initiate' state with requested_date <= now
-        records = self.search([
-            ('state', '=', 'initiate'),
-            ('requested_date', '<=', now)
-        ])
-        _logger.info("----------------Found %d record(s) to update.", self.requested_date)
-        _logger.info("----------------Found %d record(s) to update.", len(records))
-        print("=======RECORDS=====",records)
-        print("=======REQUESTED DATE=====",self.requested_date)
-        # Process each record individually (no singleton error this way)
-        for rec in records:
-            rec.write({'state': 'dispatch'})
-            _logger.info("Record %d state changed to 'dispatch'.", rec.id)
-            # Example: create a 'service.history' record
-            self.env['service.history'].create({
-                'service_id': rec.id,        # Adjust with your field names
-                'user': self.env.user.id,
-                'time': fields.Datetime.now(),
-                'status': rec.state,
-            })
-
-            # Example: create a 'service.comment' record
-            self.env['service.comment'].create({
-                'service_id': rec.id,  # Adjust with your field names
-                'comment': rec.comments or 'Scheduled to dispatch',
-                'comment_date_and_time': fields.Datetime.now(),
-                'comment_user': self.env.user.id,
-                'comment_status': rec.state,
-            })
-
-        _logger.info("Completed check_and_update_state for all matching records.")
-
 
     @api.onchange('member_id')
     def _onchange_member_id(self):
@@ -1195,6 +1318,7 @@ class AAAService(models.Model):
     def action_cancel_service(self):
         for service in self:
             # Force setting the state to 'cancel'
+            
             service.sudo().write({'state': 'cancel'})
 
             # Create a service history record
@@ -1231,14 +1355,30 @@ class AAAService(models.Model):
     def action_change(self):
         self.state = 'change'
         for service in self:
-           
-                self.env['service.history'].create({
+                # Prepare the origin_no content based on member_type
+            if service.member_type == 'credit':
+                origin_info = (
+                    f"Service: {service.product_id.name if service.product_id else 'N/A'}\n"
+                    f"From location: {service.from_location.name if service.from_location else 'N/A'}\n"
+                    f"To location: {service.to_location.name if service.to_location else 'N/A'}"
+                )
+            elif service.member_type in ['policy', 'adhoc']:
+                origin_info = (
+                    f"Service: {service.product_id.name if service.product_id else 'N/A'}\n"
+                    f"From location: {service.selected_from_location.name if service.selected_from_location else 'N/A'}\n"
+                    f"To location: {service.selected_to_location.name if service.selected_to_location else 'N/A'}"
+                )
+            else:
+                origin_info = "Not applicable"
+
+            service.orgin_no = origin_info
+            self.env['service.history'].create({
                     'service_id': service.id,
                     'user': self.env.user.id,
                     'time': fields.Datetime.now(),
                     'status': service.state,  
                 })
-                comment_content = service.comments or 'CHANGED'
+            comment_content = service.comments or 'CHANGED'
  
             # Create the service.comment record
         self.env['service.comment'].create({
@@ -1326,21 +1466,150 @@ class AAAService(models.Model):
 
     def history(self):
         pass
-    # -------CHANGE BUTTON IN CALL CENTER SERVICE FORM----------
+    
+   
+
+    # def action_new_change(self):
+    #     new_service = False  # Initialize variable to avoid unbound error in case of multiple records
+    #     for service in self:
+    #         # Fetch the previous service's name field, which is the sequence number
+    #         previous_service_sequence = service.name  # Assuming 'name' contains the sequence number
+    #         print("PREVIOUS SERVICE SEQUENCE NO:", previous_service_sequence)
+    #         # Debugging: Ensure the service object is correct
+    #         print("SERVICE ID:", service.id)
+    #         # Try creating the new service record
+    #         try:
+    #             new_service = self.env['aaa.service'].create({
+    #                 'state': 'initiate',  # Set the state of the new service to 'initiate'
+    #                 'orgin_no': previous_service_sequence,  # Copy the name (sequence number) to the origin_no field
+    #                 'customer_id': service.customer_id.id,  # Copy the customer ID
+    #                 'sequence_id': service.sequence_id.id,
+    #                 'member_id': service.member_id.id,
+    #                 'vehicle_type': service.vehicle_type,
+    #                 'vehicle_model': service.vehicle_model,
+    #                 'vehicle_plate': service.vehicle_plate,
+    #                 'vehicle_chasis_no': service.vehicle_chasis_no,
+    #                 'policy_no': service.policy_no,
+    #                 'member_type': service.member_type,
+    #                 'type': service.type,
+    #                 'card_type': service.card_type,
+    #                 'product_id':service.product_id.id,
+    #                 'selected_from_location': service.selected_from_location.id,
+    #                 'selected_to_location':service.selected_to_location.id,
+    #                 'from_location':service.from_location.id,
+    #                 'to_location': service.to_location.id
+    #             })
+    #             # Debugging: Ensure the new service is created
+    #             print("NEW SERVICE ID:", new_service.id)
+    #         except Exception as e:
+    #             print("ERROR CREATING NEW SERVICE:", str(e))
+    #             raise UserError(_("Failed to create a new service: %s") % str(e))  # Raise an error with a meaningful message
+    #     # Ensure the new service was created
+    #     if not new_service:
+    #         raise UserError(_("No new service record was created."))
+    #     # Ensure the view_id reference is correct
+    #     try:
+    #         view_id = self.env.ref('customer.call_center_service_form').id  # Make sure this reference is correct
+    #         print("VIEW ID:", view_id)
+    #     except Exception as e:
+    #         print("ERROR FETCHING VIEW ID:", str(e))
+    #         raise UserError(_("Failed to fetch the form view: %s") % str(e))
+    #     # Open the newly created service form in edit mode (editable)
+    #     return {
+    #         'type': 'ir.actions.act_window',
+    #         'res_model': 'aaa.service',
+    #         'view_type': 'form',
+    #         'view_mode': 'form',
+    #         'res_id': new_service.id,  # Pass the ID of the newly created service record
+    #         'view_id': view_id,  # Ensure correct view reference
+    #         'target': 'current',  # Open in the current window
+    #         'flags': {'form': {'action_buttons': True, 'options': {'mode': 'edit'}}},  # Make sure the form is in edit mode
+    #     }
+    # def action_new_change(self):
+    #     new_service = False  # Initialize to avoid unbound error
+    #     for service in self:
+    #         print("PREVIOUS SERVICE ID:", service.id)
+    #         print("SERVICE SEQUENCE NO:", service.name)  # Assuming 'name' is still relevant for debugging
+
+    #         try:
+    #             new_service = self.env['aaa.service'].create({
+    #                 'state': 'initiate',
+    #                 'origin_no': service.id,  # Link to the current service record
+    #                 'customer_id': service.customer_id.id,
+    #                 'sequence_id': service.sequence_id.id,
+    #                 'member_id': service.member_id.id,
+    #                 'vehicle_type': service.vehicle_type,
+    #                 'vehicle_model': service.vehicle_model,
+    #                 'vehicle_plate': service.vehicle_plate,
+    #                 'vehicle_chasis_no': service.vehicle_chasis_no,
+    #                 'policy_no': service.policy_no,
+    #                 'member_type': service.member_type,
+    #                 'type': service.type,
+    #                 'card_type': service.card_type,
+    #                 'product_id': service.product_id.id,
+    #                 'selected_from_location': service.selected_from_location.id,
+    #                 'selected_to_location': service.selected_to_location.id,
+    #                 'from_location': service.from_location.id,
+    #                 'to_location': service.to_location.id
+    #             })
+    #             print("NEW SERVICE ID:", new_service.id)
+    #         except Exception as e:
+    #             print("ERROR CREATING NEW SERVICE:", str(e))
+    #             raise UserError(_("Failed to create a new service: %s") % str(e))
+
+    #     if not new_service:
+    #         raise UserError(_("No new service record was created."))
+
+    #     try:
+    #         view_id = self.env.ref('customer.call_center_service_form').id
+    #         print("VIEW ID:", view_id)
+    #     except Exception as e:
+    #         print("ERROR FETCHING VIEW ID:", str(e))
+    #         raise UserError(_("Failed to fetch the form view: %s") % str(e))
+
+    #     return {
+    #         'type': 'ir.actions.act_window',
+    #         'res_model': 'aaa.service',
+    #         'view_type': 'form',
+    #         'view_mode': 'form',
+    #         'res_id': new_service.id,
+    #         'view_id': view_id,
+    #         'target': 'current',
+    #         'flags': {'form': {'action_buttons': True, 'options': {'mode': 'edit'}}},
+    #     }
+
     def action_new_change(self):
-        new_service = False  # Initialize variable to avoid unbound error in case of multiple records
+        """Update existing service record, change state, and store previous names of fields."""
+        
+
         for service in self:
-            # Fetch the previous service's name field, which is the sequence number
-            previous_service_sequence = service.name  # Assuming 'name' contains the sequence number
-            print("PREVIOUS SERVICE SEQUENCE NO:", previous_service_sequence)
-            # Debugging: Ensure the service object is correct
-            print("SERVICE ID:", service.id)
-            # Try creating the new service record
+            print("SERVICE ID BEING UPDATED:", service.id)
+            print("SERVICE SEQUENCE NO:", service.name)  # Assuming 'name' is relevant for debugging
+
+            # # Prepare the origin_no content based on member_type
+            # if service.member_type == 'credit':
+            #     origin_info = {
+            #         'product_name': service.product_id.name if service.product_id else '',
+            #         'from_location_name': service.from_location.name if service.from_location else '',
+            #         'to_location_name': service.to_location.name if service.to_location else ''
+            #     }
+            # elif service.member_type == 'policy':
+            #     origin_info = {
+            #         'product_name': service.product_id.name if service.product_id else '',
+            #         'selected_from_location_name': service.selected_from_location.name if service.selected_from_location else '',
+            #         'selected_to_location_name': service.selected_to_location.name if service.selected_to_location else ''
+            #     }
+            # else:
+            #     origin_info = {}
+
+            # # Convert dictionary to string for storing in a Char field
+            # service.orgin_no = json.dumps(origin_info, ensure_ascii=False)
+            # Update the service record
             try:
-                new_service = self.env['aaa.service'].create({
-                    'state': 'initiate',  # Set the state of the new service to 'initiate'
-                    'orgin_no': previous_service_sequence,  # Copy the name (sequence number) to the origin_no field
-                    'customer_id': service.customer_id.id,  # Copy the customer ID
+                service.write({
+                    'state': 'initiate',  # Update the state to 'initiate'
+                    
+                    'customer_id': service.customer_id.id,
                     'sequence_id': service.sequence_id.id,
                     'member_id': service.member_id.id,
                     'vehicle_type': service.vehicle_type,
@@ -1355,34 +1624,23 @@ class AAAService(models.Model):
                     'selected_from_location': service.selected_from_location.id,
                     'selected_to_location': service.selected_to_location.id,
                     'from_location': service.from_location.id,
-                    'to_location': service.to_location.id,
+                    'to_location': service.to_location.id
+                    # Other updates can be added here if necessary
                 })
-                # Debugging: Ensure the new service is created
-                print("NEW SERVICE ID:", new_service.id)
+                print("SERVICE UPDATED, NEW STATE:", service.state)
             except Exception as e:
-                print("ERROR CREATING NEW SERVICE:", str(e))
-                raise UserError(_("Failed to create a new service: %s") % str(e))  # Raise an error with a meaningful message
-        # Ensure the new service was created
-        if not new_service:
-            raise UserError(_("No new service record was created."))
-        # Ensure the view_id reference is correct
-        try:
-            view_id = self.env.ref('customer.call_center_service_form').id  # Make sure this reference is correct
-            print("VIEW ID:", view_id)
-        except Exception as e:
-            print("ERROR FETCHING VIEW ID:", str(e))
-            raise UserError(_("Failed to fetch the form view: %s") % str(e))
-        # Open the newly created service form in edit mode (editable)
+                print("ERROR UPDATING SERVICE:", str(e))
+                raise UserError(_("Failed to update the service: %s") % str(e))
+
+        # Optionally, refresh the view to show changes
         return {
-            'type': 'ir.actions.act_window',
-            'res_model': 'aaa.service',
-            'view_type': 'form',
-            'view_mode': 'form',
-            'res_id': new_service.id,  # Pass the ID of the newly created service record
-            'view_id': view_id,  # Ensure correct view reference
-            'target': 'current',  # Open in the current window
-            'flags': {'form': {'action_buttons': True, 'options': {'mode': 'edit'}}},  # Make sure the form is in edit mode
+            'type': 'ir.actions.client',
+            'tag': 'reload',
         }
+
+    
+
+    
     
     def action_request_service(self):
         self.state='requested'
@@ -1404,11 +1662,9 @@ class AAAService(models.Model):
             'comment_user': self.env.user.id,
             'comment_status': service.state,
             })
- 
             # If a manual comment exists, clear the service.comments field after creating the record
         if service.comments:
             service.comments = False
- 
         return True
 
     def action_approve_service(self):
