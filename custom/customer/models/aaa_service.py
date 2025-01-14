@@ -1460,75 +1460,15 @@ class AAAService(models.Model):
 
     def history(self):
         pass
-    
-   
 
     # def action_new_change(self):
-    #     new_service = False  # Initialize variable to avoid unbound error in case of multiple records
+    #     """Update existing service record, change state, and store previous names of fields."""
     #     for service in self:
-    #         # Fetch the previous service's name field, which is the sequence number
-    #         previous_service_sequence = service.name  # Assuming 'name' contains the sequence number
-    #         print("PREVIOUS SERVICE SEQUENCE NO:", previous_service_sequence)
-    #         # Debugging: Ensure the service object is correct
-    #         print("SERVICE ID:", service.id)
-    #         # Try creating the new service record
+    #         print("SERVICE ID BEING UPDATED:", service.id)
+    #         print("SERVICE SEQUENCE NO:", service.name)  # Assuming 'name' is relevant for debugging
     #         try:
-    #             new_service = self.env['aaa.service'].create({
-    #                 'state': 'initiate',  # Set the state of the new service to 'initiate'
-    #                 'orgin_no': previous_service_sequence,  # Copy the name (sequence number) to the origin_no field
-    #                 'customer_id': service.customer_id.id,  # Copy the customer ID
-    #                 'sequence_id': service.sequence_id.id,
-    #                 'member_id': service.member_id.id,
-    #                 'vehicle_type': service.vehicle_type,
-    #                 'vehicle_model': service.vehicle_model,
-    #                 'vehicle_plate': service.vehicle_plate,
-    #                 'vehicle_chasis_no': service.vehicle_chasis_no,
-    #                 'policy_no': service.policy_no,
-    #                 'member_type': service.member_type,
-    #                 'type': service.type,
-    #                 'card_type': service.card_type,
-    #                 'product_id':service.product_id.id,
-    #                 'selected_from_location': service.selected_from_location.id,
-    #                 'selected_to_location':service.selected_to_location.id,
-    #                 'from_location':service.from_location.id,
-    #                 'to_location': service.to_location.id
-    #             })
-    #             # Debugging: Ensure the new service is created
-    #             print("NEW SERVICE ID:", new_service.id)
-    #         except Exception as e:
-    #             print("ERROR CREATING NEW SERVICE:", str(e))
-    #             raise UserError(_("Failed to create a new service: %s") % str(e))  # Raise an error with a meaningful message
-    #     # Ensure the new service was created
-    #     if not new_service:
-    #         raise UserError(_("No new service record was created."))
-    #     # Ensure the view_id reference is correct
-    #     try:
-    #         view_id = self.env.ref('customer.call_center_service_form').id  # Make sure this reference is correct
-    #         print("VIEW ID:", view_id)
-    #     except Exception as e:
-    #         print("ERROR FETCHING VIEW ID:", str(e))
-    #         raise UserError(_("Failed to fetch the form view: %s") % str(e))
-    #     # Open the newly created service form in edit mode (editable)
-    #     return {
-    #         'type': 'ir.actions.act_window',
-    #         'res_model': 'aaa.service',
-    #         'view_type': 'form',
-    #         'view_mode': 'form',
-    #         'res_id': new_service.id,  # Pass the ID of the newly created service record
-    #         'view_id': view_id,  # Ensure correct view reference
-    #         'target': 'current',  # Open in the current window
-    #         'flags': {'form': {'action_buttons': True, 'options': {'mode': 'edit'}}},  # Make sure the form is in edit mode
-    #     }
-    # def action_new_change(self):
-    #     new_service = False  # Initialize to avoid unbound error
-    #     for service in self:
-    #         print("PREVIOUS SERVICE ID:", service.id)
-    #         print("SERVICE SEQUENCE NO:", service.name)  # Assuming 'name' is still relevant for debugging
-
-    #         try:
-    #             new_service = self.env['aaa.service'].create({
-    #                 'state': 'initiate',
-    #                 'origin_no': service.id,  # Link to the current service record
+    #             service.write({
+    #                 'state': 'initiate',  # Update the state to 'initiate'
     #                 'customer_id': service.customer_id.id,
     #                 'sequence_id': service.sequence_id.id,
     #                 'member_id': service.member_id.id,
@@ -1545,64 +1485,46 @@ class AAAService(models.Model):
     #                 'selected_to_location': service.selected_to_location.id,
     #                 'from_location': service.from_location.id,
     #                 'to_location': service.to_location.id
+    #                 # Other updates can be added here if necessary
     #             })
-    #             print("NEW SERVICE ID:", new_service.id)
+    #             print("SERVICE UPDATED, NEW STATE:", service.state)
     #         except Exception as e:
-    #             print("ERROR CREATING NEW SERVICE:", str(e))
-    #             raise UserError(_("Failed to create a new service: %s") % str(e))
-
-    #     if not new_service:
-    #         raise UserError(_("No new service record was created."))
-
-    #     try:
-    #         view_id = self.env.ref('customer.call_center_service_form').id
-    #         print("VIEW ID:", view_id)
-    #     except Exception as e:
-    #         print("ERROR FETCHING VIEW ID:", str(e))
-    #         raise UserError(_("Failed to fetch the form view: %s") % str(e))
-
+    #             print("ERROR UPDATING SERVICE:", str(e))
+    #             raise UserError(_("Failed to update the service: %s") % str(e))
+    #     # Optionally, refresh the view to show changes
     #     return {
-    #         'type': 'ir.actions.act_window',
-    #         'res_model': 'aaa.service',
-    #         'view_type': 'form',
-    #         'view_mode': 'form',
-    #         'res_id': new_service.id,
-    #         'view_id': view_id,
-    #         'target': 'current',
-    #         'flags': {'form': {'action_buttons': True, 'options': {'mode': 'edit'}}},
+    #         'type': 'ir.actions.client',
+    #         'tag': 'reload',
     #     }
-
     def action_new_change(self):
         """Update existing service record, change state, and store previous names of fields."""
-        
-
+ 
         for service in self:
-            print("SERVICE ID BEING UPDATED:", service.id)
-            print("SERVICE SEQUENCE NO:", service.name)  # Assuming 'name' is relevant for debugging
-
-            # # Prepare the origin_no content based on member_type
-            # if service.member_type == 'credit':
-            #     origin_info = {
-            #         'product_name': service.product_id.name if service.product_id else '',
-            #         'from_location_name': service.from_location.name if service.from_location else '',
-            #         'to_location_name': service.to_location.name if service.to_location else ''
-            #     }
-            # elif service.member_type == 'policy':
-            #     origin_info = {
-            #         'product_name': service.product_id.name if service.product_id else '',
-            #         'selected_from_location_name': service.selected_from_location.name if service.selected_from_location else '',
-            #         'selected_to_location_name': service.selected_to_location.name if service.selected_to_location else ''
-            #     }
-            # else:
-            #     origin_info = {}
-
-            # # Convert dictionary to string for storing in a Char field
-            # service.orgin_no = json.dumps(origin_info, ensure_ascii=False)
+            print("product_nameee:", service.product_id.name)
+            print("service_typeeeee", service.product_id.service_based)
+            print("SERVICE SEQUENCE NO:", service.name)      
+            # Set up the API call
+            url = f"{base_url}/carhire-order/order/service/consumers/orders/update/order-service-change"
+            headers = {'Content-Type': 'application/json'}
+            payload = {
+                "erp_order_number": service.name,  
+                "new_service_name": service.product_id.name,
+                "new_service_type": service.product_id.service_based
+            }
+ 
+            # Make the API call
+            try:
+                response = requests.put(url, json=payload, headers=headers)
+                response.raise_for_status()  # Raises an HTTPError for bad responses
+                print("API RESPONSE:", response.json())
+            except requests.exceptions.RequestException as e:
+                print("API REQUEST FAILED:", str(e))
+                # raise UserError(_("API request failed: %s") % str(e))
+ 
             # Update the service record
             try:
                 service.write({
                     'state': 'initiate',  # Update the state to 'initiate'
-                    
                     'customer_id': service.customer_id.id,
                     'sequence_id': service.sequence_id.id,
                     'member_id': service.member_id.id,
@@ -1619,23 +1541,18 @@ class AAAService(models.Model):
                     'selected_to_location': service.selected_to_location.id,
                     'from_location': service.from_location.id,
                     'to_location': service.to_location.id
-                    # Other updates can be added here if necessary
                 })
                 print("SERVICE UPDATED, NEW STATE:", service.state)
             except Exception as e:
                 print("ERROR UPDATING SERVICE:", str(e))
                 raise UserError(_("Failed to update the service: %s") % str(e))
-
+ 
         # Optionally, refresh the view to show changes
         return {
             'type': 'ir.actions.client',
             'tag': 'reload',
         }
-
-    
-
-    
-    
+ 
     def action_request_service(self):
         self.state='requested'
         for service in self:
