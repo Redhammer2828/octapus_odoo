@@ -119,7 +119,10 @@
                             <notebook colspan="4">
                                 <page name="package" string="Package">
                                     <group>
-                                        <field name="product_template_id" class="required_field" required="1" readonly="is_readonly" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" domain="[('bundle_product', '=', True)]" />
+                                        <field name="product_template_id" class="required_field"
+                                            required="1"
+                                            options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
+                                            domain="[('bundle_product', '=', True)]" />
                                     </group>
                                     <group>
                                         <field name="service_ids" widget="many2many_tags" options="{'no_create':False,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" domain="[('bundle_product', '=', False)]" readonly="is_readonly" />
