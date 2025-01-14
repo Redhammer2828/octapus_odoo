@@ -534,13 +534,14 @@ class DataUploadFile(models.Model):
                             'member_activate_date': member_line.member_activate_date,
                             'invoice_ref_date': member_line.invoice_ref_date,
                             'delivery_ref_date': member_line.delivery_ref_date,
-                            'vehicle_type': member_line.vehicle_type,
-                            'vehicle_model': member_line.vehicle_model,
-                            'vehicle_mfg_year': member_line.vehicle_mfg_year,
-                            'vehicle_plate': member_line.vehicle_plate,
-                            'vehicle_chasis_no': member_line.vehicle_chasis_no,
+                            # 'vehicle_type': member_line.vehicle_type,
+                            # 'vehicle_model': member_line.vehicle_model,
+                            # 'vehicle_mfg_year': member_line.vehicle_mfg_year,
+                            # 'vehicle_plate': member_line.vehicle_plate,
+                            # 'vehicle_chasis_no': member_line.vehicle_chasis_no,
                             'street': member_line.street,
                             'mobile': member_line.mobile,
+                            
                         })
                 elif member_line.upload_member_status in ['update']:
                     matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)

@@ -4,7 +4,8 @@ import logging
 from lxml import etree
 from odoo.exceptions import UserError, ValidationError
 import json
-from datetime import date
+from datetime import datetime, time
+from datetime import timedelta
 import random
 
 
@@ -102,52 +103,17 @@ class ResPartnerMembers(models.Model):
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
     is_it_user = fields.Boolean(string="Is IT User", compute='_compute_is_it_user', store=False)
-
-    @api.depends('create_user')
-    def _compute_is_agent_user(self):
-        """Compute is_agent_user based on the create_uid user's group membership."""
-        for record in self:
-            # Default to False if no `created_by` is set
-            record.is_agent_user = False
-            if record.create_user:
-                # Check if `created_by` belongs to the 'new_agents' group
-                user_groups = record.create_user.groups_id
-                record.is_agent_user = any(group.name == 'Agent' for group in user_groups)
-
-    @api.depends('create_user')
-    def _compute_is_dispatch_user(self):
-        """Compute is_dispatch_user based on the ccreate_uid user's group membership."""
-        for record in self:
-            # Default to False if no `created_by` is set
-            record.is_dispatch_user = False
-            if record.create_user:
-                # Check if `created_by` belongs to the 'new_agents' group
-                user_groups = record.create_user.groups_id
-                record.is_dispatch_user = any(group.name == 'Dispatcher' for group in user_groups)
-
-    @api.depends('create_user')
-    def _compute_is_it_user(self):
-        """Compute is_it_user based on the ccreate_uid user's group membership."""
-        for record in self:
-            # Default to False if no `created_by` is set
-            record.is_it_user = False
-            if record.create_user:
-                # Check if `created_by` belongs to the 'new_agents' group
-                user_groups = record.create_user.groups_id
-                record.is_it_user = any(group.name == 'IT' for group in user_groups)
+    create_user = fields.Many2one(
+        'res.users',
+        string="Agent",
+        default=lambda self: self.env.user,
+        compute='_compute_created_by',
+        store=False,
+        readonly=False
+    )
+    confirmed_by = fields.Many2one('res.users', string="Confirm By")
 
 
-    @api.depends('membership_state')
-    def _compute_created_by(self):
-        """Dynamically update create_uid when the record is in specified states."""
-        for record in self:
-            if record.membership_state in {'temp', 'confirm', 'cancel'} and record.create_user != self.env.user:
-                record.create_user = self.env.user
-    @api.onchange('membership_state')
-    def _onchange_membership_state(self):
-        """Automatically set the current user when membership is confirmed."""
-        if self.membership_state == 'confirm':
-            self.confirmed_by = self.env.user.id
     
     def unlink(self):
         """Restrict deletion for users in groups named '' or 'new_dispatchers'."""
@@ -227,14 +193,14 @@ class ResPartnerMembers(models.Model):
                 # Check if `created_by` belongs to the 'new_agents' group
                 user_groups = record.create_user.groups_id
                 record.is_it_user = any(group.name == 'IT Group' for group in user_groups)
- 
- 
+  
     @api.depends('membership_state')
     def _compute_created_by(self):
         """Dynamically update create_uid when the record is in specified states."""
         for record in self:
             if record.membership_state in {'temp', 'confirm', 'cancel'} and record.create_user != self.env.user:
                 record.create_user = self.env.user
+    
     @api.onchange('membership_state')
     def _onchange_membership_state(self):
         """Automatically set the current user when membership is confirmed."""
@@ -373,17 +339,66 @@ class ResPartnerMembers(models.Model):
                 partner.member_expired = True
             else:
                 partner.member_expired = False
-#-------------------------------COUNT CALCULATION-----------------------------------------------------   
-    @api.depends('name')
+#-------------------------------COUNT CALCULATION---START--------------------------------------------------   
+    # @api.depends('name')
+    # def _compute_policy_member_service_count(self):
+    #     for partner in self:
+    #         service_member_ids = self.env['aaa.service'].search([
+    #             ('member_id', '=', self.id),
+    #             ('type', '=', 'non_cash'),
+    #             ('member_type', '=', 'policy')
+    #         ])
+    #         print("ACTIVATION DATE",self.member_activate_date)
+    #         print("EXPIRY DATE",self.member_expiry_date)
+    #         print("MEMBER SERVICES", service_member_ids.ids)
+    #         partner.policy_member_service_count= len(service_member_ids)
+
+    @api.depends('name', 'member_activate_date', 'member_expiry_date')
     def _compute_policy_member_service_count(self):
         for partner in self:
-            service_member_ids = self.env['aaa.service'].search([
-                ('member_id', '=', self.id),
+            # 1. Search with base domain, ignoring dates for now
+            service_domain = [
+                ('member_id', '=', partner.id),
                 ('type', '=', 'non_cash'),
-                ('member_type', '=', 'policy')
-            ])
-            print("MEMBER SERVICES", service_member_ids.ids)
-            partner.policy_member_service_count= len(service_member_ids)
+                ('member_type', '=', 'policy'),
+            ]
+            all_services = self.env['aaa.service'].search(service_domain)
+            print("ALL SERVICES:", all_services.ids)
+            # Print service_time for each record
+            print("SERVICE TIME OF ALL SERVICES for Partner:", partner.name)
+            for svc in all_services:
+                print(f"   Service ID: {svc.id}, service_time: {svc.service_time}")
+
+            # 2. If activation/expiry dates exist, filter in Python
+            if partner.member_activate_date and partner.member_expiry_date:
+                print(f'partner date time:{partner.member_activate_date}:{partner.member_expiry_date}')
+                filtered_service_ids = []
+                
+                for svc in all_services:
+                    print(f'service time in loop:{svc.service_time}')
+                    if svc.service_time:
+                        print(f'service time check:{svc.service_time.date()}:{partner.member_activate_date}: {partner.member_expiry_date}')
+                        date_string = svc.service_time.strftime("%Y-%m-%d")
+                        activate_string = partner.member_activate_date.strftime("%Y-%m-%d")
+                        expiry_string = partner.member_expiry_date.strftime("%Y-%m-%d")
+                        print(f"date_string:{date_string}:{activate_string}:{expiry_string}")
+                        if date_string >= activate_string and date_string<= expiry_string:
+                            print('filter time date',svc.service_time)
+                            filtered_service_ids.append(svc.id)
+
+                # Create a new recordset from the filtered IDs
+                filtered_services = self.env['aaa.service'].browse(filtered_service_ids)
+            else:
+                filtered_services = all_services
+
+            # 3. Assign the filtered count
+            partner.policy_member_service_count = len(filtered_services)
+            
+            # Debug prints
+            print("ACTIVATION DATE:", partner.member_activate_date)
+            print("EXPIRY DATE:", partner.member_expiry_date)
+            # print("ALL SERVICES:", all_services.ids)
+            print("FILTERED SERVICES:", filtered_services.ids)
 
     
     def action_view_policy_service(self):
@@ -401,19 +416,36 @@ class ResPartnerMembers(models.Model):
             },
             'views': [(self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
                     (self.env.ref('customer.call_center_service_form').id, 'form')],
-         
         }
     
+    # @api.depends('name')
+    # def _compute_policy_member_cash_service_count(self):
+    #     for cash in self:
+    #         cash_service_ids = self.env['aaa.service'].search([
+    #             ('member_id', '=', self.id),
+    #             ('type', '=', 'cash'),
+    #             ('member_type', '=', 'policy')
+    #         ])
+    #         print("CASH SERVICES", cash_service_ids.ids)
+    #         cash.policy_member_cash_service_count= len(cash_service_ids)
+
     @api.depends('name')
     def _compute_policy_member_cash_service_count(self):
         for cash in self:
+            if cash.member_activate_date:
+                activate_date = cash.member_activate_date
+            else:
+                activate_date = cash.member_expiry_date - timedelta(days=395)
+            
             cash_service_ids = self.env['aaa.service'].search([
-                ('member_id', '=', self.id),
+                ('member_id', '=', cash.id),
                 ('type', '=', 'cash'),
-                ('member_type', '=', 'policy')
+                ('member_type', '=', 'policy'),
+                ('service_time', '>=', activate_date),
+                ('service_time', '<=', cash.member_expiry_date)
             ])
             print("CASH SERVICES", cash_service_ids.ids)
-            cash.policy_member_cash_service_count= len(cash_service_ids)
+            cash.policy_member_cash_service_count = len(cash_service_ids)
  
     def action_view_cash_service(self):
          
@@ -489,7 +521,8 @@ class ResPartnerMembers(models.Model):
                     (self.env.ref('customer.call_center_service_form').id, 'form')],
          
         }
-# ----------------------------------------------------------------------------------------------------- 
+#-------------------------------COUNT CALCULATION---END--------------------------------------------------   
+
     def action_membership_renewal(self):
         mem_renewal= self.env['membership.history'].create({
             'name': self.name,

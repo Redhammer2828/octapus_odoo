@@ -11,13 +11,14 @@ import logging
 load_dotenv()
 _logger = logging.getLogger(__name__)
 base_url = os.getenv("BASE_URL")
-
+# J PUSH
 class AAAService(models.Model):
     _name = 'aaa.service'
     _description = 'AAA Service'
     _inherit = ['mail.thread', 'mail.activity.mixin']
 
     name = fields.Char(string="Number", readonly=True, default=lambda self:('New'))
+    color = fields.Char(string="Color")
     type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type", readonly=True)
     member_type = fields.Selection([('adhoc', 'AD-HOC'), ('policy', 'POLICY'),('credit', 'CREDIT')], string="Member Type", readonly=True)
     card_type = fields.Char(string="Card Type", readonly=True)
@@ -44,6 +45,8 @@ class AAAService(models.Model):
         domain="[('is_company', '=', False),('member_type','=',member_type)] "
         
     )
+    
+    invoice_ref_date = fields.Date(string='Invoice Reference Date')
       # Fields to track if values came from res.partner
     is_member_from_partner = fields.Boolean(string='Member from Partner', default=False)
     is_customer_from_partner = fields.Boolean(string='Customer from Partner', default=False)
@@ -728,7 +731,7 @@ class AAAService(models.Model):
         member = self.member_id
         print("POLICY MEMBER = res_partner id =", member.id)
         product_template_id = member.product_template_id.id
-        print("PACKAGE ID OF POLICY MEMBER = product.package.servide", product_template_id)
+        print("PACKAGE ID OF POLICY MEMBER = product.package.service", product_template_id)
  
         if not product_template_id:
             raise ValidationError(_("Package not found for the member."))
@@ -818,26 +821,27 @@ class AAAService(models.Model):
  
         # Logic for 24-hour validation
             if validity_period_days == 24:
+
+                if self.member_activate_date:
+                    activate_date = self.member_activate_date
+                else:
+                 # Default to 395 days before the member_expiry_date if activate_date is null
+                    activate_date = self.member_expiry_date - timedelta(days=395)
                 # Fetch the last service in the same category
-                # last_service = self.env['aaa.service'].search([
-                #     ('member_id', '=', self.member_id.id),
-                #     ('product_id.categ_id', '=', parent_category_id),
-                #     ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-                #     ('service_time', '>=', self.member_id.member_activate_date),
-                #     ('service_time', '<=', self.member_id.member_expiry_date),
-                # ], order='service_time desc', limit=1)
-                domain_one = [
+                # Fetch the last service in the same category within the valid date range
+                last_service = self.env['aaa.service'].search([
                     ('member_id', '=', self.member_id.id),
                     ('product_id.categ_id', '=', parent_category_id),
+                    ('service_time', '>=', activate_date),
+                    ('service_time', '<=', self.member_expiry_date),
                     ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-                ]
-                # Conditionally add filters for member_activate_date/member_expiry_date
-                if self.member_id.member_activate_date:
-                    domain_one.append(('service_time', '>=', self.member_id.member_activate_date))
-                if self.member_id.member_expiry_date:
-                    domain_one.append(('service_time', '<=', self.member_id.member_expiry_date))
-                last_service = self.env['aaa.service'].search(domain_one, order='service_time desc', limit=1)
+                ], order='service_time desc', limit=1)
+
+                print(f"LAST SERVICEL:{last_service}")
+                print("PRODUCT CATEGORY ID CHOOSES:",self.product_id.categ_id)
+                print("MEMBER ACTIVATION DATE",self.member_id.member_expiry_date)
                 if last_service and last_service.service_time:
+
                     time_since_last_service = fields.Datetime.now() - last_service.service_time
                     hours_since_last_service = time_since_last_service.total_seconds() / 3600
                     print(f"HOURS SINCE LAST SERVICE: {hours_since_last_service}")
@@ -884,28 +888,24 @@ class AAAService(models.Model):
             print(f"START OF LOCATION DURATION SERVICE PERIOD: {period_start}")
  
             total_days = 0
+
+            # Determine the activate date, accounting for a potentially null member_activate_date
+            if self.member_activate_date:
+                activate_date = self.member_activate_date
+            else:
+                # Default to 395 days before the member_expiry_date if activate_date is null
+                activate_date = self.member_expiry_date - timedelta(days=395)
             # Fetch all services in the same category within the validity period
-            # member_services_in_category = self.env['aaa.service'].search([
-            #     ('member_id', '=', self.member_id.id),
-            #     ('product_id.categ_id', '=', parent_category_id),
-            #     ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-            #     ('date_time_to', '>=', period_start),
-            # ])
-
-            domain_two = [
-            ('member_id', '=', self.member_id.id),
-            ('product_id.categ_id', '=', parent_category_id),
-            ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-            ('date_time_to', '>=', period_start),]
-
-             # Conditionally append membership activation/expiry filters, if set
-            if self.member_id.member_activate_date:
-                domain_two.append(('service_time', '>=', self.member_id.member_activate_date))
-            if self.member_id.member_expiry_date:
-                domain_two.append(('service_time', '<=', self.member_id.member_expiry_date))
-            member_services_in_category = self.env['aaa.service'].search(domain_two)
+            # Fetch all services in the same category within the validity period
+            member_services_in_category = self.env['aaa.service'].search([
+                ('member_id', '=', self.member_id.id),
+                ('product_id.categ_id', '=', parent_category_id),
+                ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+                ('service_time', '>=', activate_date),
+                ('service_time', '<=', self.member_expiry_date),
+                ('date_time_to', '>=', period_start),
+            ])
             print(f"MEMBER SERVICES IN CATEGORY: {member_services_in_category}")
- 
             # Calculate the total days accessed in the category
             for service in member_services_in_category:
                 if service.service_based == 'location_duration' and service.date_time_to and service.date_time_from:
@@ -944,49 +944,43 @@ class AAAService(models.Model):
  
     def _is_service_accessible_in_24_hours(self, parent_category_id):
         last_dispatch_time = fields.Datetime.now() - timedelta(hours=24)
-        # recent_services = self.env['aaa.service'].search_count([
-        #     ('member_id', '=', self.member_id.id),
-        #     ('product_id.categ_id', '=', parent_category_id),
-        #     ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-        #     ('create_date', '>=', last_dispatch_time),
-        # ])
-            # Base domain for checking recent services (within the last 24 hours)
-        domain_three = [('member_id', '=', self.member_id.id),
-            ('product_id.categ_id', '=', parent_category_id),
-            ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-            ('create_date', '>=', last_dispatch_time),]
-        # Conditionally add membership activation/expiry filters if they exist
-        if self.member_id.member_activate_date:
-            domain_three.append(('service_time', '>=', self.member_id.member_activate_date))
-        if self.member_id.member_expiry_date:
-            domain_three.append(('service_time', '<=', self.member_id.member_expiry_date))
-        recent_services = self.env['aaa.service'].search_count(domain_three)
-        return recent_services == 0
- 
-    # def _count_services_in_category(self, parent_category_id):
-    #     return self.env['aaa.service'].search_count([
-    #         ('member_id', '=', self.member_id.id),
-    #         ('product_id.categ_id', '=', parent_category_id),
-    #         ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-    #     ])
-    # def _count_services_in_category(self, parent_category_id):
-    #     return self.env['aaa.service'].search_count([
-    #         ('member_id', '=', self.member_id.id),
-    #         ('product_id.categ_id', '=', parent_category_id),
-    #         ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-    #     ])
-    def _count_services_in_category(self, parent_category_id):
-        return self.env['aaa.service'].search_count([
+        
+        # Determine the activate date, accounting for a potentially null member_activate_date
+        if self.member_activate_date:
+            activate_date = self.member_activate_date
+        else:
+            # Default to 395 days before the member_expiry_date if activate_date is null
+            activate_date = self.member_expiry_date - timedelta(days=395)
+
+        recent_services = self.env['aaa.service'].search_count([
             ('member_id', '=', self.member_id.id),
             ('product_id.categ_id', '=', parent_category_id),
+            ('service_time', '>=', activate_date),
+            ('service_time', '<=', self.member_expiry_date),
+            ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+            ('create_date', '>=', last_dispatch_time),
+        ])
+        
+        return recent_services == 0
+ 
+    
+    def _count_services_in_category(self, parent_category_id):
+        # Determine the activate date, accounting for a potentially null member_activate_date
+        if self.member_activate_date:
+            activate_date = self.member_activate_date
+        else:
+            # Default to 395 days before the member_expiry_date if activate_date is null
+            activate_date = self.member_expiry_date - timedelta(days=395)
+
+        count = self.env['aaa.service'].search_count([
+            ('member_id', '=', self.member_id.id),
+            ('product_id.categ_id', '=', parent_category_id),
+            ('service_time', '>=', activate_date),
+            ('service_time', '<=', self.member_expiry_date),
             ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
         ])
-        # Only add these criteria if the partner actually has activation/expiry dates
-        if self.member_id.member_activate_date:
-            domain.append(('service_time', '>=', self.member_id.member_activate_date))
-        if self.member_id.member_expiry_date:
-            domain.append(('service_time', '<=', self.member_id.member_expiry_date))
-        return self.env['aaa.service'].search_count(domain)
+
+        return count
 
     def _trigger_cash_or_credit_service_wizard(self):
         return {
