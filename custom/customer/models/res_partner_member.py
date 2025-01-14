@@ -112,9 +112,8 @@ class ResPartnerMembers(models.Model):
         readonly=False
     )
     confirmed_by = fields.Many2one('res.users', string="Confirm By")
+    property_product_pricelist_id = fields.Many2one('product.pricelist', string='Pricelist')
 
-
-    
     def unlink(self):
         """Restrict deletion for users in groups named '' or 'new_dispatchers'."""
         current_user = self.env.user  # Get the currently logged-in user
