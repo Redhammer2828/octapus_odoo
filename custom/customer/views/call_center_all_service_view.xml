@@ -6,7 +6,12 @@
             <field name="name">call.center.all.service.view.tree</field>
             <field name="model">aaa.service</field>
             <field name="arch" type="xml">
-                <tree string="Services" create="false" duplicate="false" js_class="MyListRenderer">
+                <tree string="Services" create="false" duplicate="false" 
+                    decoration-success="state=='done'"
+                    decoration-danger="state=='cancel'"
+                    decoration-warning="state=='change'"
+                    decoration-primary="state=='dispatch'"
+                    decoration-bf="state in ('start','reach')">
                     <field name="name" />
                     <field name="service_time" string="Service Date" />
                     <field name="customer_id" />
@@ -150,6 +155,20 @@
             ]">
             </field>
         </record>
+        <record id="call_center_change_service_action" model="ir.actions.act_window">
+            <field name="name">Change</field>
+            <field name="res_model">aaa.service</field>
+            <field name="view_mode">tree</field>
+            <field name="domain">[('state', '=','change')]</field>
+            <field name="context">{'default_created_by': uid}</field>
+            <field name="view_ids"
+                eval="[
+              (5, 0, 0),
+              (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
+              (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
+            ]">
+            </field>
+        </record>
         <!-- Create a specific tree view for scheduled services -->
         <record id="call_center_scheduled_service_view_tree" model="ir.ui.view">
             <field name="name">call.center.scheduled.service.view.tree</field>
@@ -191,6 +210,9 @@
             action="call_center_cancelled_service_action" sequence="6" />
         <menuitem id="menu_requested_service" name="Requested Services"
             parent="menu_all_service_root" action="call_center_requested_service_action"
+            sequence="7" />
+        <menuitem id="menu_changed_service" name="Change Service"
+            parent="menu_all_service_root" action="call_center_change_service_action"
             sequence="7" />
         <menuitem id="menu_scheduled_service" name="Scheduled" parent="menu_all_service_root"
             action="call_center_initiate_service_action" sequence="4" />
