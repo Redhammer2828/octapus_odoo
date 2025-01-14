@@ -15,6 +15,7 @@ class ResPartnerCustomer(models.Model):
         store=False
     )
 
+    property_product_pricelist_id = fields.Many2one('product.pricelist', string='Price List')
 
     customer = fields.Binary('customer')  #Field (Flag) for Members (is_customer)
     
