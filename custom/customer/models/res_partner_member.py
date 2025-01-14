@@ -4,7 +4,7 @@ import logging
 from lxml import etree
 from odoo.exceptions import UserError, ValidationError
 import json
-from datetime import datetime, time
+from datetime import datetime, time, date
 from datetime import timedelta
 import random
 
