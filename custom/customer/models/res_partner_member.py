@@ -4,7 +4,8 @@ import logging
 from lxml import etree
 from odoo.exceptions import UserError, ValidationError
 import json
-from datetime import date
+from datetime import datetime, time, date
+from datetime import timedelta
 import random
 
 
@@ -44,7 +45,12 @@ class ResPartnerMembers(models.Model):
     email = fields.Char(string='Email', widget='email')
     website = fields.Char(string='Website', widget='url')
     lang = fields.Char(string='Language')
-    invoice_ref_date = fields.Date(string='Invoice Ref Date')
+    #invoice_ref_date = fields.Date(string='Invoice Ref Date')
+
+    invoice_ref_date = fields.Date(
+        string='Invoice Ref Date',
+        default=lambda self: date.today()
+    )
     delivery_ref_date = fields.Date(string='Delivery Ref Date')
     mail_ref = fields.Char(string='Mail Ref')
     related_company_customer_code = fields.Char(string='Related Company Customer Code')
@@ -57,7 +63,16 @@ class ResPartnerMembers(models.Model):
     vehcle_reg_country_id = fields.Many2one('res.country', string='Vehicle Reg. Country') #changed country to res.country
     # readonly fields
     membership_cancel_date = fields.Date(string='Membership Cancel Date')
-    # create_uid = fields.Many2one('res.users', string='Created By')
+    #create_uid = fields.Many2one('res.users', string='Created By')
+    create_user = fields.Many2one(
+        'res.users',
+        string="Logged By",
+        default=lambda self: self.env.user,
+        compute='_compute_created_by',
+        store=False,
+        readonly=False
+    )
+    confirmed_by = fields.Many2one('res.users', string="Confirm By")
     card_type_id = fields.Many2one('card.type', string='Card Type') #Created card.type model 
     member_type = fields.Selection([ ('policy', 'Policy Member'),
                                     ('credit', 'Credit Member'),
@@ -84,8 +99,7 @@ class ResPartnerMembers(models.Model):
     cancellation_comment = fields.Text('Cancelation Comment')
     # ----------------------------
     membership_history_ids= fields.One2many('membership.history','history_id', string='Membership History')
-
-    # USER BASED BUTTON HIDING 
+    #-------------ROLES----------------
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
     is_it_user = fields.Boolean(string="Is IT User", compute='_compute_is_it_user', store=False)
@@ -98,7 +112,7 @@ class ResPartnerMembers(models.Model):
         readonly=False
     )
     confirmed_by = fields.Many2one('res.users', string="Confirm By")
-    
+
     def unlink(self):
         """Restrict deletion for users in groups named '' or 'new_dispatchers'."""
         current_user = self.env.user  # Get the currently logged-in user
@@ -114,6 +128,11 @@ class ResPartnerMembers(models.Model):
     
     @api.model
     def create(self, vals):
+
+        # Dynamically set the created_by field if not set already
+        if not vals.get('create_uid'):
+            vals['create_uid'] = self.env.user.id
+
         if self.env.context.get('from_res_partner_member_form'):
             vals['is_customer'] = True
             vals['credit_member_ok'] = False
@@ -172,14 +191,14 @@ class ResPartnerMembers(models.Model):
                 # Check if `created_by` belongs to the 'new_agents' group
                 user_groups = record.create_user.groups_id
                 record.is_it_user = any(group.name == 'IT Group' for group in user_groups)
- 
- 
+  
     @api.depends('membership_state')
     def _compute_created_by(self):
         """Dynamically update create_uid when the record is in specified states."""
         for record in self:
             if record.membership_state in {'temp', 'confirm', 'cancel'} and record.create_user != self.env.user:
                 record.create_user = self.env.user
+    
     @api.onchange('membership_state')
     def _onchange_membership_state(self):
         """Automatically set the current user when membership is confirmed."""
@@ -318,7 +337,7 @@ class ResPartnerMembers(models.Model):
                 partner.member_expired = True
             else:
                 partner.member_expired = False
-#-------------------------------COUNT CALCULATION-----------------------------------------------------   
+#-------------------------------COUNT CALCULATION---START--------------------------------------------------   
     @api.depends('name')
     def _compute_policy_member_service_count(self):
         for partner in self:
@@ -327,6 +346,8 @@ class ResPartnerMembers(models.Model):
                 ('type', '=', 'non_cash'),
                 ('member_type', '=', 'policy')
             ])
+            print("ACTIVATION DATE",self.member_activate_date)
+            print("EXPIRY DATE",self.member_expiry_date)
             print("MEMBER SERVICES", service_member_ids.ids)
             partner.policy_member_service_count= len(service_member_ids)
 
@@ -346,7 +367,6 @@ class ResPartnerMembers(models.Model):
             },
             'views': [(self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
                     (self.env.ref('customer.call_center_service_form').id, 'form')],
-         
         }
     
     @api.depends('name')
@@ -434,15 +454,23 @@ class ResPartnerMembers(models.Model):
                     (self.env.ref('customer.call_center_service_form').id, 'form')],
          
         }
-# ----------------------------------------------------------------------------------------------------- 
+#-------------------------------COUNT CALCULATION---END--------------------------------------------------   
+
     def action_membership_renewal(self):
         mem_renewal= self.env['membership.history'].create({
+            'name': self.name,
+            'parent_customer_id': self.parent_customer_id.id,
+            'old_membership_number': self.old_membership_number,
+            'member_partner_category_id': self.member_partner_category_id.id,
+            'product_template_id' : self.product_template_id.id,
+            'member_type': self.member_type,
             'policy_no':self.policy_no,
             'vehicle_chasis_no': self.vehicle_chasis_no,
             'vehicle_plate': self.vehicle_plate,
             'vehicle_type': self.vehicle_type,
             'member_activate_date': self.member_activate_date,
             'member_expiry_date': self.member_expiry_date,
+            'invoice_ref_date': self.invoice_ref_date,
             'card_type_id': self.card_type_id.id,
             'history_id': self.id
             
@@ -468,12 +496,19 @@ class ResPartnerMembers(models.Model):
         
     def action_membership_extension(self):
         mem_extension= self.env['membership.history'].create({
+            'name': self.name,
+            'parent_customer_id': self.parent_customer_id.id,
+            'old_membership_number': self.old_membership_number,
+            'member_partner_category_id': self.member_partner_category_id.id,
+            'product_template_id' : self.product_template_id.id,
+            'member_type': self.member_type,
             'policy_no':self.policy_no,
             'vehicle_chasis_no': self.vehicle_chasis_no,
             'vehicle_plate': self.vehicle_plate,
             'vehicle_type': self.vehicle_type,
             'member_activate_date': self.member_activate_date,
             'member_expiry_date': self.member_expiry_date,
+            'invoice_ref_date': self.invoice_ref_date,
             'card_type_id': self.card_type_id.id,
             'history_id': self.id
             
@@ -677,12 +712,22 @@ class ResPartnerMembers(models.Model):
 
         # name = fields.Char('Name')
         # ref_num = fields.Char('Ref Num')
+        name= fields.Char(string="Member")
+        old_membership_number = fields.Char(string='Old Membership Number')
+        parent_customer_id=fields.Many2one('res.partner',string='Customer',domain="[('is_company', '=', True)]")
+        member_partner_category_id = fields.Many2one('partner.category',string='Category',
+        domain="[('partner_id', '=', parent_customer_id),('member_type', '=', member_type)]")
+        product_template_id = fields.Many2one('product.template', string="Package")
+        member_type = fields.Selection([ ('policy', 'Policy Member'),
+                                    ('credit', 'Credit Member'),
+                                    ('adhoc', 'Ad-hoc Member') ], string='Member Type')
         policy_no = fields.Char(string='Policy Number')
         vehicle_chasis_no = fields.Char(string='Vehicle Chasis No')
         vehicle_type = fields.Char(string='Vehicle Type')
         vehicle_plate = fields.Char(string='Vehicle Plate')
         member_activate_date = fields.Date(string='Member Activate Date')
         member_expiry_date = fields.Date(string='Member Expiry Date')
+        invoice_ref_date = fields.Date(string= "Invoice Date")
         card_type_id = fields.Many2one('card.type', string='Card Type')
         history_id = fields.Many2one('res.partner', string="Replaced Member")
         

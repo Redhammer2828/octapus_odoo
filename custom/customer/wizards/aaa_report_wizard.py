@@ -2,6 +2,7 @@ from odoo import models, fields, api
 import datetime
 from datetime import timedelta
 from pytz import timezone, UTC
+import pytz
 import io
 import xlsxwriter
 import base64
@@ -20,35 +21,68 @@ class AaaReportWizard(models.TransientModel):
     _name = 'aaa.report.wizard'
     _description = 'AAA Report Wizard'
 
-    from_date = fields.Datetime(string="From Date", required=True)
-    to_date = fields.Datetime(string="To Date", required=True)
+    # from_date = fields.Datetime(string="From Date", required=True)
+    # to_date = fields.Datetime(string="To Date", required=True)
    
+
+    # from_date = fields.Datetime(
+    #     string="From Date",
+    #     required=True,
+    #     default=lambda self: self._get_datetime_with_midnight()
+    # )
+
+    # to_date = fields.Datetime(
+    #     string="To Date",
+    #     required=True,
+    #     default=lambda self: self._get_datetime_with_midnight()
+    # )
 
     from_date = fields.Datetime(
         string="From Date",
         required=True,
-        default=lambda self: self._get_datetime_with_midnight()
+        default=lambda self: self._get_start_of_day()
     )
 
     to_date = fields.Datetime(
         string="To Date",
         required=True,
-        default=lambda self: self._get_datetime_with_midnight()
+        default=lambda self: self._get_end_of_day()
     )
 
-    def _get_datetime_with_midnight(self):
-        # Get today's date in the user's time zone
-        user_tz = timezone(self.env.user.tz or 'UTC')  # Default to UTC if no timezone is set
-        today_date = datetime.now(user_tz).date()  # Get today's date in user's time zone
+    def _get_start_of_day(self):
+        # Ensure midnight is calculated directly in UTC without shifting the date
+        utc_now = datetime.now(pytz.utc).date()  # Get today's date directly in UTC
+        midnight_utc = datetime.combine(utc_now, time(0, 0, 0))  # Midnight in UTC
+        return midnight_utc  # No need for timezone adjustments, already UTC-based
+
+
+    def _get_end_of_day(self):
+        # Get the user's timezone or default to UTC
+        user_tz = pytz.timezone(self.env.user.tz or 'UTC')
         
-        # Combine today's date with midnight time (00:00:00)
-        midnight = datetime.combine(today_date, time(0, 0, 0))
+        # Get today's date in the user's timezone at 23:59:59
+        today = datetime.now(user_tz).date()
+        end_of_day_user_tz = user_tz.localize(datetime.combine(today, time(23, 59, 59)))
+        
+        # Convert to UTC without shifting the date
+        end_of_day_utc = end_of_day_user_tz.astimezone(pytz.utc)
+        
+        # Return as naive datetime for Odoo compatibility
+        return end_of_day_utc.replace(tzinfo=None)
 
-        # Localize this time to the user's time zone and then convert to naive datetime
-        midnight_user_tz = user_tz.localize(midnight)
-        naive_midnight = midnight_user_tz.astimezone(timezone('UTC')).replace(tzinfo=None)
+    # def _get_datetime_with_midnight(self):
+    #     # Get today's date in the user's time zone
+    #     user_tz = timezone(self.env.user.tz or 'UTC')  # Default to UTC if no timezone is set
+    #     today_date = datetime.now(user_tz).date()  # Get today's date in user's time zone
+        
+    #     # Combine today's date with midnight time (00:00:00)
+    #     midnight = datetime.combine(today_date, time(0, 0, 0))
 
-        return naive_midnight
+    #     # Localize this time to the user's time zone and then convert to naive datetime
+    #     midnight_user_tz = user_tz.localize(midnight)
+    #     naive_midnight = midnight_user_tz.astimezone(timezone('UTC')).replace(tzinfo=None)
+
+    #     return naive_midnight
     
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
     member_type = fields.Selection([('policy', 'POLICY'), ('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type")
@@ -283,9 +317,17 @@ class AaaReportWizard(models.TransientModel):
                 elif header == 'Agent':
                     service_history = self.env['service.history'].search([
                         ('service_id', '=', record.id),
-                        ('status', '=', record.state)
+                        ('status', '=', 'initiate')
                     ], limit=1)
                     field_value = service_history.user.login if service_history and service_history.user else ''
+                elif header == 'Dispatcher':
+                #     field_value = record.dispatcher_from_history
+                    service_history = self.env['service.history'].search([
+                        ('service_id', '=', record.id),
+                        ('status', '=', 'dispatch')
+                    ], limit=1)
+                    field_value = service_history.user.login if service_history and service_history.user else ''
+
                 elif header == 'Comments':
                     service_comment = self.env['service.comment'].search([
                         ('service_id', '=', record.id),
