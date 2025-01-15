@@ -135,6 +135,7 @@ class ServiceReportWizard(models.TransientModel):
         service_records = self.env['aaa.service'].search(domain)
         _logger.debug("Fetched %d records from the aaa.service model", len(service_records))
         return service_records
+    
     def _calculate_amount(self, record):
         """Calculate the amount for a membership record."""
         amount = 0.0
