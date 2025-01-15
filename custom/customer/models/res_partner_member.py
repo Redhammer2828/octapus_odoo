@@ -338,65 +338,65 @@ class ResPartnerMembers(models.Model):
             else:
                 partner.member_expired = False
 #-------------------------------COUNT CALCULATION---START--------------------------------------------------   
-    # @api.depends('name')
-    # def _compute_policy_member_service_count(self):
-    #     for partner in self:
-    #         service_member_ids = self.env['aaa.service'].search([
-    #             ('member_id', '=', self.id),
-    #             ('type', '=', 'non_cash'),
-    #             ('member_type', '=', 'policy')
-    #         ])
-    #         print("ACTIVATION DATE",self.member_activate_date)
-    #         print("EXPIRY DATE",self.member_expiry_date)
-    #         print("MEMBER SERVICES", service_member_ids.ids)
-    #         partner.policy_member_service_count= len(service_member_ids)
-
-    @api.depends('name', 'member_activate_date', 'member_expiry_date')
+    @api.depends('name')
     def _compute_policy_member_service_count(self):
         for partner in self:
-            # 1. Search with base domain, ignoring dates for now
-            service_domain = [
-                ('member_id', '=', partner.id),
+            service_member_ids = self.env['aaa.service'].search([
+                ('member_id', '=', self.id),
                 ('type', '=', 'non_cash'),
-                ('member_type', '=', 'policy'),
-            ]
-            all_services = self.env['aaa.service'].search(service_domain)
-            print("ALL SERVICES:", all_services.ids)
-            # Print service_time for each record
-            print("SERVICE TIME OF ALL SERVICES for Partner:", partner.name)
-            for svc in all_services:
-                print(f"   Service ID: {svc.id}, service_time: {svc.service_time}")
+                ('member_type', '=', 'policy')
+            ])
+            print("ACTIVATION DATE",self.member_activate_date)
+            print("EXPIRY DATE",self.member_expiry_date)
+            print("MEMBER SERVICES", service_member_ids.ids)
+            partner.policy_member_service_count= len(service_member_ids)
 
-            # 2. If activation/expiry dates exist, filter in Python
-            if partner.member_activate_date and partner.member_expiry_date:
-                print(f'partner date time:{partner.member_activate_date}:{partner.member_expiry_date}')
-                filtered_service_ids = []
+    # @api.depends('name', 'member_activate_date', 'member_expiry_date')
+    # def _compute_policy_member_service_count(self):
+    #     for partner in self:
+    #         # 1. Search with base domain, ignoring dates for now
+    #         service_domain = [
+    #             ('member_id', '=', partner.id),
+    #             ('type', '=', 'non_cash'),
+    #             ('member_type', '=', 'policy'),
+    #         ]
+    #         all_services = self.env['aaa.service'].search(service_domain)
+    #         print("ALL SERVICES:", all_services.ids)
+    #         # Print service_time for each record
+    #         print("SERVICE TIME OF ALL SERVICES for Partner:", partner.name)
+    #         for svc in all_services:
+    #             print(f"   Service ID: {svc.id}, service_time: {svc.service_time}")
+
+    #         # 2. If activation/expiry dates exist, filter in Python
+    #         if partner.member_activate_date and partner.member_expiry_date:
+    #             print(f'partner date time:{partner.member_activate_date}:{partner.member_expiry_date}')
+    #             filtered_service_ids = []
                 
-                for svc in all_services:
-                    print(f'service time in loop:{svc.service_time}')
-                    if svc.service_time:
-                        print(f'service time check:{svc.service_time.date()}:{partner.member_activate_date}: {partner.member_expiry_date}')
-                        date_string = svc.service_time.strftime("%Y-%m-%d")
-                        activate_string = partner.member_activate_date.strftime("%Y-%m-%d")
-                        expiry_string = partner.member_expiry_date.strftime("%Y-%m-%d")
-                        print(f"date_string:{date_string}:{activate_string}:{expiry_string}")
-                        if date_string >= activate_string and date_string<= expiry_string:
-                            print('filter time date',svc.service_time)
-                            filtered_service_ids.append(svc.id)
+    #             for svc in all_services:
+    #                 print(f'service time in loop:{svc.service_time}')
+    #                 if svc.service_time:
+    #                     print(f'service time check:{svc.service_time.date()}:{partner.member_activate_date}: {partner.member_expiry_date}')
+    #                     date_string = svc.service_time.strftime("%Y-%m-%d")
+    #                     activate_string = partner.member_activate_date.strftime("%Y-%m-%d")
+    #                     expiry_string = partner.member_expiry_date.strftime("%Y-%m-%d")
+    #                     print(f"date_string:{date_string}:{activate_string}:{expiry_string}")
+    #                     if date_string >= activate_string and date_string<= expiry_string:
+    #                         print('filter time date',svc.service_time)
+    #                         filtered_service_ids.append(svc.id)
 
-                # Create a new recordset from the filtered IDs
-                filtered_services = self.env['aaa.service'].browse(filtered_service_ids)
-            else:
-                filtered_services = all_services
+    #             # Create a new recordset from the filtered IDs
+    #             filtered_services = self.env['aaa.service'].browse(filtered_service_ids)
+    #         else:
+    #             filtered_services = all_services
 
-            # 3. Assign the filtered count
-            partner.policy_member_service_count = len(filtered_services)
+    #         # 3. Assign the filtered count
+    #         partner.policy_member_service_count = len(filtered_services)
             
-            # Debug prints
-            print("ACTIVATION DATE:", partner.member_activate_date)
-            print("EXPIRY DATE:", partner.member_expiry_date)
-            # print("ALL SERVICES:", all_services.ids)
-            print("FILTERED SERVICES:", filtered_services.ids)
+    #         # Debug prints
+    #         print("ACTIVATION DATE:", partner.member_activate_date)
+    #         print("EXPIRY DATE:", partner.member_expiry_date)
+    #         # print("ALL SERVICES:", all_services.ids)
+    #         print("FILTERED SERVICES:", filtered_services.ids)
 
     
     def action_view_policy_service(self):
@@ -416,50 +416,92 @@ class ResPartnerMembers(models.Model):
                     (self.env.ref('customer.call_center_service_form').id, 'form')],
         }
     
-    # @api.depends('name')
-    # def _compute_policy_member_cash_service_count(self):
-    #     for cash in self:
-    #         cash_service_ids = self.env['aaa.service'].search([
-    #             ('member_id', '=', self.id),
-    #             ('type', '=', 'cash'),
-    #             ('member_type', '=', 'policy')
-    #         ])
-    #         print("CASH SERVICES", cash_service_ids.ids)
-    #         cash.policy_member_cash_service_count= len(cash_service_ids)
-
     @api.depends('name')
     def _compute_policy_member_cash_service_count(self):
         for cash in self:
-            if cash.member_activate_date:
-                activate_date = cash.member_activate_date
-            else:
-                activate_date = cash.member_expiry_date - timedelta(days=395)
-            
             cash_service_ids = self.env['aaa.service'].search([
-                ('member_id', '=', cash.id),
+                ('member_id', '=', self.id),
                 ('type', '=', 'cash'),
-                ('member_type', '=', 'policy'),
-                ('service_time', '>=', activate_date),
-                ('service_time', '<=', cash.member_expiry_date)
+                ('member_type', '=', 'policy')
             ])
             print("CASH SERVICES", cash_service_ids.ids)
-            cash.policy_member_cash_service_count = len(cash_service_ids)
+            cash.policy_member_cash_service_count= len(cash_service_ids)
+
+    # @api.depends('name')
+    # def _compute_policy_member_cash_service_count(self):
+    #     for cash in self:
+    #         if cash.member_activate_date:
+    #             activate_date = cash.member_activate_date
+    #         elif cash.member_expiry_date and isinstance(cash.member_expiry_date, date):
+    #             activate_date = cash.member_expiry_date - timedelta(days=395)
+    #         else:
+    #             # If no valid date is found, skip this record to avoid errors
+    #             continue
+
+    #         if isinstance(activate_date, date) and isinstance(cash.member_expiry_date, date):
+    #             cash_service_ids = self.env['aaa.service'].search([
+    #                 ('member_id', '=', cash.id),
+    #                 ('type', '=', 'cash'),
+    #                 ('member_type', '=', 'policy'),
+    #                 ('service_time', '>=', activate_date),
+    #                 ('service_time', '<=', cash.member_expiry_date)
+    #             ])
+    #             print("CASH SERVICES", cash_service_ids.ids)
+    #             cash.policy_member_cash_service_count = len(cash_service_ids)
+    #         else:
+    #             # Optionally handle or log cases where dates are invalid
+    #             cash.policy_member_cash_service_count = 0
  
-    def action_view_cash_service(self):
+    # def action_view_cash_service(self):
          
-         return {
+    #      return {
+    #         'name': 'Services',
+    #         'type': 'ir.actions.act_window',
+    #         'res_model': 'aaa.service',
+    #         'view_mode': 'tree,form',
+    #         'domain': [('member_id', '=', self.id), ('member_type','=','policy'), ('type', '=', 'cash')],
+    #         'context': {
+    #             'from_res_partner_member_form': True,
+    #             'default_customer_id': self.parent_customer_id,
+    #             'default_member_id': self.id,  # Pre-select the parent customer
+    #         },
+    #         'views': [(self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
+    #                 (self.env.ref('customer.call_center_service_form').id, 'form')],
+    #     }
+    def action_view_cash_service(self):
+        activate_date = None
+        if self.member_activate_date:
+            activate_date = self.member_activate_date
+        elif self.member_expiry_date and isinstance(self.member_expiry_date, date):
+            activate_date = self.member_expiry_date - timedelta(days=395)
+
+        domain = [
+            ('member_id', '=', self.id),
+            ('member_type', '=', 'policy'),
+            ('type', '=', 'cash')
+        ]
+
+        if isinstance(activate_date, date) and isinstance(self.member_expiry_date, date):
+            domain.extend([
+                ('service_time', '>=', activate_date),
+                ('service_time', '<=', self.member_expiry_date)
+            ])
+
+        return {
             'name': 'Services',
             'type': 'ir.actions.act_window',
             'res_model': 'aaa.service',
             'view_mode': 'tree,form',
-            'domain': [('member_id', '=', self.id), ('member_type','=','policy'), ('type', '=', 'cash')],
+            'domain': domain,
             'context': {
                 'from_res_partner_member_form': True,
                 'default_customer_id': self.parent_customer_id,
                 'default_member_id': self.id,  # Pre-select the parent customer
             },
-            'views': [(self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
-                    (self.env.ref('customer.call_center_service_form').id, 'form')],
+            'views': [
+                (self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
+                (self.env.ref('customer.call_center_service_form').id, 'form')
+            ],
         }
     
     @api.depends('name')

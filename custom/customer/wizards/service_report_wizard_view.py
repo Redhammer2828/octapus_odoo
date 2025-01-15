@@ -139,7 +139,9 @@ class ServiceReportWizard(models.TransientModel):
         """Calculate the amount for a membership record."""
         amount = 0.0
         if record.member_type == 'credit':
-            if record.from_location and record.to_location and record.product_id:
+            if record.from_location and record.to_location and record.product_id and record.customer_id:
+                pricelist_id = record.customer_id.property_product_pricelist
+                print("PRICELIST ID",pricelist_id)
                 service_rate = self.env['service.rate'].search([
                     ('product_pricelist_item_id.product_tmpl_id', '=', record.product_id.id),
                     ('from_loc_id', '=', record.from_location.id),
