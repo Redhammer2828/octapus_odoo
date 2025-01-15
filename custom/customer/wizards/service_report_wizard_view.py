@@ -135,11 +135,14 @@ class ServiceReportWizard(models.TransientModel):
         service_records = self.env['aaa.service'].search(domain)
         _logger.debug("Fetched %d records from the aaa.service model", len(service_records))
         return service_records
+    
     def _calculate_amount(self, record):
         """Calculate the amount for a membership record."""
         amount = 0.0
         if record.member_type == 'credit':
-            if record.from_location and record.to_location and record.product_id:
+            if record.from_location and record.to_location and record.product_id and record.customer_id:
+                pricelist_id = record.customer_id.property_product_pricelist
+                print("PRICELIST ID",pricelist_id)
                 service_rate = self.env['service.rate'].search([
                     ('product_pricelist_item_id.product_tmpl_id', '=', record.product_id.id),
                     ('from_loc_id', '=', record.from_location.id),
