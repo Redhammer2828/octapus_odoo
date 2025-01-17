@@ -293,6 +293,8 @@
                                 </group>
                                 <group string="Purchase" name="purchase" priority="2">
                                     <field name="is_vendor" />
+                                    <field name="property_product_pricelist_id_vendor"
+                                           options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
                                 </group>
                                 <group name="misc" string="Misc">
                                     <field name="company_registry" invisible="parent_id" />
@@ -386,7 +388,7 @@
     <menuitem
         id="menu_membership_root"
         name="Membership" />
-    
+
     <menuitem
         id="menu_customer"
         name="Customers"

@@ -23,7 +23,7 @@
                             <field name="is_company" />
                             <field name="is_vendor" invisible="1" />
                             <field name="is_driver_available" />
-                            
+
                             <field name="name" string="Name" class=""/>
                             <field name="parent_customer_id" string="Company" />
                         </group>
@@ -66,6 +66,9 @@
                                 <field name="title" string="Title" invisible="is_company == True" />
                                 <field name="lang" string="Language" />
                                 <field name="vendor_rating" widget="priority" />
+                                <field name="property_product_pricelist_id_vendor"
+                                       options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
+                                />
                             </group>
                         </group>
 
@@ -73,7 +76,9 @@
                             <page string="Contacts &amp; Addresses"></page>
                             <page string="Service Rates"></page>
                             <page string="Internal Notes"></page>
-                            <page string="Sales &amp; Purchases"></page>
+                            <page string="Sales &amp; Purchases">
+
+                            </page>
                             <page string="Accounting"></page>
                         </notebook>
                     </sheet>
