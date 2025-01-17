@@ -12,6 +12,7 @@ load_dotenv()
 _logger = logging.getLogger(__name__)
 base_url = os.getenv("BASE_URL")
 # J PUSH
+# J PUSH
 class AAAService(models.Model):
     _name = 'aaa.service'
     _description = 'AAA Service'
@@ -1496,22 +1497,98 @@ class AAAService(models.Model):
     #         'type': 'ir.actions.client',
     #         'tag': 'reload',
     #     }
+
+    # def action_new_change(self):
+    #     """Update existing service record, change state, and store previous names of fields."""
+
+    #     for service in self:
+    #         print("product_name:", service.product_id.name)
+    #         print("service_type", service.product_id.service_based)
+    #         print("SERVICE SEQUENCE NO:", service.name)       
+    #         # Set up the API call
+    #         url = f"{base_url}/carhire-order/order/service/consumers/orders/update/order-service-change"
+    #         headers = {'Content-Type': 'application/json'}
+
+    #         # Map the service_based value to the appropriate API parameter
+    #         service_based_mapping = {
+    #             'location': 'LOCATION_BASED',
+    #             'distance': 'DISTANCE_BASED'
+    #         }
+    #         new_service_type = service_based_mapping.get(service.product_id.service_based, service.product_id.service_based)
+
+    #         payload = {
+    #             "erp_order_number": service.name,  
+    #             "new_service_name": service.product_id.name,
+    #             "new_service_type": new_service_type
+    #         }
+
+    #         # Make the API call
+    #         try:
+    #             response = requests.put(url, json=payload, headers=headers)
+    #             response.raise_for_status()  # Raises an HTTPError for bad responses
+    #             print("API RESPONSE:", response.json())
+    #         except requests.exceptions.RequestException as e:
+    #             print("API REQUEST FAILED:", str(e))
+    #             # raise UserError(_("API request failed: %s") % str(e))
+
+    #         # Update the service record
+    #         try:
+    #             service.write({
+    #                 'state': 'initiate',  # Update the state to 'initiate'
+    #                 'customer_id': service.customer_id.id,
+    #                 'sequence_id': service.sequence_id.id,
+    #                 'member_id': service.member_id.id,
+    #                 'vehicle_type': service.vehicle_type,
+    #                 'vehicle_model': service.vehicle_model,
+    #                 'vehicle_plate': service.vehicle_plate,
+    #                 'vehicle_chasis_no': service.vehicle_chasis_no,
+    #                 'policy_no': service.policy_no,
+    #                 'member_type': service.member_type,
+    #                 'type': service.type,
+    #                 'card_type': service.card_type,
+    #                 'product_id': service.product_id.id,
+    #                 'selected_from_location': service.selected_from_location.id,
+    #                 'selected_to_location': service.selected_to_location.id,
+    #                 'from_location': service.from_location.id,
+    #                 'to_location': service.to_location.id
+    #             })
+    #             print("SERVICE UPDATED, NEW STATE:", service.state)
+    #         except Exception as e:
+    #             print("ERROR UPDATING SERVICE:", str(e))
+    #             # raise UserError(_("Failed to update the service: %s") % str(e))
+
+    #     # Optionally, refresh the view to show changes
+    #     return {
+    #         'type': 'ir.actions.client',
+    #         'tag': 'reload',
+    #     }
     def action_new_change(self):
         """Update existing service record, change state, and store previous names of fields."""
- 
+
         for service in self:
-            print("product_nameee:", service.product_id.name)
-            print("service_typeeeee", service.product_id.service_based)
-            print("SERVICE SEQUENCE NO:", service.name)      
+            print("product_name:", service.product_id.name)
+            print("service_type", service.product_id.service_based)
+            print("SERVICE SEQUENCE NO:", service.name)       
             # Set up the API call
             url = f"{base_url}/carhire-order/order/service/consumers/orders/update/order-service-change"
             headers = {'Content-Type': 'application/json'}
+
+            # Map the service_based value to the appropriate API parameter
+            service_based_mapping = {
+                'location': 'LOCATION_BASED',
+                'distance': 'DISTANCE_BASED'
+            }
+            new_service_type = service_based_mapping.get(service.product_id.service_based, service.product_id.service_based)
+
             payload = {
                 "erp_order_number": service.name,  
                 "new_service_name": service.product_id.name,
-                "new_service_type": service.product_id.service_based
+                "new_service_type": new_service_type
             }
- 
+
+            # Print payload values for verification before making the API call
+            print("Payload for API call:", payload)
+
             # Make the API call
             try:
                 response = requests.put(url, json=payload, headers=headers)
@@ -1520,7 +1597,7 @@ class AAAService(models.Model):
             except requests.exceptions.RequestException as e:
                 print("API REQUEST FAILED:", str(e))
                 # raise UserError(_("API request failed: %s") % str(e))
- 
+
             # Update the service record
             try:
                 service.write({
@@ -1545,8 +1622,8 @@ class AAAService(models.Model):
                 print("SERVICE UPDATED, NEW STATE:", service.state)
             except Exception as e:
                 print("ERROR UPDATING SERVICE:", str(e))
-                raise UserError(_("Failed to update the service: %s") % str(e))
- 
+                # raise UserError(_("Failed to update the service: %s") % str(e))
+
         # Optionally, refresh the view to show changes
         return {
             'type': 'ir.actions.client',
