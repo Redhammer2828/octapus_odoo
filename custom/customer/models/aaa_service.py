@@ -1590,12 +1590,13 @@ class AAAService(models.Model):
             print("Payload for API call:", payload)
 
             # Make the API call
-            try:
-                response = requests.put(url, json=payload, headers=headers)
-                response.raise_for_status()  # Raises an HTTPError for bad responses
-                print("API RESPONSE:", response.json())
-            except requests.exceptions.RequestException as e:
-                print("API REQUEST FAILED:", str(e))
+        
+            response = requests.put(url, json=payload, headers=headers)
+            if response.status == 200: 
+                    print('change request success')
+            else:
+                    print('change request failed')
+    
                 # raise UserError(_("API request failed: %s") % str(e))
 
             # Update the service record
