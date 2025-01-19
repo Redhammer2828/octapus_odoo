@@ -128,7 +128,6 @@ class ResPartnerMembers(models.Model):
 
     @api.model
     def create(self, vals):
-
         # Dynamically set the created_by field if not set already
         if not vals.get('create_uid'):
             vals['create_uid'] = self.env.user.id
@@ -138,7 +137,6 @@ class ResPartnerMembers(models.Model):
             vals['credit_member_ok'] = False
             vals['adhoc_member'] = False
             vals['member_type'] = 'policy'
-
 
         if self.env.context.get('from_res_partner_credit_member_form'):
             vals['is_customer'] = True
@@ -157,7 +155,28 @@ class ResPartnerMembers(models.Model):
 
         new_partner = super(ResPartnerMembers, self).create(vals)
         return new_partner
+    
+    @api.model
+    def fields_get(self, allfields=None, attributes=None):
+        fields = super(ResPartnerMembers, self).fields_get(allfields, attributes)
+        is_it_user = self.user_in_group('IT Group')  # Check once and use for multiple fields
 
+        # Adjust readonly property for member_partner_category_id
+        if 'member_partner_category_id' in fields:
+            fields['member_partner_category_id']['readonly'] = not is_it_user
+
+        # Adjust readonly property for product_template_id
+        if 'product_template_id' in fields:
+            fields['product_template_id']['readonly'] = not is_it_user
+
+        return fields
+
+    def user_in_group(self, group_name):
+        """Helper method to check if the current user is in a specified group by name."""
+        Group = self.env['res.groups']
+        group = Group.search([('name', '=', group_name)], limit=1)
+        return group in self.env.user.groups_id
+    
     # USER BASED BUTTON HIDING
     @api.depends('create_user')
     def _compute_is_agent_user(self):
@@ -349,6 +368,8 @@ class ResPartnerMembers(models.Model):
             service_member_ids = self.env['aaa.service'].search([
                 ('member_id', '=', self.id),
                 ('type', '=', 'non_cash'),
+                ('service_time', '>=', self.member_activate_date),
+                ('service_time', '<=', self.member_expiry_date),
                 ('member_type', '=', 'policy')
             ])
             print("ACTIVATION DATE",self.member_activate_date)
@@ -364,7 +385,8 @@ class ResPartnerMembers(models.Model):
             'type': 'ir.actions.act_window',
             'res_model': 'aaa.service',
             'view_mode': 'tree,form',
-            'domain': [('member_id', '=', self.id), ('member_type','=','policy'), ('type', '=', 'non_cash')],
+            'domain': [('member_id', '=', self.id), ('member_type','=','policy'),('service_time', '>=', self.member_activate_date),
+                       ('service_time', '<=', self.member_expiry_date),('type', '=', 'non_cash')],
             'context': {
                 'from_res_partner_member_form': True,
                 'default_customer_id': self.parent_customer_id,
@@ -466,6 +488,7 @@ class ResPartnerMembers(models.Model):
             'name': self.name,
             'parent_customer_id': self.parent_customer_id.id,
             'old_membership_number': self.old_membership_number,
+            'ref_num': self.ref_num,
             'member_partner_category_id': self.member_partner_category_id.id,
             'product_template_id' : self.product_template_id.id,
             'member_type': self.member_type,
@@ -504,6 +527,7 @@ class ResPartnerMembers(models.Model):
             'name': self.name,
             'parent_customer_id': self.parent_customer_id.id,
             'old_membership_number': self.old_membership_number,
+            'ref_num': self.ref_num,
             'member_partner_category_id': self.member_partner_category_id.id,
             'product_template_id' : self.product_template_id.id,
             'member_type': self.member_type,
@@ -735,3 +759,5 @@ class ResPartnerMembers(models.Model):
         invoice_ref_date = fields.Date(string= "Invoice Date")
         card_type_id = fields.Many2one('card.type', string='Card Type')
         history_id = fields.Many2one('res.partner', string="Replaced Member")
+        ref_num = fields.Char(string='Membership Number')
+        

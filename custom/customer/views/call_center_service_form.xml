@@ -141,7 +141,7 @@
                                 <field name="driving_license" string="Driving License"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="claim_number" readonly="state == 'done'" />
-                                <field name="smarto" readonly="state in ['cancel', 'discard']" />
+                                <field name="smarto" readonly="state in ['cancel', 'discard']" widget="boolean_toggle" />
                                 <field name="smarto_id" readonly="state in ['cancel', 'discard']"
                                     invisible="smarto != True" required="smarto == True" />
                                 <field name="comments" string="Comments" />
@@ -281,6 +281,22 @@
                                 <field name="driver_num" string="Contact No"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']" />
+
+                                <!-- JAFZA SERVICE -->
+                                <field name="is_jafza_service" widget="boolean_toggle"/>
+                                <field name="jafza_provider_id" string="Provider"
+                                    invisible="state in ['draft', 'initiate']"
+                                    class="required_field" readonly="state in ['done', 'cancel']"
+                                    required="state == 'start'"
+                                    options="{'no_create': True, 'no_open': True}" />
+                                <field name="jafza_driver_id" invisible="is_driver_name_visible == True and is_jafza_service == False"
+                                    readonly="state in ['done', 'cancel']" class="required_field"
+                                    required="state == 'start'"
+                                    options="{'no_create': True, 'no_open': True}" />
+                                <field name="jafza_driver_name"
+                                    invisible="is_driver_name_visible == True and is_jafza_service == False" 
+                                    readonly="state in ['done', 'cancel']" />
+                                <field name="is_aditional_duty" widget="boolean_toggle"/>
                             </group>
                             <group string="SUMMARY"
                                 invisible="state in ['draft', 'initiate', 'dispatch']"
