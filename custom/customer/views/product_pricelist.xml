@@ -10,6 +10,31 @@
                 <xpath expr="//field[@name='currency_id']" position="after">
                     <field name="country_group_ids" />
                     <field name="customer_type"/>
+                   <field name="is_vendor"
+                       string="Vendor price list"
+                       widget="boolean_toggle"
+                       context="{'set_is_vendor': True}"/>
+                    <field name="is_customer"
+                       string="customer price list"
+                       widget="boolean_toggle"
+                       context="{'set_is_vendor': True}"/>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="view_product_pricelist_tree_inherited" model="ir.ui.view">
+            <field name="name">product.product_pricelist.tree.inherit</field>
+            <field name="model">product.pricelist</field>
+            <field name="inherit_id" ref="product.product_pricelist_view_tree"/> <!-- Reference the existing tree view -->
+            <field name="arch" type="xml">
+                <!-- Insert the new fields after the currency_id field -->
+                <xpath expr="//field[@name='currency_id']" position="after">
+                    <field name="is_vendor"
+                           string="Vendor Price List"
+                           widget="boolean_toggle" />
+                    <field name="is_customer"
+                           string="Customer Price List"
+                           widget="boolean_toggle" />
                 </xpath>
             </field>
         </record>

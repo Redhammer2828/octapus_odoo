@@ -10,20 +10,26 @@ class ResPartnerCustomer(models.Model):
 
     member_count = fields.Integer(compute='_compute_member_count', string='Member Count')
     customer_service_count = fields.Integer(
-        compute='_compute_service_count', 
-        string="Service Count", 
+        compute='_compute_service_count',
+        string="Service Count",
         store=False
     )
 
     property_product_pricelist_id = fields.Many2one('product.pricelist', string='Price List')
 
+    property_product_pricelist_id_vendor = fields.Many2one(
+        'product.pricelist',
+        string='Vendor Pricelist',
+        domain="[('is_vendor', '=', True)]",
+    )
+
     customer = fields.Binary('customer')  #Field (Flag) for Members (is_customer)
-    
+
     #Page - Category
     customer_category_ids = fields.One2many('partner.category', 'partner_id', string='Customer Categories')
-    
+
     invoicing_policy = fields.Selection([ ('individual', 'Individual'),
-                                    ('consolidated', 'Consolidated') ], string='Invoicing Policy') 
+                                    ('consolidated', 'Consolidated') ], string='Invoicing Policy')
           # Set the default value here
     #Action for Member Button
     def action_view_member(self):
@@ -41,8 +47,8 @@ class ResPartnerCustomer(models.Model):
                     (self.env.ref('customer.res_partner_member_form').id, 'form')],
             # Add any other action parameters as needed
         }
-        
-    #For Calculating Count of Memnbers 
+
+    #For Calculating Count of Memnbers
     @api.depends('parent_customer_id')
     def _compute_member_count(self):
         for record in self:
@@ -76,7 +82,7 @@ class ResPartnerCustomer(models.Model):
             partner.customer_service_count = self.env['aaa.service'].search_count([
                 ('customer_id', '=', partner.id)
             ])
-    
+
     def waive_off_history(self):
         pass
 

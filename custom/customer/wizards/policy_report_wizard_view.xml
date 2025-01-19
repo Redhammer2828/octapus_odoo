@@ -7,13 +7,13 @@
             <form string="Policy Reports">
                 <group col="2">
                     <group string="Invoice Date">
-                        <field name="from_date" />
-                        <field name="to_date" />
-                        <!-- <field name="product_template_id" /> -->
+                        <field name="from_date" required="1"/>
+                        <field name="to_date" required="1" />
+                        <field name="product_template_id" />
                     </group>
                     <group>
                         <field name="customer_id" />
-                        <field name="member_type" />
+                        <field name="member_type" readonly="1"/>
                         <field name="sequence_id" />
                         <field name="type" />
                     </group>
