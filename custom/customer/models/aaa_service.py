@@ -52,6 +52,7 @@ class AAAService(models.Model):
     is_member_from_partner = fields.Boolean(string='Member from Partner', default=False)
     is_customer_from_partner = fields.Boolean(string='Customer from Partner', default=False)
     is_sequence_from_partner = fields.Boolean(string='Sequence from Partner', default=False)
+    
 
     membership_num = fields.Char('Membership Number')
     created_by = fields.Many2one(
@@ -199,6 +200,16 @@ class AAAService(models.Model):
         compute='_compute_dispatcher_from_history',
         store=True
     )
+# --------JAFZA SERVICE-----------------------------
+    is_jafza_service = fields.Boolean(string='Is Jafza Service', default=False)
+    is_aditional_duty = fields.Boolean(string='Is Aditional Duty', default=False)
+    jafza_provider_id = fields.Many2one('res.partner', string="Provider" ,domain=[('is_vendor', '=', True)])
+    jafza_driver_id = fields.Many2one(
+        'hr.employee',
+        string="Driver",
+        domain="[('job_id.name', '=', 'Driver')]"
+    )
+    jafza_driver_name = fields.Char(string="Driver Name")
 
     # # -----------LOCATION- API TESTINGs--------------------------------------------------
     
