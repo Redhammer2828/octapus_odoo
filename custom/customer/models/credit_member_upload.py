@@ -94,9 +94,7 @@ class CreditMemberUpload(models.Model):
             f"Updated Records: {updated_member_count} | Renewal Records: {renewal_member_count} | "
             f"Time to Process: {processing_time:.2f} seconds"
         )
-        
         self.state = 'validate'
-
 
     def check_member_details(self, member, member_line):
         excel_chassis_no = member_line.vehicle_chasis_no.strip().upper()
@@ -163,15 +161,12 @@ class CreditMemberUpload(models.Model):
 
     def apply_member_upload_wizard(self):
         import time  # Ensure time is imported for measuring execution time
-
         # Start measuring time
         start_time = time.time()
-
         # Get the dynamically imported data after validation
         validated_member_lines = self.upload_member_ids.filtered(
             lambda line: line.upload_member_status != 'rejection'
         )
-
         # Collect customer codes and card types upfront for 'new' members
         customer_codes = {line.customer_code for line in validated_member_lines if line.upload_member_status == 'new'}
         card_types = {line.card_type for line in validated_member_lines if line.upload_member_status == 'new'}
@@ -304,8 +299,7 @@ class CreditMemberUpload(models.Model):
             'view_id': self.env.ref('customer.view_credit_member_upload_line_tree').id,
             'domain': [('upload_file_id', '=', self.id), ('upload_member_status', '=', 'rejection')],
             'context': {'default_upload_file_id': self.id},
-        }
-        
+        }     
 # ------------------------------------------------------------------------------------
 class CreditMemberUploadLine(models.Model):
     _name = 'credit.member.upload.line'

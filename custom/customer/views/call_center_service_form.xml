@@ -141,7 +141,7 @@
                                 <field name="driving_license" string="Driving License"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="claim_number" readonly="state == 'done'" />
-                                <field name="smarto" readonly="state in ['cancel', 'discard']" />
+                                <field name="smarto" readonly="state in ['cancel', 'discard']" widget="boolean_toggle" />
                                 <field name="smarto_id" readonly="state in ['cancel', 'discard']"
                                     invisible="smarto != True" required="smarto == True" />
                                 <field name="comments" string="Comments" />
@@ -152,11 +152,11 @@
                             </group>
                             <group string="VEHICLE DETAILS" name="vehicle_details">
                                 <field name="vehicle_type" string="Vehicle Type"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start'] or (state == 'reach' and member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" />
                                 <field name="vehicle_model" string="Vehicle Model"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start'] or (state == 'reach' and member_type == 'policy') or (state in ('dispatch','start') and is_agent_user) " />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user) " />
                                 <field name="vehicle_plate" string="Vehicle Plate"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start'] or (state == 'reach' and member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']  or member_type == 'policy'" />
                                 <field name="policy_no" string="Policy No"
@@ -281,16 +281,27 @@
                                 <field name="driver_num" string="Contact No"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']" />
+
+                                <!-- JAFZA SERVICE -->
+                                <field name="is_jafza_service" widget="boolean_toggle"/>
+                                <field name="jafza_provider_id" string="Provider" 
+                                    invisible="state in ['draft', 'initiate'] or is_jafza_service == False"
+                                    readonly="state in ['done', 'cancel']"
+                                    options="{'no_create': True, 'no_open': True}" />
+                                <field name="jafza_driver_id" invisible="is_driver_name_visible == True and is_jafza_service == False"
+                                    readonly="state in ['done', 'cancel']"
+                                    options="{'no_create': True, 'no_open': True}" />
+                                <field name="jafza_driver_name"
+                                    invisible="is_driver_name_visible == True and is_jafza_service == False" 
+                                    readonly="state in ['done', 'cancel']" />
+                                <field name="is_aditional_duty" widget="boolean_toggle"/>
                             </group>
                             <group string="SUMMARY"
                                 invisible="state in ['draft', 'initiate', 'dispatch']"
                                 readonly="state in ['done', 'cancel']">
-                                <!-- <field name="credit_proforma_number" string="Trip Sheet Number"
-                                invisible="state in ['draft', 'initiate', 'dispatch']"
-                                required="state in ['reach']" readonly="state in ['done']" /> -->
                                 <field name="credit_proforma_number" string="Trip Sheet Number"
                                     invisible="state in ['draft', 'initiate', 'dispatch']"
-                                    required="state == 'done'" readonly="state in ['done']"
+                                    required="state in ['done', 'reach']" readonly="state in ['done']"
                                     class="required_field" />
                                 <field name="vendor_rating" widget="priority"
                                     string="Rate this service"

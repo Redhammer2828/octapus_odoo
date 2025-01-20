@@ -73,23 +73,23 @@ class ResPartnerMembers(models.Model):
         readonly=False
     )
     confirmed_by = fields.Many2one('res.users', string="Confirm By")
-    card_type_id = fields.Many2one('card.type', string='Card Type') #Created card.type model 
+    card_type_id = fields.Many2one('card.type', string='Card Type') #Created card.type model
     member_type = fields.Selection([ ('policy', 'Policy Member'),
                                     ('credit', 'Credit Member'),
-                                    ('adhoc', 'Ad-hoc Member') ], string='Member Type')   
+                                    ('adhoc', 'Ad-hoc Member') ], string='Member Type')
     adhoc_member = fields.Boolean(string='Adhoc Member')
     credit_member_ok = fields.Boolean(string='Credit Member OK')
     product_template_id = fields.Many2one('product.template', string="Package")
     service_ids = fields.Many2many('product.product', string="Services", widget="many2many_tags", options="{'no_create_edit': True}" ,compute='_compute_service_ids', store=True)
     member_partner_category_id = fields.Many2one('partner.category',string='Category',domain="[('partner_id', '=', parent_customer_id),('member_type', '=', member_type)]")
     #------------------------------------------------------------
-    member_expired = fields.Boolean(string="Member Expired", compute='_compute_member_expired', store=True)
+    member_expired = fields.Boolean(string="Member Expired", compute='_compute_member_expired')
     policy_member_service_count = fields.Integer(string="Policy Services Count", compute='_compute_policy_member_service_count')
     policy_member_cash_service_count = fields.Integer(string="Policy Cash Services Count", compute='_compute_policy_member_cash_service_count')
     policy_member_credit_service_count = fields.Integer(string="Policy Credit Services Count" ,compute='_compute_policy_member_credit_service_count')
     credit_member_service_count = fields.Integer(string="Credit Services", compute='_compute_credit_member_service_count')
-    adhoc_member_service_count = fields.Integer(string="Adhoc Services Count", compute='_compute_adhoc_member_service_count')                                                                                        
-    # ------------------------------------------------------------    
+    adhoc_member_service_count = fields.Integer(string="Adhoc Services Count", compute='_compute_adhoc_member_service_count')
+    # ------------------------------------------------------------
     membership_state = fields.Selection([
     ('temp', "Temporary"),
     ('confirm', "Confirmed"),
@@ -125,10 +125,9 @@ class ResPartnerMembers(models.Model):
                 "You cannot delete this record"
             )
         return super(ResPartnerMembers, self).unlink()
-    
+
     @api.model
     def create(self, vals):
-
         # Dynamically set the created_by field if not set already
         if not vals.get('create_uid'):
             vals['create_uid'] = self.env.user.id
@@ -138,7 +137,6 @@ class ResPartnerMembers(models.Model):
             vals['credit_member_ok'] = False
             vals['adhoc_member'] = False
             vals['member_type'] = 'policy'
-        
 
         if self.env.context.get('from_res_partner_credit_member_form'):
             vals['is_customer'] = True
@@ -151,12 +149,33 @@ class ResPartnerMembers(models.Model):
             vals['credit_member_ok'] = False
             vals['adhoc_member'] = True
             vals['member_type'] = 'adhoc'
-        
+
         if not vals.get('create_uid'):
             vals['create_uid'] = self.env.user.id
-        
+
         new_partner = super(ResPartnerMembers, self).create(vals)
         return new_partner
+    
+    @api.model
+    def fields_get(self, allfields=None, attributes=None):
+        fields = super(ResPartnerMembers, self).fields_get(allfields, attributes)
+        is_it_user = self.user_in_group('IT Group')  # Check once and use for multiple fields
+
+        # Adjust readonly property for member_partner_category_id
+        if 'member_partner_category_id' in fields:
+            fields['member_partner_category_id']['readonly'] = not is_it_user
+
+        # Adjust readonly property for product_template_id
+        if 'product_template_id' in fields:
+            fields['product_template_id']['readonly'] = not is_it_user
+
+        return fields
+
+    def user_in_group(self, group_name):
+        """Helper method to check if the current user is in a specified group by name."""
+        Group = self.env['res.groups']
+        group = Group.search([('name', '=', group_name)], limit=1)
+        return group in self.env.user.groups_id
     
     # USER BASED BUTTON HIDING
     @api.depends('create_user')
@@ -169,7 +188,7 @@ class ResPartnerMembers(models.Model):
                 # Check if `created_by` belongs to the 'new_agents' group
                 user_groups = record.create_user.groups_id
                 record.is_agent_user = any(group.name == 'Agent' for group in user_groups)
- 
+
     @api.depends('create_user')
     def _compute_is_dispatch_user(self):
         """Compute is_dispatch_user based on the ccreate_uid user's group membership."""
@@ -180,7 +199,7 @@ class ResPartnerMembers(models.Model):
                 # Check if `created_by` belongs to the 'new_agents' group
                 user_groups = record.create_user.groups_id
                 record.is_dispatch_user = any(group.name == 'Dispatcher' for group in user_groups)
- 
+
     @api.depends('create_user')
     def _compute_is_it_user(self):
         """Compute is_it_user based on the ccreate_uid user's group membership."""
@@ -191,14 +210,14 @@ class ResPartnerMembers(models.Model):
                 # Check if `created_by` belongs to the 'new_agents' group
                 user_groups = record.create_user.groups_id
                 record.is_it_user = any(group.name == 'IT Group' for group in user_groups)
-  
+
     @api.depends('membership_state')
     def _compute_created_by(self):
         """Dynamically update create_uid when the record is in specified states."""
         for record in self:
             if record.membership_state in {'temp', 'confirm', 'cancel'} and record.create_user != self.env.user:
                 record.create_user = self.env.user
-    
+
     @api.onchange('membership_state')
     def _onchange_membership_state(self):
         """Automatically set the current user when membership is confirmed."""
@@ -221,7 +240,7 @@ class ResPartnerMembers(models.Model):
             for record in self:
                 record.confirmed_by = self.env.user.id
                 company = record.parent_customer_id  # Get the company directly
-            
+
                 if company:
                     # Step 1: Check if a vehicle with the same chassis number exists within the same company, excluding the current record
                     existing_members = self.env['res.partner'].search([
@@ -231,16 +250,16 @@ class ResPartnerMembers(models.Model):
                         ('id', '!=', record.id)  # Exclude the current record from the search
                     ])
                     print("Existing members", existing_members)
-                
+
                     if existing_members:
                         for existing_member in existing_members:
                             existing_expiry_date = existing_member.member_expiry_date
                             current_expiry_date = record.member_expiry_date
-    
+
                             # Log for debugging purposes
                             print("Existing member expiry date", existing_expiry_date)
                             print("COMPANY",company)
-    
+
                             # Handle case where the existing member's expiry date has passed
                             if existing_expiry_date and existing_expiry_date < date.today():
                                 # Expired policy: Cancel the existing membership and confirm the new one
@@ -253,58 +272,58 @@ class ResPartnerMembers(models.Model):
                                     raise ValidationError(_("An active policy with the same chassis number under the selected company already exists!"))
                                 else:
                                 # If the same name and chassis number exist, handle expiry date difference
-    
+
                                         current_expiry_date = record.member_expiry_date  # Ensure that you fetch the current record's expiry date
                                         existing_expiry_date = existing_member.member_expiry_date
-    
+
                                         # **New validation check**: If the expiry dates are the same, raise an error
                                         if current_expiry_date == existing_expiry_date:
                                             raise ValidationError(_("A record with the same chassis number and expiry date already exists!"))
-    
+
                                         # Calculate the difference in expiry dates
                                         date_difference = (current_expiry_date - existing_expiry_date).days
-    
+
                                         if date_difference >= 365:
                                             # If the difference is greater than or equal to 365 days, suggest renewal
                                             raise ValidationError(_("An already existing record has an expiry difference of >= 365 days. Please proceed with membership renewal."))
                                         elif date_difference < 365:
                                             # If the difference is less than 365 days, suggest extension
                                             raise ValidationError(_("The same record exists with an expiry date difference of < 365 days. Please proceed with membership extension."))
-                    
+
                         # If none of the existing members are active (i.e., all expired and cancelled), confirm the current record
                         record.membership_state = 'confirm'
-    
+
             # Step 2: Check if the same chassis number exists under another company
             chassis_in_another_company = self.env['res.partner'].search([
                 ('vehicle_chasis_no', '=', record.vehicle_chasis_no),
                 ('parent_customer_id', '!=', company.id),  # Check if the chassis number exists under a different company
                 ('membership_state', '=', 'confirm')
             ])
-    
+
             if chassis_in_another_company:
                 # Loop through each record that has the same chassis number in another company
                 for other_member in chassis_in_another_company:
                     another_company_expiry_date = other_member.member_expiry_date
                     print("Another company expiry date", another_company_expiry_date)
-    
+
                     if another_company_expiry_date and another_company_expiry_date >= date.today():
                         # If the existing record's expiry date is greater than or equal to the current date, raise an error
                         raise ValidationError(_("The same chassis number exists under another company with an active policy!"))
                     else:
                         # If the policy is expired, you can handle it as needed (e.g., cancel it)
                         other_member.membership_state = 'cancel'
-            
+
                 # If all the other company's records have expired policies, confirm the current record
                 record.membership_state = 'confirm'
-    
+
             # Step 3: Check that the expiry date is greater than the activation date if both are set
             if record.member_activate_date and record.member_expiry_date:
                 if record.member_expiry_date <= record.member_activate_date:
                     raise ValidationError(_("The expiry date should be greater than the activation date."))
-    
+
             # Step 4: Confirm membership if all validations pass
             record.membership_state = 'confirm'
-    
+
     def copy(self, default=None):
         if default is None:
             default = {}
@@ -319,31 +338,37 @@ class ResPartnerMembers(models.Model):
             'membership_state': 'temp',
             'is_duplicated': True,
         })
-
         # Call the super method to create the duplicated record
         return super(ResPartnerMembers, self).copy(default)
-    
+
     @api.depends('membership_state')
     def _compute_is_readonly(self):
         for record in self:
             record.is_readonly = record.membership_state == 'confirm'
-     
+
     is_readonly = fields.Boolean(string='Read-Only', compute='_compute_is_readonly', store=True)
-   
-    @api.depends('member_expiry_date')
+
+    @api.depends('member_expiry_date','name')
     def _compute_member_expired(self):
         for partner in self:
+            print('partner_member expiry status',partner)
+            print('member expiry date',partner.member_expiry_date)
+            print('todays date for expiry check',fields.Date.today())
             if partner.member_expiry_date and partner.member_expiry_date < fields.Date.today():
                 partner.member_expired = True
+                print('inside expiry check')
             else:
+                print('iside expiry else')
                 partner.member_expired = False
-#-------------------------------COUNT CALCULATION---START--------------------------------------------------   
+#-------------------------------COUNT CALCULATION---START--------------------------------------------------
     @api.depends('name')
     def _compute_policy_member_service_count(self):
         for partner in self:
             service_member_ids = self.env['aaa.service'].search([
                 ('member_id', '=', self.id),
                 ('type', '=', 'non_cash'),
+                ('service_time', '>=', self.member_activate_date),
+                ('service_time', '<=', self.member_expiry_date),
                 ('member_type', '=', 'policy')
             ])
             print("ACTIVATION DATE",self.member_activate_date)
@@ -351,15 +376,16 @@ class ResPartnerMembers(models.Model):
             print("MEMBER SERVICES", service_member_ids.ids)
             partner.policy_member_service_count= len(service_member_ids)
 
-    
+
     def action_view_policy_service(self):
-       
+
         return {
             'name': 'Services',
             'type': 'ir.actions.act_window',
             'res_model': 'aaa.service',
             'view_mode': 'tree,form',
-            'domain': [('member_id', '=', self.id), ('member_type','=','policy'), ('type', '=', 'non_cash')],
+            'domain': [('member_id', '=', self.id), ('member_type','=','policy'),('service_time', '>=', self.member_activate_date),
+                       ('service_time', '<=', self.member_expiry_date),('type', '=', 'non_cash')],
             'context': {
                 'from_res_partner_member_form': True,
                 'default_customer_id': self.parent_customer_id,
@@ -368,26 +394,29 @@ class ResPartnerMembers(models.Model):
             'views': [(self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
                     (self.env.ref('customer.call_center_service_form').id, 'form')],
         }
-    
+
     @api.depends('name')
     def _compute_policy_member_cash_service_count(self):
         for cash in self:
             cash_service_ids = self.env['aaa.service'].search([
                 ('member_id', '=', self.id),
+                ('service_time', '>=', self.member_activate_date),
+                ('service_time', '<=', self.member_expiry_date),
                 ('type', '=', 'cash'),
                 ('member_type', '=', 'policy')
             ])
             print("CASH SERVICES", cash_service_ids.ids)
             cash.policy_member_cash_service_count= len(cash_service_ids)
- 
+
     def action_view_cash_service(self):
-         
+
          return {
             'name': 'Services',
             'type': 'ir.actions.act_window',
             'res_model': 'aaa.service',
             'view_mode': 'tree,form',
-            'domain': [('member_id', '=', self.id), ('member_type','=','policy'), ('type', '=', 'cash')],
+            'domain': [('member_id', '=', self.id), ('member_type','=','policy'),('service_time', '>=', self.member_activate_date),
+                       ('service_time', '<=', self.member_expiry_date),('type', '=', 'cash')],
             'context': {
                 'from_res_partner_member_form': True,
                 'default_customer_id': self.parent_customer_id,
@@ -396,7 +425,7 @@ class ResPartnerMembers(models.Model):
             'views': [(self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
                     (self.env.ref('customer.call_center_service_form').id, 'form')],
         }
-    
+
     @api.depends('name')
     def _compute_credit_member_service_count(self):
         for partner in self:
@@ -407,9 +436,9 @@ class ResPartnerMembers(models.Model):
             ])
             print("MEMBER SERVICES", service_member_ids.ids)
             partner.credit_member_service_count= len(service_member_ids)
- 
+
     def action_view_credit_service(self):
-       
+
             return {
             'name': 'Credit Services',
             'type': 'ir.actions.act_window',
@@ -423,9 +452,8 @@ class ResPartnerMembers(models.Model):
             },
             'views': [(self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
                     (self.env.ref('customer.call_center_service_form').id, 'form')],
-         
         }
-   
+
     @api.depends('name')
     def _compute_adhoc_member_service_count(self):
         for partner in self:
@@ -436,9 +464,9 @@ class ResPartnerMembers(models.Model):
             ])
             print("MEMBER SERVICES", service_member_ids.ids)
             partner.adhoc_member_service_count= len(service_member_ids)
- 
+
     def action_view_adhoc_service(self):
-       
+
             return {
             'name': 'Adhoc Services',
             'type': 'ir.actions.act_window',
@@ -452,15 +480,16 @@ class ResPartnerMembers(models.Model):
             },
             'views': [(self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
                     (self.env.ref('customer.call_center_service_form').id, 'form')],
-         
+
         }
-#-------------------------------COUNT CALCULATION---END--------------------------------------------------   
+#-------------------------------COUNT CALCULATION---END--------------------------------------------------
 
     def action_membership_renewal(self):
         mem_renewal= self.env['membership.history'].create({
             'name': self.name,
             'parent_customer_id': self.parent_customer_id.id,
             'old_membership_number': self.old_membership_number,
+            'ref_num': self.ref_num,
             'member_partner_category_id': self.member_partner_category_id.id,
             'product_template_id' : self.product_template_id.id,
             'member_type': self.member_type,
@@ -473,7 +502,7 @@ class ResPartnerMembers(models.Model):
             'invoice_ref_date': self.invoice_ref_date,
             'card_type_id': self.card_type_id.id,
             'history_id': self.id
-            
+
         })
         view_id = self.env.ref('customer.membership_renewal_wizard_form').id
         return {
@@ -493,12 +522,13 @@ class ResPartnerMembers(models.Model):
                 'active_model': self._name,
             }
         }
-        
+
     def action_membership_extension(self):
         mem_extension= self.env['membership.history'].create({
             'name': self.name,
             'parent_customer_id': self.parent_customer_id.id,
             'old_membership_number': self.old_membership_number,
+            'ref_num': self.ref_num,
             'member_partner_category_id': self.member_partner_category_id.id,
             'product_template_id' : self.product_template_id.id,
             'member_type': self.member_type,
@@ -511,7 +541,7 @@ class ResPartnerMembers(models.Model):
             'invoice_ref_date': self.invoice_ref_date,
             'card_type_id': self.card_type_id.id,
             'history_id': self.id
-            
+
         })
         view_id = self.env.ref('customer.membership_extension_wizard_form').id
         return {
@@ -546,18 +576,18 @@ class ResPartnerMembers(models.Model):
 
     def action_create_service(self):
         view_id = self.env.ref('customer.call_center_service_form').id
- 
+
         vehicle_model = self.env['member.vehicle.type'].search([('name', '=', self.vehicle_model)], limit=1)
         print("VEHICLE_MODEL:", self.vehicle_model)
         print("VEHICLE_RECORD:", vehicle_model)
- 
+
         card_type = self.env['card.type'].browse(self.card_type_id.id)
         card_type_name = card_type.name
- 
+
         # Fetch the res.partner record directly by name
         partner = self.env['res.partner'].search([('name', '=', self.name)], limit=1)
         print("DEBUG: Partner fetched:", partner)
- 
+
         # Pre-create the aaa.service record with the fetched partner ID
         service_vals = {
             'customer_id': self.parent_customer_id.id,
@@ -579,10 +609,10 @@ class ResPartnerMembers(models.Model):
             'is_customer_from_partner': bool(self.parent_customer_id),
             'is_sequence_from_partner': bool(self.member_partner_category_id),
             }
- 
+
         # Create the service record directly
         service_record = self.env['aaa.service'].create(service_vals)
- 
+
         # Return the form view for the newly created record
         return {
             'name': 'Service Policy',
@@ -592,10 +622,10 @@ class ResPartnerMembers(models.Model):
             'res_id': service_record.id,  # Open the newly created record
             'view_id': view_id,
         }
-    
+
     def action_create_enquiry(self):
         view_id = self.env.ref('customer.call_center_enquiry_view_form').id
- 
+
         # Fetch the service IDs from res.partner
         member = self.env['res.partner'].browse(self.id)
         service_ids = member.service_ids.ids  # Assuming 'service_ids' is a One2many or Many2many field in res.partner
@@ -622,7 +652,7 @@ class ResPartnerMembers(models.Model):
                 'domain_service_id': [('id', 'in', service_ids)],
             },
         }
-    
+
 
     def action_policy_service_history(self):
         # Retrieve services taken by the member
@@ -635,16 +665,16 @@ class ResPartnerMembers(models.Model):
         for service in service_partners:
             product_id = service.product_id.id
             print("PRODUCT ID", product_id)
-            
+
             # Increment the count for this product_id
             if product_id in product_count_dict:
                 product_count_dict[product_id] += 1
             else:
                 product_count_dict[product_id] = 1
-            
+
             # Retrieve addon services related to the current service
             addon_services = self.env['aaa.service.addon'].search([('service_id', '=', service.id)])
-            
+
             # Loop through each addon service and add related product IDs to the dictionary
             for addon in addon_services:
                 addon_product_id = addon.product_id.id
@@ -652,7 +682,7 @@ class ResPartnerMembers(models.Model):
                     product_count_dict[addon_product_id] += 1
                 else:
                     product_count_dict[addon_product_id] = 1
-        
+
         # Convert the dictionary to the format required for line_ids
         service_lines = [(0, 0, {'product_id': product_id, 'count': count}) for product_id, count in product_count_dict.items()]
         print("SERVICE LINES", service_lines)
@@ -730,4 +760,5 @@ class ResPartnerMembers(models.Model):
         invoice_ref_date = fields.Date(string= "Invoice Date")
         card_type_id = fields.Many2one('card.type', string='Card Type')
         history_id = fields.Many2one('res.partner', string="Replaced Member")
+        ref_num = fields.Char(string='Membership Number')
         
