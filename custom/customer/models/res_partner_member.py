@@ -338,7 +338,6 @@ class ResPartnerMembers(models.Model):
             'membership_state': 'temp',
             'is_duplicated': True,
         })
-
         # Call the super method to create the duplicated record
         return super(ResPartnerMembers, self).copy(default)
 
@@ -401,6 +400,8 @@ class ResPartnerMembers(models.Model):
         for cash in self:
             cash_service_ids = self.env['aaa.service'].search([
                 ('member_id', '=', self.id),
+                ('service_time', '>=', self.member_activate_date),
+                ('service_time', '<=', self.member_expiry_date),
                 ('type', '=', 'cash'),
                 ('member_type', '=', 'policy')
             ])
@@ -414,7 +415,8 @@ class ResPartnerMembers(models.Model):
             'type': 'ir.actions.act_window',
             'res_model': 'aaa.service',
             'view_mode': 'tree,form',
-            'domain': [('member_id', '=', self.id), ('member_type','=','policy'), ('type', '=', 'cash')],
+            'domain': [('member_id', '=', self.id), ('member_type','=','policy'),('service_time', '>=', self.member_activate_date),
+                       ('service_time', '<=', self.member_expiry_date),('type', '=', 'cash')],
             'context': {
                 'from_res_partner_member_form': True,
                 'default_customer_id': self.parent_customer_id,
@@ -450,7 +452,6 @@ class ResPartnerMembers(models.Model):
             },
             'views': [(self.env.ref('customer.call_center_all_service_view_tree').id, 'tree'),
                     (self.env.ref('customer.call_center_service_form').id, 'form')],
-
         }
 
     @api.depends('name')

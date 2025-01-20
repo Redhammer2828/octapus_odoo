@@ -13,7 +13,6 @@ class DataUploadFile(models.Model):
     file = fields.Binary(string='File')
     file_type = fields.Char('File Type')
     file_name = fields.Char(string="File Name")
-    
     date = fields.Datetime('Uploaded Date', default=lambda self: fields.Datetime.now())
     upload_by = fields.Many2one('res.users', string='Uploaded By', default=lambda self: self.env.user)
     upload_log = fields.Text( string='Log')
@@ -24,7 +23,7 @@ class DataUploadFile(models.Model):
         ('validate', 'Validated'),
         ('done', 'Done')
     ], string='Status', default='draft')
- # # ------------------------------------------------------------------------------------TRY-------------------------      
+ # # ---------------------------------------------------TRY--------------------------------------------------      
     # def action_validate_policy_data(self):
     #     start_time = time.time()
 
@@ -336,7 +335,6 @@ class DataUploadFile(models.Model):
             f"Changed Records: {replaced_member_count} | "
             f"Time to Process: {processing_time} seconds"
         )
-
         self.state = 'validate'
 
     def check_member_details(self, member, member_line):

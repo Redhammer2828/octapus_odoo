@@ -1600,16 +1600,8 @@ class AAAService(models.Model):
             # Print payload values for verification before making the API call
             print("Payload for API call:", payload)
 
-            # Make the API call
-        
+            # Make the API call(justapi call)       
             response = requests.put(url, json=payload, headers=headers)
-            if response.status == 200: 
-                    print('change request success')
-            else:
-                    print('change request failed')
-    
-                # raise UserError(_("API request failed: %s") % str(e))
-
             # Update the service record
             try:
                 service.write({
