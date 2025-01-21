@@ -84,7 +84,8 @@
                                 <field name="member_activate_date" date_format="%d/%m/%Y" readonly="is_readonly"/>
                                 <field name="member_expiry_date" class="required_field" required="1" date_format="%d/%m/%Y" widget="date" readonly="is_readonly" />
                                 <field name="card_type_id" class="required_field" required="1" readonly="is_readonly" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
-                                <field name="member_partner_category_id" class="required_field" required="1" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" />
+                                <!-- <field name="member_partner_category_id" class="required_field" required="1" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" /> -->
+                                <field name="member_partner_category_id" class="required_field" required="1"  options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" readonly="membership_state in ['cancel', 'confirm'] and is_it_user == False"/>
                                 <field name="driving_license" />
                                 <field name="member_type" widget="radio" readonly="1" />
                                 <!-- <field name="membership_cancel_date" readonly="1" /> -->
@@ -119,10 +120,10 @@
                             <notebook colspan="4">
                                 <page name="package" string="Package">
                                     <group>
-                                        <field name="product_template_id" class="required_field"
+                                    <field name="product_template_id" class="required_field"
                                             required="1"
                                             options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
-                                            domain="[('bundle_product', '=', True)]" />
+                                            domain="[('bundle_product', '=', True)]" readonly="membership_state in ['cancel', 'confirm'] and is_it_user == False"/>
                                     </group>
                                     <group>
                                         <field name="service_ids" widget="many2many_tags" options="{'no_create':False,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}" domain="[('bundle_product', '=', False)]" readonly="is_readonly" />

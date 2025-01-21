@@ -425,7 +425,7 @@ class AAAService(models.Model):
         return ''
 
 # -------------------------------------------------------------------------
-    @api.onchange('provider_id')
+    @api.onchange('provider_id','jafza_provider_id')
     def _onchange_provider_id(self):
             """
             Dynamically show/hide driver_name or driver_id based on the provider's name.
