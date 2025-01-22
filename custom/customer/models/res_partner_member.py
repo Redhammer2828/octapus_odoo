@@ -158,20 +158,26 @@ class ResPartnerMembers(models.Model):
     
     @api.model
     def fields_get(self, allfields=None, attributes=None):
+        """Override fields_get to customize field properties based on membership state and member type."""
         fields = super(ResPartnerMembers, self).fields_get(allfields, attributes)
        
         target_fields = ['member_partner_category_id', 'product_template_id']
        
         for field_name in target_fields:
             if field_name in fields:
-                if self.membership_state == 'temp':
+                # Check if member_type is 'credit' or 'adhoc'
+                if self.member_type in ['credit', 'adhoc']:
+                    fields[field_name]['readonly'] = False
+                elif self.membership_state == 'temp':
                     # In temp state, fields are editable for all users
                     fields[field_name]['readonly'] = False
                 elif self.membership_state == 'confirm':
                     # In confirm state, only editable if user is in IT Group
                     fields[field_name]['readonly'] = not self.is_it_user
-                else:  # cancel state
+                elif self.membership_state == 'cancel':
                     fields[field_name]['readonly'] = True
+                else:  # For any other state
+                    fields[field_name]['readonly'] = False
        
         return fields
     
