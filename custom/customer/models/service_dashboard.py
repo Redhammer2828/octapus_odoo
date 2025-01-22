@@ -23,15 +23,17 @@ class ServiceDashboard(models.Model):
     @api.depends('employee_id', 'input_driver_name')
     def _compute_service_data(self):
         today = fields.Datetime.now()
-        start_day = today.replace(hour=0, minute=0, second=0)
-        end_day = today.replace(hour=23, minute=59, second=59)
-        start_week = today - timedelta(days=today.weekday())
-        end_week = start_week + timedelta(days=6)
-        start_month = today.replace(day=1)
-        next_month = start_month + timedelta(days=32)
-        end_month = next_month.replace(day=1) - timedelta(days=1)
-        start_year = today.replace(month=1, day=1)
-        end_year = today.replace(month=12, day=31, hour=23, minute=59, second=59)
+        start_day = today.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_day = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        start_week = (today - timedelta(days=today.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+        end_week = (start_week + timedelta(days=6)).replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        start_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_month = (start_month + timedelta(days=(32 - start_month.day))).replace(day=1, hour=0, minute=0, second=0, microsecond=0) - timedelta(seconds=1)
+
+        start_year = today.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_year = today.replace(month=12, day=31, hour=23, minute=59, second=59, microsecond=999999)
 
         for record in self:
             domain = []
@@ -40,21 +42,20 @@ class ServiceDashboard(models.Model):
             if record.input_driver_name:
                 domain += [('driver_name', 'ilike', record.input_driver_name)]
 
-            # Define domains for different time periods
             domain_today = domain + [('service_time', '>=', start_day), ('service_time', '<=', end_day)]
             domain_week = domain + [('service_time', '>=', start_week), ('service_time', '<=', end_week)]
             domain_month = domain + [('service_time', '>=', start_month), ('service_time', '<=', end_month)]
             domain_year = domain + [('service_time', '>=', start_year), ('service_time', '<=', end_year)]
 
-            # Calculate the counts for different states and time periods
-            record.completed_today = self.env['aaa.service'].search_count(domain_today + [('state', '=', 'done')])
-            record.cancelled_today = self.env['aaa.service'].search_count(domain_today + [('state', '=', 'cancel')])
-            record.completed_week = self.env['aaa.service'].search_count(domain_week + [('state', '=', 'done')])
-            record.cancelled_week = self.env['aaa.service'].search_count(domain_week + [('state', '=', 'cancel')])
-            record.completed_month = self.env['aaa.service'].search_count(domain_month + [('state', '=', 'done')])
-            record.cancelled_month = self.env['aaa.service'].search_count(domain_month + [('state', '=', 'cancel')])
-            record.completed_year = self.env['aaa.service'].search_count(domain_year + [('state', '=', 'done')])
-            record.cancelled_year = self.env['aaa.service'].search_count(domain_year + [('state', '=', 'cancel')])
+            service_model = self.env['aaa.service']
+            record.completed_today = service_model.search_count(domain_today + [('state', '=', 'done')])
+            record.cancelled_today = service_model.search_count(domain_today + [('state', '=', 'cancel')])
+            record.completed_week = service_model.search_count(domain_week + [('state', '=', 'done')])
+            record.cancelled_week = service_model.search_count(domain_week + [('state', '=', 'cancel')])
+            record.completed_month = service_model.search_count(domain_month + [('state', '=', 'done')])
+            record.cancelled_month = service_model.search_count(domain_month + [('state', '=', 'cancel')])
+            record.completed_year = service_model.search_count(domain_year + [('state', '=', 'done')])
+            record.cancelled_year = service_model.search_count(domain_year + [('state', '=', 'cancel')])
 
     @api.depends('completed_today', 'cancelled_today', 'completed_week', 'cancelled_week', 'completed_month', 'cancelled_month', 'completed_year', 'cancelled_year')
     def _compute_total_service_data(self):
@@ -63,3 +64,17 @@ class ServiceDashboard(models.Model):
             record.total_week = record.completed_week + record.cancelled_week
             record.total_month = record.completed_month + record.cancelled_month
             record.total_year = record.completed_year + record.cancelled_year
+
+    @api.onchange('employee_id')
+    def _onchange_employee_id(self):
+        """Clear the manual input if a driver is selected from the list."""
+        if self.employee_id:
+            self.input_driver_name = False
+
+    @api.onchange('input_driver_name')
+    def _onchange_input_driver_name(self):
+        """Clear the dropdown selection if a name is manually typed into the search."""
+        if self.input_driver_name:
+            self.employee_id = False
+
+
