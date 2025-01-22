@@ -21,22 +21,6 @@ class AaaReportWizard(models.TransientModel):
     _name = 'aaa.report.wizard'
     _description = 'AAA Report Wizard'
 
-    # from_date = fields.Datetime(string="From Date", required=True)
-    # to_date = fields.Datetime(string="To Date", required=True)
-   
-
-    # from_date = fields.Datetime(
-    #     string="From Date",
-    #     required=True,
-    #     default=lambda self: self._get_datetime_with_midnight()
-    # )
-
-    # to_date = fields.Datetime(
-    #     string="To Date",
-    #     required=True,
-    #     default=lambda self: self._get_datetime_with_midnight()
-    # )
-
     from_date = fields.Datetime(
         string="From Date",
         required=True,
@@ -69,20 +53,6 @@ class AaaReportWizard(models.TransientModel):
         
         # Return as naive datetime for Odoo compatibility
         return end_of_day_utc.replace(tzinfo=None)
-
-    # def _get_datetime_with_midnight(self):
-    #     # Get today's date in the user's time zone
-    #     user_tz = timezone(self.env.user.tz or 'UTC')  # Default to UTC if no timezone is set
-    #     today_date = datetime.now(user_tz).date()  # Get today's date in user's time zone
-        
-    #     # Combine today's date with midnight time (00:00:00)
-    #     midnight = datetime.combine(today_date, time(0, 0, 0))
-
-    #     # Localize this time to the user's time zone and then convert to naive datetime
-    #     midnight_user_tz = user_tz.localize(midnight)
-    #     naive_midnight = midnight_user_tz.astimezone(timezone('UTC')).replace(tzinfo=None)
-
-    #     return naive_midnight
     
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
     member_type = fields.Selection([('policy', 'POLICY'), ('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type")
@@ -115,8 +85,6 @@ class AaaReportWizard(models.TransientModel):
     
     def action_print_pdf(self):
         pass
-
-   
 
     def action_export_excel(self):
         import io
@@ -195,7 +163,6 @@ class AaaReportWizard(models.TransientModel):
             'From - Date', 'To - Date', 'Smart Tow ID', 'Status', 'Agent', 'Dispatcher', 'Comments',
             'Trip Sheet Number', 'Amount Collected', 'Rating', 'Rating Added By'
         ]
-
         # Write headers
         for col_num, header in enumerate(headers):
             worksheet.write(7, col_num, header, header_format)

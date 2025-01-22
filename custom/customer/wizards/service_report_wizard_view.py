@@ -54,7 +54,7 @@ class ServiceReportWizard(models.TransientModel):
         return end_of_day_utc.replace(tzinfo=None)
   
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
-    member_type = fields.Selection([('policy', 'POLICY'), ('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type")
+    member_type = fields.Selection([('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type",default ='credit')
     sequence_id = fields.Many2one('partner.category', string="Customer Category",
     domain="[('partner_id','=', customer_id), ('member_type', '=', member_type)]")
     type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type")
