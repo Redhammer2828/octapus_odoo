@@ -145,7 +145,8 @@ class AAAService(models.Model):
     
     date_time_from = fields.Datetime(string= "From Date time") 
     date_time_to = fields.Datetime(string="To Date time")
-    quantity = fields.Float(string="Quantity")
+    quantity = fields.Float(string="Quantity", compute="_compute_quantity", store=True)
+    quantity_with_days = fields.Char(string='Quantity with Days', compute="_compute_quantity", store=True)
     service_based = fields.Selection(related='product_id.service_based', store=True, readonly=True)
     
     old_membership_number = fields.Char('Old Membership Number')
@@ -224,7 +225,7 @@ class AAAService(models.Model):
 
     from_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
     to_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
-    quantity_with_days = fields.Char(string='Quantity with Days') 
+    # quantity_with_days = fields.Char(string='Quantity with Days') 
     orgin_no = fields.Text('Orgin')
     origin_no = fields.Many2one('aaa.service', string='Origin Service', help='References the original service before changes were made.', readonly=True)
     
@@ -365,16 +366,86 @@ class AAAService(models.Model):
         # Trigger computation of the amount when locations are selected
         self._compute_amount()
 
-    @api.onchange('date_time_from', 'date_time_to')
-    def _onchange_from_to_date(self):
+    # @api.depends('date_time_from', 'date_time_to', 'member_type')
+    # def _compute_quantity(self):
+    #     for record in self:
+    #         if record.date_time_from and record.date_time_to:
+    #             delta = record.date_time_to - record.date_time_from
+    #             days = delta.days
+    #             record.quantity = days
+    #             record.quantity_with_days = f"{days} Days"
+    #         else:
+    #             record.quantity = 0
+    #             record.quantity_with_days = "0 Days"
+ 
+    # @api.onchange('date_time_from', 'date_time_to')
+    # def _onchange_from_to_date(self):
+    #     for record in self:
+    #         if record.member_type in ['credit', 'adhoc']:
+    #             if record.date_time_from and record.date_time_to:
+    #                 delta = record.date_time_to - record.date_time_from
+    #                 record.quantity = delta.days
+    #                 record.quantity_with_days = f"{record.quantity} Days" if record.quantity else "0 Days"
+ 
+    # def write(self, vals):
+    #     res = super(AAAService, self).write(vals)
+    #     for record in self:
+    #         if record.member_type in ['credit', 'adhoc'] and 'date_time_to' in vals:
+    #             if record.date_time_from and record.date_time_to:
+    #                 delta = record.date_time_to - record.date_time_from
+    #                 record.quantity = delta.days
+    #                 record.quantity_with_days = f"{record.quantity} Days"
+    #             else:
+    #                 record.quantity = 0
+    #                 record.quantity_with_days = "0 Days"
+    #     return res
+    @api.depends('date_time_from', 'date_time_to', 'member_type')
+    def _compute_quantity(self):
         for record in self:
             if record.date_time_from and record.date_time_to:
                 delta = record.date_time_to - record.date_time_from
-                record.quantity = delta.days
-                record.quantity_with_days = f"{delta.days} Days"  # Set quantity_with_days here
+                total_hours = delta.total_seconds() / 3600  # Convert seconds to hours
+                days = int(total_hours // 24)  # Full days
+                if total_hours % 24 > 1:  # Count extra hour into the next day if exceeds 25 hours
+                    days += 1
+                record.quantity = days
+                record.quantity_with_days = f"{days} Day{'s' if days != 1 else ''}"
             else:
                 record.quantity = 0
                 record.quantity_with_days = "0 Days"
+
+    @api.onchange('date_time_from', 'date_time_to')
+    def _onchange_from_to_date(self):
+        for record in self:
+            if record.member_type in ['credit', 'adhoc']:
+                if record.date_time_from and record.date_time_to:
+                    delta = record.date_time_to - record.date_time_from
+                    total_hours = delta.total_seconds() / 3600  # Convert seconds to hours
+                    days = int(total_hours // 24)  # Full days
+                    if total_hours % 24 > 1:  # Count extra hour into the next day if exceeds 25 hours
+                        days += 1
+                    record.quantity = days
+                    record.quantity_with_days = f"{days} Day{'s' if days != 1 else ''}"
+                else:
+                    record.quantity = 0
+                    record.quantity_with_days = "0 Days"
+
+    def write(self, vals):
+        res = super(AAAService, self).write(vals)
+        for record in self:
+            if record.member_type in ['credit', 'adhoc'] and 'date_time_to' in vals:
+                if record.date_time_from and record.date_time_to:
+                    delta = record.date_time_to - record.date_time_from
+                    total_hours = delta.total_seconds() / 3600  # Convert seconds to hours
+                    days = int(total_hours // 24)  # Full days
+                    if total_hours % 24 > 1:  # Count extra hour into the next day if exceeds 25 hours
+                        days += 1
+                    record.quantity = days
+                    record.quantity_with_days = f"{days} Day{'s' if days != 1 else ''}"
+                else:
+                    record.quantity = 0
+                    record.quantity_with_days = "0 Days"
+        return res
    
     @api.depends('selected_from_location', 'selected_to_location')
     def _compute_amount(self):
@@ -425,7 +496,7 @@ class AAAService(models.Model):
         return ''
 
 # -------------------------------------------------------------------------
-    @api.onchange('provider_id')
+    @api.onchange('provider_id','jafza_provider_id')
     def _onchange_provider_id(self):
             """
             Dynamically show/hide driver_name or driver_id based on the provider's name.
@@ -880,6 +951,7 @@ class AAAService(models.Model):
                     print("No last service found or missing service_time")
             else:  # Logic for validity_period_days = 365 or other cases
                 remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
+                print("COUNT AT 365 days ---------------------------",self._count_services_in_category(parent_category_id))
                 print(f"REMAINING SERVICE ACCESS IN THE CAT_DURATION ({validity_period_days} days): {remaining_quantity}")
  
                 if remaining_quantity <= 0:
@@ -973,11 +1045,9 @@ class AAAService(models.Model):
             ('service_time', '<=', self.member_expiry_date),
             ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
             ('create_date', '>=', last_dispatch_time),
-        ])
-        
+        ]) 
         return recent_services == 0
  
-    
     def _count_services_in_category(self, parent_category_id):
         # Determine the activate date, accounting for a potentially null member_activate_date
         if self.member_activate_date:
@@ -993,7 +1063,7 @@ class AAAService(models.Model):
             ('service_time', '<=', self.member_expiry_date),
             ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
         ])
-
+        print("----------------------------------COUNTTT-------------",count)
         return count
 
     def _trigger_cash_or_credit_service_wizard(self):

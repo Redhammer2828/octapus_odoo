@@ -158,24 +158,28 @@ class ResPartnerMembers(models.Model):
     
     @api.model
     def fields_get(self, allfields=None, attributes=None):
+        """Override fields_get to customize field properties based on membership state and member type."""
         fields = super(ResPartnerMembers, self).fields_get(allfields, attributes)
-        is_it_user = self.user_in_group('IT Group')  # Check once and use for multiple fields
-
-        # Adjust readonly property for member_partner_category_id
-        if 'member_partner_category_id' in fields:
-            fields['member_partner_category_id']['readonly'] = not is_it_user
-
-        # Adjust readonly property for product_template_id
-        if 'product_template_id' in fields:
-            fields['product_template_id']['readonly'] = not is_it_user
-
+       
+        target_fields = ['member_partner_category_id', 'product_template_id']
+       
+        for field_name in target_fields:
+            if field_name in fields:
+                # Check if member_type is 'credit' or 'adhoc'
+                if self.member_type in ['credit', 'adhoc']:
+                    fields[field_name]['readonly'] = False
+                elif self.membership_state == 'temp':
+                    # In temp state, fields are editable for all users
+                    fields[field_name]['readonly'] = False
+                elif self.membership_state == 'confirm':
+                    # In confirm state, only editable if user is in IT Group
+                    fields[field_name]['readonly'] = not self.is_it_user
+                elif self.membership_state == 'cancel':
+                    fields[field_name]['readonly'] = True
+                else:  # For any other state
+                    fields[field_name]['readonly'] = False
+       
         return fields
-
-    def user_in_group(self, group_name):
-        """Helper method to check if the current user is in a specified group by name."""
-        Group = self.env['res.groups']
-        group = Group.search([('name', '=', group_name)], limit=1)
-        return group in self.env.user.groups_id
     
     # USER BASED BUTTON HIDING
     @api.depends('create_user')
