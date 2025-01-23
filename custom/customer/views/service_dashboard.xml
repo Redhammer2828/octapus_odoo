@@ -147,7 +147,7 @@
         <field name="view_mode">form</field>
         <field name="view_id" ref="service_dashboard_form_view"/>
     </record>
-
+#latest
     <menuitem id="menu_service_dashboard"
               name="Service Dashboard"
               parent="menu_call_center_root"

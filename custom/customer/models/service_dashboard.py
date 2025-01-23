@@ -19,7 +19,7 @@ class ServiceDashboard(models.Model):
     total_week = fields.Integer(string='Total This Week', compute='_compute_total_service_data')
     total_month = fields.Integer(string='Total This Month', compute='_compute_total_service_data')
     total_year = fields.Integer(string='Total This Year', compute='_compute_total_service_data')
-
+    #lastest
     @api.depends('employee_id', 'input_driver_name')
     def _compute_service_data(self):
         today = fields.Datetime.now()
