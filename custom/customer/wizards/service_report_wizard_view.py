@@ -12,6 +12,7 @@ from reportlab.lib import colors
 from io import BytesIO
 from reportlab.lib.utils import ImageReader  # Import ImageReader
 from datetime import datetime, time, timedelta
+from pytz import timezone
 
 import logging
 # Set up logging for debugging purposes
@@ -21,37 +22,41 @@ class ServiceReportWizard(models.TransientModel):
     _name = 'service.report.wizard'
     _description = 'Service Report Wizard'
 
+    def _default_dubai_time(self):
+        """Return the current time in Dubai timezone."""
+        dubai_tz = timezone('Asia/Dubai')
+        utc_now = datetime.now(utc)  # Get current time in UTC
+        dubai_time = utc_now.astimezone(dubai_tz)
+        return dubai_time.replace(tzinfo=None)  # Return as naive datetime in Dubai timezone
+
     from_date = fields.Datetime(
         string="From Date",
         required=True,
-        default=lambda self: self._get_start_of_day()
+        default=_default_dubai_time, 
     )
 
     to_date = fields.Datetime(
         string="To Date",
         required=True,
-        default=lambda self: self._get_end_of_day()
     )
 
-    def _get_start_of_day(self):
-        # Ensure midnight is calculated directly in UTC without shifting the date
-        utc_now = datetime.now(pytz.utc).date()  # Get today's date directly in UTC
-        midnight_utc = datetime.combine(utc_now, time(0, 0, 0))  # Midnight in UTC
-        return midnight_utc  # No need for timezone adjustments, already UTC-based
-
-    def _get_end_of_day(self):
-        # Get the user's timezone or default to UTC
-        user_tz = pytz.timezone(self.env.user.tz or 'UTC')
-        
-        # Get today's date in the user's timezone at 23:59:59
-        today = datetime.now(user_tz).date()
-        end_of_day_user_tz = user_tz.localize(datetime.combine(today, time(23, 59, 59)))
-        
-        # Convert to UTC without shifting the date
-        end_of_day_utc = end_of_day_user_tz.astimezone(pytz.utc)
-        
-        # Return as naive datetime for Odoo compatibility
-        return end_of_day_utc.replace(tzinfo=None)
+    def _convert_to_dubai_time(self, dt):
+        """Convert the given datetime from user's timezone to Dubai timezone."""
+        if not dt:
+            return None
+        try:
+            # Get user's timezone or default to UTC
+            user_tz = timezone(self.env.user.tz or 'UTC')
+            # Convert naive datetime to user's timezone
+            user_time = user_tz.localize(dt) if dt.tzinfo is None else dt
+            # Convert user's timezone time to Dubai timezone
+            dubai_tz = timezone('Asia/Dubai')
+            dubai_time = user_time.astimezone(dubai_tz)
+            # Return as naive datetime in Dubai timezone
+            return dubai_time.replace(tzinfo=None)
+        except Exception as e:
+            _logger.error("Error converting datetime to Dubai time: %s", e)
+            raise
   
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
     member_type = fields.Selection([('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type",default ='credit')
@@ -60,6 +65,17 @@ class ServiceReportWizard(models.TransientModel):
     type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type")
 
     def _fetch_service_records(self):
+
+        print("DATE FROM ---------------",self.from_date)
+        print("To DATE ---------------",self.to_date)
+                # Convert input dates to Dubai time
+        from_date_dubai = self._convert_to_dubai_time(self.from_date)
+        to_date_dubai = self._convert_to_dubai_time(self.to_date)
+
+        _logger.info(
+            "Searching service records from %s to %s (Dubai Time)",
+            from_date_dubai, to_date_dubai
+        )
 
         """Fetches service records based on the wizard's filter criteria."""
         domain = []
@@ -71,10 +87,11 @@ class ServiceReportWizard(models.TransientModel):
             domain.append(('type', '=', self.type))
         if self.sequence_id:
             domain.append(('sequence_id', '=', self.sequence_id.id))
-
         # Filter by Service Time (Date Range)
-        domain.append(('service_time', '>=', self.from_date))
-        domain.append(('service_time', '<=', self.to_date))
+        if from_date_dubai:
+            domain.append(('service_time', '>=', from_date_dubai))
+        if to_date_dubai:
+            domain.append(('service_time', '<=', to_date_dubai))
 
         service_records = self.env['aaa.service'].search(domain)
         _logger.debug("Fetched %d records from the aaa.service model", len(service_records))
@@ -392,16 +409,6 @@ class ServiceReportWizard(models.TransientModel):
                         field_value = record.vehicle_chasis_no or ''
                     elif header == 'Service':
                         field_value = record.product_id.name or ''
-                    # elif header == 'From Location':
-                    #     if record.member_id.member_type in ['credit', 'adhoc']:
-                    #         field_value = record.from_location.name if record.from_location else ''
-                    #     else:
-                    #         field_value = record.selected_from_location.name if record.selected_from_location else ''
-                    # elif header == 'To Location':
-                    #     if record.member_id.member_type in ['credit', 'adhoc']:
-                    #         field_value = record.to_location.name if record.to_location else ''
-                    #     else:
-                    #         field_value = record.selected_to_location.name if record.selected_to_location else ''
                     elif header == 'From Location':
                         if record.member_id.member_type in ['policy', 'adhoc']:
                             # If selected_from_location is not set, fallback to from_location
