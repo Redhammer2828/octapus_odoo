@@ -669,10 +669,12 @@ class AAAService(models.Model):
             self.message_post(body=_("Request failed: %s") % str(e))
             print("Request failed:", str(e))
 
-    def action_order_create(self, order_number):
+    def action_order_create(self, order_number,is_jafza_service,is_aditional_duty):
         url = f"{base_url}/aaa-customer/consumers/create/road_side_service"
         payload = json.dumps({
-            "erp_order_number": order_number,  
+            "erp_order_number": order_number,
+            "is_jafza_service" : is_jafza_service,
+            "is_after_duty" :   is_aditional_duty  
         })
         header = {
             'content-type':'application/json'
