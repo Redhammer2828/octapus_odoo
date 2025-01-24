@@ -222,7 +222,7 @@
                                         class="required_field" required="1"
                                         readonly="state in['cancel', 'done']" />
                                     <field name="date_time_to" string="To Date time"
-                                        invisible="service_based != 'location_duration'"
+                                        invisible="product_id != 'location_duration'"
                                         class="required_field" required="1"
                                         readonly="state in['cancel', 'done']" />
                                     <field name="quantity" string="Quantity (Days)"

@@ -1,7 +1,6 @@
 from odoo import models, fields, api
 import datetime
 from datetime import timedelta
-#from pytz import timezone, utc
 import pytz
 import io
 import xlsxwriter
@@ -22,61 +21,40 @@ class ServiceReportWizard(models.TransientModel):
     _name = 'service.report.wizard'
     _description = 'Service Report Wizard'
 
-    def _default_dubai_time(self):
-        """Return the current time in Dubai timezone."""
-        dubai_tz = timezone('Asia/Dubai')
-        utc_now = datetime.now(utc)  # Get current time in UTC
-        dubai_time = utc_now.astimezone(dubai_tz)
-        return dubai_time.replace(tzinfo=None)  # Return as naive datetime in Dubai timezone
-
     from_date = fields.Datetime(
         string="From Date",
         required=True,
-        default=_default_dubai_time, 
     )
 
     to_date = fields.Datetime(
         string="To Date",
         required=True,
     )
-
-    def _convert_to_dubai_time(self, dt):
-        """Convert the given datetime from user's timezone to Dubai timezone."""
-        if not dt:
-            return None
-        try:
-            # Get user's timezone or default to UTC
-            user_tz = timezone(self.env.user.tz or 'UTC')
-            # Convert naive datetime to user's timezone
-            user_time = user_tz.localize(dt) if dt.tzinfo is None else dt
-            # Convert user's timezone time to Dubai timezone
-            dubai_tz = timezone('Asia/Dubai')
-            dubai_time = user_time.astimezone(dubai_tz)
-            # Return as naive datetime in Dubai timezone
-            return dubai_time.replace(tzinfo=None)
-        except Exception as e:
-            _logger.error("Error converting datetime to Dubai time: %s", e)
-            raise
-  
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
     member_type = fields.Selection([('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type",default ='credit')
     sequence_id = fields.Many2one('partner.category', string="Customer Category",
     domain="[('partner_id','=', customer_id), ('member_type', '=', member_type)]")
     type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type")
+    state = fields.Selection([
+        ('draft', 'Draft'),
+        ('initiate', 'Initiate'),
+        ('dispatch', 'Dispatch'),
+        ('start', 'Start'),
+        ('reach', 'Reach'),
+        ('completed_by_driver', 'Completed by driver'),
+        ('done', 'Done'),
+        ('cancel', 'Cancelled'),
+        ('change', 'Changed' ),
+        ('approved','Approved'),
+        ('requested','Requeted')
+    ], string="Status", readonly=True, default='initiate', tracking=True)
 
+# FETCH RECORDS ----- INITIAL SEARCH FUNCTION
     def _fetch_service_records(self):
 
         print("DATE FROM ---------------",self.from_date)
         print("To DATE ---------------",self.to_date)
                 # Convert input dates to Dubai time
-        from_date_dubai = self._convert_to_dubai_time(self.from_date)
-        to_date_dubai = self._convert_to_dubai_time(self.to_date)
-
-        _logger.info(
-            "Searching service records from %s to %s (Dubai Time)",
-            from_date_dubai, to_date_dubai
-        )
-
         """Fetches service records based on the wizard's filter criteria."""
         domain = []
         if self.customer_id:
@@ -88,10 +66,12 @@ class ServiceReportWizard(models.TransientModel):
         if self.sequence_id:
             domain.append(('sequence_id', '=', self.sequence_id.id))
         # Filter by Service Time (Date Range)
-        if from_date_dubai:
-            domain.append(('service_time', '>=', from_date_dubai))
-        if to_date_dubai:
-            domain.append(('service_time', '<=', to_date_dubai))
+        if self.from_date:
+            domain.append(('service_time', '>=', self.from_date))
+        if self.to_date:
+            domain.append(('service_time', '<=', self.to_date))
+        if self.state:
+            domain.append(('state', '=', 'done'))
 
         service_records = self.env['aaa.service'].search(domain)
         _logger.debug("Fetched %d records from the aaa.service model", len(service_records))
@@ -101,7 +81,7 @@ class ServiceReportWizard(models.TransientModel):
         """Calculate the amount for a membership record."""
         amount = 0.0
         pricelist = self.customer_id.property_product_pricelist.id
-        print("PRICELIST ID(((((((((((((((((((((((())))))))))))))))))))))))",pricelist)
+        print("PRICELIST ID------",pricelist)
         if record.member_type == 'credit':
             if record.from_location and record.to_location and record.product_id and record.customer_id:
                 service_rate = self.env['service.rate'].search([
@@ -119,169 +99,8 @@ class ServiceReportWizard(models.TransientModel):
                 ], limit=1)
                 amount = pricelist_item.fixed_price if pricelist_item else 0.0
         return f"{float(amount or 0):.2f}"
-   
-    def action_print_pdf(self):
-        """Generate Membership Details PDF with renewals and extensions."""
-        import textwrap
-        from reportlab.lib.pagesizes import landscape, A4
-        from reportlab.pdfgen import canvas
-        from reportlab.lib.utils import ImageReader
-        from reportlab.lib.units import inch
-        import io
-        import base64
 
-        # Initialize PDF
-        buffer = io.BytesIO()
-        pdf = canvas.Canvas(buffer, pagesize=landscape(A4))
-        width, height = landscape(A4)
-        margin = 20
-
-        # Company logo setup
-        company = self.env['res.company'].search([], limit=1)
-        logo_width, logo_height = 1.2 * inch, 1.2 * inch
-
-        # Define headers and column widths
-        headers = [
-            'MEMBERSHIP\nNO.', 'NAME', 'CUSTOMER', 'PLATE\nNO.', 'CHASIS\nNO.', 'POLICY\nNO.',
-            'START\nDATE', 'EXPIRY\nDATE', 'CAR\nMAKE', 'AMOUNT'
-        ]
-        col_widths = [65, 115, 115, 65, 95, 85, 65, 65, 75, 60]
-        header_height = 40
-        row_height = 30
-
-        # Function to draw headers and data rows
-        def draw_header(pdf):
-            """Draw the header with logo, title, and filters."""
-            if company.logo:
-                logo_data = base64.b64decode(company.logo)
-                logo_image = ImageReader(io.BytesIO(logo_data))
-                pdf.drawImage(
-                    logo_image,
-                    width - margin - logo_width,
-                    height - logo_height - 10,
-                    width=logo_width,
-                    height=logo_height,
-                )
-
-            pdf.setFont("Helvetica-Bold", 12)
-            title = "Membership Details"
-            pdf.drawString((width - pdf.stringWidth(title, "Helvetica-Bold", 12)) / 2, height - 40, title)
-
-            pdf.setFont("Helvetica", 10)
-            date_range = f"From: {self.from_date.strftime('%d-%m-%Y')} To: {self.to_date.strftime('%d-%m-%Y')}"
-            pdf.drawString((width - pdf.stringWidth(date_range, "Helvetica", 10)) / 2, height - 55, date_range)
-
-            if self.customer_id:
-                customer_name = f"Customer: {self.customer_id.name}"
-                pdf.drawString((width - pdf.stringWidth(customer_name, "Helvetica", 10)) / 2, height - 70, customer_name)
-
-            pdf.setFont("Helvetica", 8)
-            tagline_y_position = height - logo_height - 15
-            pdf.drawRightString(width - margin, tagline_y_position, "We guarantee to get you moving...")
-
-        def draw_table_header(pdf, y_position):
-            """Draw table headers."""
-            x_offset = margin
-            pdf.setFont("Helvetica-Bold", 8)
-            for i, header in enumerate(headers):
-                pdf.rect(x_offset, y_position - header_height, col_widths[i], header_height)
-                text_lines = header.split('\n')
-                starting_y = y_position - (header_height / 2) + (len(text_lines) * 5)
-                for line in text_lines:
-                    text_width = pdf.stringWidth(line, "Helvetica-Bold", 8)
-                    x_text = x_offset + (col_widths[i] - text_width) / 2
-                    pdf.drawString(x_text, starting_y, line)
-                    starting_y -= 10
-                x_offset += col_widths[i]
-            return y_position - header_height
-
-        def draw_data_row(pdf, data, y_position):
-            """Draw each row with wrapped text and proper alignment."""
-            x_offset = margin
-            pdf.setFont("Helvetica", 7)
-            line_height = 8
-
-            def wrap_text(text, width):
-                text = str(text) if text else ''
-                max_chars = int(width / 5.5)
-                return textwrap.wrap(text, max_chars)
-
-            max_lines = 1
-            column_lines = []
-            for i, value in enumerate(data.values()):
-                wrapped = wrap_text(value, col_widths[i])
-                column_lines.append(wrapped)
-                max_lines = max(max_lines, len(wrapped))
-
-            adjusted_row_height = row_height * max_lines
-            for i, lines in enumerate(column_lines):
-                pdf.rect(x_offset, y_position - adjusted_row_height, col_widths[i], adjusted_row_height)
-                start_y = y_position - line_height
-                for line in lines:
-                    pdf.drawString(x_offset + 5, start_y, line)
-                    start_y -= line_height
-                x_offset += col_widths[i]
-            return y_position - adjusted_row_height
-
-        # Collect data for each specific period based on user's interest
-        def collect_and_print_data(from_date, to_date, is_renewal=False):
-            domain = [('parent_customer_id', '=', self.customer_id.id),
-                    ('member_type', '=', 'policy'),
-                    ('member_partner_category_id', '=', self.sequence_id.id),
-                    ('invoice_ref_date', '>=', from_date),
-                    ('invoice_ref_date', '<=', to_date)]
-
-            if is_renewal:
-                records = self.env['membership.history'].search(domain)
-            else:
-                records = self.env['res.partner'].search(domain)
-
-            data_list = []
-            for record in records:
-                data_list.append({
-                    'membership_no': record.old_membership_number or '',
-                    'name': record.name or '',
-                    'customer': record.parent_customer_id.name or '',
-                    'plate_no': record.vehicle_plate or '',
-                    'chasis_no': record.vehicle_chasis_no or '',
-                    'policy_no': record.policy_no or '',
-                    'start_date': record.member_activate_date.strftime('%d-%m-%Y') if record.member_activate_date else '',
-                    'expiry_date': record.member_expiry_date.strftime('%d-%m-%Y') if record.member_expiry_date else '',
-                    'car_make': record.vehicle_type or '',
-                    'amount': self._calculate_amount(record),
-                })
-
-            # Generate PDF content for the collected data
-            draw_header(pdf)
-            y_position = draw_table_header(pdf, height - 120)
-            for row_data in data_list:
-                y_position = draw_data_row(pdf, row_data, y_position)
-                if y_position < 50:  # Check if we need a new page
-                    pdf.showPage()
-                    y_position = draw_table_header(pdf, height - 120)
-
-        # Generate PDF for initial memberships and renewals separately
-        collect_and_print_data(self.from_date, self.to_date)  # Initial memberships
-        collect_and_print_data(self.from_date, self.to_date, is_renewal=True)  # Renewals
-
-        pdf.save()
-        buffer.seek(0)
-
-        # Attach PDF
-        attachment = self.env['ir.attachment'].create({
-            'name': f"Membership Details_{self.id}.pdf",
-            'datas': base64.b64encode(buffer.read()),
-            'type': 'binary',
-        })
-
-        return {
-            'type': 'ir.actions.act_window',
-            'res_model': 'ir.attachment',
-            'res_id': attachment.id,
-            'view_mode': 'form',
-            'target': 'new',
-        }
-
+# EXCEL REPORT GENERATOR------------  
     def action_export_excel(self):
         # Initialize buffer for Excel generation
         buffer = io.BytesIO()

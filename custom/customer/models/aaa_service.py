@@ -44,8 +44,7 @@ class AAAService(models.Model):
     member_id = fields.Many2one(
         'res.partner', 
         string="Member", 
-        domain="[('is_company', '=', False),('member_type','=',member_type)] "
-        
+        domain="[('is_company', '=', False),('member_type','=',member_type)] " 
     )
     
     invoice_ref_date = fields.Date(string='Invoice Reference Date')
@@ -54,7 +53,6 @@ class AAAService(models.Model):
     is_customer_from_partner = fields.Boolean(string='Customer from Partner', default=False)
     is_sequence_from_partner = fields.Boolean(string='Sequence from Partner', default=False)
     
-
     membership_num = fields.Char('Membership Number')
     created_by = fields.Many2one(
         'res.users',
@@ -756,12 +754,10 @@ class AAAService(models.Model):
             self.message_post(body=_("Request failed: %s") % str(e))
             print("Request failed:", str(e))
 
-    def action_order_create(self, order_number,is_jafza_service,is_aditional_duty):
+    def action_order_create(self, order_number):
         url = f"{base_url}/aaa-customer/consumers/create/road_side_service"
         payload = json.dumps({
-            "erp_order_number": order_number,
-            "is_jafza_service" : is_jafza_service,
-            "is_after_duty" : is_aditional_duty  
+            "erp_order_number": order_number  
         })
         header = {
             'content-type':'application/json'

@@ -3,11 +3,11 @@
     'name': 'Customer',
     'version': '1.0',
     'depends': ['web','base','product','hr','mail'],
-    # 'assets': {
-    #     'web.assets_backend': [
-    #         'customer/static/src/js/place_autocomplete_field.js',
-    #     ],
-    # },
+    'assets': {
+        'web.assets_backend': [
+             '/customer/static/src/css/my_custom_style.css',
+        ],
+    },
     'author': 'Sasoft',
     'category': 'Customer',
     'description': 'Customers Management',
