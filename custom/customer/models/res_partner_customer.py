@@ -30,6 +30,8 @@ class ResPartnerCustomer(models.Model):
 
     invoicing_policy = fields.Selection([ ('individual', 'Individual'),
                                     ('consolidated', 'Consolidated') ], string='Invoicing Policy')
+    
+    trn_number = fields.Char('TRN Number')
           # Set the default value here
     #Action for Member Button
     def action_view_member(self):
