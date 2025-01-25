@@ -22,7 +22,7 @@
                         .custom_group_outer:hover {
                             box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.2);
                         }
-
+ 
                         /* Inner group styling */
                         .custom_group {
                             background-color: #f9f9f9;
@@ -44,6 +44,8 @@
                             color: #333;
                         }
                         .oe_label, .oe_read_only {
+                            font-size: 16px;
+                            color: #666;
                             font-size: 16px;
                             color: #666;
                         }
@@ -68,10 +70,25 @@
                             text-align: center;
                             text-transform: uppercase;
                             letter-spacing: 1px;
+                            font-size: 28px;
+                            font-weight: bold;
+                            color: #71639e;
+                            margin-bottom: 20px;
+                            text-align: center;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
                         }
 
                         /* Specific headings for sections */
                         .section_heading {
+                            font-size: 22px;
+                            font-weight: bold;
+                            padding: 10px;
+                            border-radius: 8px;
+                            color: #FFFFFF;
+                            text-align: center;
+                            margin-bottom: 20px;
+                            background-color: #71639e;
                             font-size: 22px;
                             font-weight: bold;
                             padding: 10px;
@@ -87,9 +104,15 @@
                             display: flex;
                             align-items: center;
                             width: 100%;
+                            display: flex;
+                            align-items: center;
+                            width: 100%;
                         }
 
                         .statistics_column {
+                            flex: 1;
+                            min-width: 300px;
+                            padding: 20px;
                             flex: 1;
                             min-width: 300px;
                             padding: 20px;

@@ -7,9 +7,6 @@ class EnquiryComplaintWizard(models.TransientModel):
     is_enquiry = fields.Boolean("Is Enquiry?", default=True)
     enq_cm_id = fields.Many2one('aaa.enquiry', string="ENQ_COMPL")
 
-
-
-
     def action_enquiry(self):
         """Open the enquiry form for a new record with no prefilled data."""
         # Create a new enquiry record with appropriate field visibility settings
