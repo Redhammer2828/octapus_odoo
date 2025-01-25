@@ -18,10 +18,10 @@
                     </group>
                 </group>
                 <footer>
-                    <button name="action_print_pdf" string="Print" type="object" class="btn-primary" />
+                    <!-- <button name="action_print_pdf" string="Print" type="object" class="btn-primary" /> -->
                     <button name="action_export_excel" string="Export" type="object"
-                        class="btn-secondary" />
-                    <button string="Cancel" class="btn-secondary" special="cancel" />
+                        class="btn-success" />
+                    <button string="Cancel" class="btn-danger" special="cancel" />
                 </footer>
             </form>
         </field>
@@ -29,7 +29,7 @@
 
     <!-- Action for opening the wizard -->
     <record id="action_service_report_wizard" model="ir.actions.act_window">
-        <field name="name">Service Report</field>
+        <field name="name">Credit Service Report</field>
         <field name="res_model">service.report.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
@@ -37,7 +37,7 @@
 
     <menuitem 
         id="menu_services_root"
-        name="Services"
+        name="Credit Report"
         sequence="15" />
 
     <menuitem
@@ -54,7 +54,7 @@
 
     <menuitem 
         id="menu_service_report_wizard"
-        name="Service Report"
+        name="Credit Service Report"
         parent="menu_service_report"
         action="action_service_report_wizard"
         sequence="17" />

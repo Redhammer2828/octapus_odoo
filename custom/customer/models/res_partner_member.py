@@ -158,20 +158,26 @@ class ResPartnerMembers(models.Model):
     
     @api.model
     def fields_get(self, allfields=None, attributes=None):
+        """Override fields_get to customize field properties based on membership state and member type."""
         fields = super(ResPartnerMembers, self).fields_get(allfields, attributes)
        
         target_fields = ['member_partner_category_id', 'product_template_id']
        
         for field_name in target_fields:
             if field_name in fields:
-                if self.membership_state == 'temp':
+                # Check if member_type is 'credit' or 'adhoc'
+                if self.member_type in ['credit', 'adhoc']:
+                    fields[field_name]['readonly'] = False
+                elif self.membership_state == 'temp':
                     # In temp state, fields are editable for all users
                     fields[field_name]['readonly'] = False
                 elif self.membership_state == 'confirm':
                     # In confirm state, only editable if user is in IT Group
                     fields[field_name]['readonly'] = not self.is_it_user
-                else:  # cancel state
+                elif self.membership_state == 'cancel':
                     fields[field_name]['readonly'] = True
+                else:  # For any other state
+                    fields[field_name]['readonly'] = False
        
         return fields
     
@@ -349,14 +355,9 @@ class ResPartnerMembers(models.Model):
     @api.depends('member_expiry_date','name')
     def _compute_member_expired(self):
         for partner in self:
-            print('partner_member expiry status',partner)
-            print('member expiry date',partner.member_expiry_date)
-            print('todays date for expiry check',fields.Date.today())
             if partner.member_expiry_date and partner.member_expiry_date < fields.Date.today():
                 partner.member_expired = True
-                print('inside expiry check')
             else:
-                print('iside expiry else')
                 partner.member_expired = False
 #-------------------------------COUNT CALCULATION---START--------------------------------------------------
     @api.depends('name')
@@ -369,6 +370,7 @@ class ResPartnerMembers(models.Model):
                 ('service_time', '<=', self.member_expiry_date),
                 ('member_type', '=', 'policy')
             ])
+            print("MEMBER ID",self.id)
             print("ACTIVATION DATE",self.member_activate_date)
             print("EXPIRY DATE",self.member_expiry_date)
             print("MEMBER SERVICES", service_member_ids.ids)
@@ -376,14 +378,15 @@ class ResPartnerMembers(models.Model):
 
 
     def action_view_policy_service(self):
-
         return {
             'name': 'Services',
             'type': 'ir.actions.act_window',
             'res_model': 'aaa.service',
             'view_mode': 'tree,form',
-            'domain': [('member_id', '=', self.id), ('member_type','=','policy'),('service_time', '>=', self.member_activate_date),
-                       ('service_time', '<=', self.member_expiry_date),('type', '=', 'non_cash')],
+            'domain': [('member_id', '=', self.id), ('member_type','=','policy'),
+                       ('service_time', '>=', self.member_activate_date),
+                       ('service_time', '<=', self.member_expiry_date),
+                       ('type', '=', 'non_cash')],
             'context': {
                 'from_res_partner_member_form': True,
                 'default_customer_id': self.parent_customer_id,

@@ -4,6 +4,9 @@ from collections import defaultdict, Counter
 from datetime import datetime, date
 import time
 import re
+import logging
+# Set up logging for debugging purposes
+_logger = logging.getLogger(__name__)
 
 class DataUploadFile(models.Model):
     _name = 'data.upload.file'
@@ -515,15 +518,48 @@ class DataUploadFile(models.Model):
                         # Create a history record for the existing member
                         self.env['membership.history'].create({
                             'policy_no': matching_partner.policy_no,
+                            'parent_customer_id' : matching_partner.parent_customer_id.id,
+                            'name' : matching_partner.name,
+                            'old_membership_number': matching_partner.old_membership_number,
+                            'ref_num': matching_partner.ref_num,
+                            'member_partner_category_id': matching_partner.member_partner_category_id.id,
+                            'member_type': matching_partner.member_type,
+                            'vehicle_plate': matching_partner.vehicle_plate,
                             'vehicle_chasis_no': matching_partner.vehicle_chasis_no,
                             'vehicle_type': matching_partner.vehicle_type,
                             'vehicle_plate': matching_partner.vehicle_plate,
                             'member_activate_date': matching_partner.member_activate_date,
                             'member_expiry_date': matching_partner.member_expiry_date,
+                            'invoice_ref_date': matching_partner.invoice_ref_date,
                             'card_type_id': matching_partner.card_type_id.id,
                             'history_id': matching_partner.id,
+                            'product_template_id': matching_partner.product_template_id.id,
                         })
-                        # Update existing member with new details
+                        # # Update existing member with new details
+                        # matching_partner.write({
+                        #     'name': member_line.member_name,
+                        #     'membership_state': 'confirm',
+                        #     'member_expiry_date': member_line.member_expiry_date,
+                        #     'policy_no': member_line.policy_no,
+                        #     'member_activate_date': member_line.member_activate_date,
+                        #     'invoice_ref_date': member_line.invoice_ref_date,
+                        #     'delivery_ref_date': member_line.delivery_ref_date,
+                        #     # 'vehicle_type': member_line.vehicle_type,
+                        #     # 'vehicle_model': member_line.vehicle_model,
+                        #     # 'vehicle_mfg_year': member_line.vehicle_mfg_year,
+                        #     # 'vehicle_plate': member_line.vehicle_plate,
+                        #     # 'vehicle_chasis_no': member_line.vehicle_chasis_no,
+                        #     'street': member_line.street,
+                        #     'mobile': member_line.mobile,
+                            
+                        # })
+                         # Find the product.template record based on the package value
+                        package_record = self.env['product.template'].search([('id', '=', member_line.package)], limit=1)
+                        if not package_record:
+                            _logger.warning(f"No product.template found for package: {member_line.package}")
+                        else:
+                            # Update product_template_id with the found record
+                            _logger.info(f"Updating partner {matching_partner.name} with package {package_record.id}")
                         matching_partner.write({
                             'name': member_line.member_name,
                             'membership_state': 'confirm',
@@ -532,6 +568,7 @@ class DataUploadFile(models.Model):
                             'member_activate_date': member_line.member_activate_date,
                             'invoice_ref_date': member_line.invoice_ref_date,
                             'delivery_ref_date': member_line.delivery_ref_date,
+                            'product_template_id': package_record.id,
                             # 'vehicle_type': member_line.vehicle_type,
                             # 'vehicle_model': member_line.vehicle_model,
                             # 'vehicle_mfg_year': member_line.vehicle_mfg_year,
@@ -539,7 +576,7 @@ class DataUploadFile(models.Model):
                             # 'vehicle_chasis_no': member_line.vehicle_chasis_no,
                             'street': member_line.street,
                             'mobile': member_line.mobile,
-                            
+                           
                         })
                 elif member_line.upload_member_status in ['update']:
                     matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
@@ -551,14 +588,30 @@ class DataUploadFile(models.Model):
                         # Create a history record for the existing member
                         self.env['membership.history'].create({
                             'policy_no': matching_partner.policy_no,
+                            'parent_customer_id' : matching_partner.parent_customer_id.id,
+                            'name' : matching_partner.name,
+                            'old_membership_number': matching_partner.old_membership_number,
+                            'ref_num': matching_partner.ref_num,
+                            'member_partner_category_id': matching_partner.member_partner_category_id.id,
+                            'member_type': matching_partner.member_type,
+                            'vehicle_plate': matching_partner.vehicle_plate,
                             'vehicle_chasis_no': matching_partner.vehicle_chasis_no,
                             'vehicle_type': matching_partner.vehicle_type,
                             'vehicle_plate': matching_partner.vehicle_plate,
                             'member_activate_date': matching_partner.member_activate_date,
                             'member_expiry_date': matching_partner.member_expiry_date,
+                            'invoice_ref_date': matching_partner.invoice_ref_date,
                             'card_type_id': matching_partner.card_type_id.id,
                             'history_id': matching_partner.id,
+                            'product_template_id': matching_partner.product_template_id.id,
                         })
+                        # Find the product.template record based on the package value
+                        package_record = self.env['product.template'].search([('id', '=', member_line.package)], limit=1)
+                        if not package_record:
+                            _logger.warning(f"No product.template found for package: {member_line.package}")
+                        else:
+                            # Update product_template_id with the found record
+                            _logger.info(f"Updating partner {matching_partner.name} with package {package_record.id}")
                         # Update existing member with new details
                         matching_partner.write({
                             'name': member_line.member_name,
@@ -572,10 +625,29 @@ class DataUploadFile(models.Model):
                             'vehicle_model': member_line.vehicle_model,
                             'vehicle_mfg_year': member_line.vehicle_mfg_year,
                             'vehicle_plate': member_line.vehicle_plate,
+                            # 'product_template_id': member_line.package,
+                            'product_template_id': package_record.id,
                             'vehicle_chasis_no': member_line.vehicle_chasis_no,
                             'street': member_line.street,
                             'mobile': member_line.mobile,
                         })
+                        # # Update existing member with new details
+                        # matching_partner.write({
+                        #     'name': member_line.member_name,
+                        #     'membership_state': 'confirm',
+                        #     'member_expiry_date': member_line.member_expiry_date,
+                        #     'policy_no': member_line.policy_no,
+                        #     'member_activate_date': member_line.member_activate_date,
+                        #     'invoice_ref_date': member_line.invoice_ref_date,
+                        #     'delivery_ref_date': member_line.delivery_ref_date,
+                        #     'vehicle_type': member_line.vehicle_type,
+                        #     'vehicle_model': member_line.vehicle_model,
+                        #     'vehicle_mfg_year': member_line.vehicle_mfg_year,
+                        #     'vehicle_plate': member_line.vehicle_plate,
+                        #     'vehicle_chasis_no': member_line.vehicle_chasis_no,
+                        #     'street': member_line.street,
+                        #     'mobile': member_line.mobile,
+                        # })
                 # Handle 'TEMP' status
                 elif member_line.upload_member_status == 'exist_temp':
                     matching_partner = self.env['res.partner'].browse(member_line.if_temp_match)
