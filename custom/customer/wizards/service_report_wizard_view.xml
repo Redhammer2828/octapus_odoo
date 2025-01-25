@@ -20,8 +20,8 @@
                 <footer>
                     <!-- <button name="action_print_pdf" string="Print" type="object" class="btn-primary" /> -->
                     <button name="action_export_excel" string="Export" type="object"
-                        class="btn-secondary" />
-                    <button string="Cancel" class="btn-secondary" special="cancel" />
+                        class="btn-success" />
+                    <button string="Cancel" class="btn-danger" special="cancel" />
                 </footer>
             </form>
         </field>

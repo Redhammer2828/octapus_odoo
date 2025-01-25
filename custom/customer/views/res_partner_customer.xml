@@ -113,6 +113,8 @@
                                         readonly="type == 'contact' and parent_id" />
                                 </div>
                             </div>
+                            <field name="trn_number" />
+                            
                             <!-- <field name="vat" placeholder="e.g. BE0477472701"
                             readonly="parent_id" /> -->
                         </group>

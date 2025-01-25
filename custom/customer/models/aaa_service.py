@@ -8,6 +8,7 @@ import re
 from dotenv import load_dotenv
 import os
 import logging
+from pytz import timezone
 load_dotenv()
 _logger = logging.getLogger(__name__)
 base_url = os.getenv("BASE_URL")
@@ -43,8 +44,7 @@ class AAAService(models.Model):
     member_id = fields.Many2one(
         'res.partner', 
         string="Member", 
-        domain="[('is_company', '=', False),('member_type','=',member_type)] "
-        
+        domain="[('is_company', '=', False),('member_type','=',member_type)] " 
     )
     
     invoice_ref_date = fields.Date(string='Invoice Reference Date')
@@ -53,7 +53,6 @@ class AAAService(models.Model):
     is_customer_from_partner = fields.Boolean(string='Customer from Partner', default=False)
     is_sequence_from_partner = fields.Boolean(string='Sequence from Partner', default=False)
     
-
     membership_num = fields.Char('Membership Number')
     created_by = fields.Many2one(
         'res.users',
@@ -151,7 +150,7 @@ class AAAService(models.Model):
     
     old_membership_number = fields.Char('Old Membership Number')
     
-    service_time = fields.Datetime(string="Service Date Time", default=fields.Datetime.now)
+
     cash_collected_hidden = fields.Boolean(string="Cash Collected Hidden")
     cash_collected = fields.Float(string="Cash Collected")     
     
@@ -246,6 +245,22 @@ class AAAService(models.Model):
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
 
+    service_time = fields.Datetime(string="Service Date Time", default=fields.Datetime.now)
+    service_time_uae_timezone = fields.Datetime(
+        string="Service Date Time UAE",
+        default=lambda self: self._get_dubai_time()
+    )
+
+    def _get_dubai_time(self):
+        """Get the current time in Dubai timezone as a naive datetime."""
+        dubai_tz = timezone('Asia/Dubai')
+        # Get the current UTC time
+        utc_now = datetime.utcnow()
+        # Convert UTC time to Dubai time
+        dubai_time = utc_now.astimezone(dubai_tz)
+        # Return a naive datetime object
+        return dubai_time.replace(tzinfo=None)
+# -----------------------------------------------------------------------------------------------------------------
 # ----------------------------DELETE RESTRICTION-------------------------------------------------------------------
     def unlink(self):
         """Restrict deletion for users in groups named 'Agent' or 'Dispatcher'."""
@@ -258,7 +273,6 @@ class AAAService(models.Model):
                 "You cannot delete this record"
             )
         return super(AAAService, self).unlink()
-# -----------------------------------------------------------------------------------------------------------------
     @api.depends('created_by')
     def _compute_is_agent_user(self):
         """Compute is_agent_user based on the created_by user's group membership."""
@@ -740,12 +754,10 @@ class AAAService(models.Model):
             self.message_post(body=_("Request failed: %s") % str(e))
             print("Request failed:", str(e))
 
-    def action_order_create(self, order_number,is_jafza_service,is_aditional_duty):
+    def action_order_create(self, order_number):
         url = f"{base_url}/aaa-customer/consumers/create/road_side_service"
         payload = json.dumps({
-            "erp_order_number": order_number,
-            "is_jafza_service" : is_jafza_service,
-            "is_after_duty" : is_aditional_duty  
+            "erp_order_number": order_number  
         })
         header = {
             'content-type':'application/json'
@@ -754,7 +766,8 @@ class AAAService(models.Model):
         if response.status_code == 200:
             print(f"API RESPONSE-ORDER CREATED,{response.text}")
         else:
-            print(f"API RESPONSE-ORDER NOT CREATED,{response.text},{response.status_code}") 
+            print(f"API RESPONSE-ORDER NOT CREATED,{response.text},{response.status_code}")
+ 
 # ---------------------------------------------------NEW A CODE-----------------------------------------------
 # -----------------------------CATEOGRY LIMIT CHECK----------------------------------------------------------------------------------------
     def action_dispatch_service(self):
@@ -1534,7 +1547,6 @@ class AAAService(models.Model):
             }
         }
    
-    
     def action_waive_off(self):
         # self.waive_off = True
         pass
@@ -1545,106 +1557,6 @@ class AAAService(models.Model):
     def history(self):
         pass
 
-    # def action_new_change(self):
-    #     """Update existing service record, change state, and store previous names of fields."""
-    #     for service in self:
-    #         print("SERVICE ID BEING UPDATED:", service.id)
-    #         print("SERVICE SEQUENCE NO:", service.name)  # Assuming 'name' is relevant for debugging
-    #         try:
-    #             service.write({
-    #                 'state': 'initiate',  # Update the state to 'initiate'
-    #                 'customer_id': service.customer_id.id,
-    #                 'sequence_id': service.sequence_id.id,
-    #                 'member_id': service.member_id.id,
-    #                 'vehicle_type': service.vehicle_type,
-    #                 'vehicle_model': service.vehicle_model,
-    #                 'vehicle_plate': service.vehicle_plate,
-    #                 'vehicle_chasis_no': service.vehicle_chasis_no,
-    #                 'policy_no': service.policy_no,
-    #                 'member_type': service.member_type,
-    #                 'type': service.type,
-    #                 'card_type': service.card_type,
-    #                 'product_id': service.product_id.id,
-    #                 'selected_from_location': service.selected_from_location.id,
-    #                 'selected_to_location': service.selected_to_location.id,
-    #                 'from_location': service.from_location.id,
-    #                 'to_location': service.to_location.id
-    #                 # Other updates can be added here if necessary
-    #             })
-    #             print("SERVICE UPDATED, NEW STATE:", service.state)
-    #         except Exception as e:
-    #             print("ERROR UPDATING SERVICE:", str(e))
-    #             raise UserError(_("Failed to update the service: %s") % str(e))
-    #     # Optionally, refresh the view to show changes
-    #     return {
-    #         'type': 'ir.actions.client',
-    #         'tag': 'reload',
-    #     }
-
-    # def action_new_change(self):
-    #     """Update existing service record, change state, and store previous names of fields."""
-
-    #     for service in self:
-    #         print("product_name:", service.product_id.name)
-    #         print("service_type", service.product_id.service_based)
-    #         print("SERVICE SEQUENCE NO:", service.name)       
-    #         # Set up the API call
-    #         url = f"{base_url}/carhire-order/order/service/consumers/orders/update/order-service-change"
-    #         headers = {'Content-Type': 'application/json'}
-
-    #         # Map the service_based value to the appropriate API parameter
-    #         service_based_mapping = {
-    #             'location': 'LOCATION_BASED',
-    #             'distance': 'DISTANCE_BASED'
-    #         }
-    #         new_service_type = service_based_mapping.get(service.product_id.service_based, service.product_id.service_based)
-
-    #         payload = {
-    #             "erp_order_number": service.name,  
-    #             "new_service_name": service.product_id.name,
-    #             "new_service_type": new_service_type
-    #         }
-
-    #         # Make the API call
-    #         try:
-    #             response = requests.put(url, json=payload, headers=headers)
-    #             response.raise_for_status()  # Raises an HTTPError for bad responses
-    #             print("API RESPONSE:", response.json())
-    #         except requests.exceptions.RequestException as e:
-    #             print("API REQUEST FAILED:", str(e))
-    #             # raise UserError(_("API request failed: %s") % str(e))
-
-    #         # Update the service record
-    #         try:
-    #             service.write({
-    #                 'state': 'initiate',  # Update the state to 'initiate'
-    #                 'customer_id': service.customer_id.id,
-    #                 'sequence_id': service.sequence_id.id,
-    #                 'member_id': service.member_id.id,
-    #                 'vehicle_type': service.vehicle_type,
-    #                 'vehicle_model': service.vehicle_model,
-    #                 'vehicle_plate': service.vehicle_plate,
-    #                 'vehicle_chasis_no': service.vehicle_chasis_no,
-    #                 'policy_no': service.policy_no,
-    #                 'member_type': service.member_type,
-    #                 'type': service.type,
-    #                 'card_type': service.card_type,
-    #                 'product_id': service.product_id.id,
-    #                 'selected_from_location': service.selected_from_location.id,
-    #                 'selected_to_location': service.selected_to_location.id,
-    #                 'from_location': service.from_location.id,
-    #                 'to_location': service.to_location.id
-    #             })
-    #             print("SERVICE UPDATED, NEW STATE:", service.state)
-    #         except Exception as e:
-    #             print("ERROR UPDATING SERVICE:", str(e))
-    #             # raise UserError(_("Failed to update the service: %s") % str(e))
-
-    #     # Optionally, refresh the view to show changes
-    #     return {
-    #         'type': 'ir.actions.client',
-    #         'tag': 'reload',
-    #     }
     def action_new_change(self):
         """Update existing service record, change state, and store previous names of fields."""
 
@@ -1668,13 +1580,9 @@ class AAAService(models.Model):
                 "new_service_name": service.product_id.name,
                 "new_service_type": new_service_type
             }
-
-            # Print payload values for verification before making the API call
-            print("Payload for API call:", payload)
-
-            # Make the API call(justapi call)       
+        
             response = requests.put(url, json=payload, headers=headers)
-            # Update the service record
+
             try:
                 service.write({
                     'state': 'initiate',  # Update the state to 'initiate'

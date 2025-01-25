@@ -24,35 +24,13 @@ class PolicyReportWizard(models.TransientModel):
     from_date = fields.Datetime(
         string="From Date",
         required=True,
-        default=lambda self: self._get_start_of_day()
     )
 
     to_date = fields.Datetime(
         string="To Date",
         required=True,
-        default=lambda self: self._get_end_of_day()
     )
-
-    def _get_start_of_day(self):
-        # Ensure midnight is calculated directly in UTC without shifting the date
-        utc_now = datetime.now(pytz.utc).date()  # Get today's date directly in UTC
-        midnight_utc = datetime.combine(utc_now, time(0, 0, 0))  # Midnight in UTC
-        return midnight_utc  # No need for timezone adjustments, already UTC-based
-
-    def _get_end_of_day(self):
-        # Get the user's timezone or default to UTC
-        user_tz = pytz.timezone(self.env.user.tz or 'UTC')
-        
-        # Get today's date in the user's timezone at 23:59:59
-        today = datetime.now(user_tz).date()
-        end_of_day_user_tz = user_tz.localize(datetime.combine(today, time(23, 59, 59)))
-        
-        # Convert to UTC without shifting the date
-        end_of_day_utc = end_of_day_user_tz.astimezone(pytz.utc)
-        
-        # Return as naive datetime for Odoo compatibility
-        return end_of_day_utc.replace(tzinfo=None)
-  
+ 
     product_template_id = fields.Many2one('product.template', string="Package", domain="[('bundle_product', '=', True)]")
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
     member_type = fields.Selection([('policy', 'POLICY'), ('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type", default="policy", readonly=True)
@@ -71,19 +49,9 @@ class PolicyReportWizard(models.TransientModel):
         amount = 0.0
         pricelist = self.customer_id.property_product_pricelist.id
         print("PRICELIST ID(((((((((((((((((((((((())))))))))))))))))))))))",pricelist)
-        if record.member_type == 'credit':
-            if record.from_location and record.to_location and record.product_id:
-                service_rate = self.env['service.rate'].search([
-                    ('product_pricelist_item_id.product_tmpl_id', '=', record.product_id.id),
-                    ('product_pricelist_item_id.pricelist_id', '=' , pricelist),
-                    ('from_loc_id', '=', record.from_location.id),
-                    ('to_loc_id', '=', record.to_location.id)
-                ], limit=1)
-                amount = service_rate.price if service_rate else 0.0
-        elif record.member_type == 'policy':
+        if record.member_type == 'policy':
             if record.name and record.product_template_id:
                 pricelist_item = self.env['product.pricelist.item'].search([
-                    ('pricelist_id' , '=' , pricelist ),
                     ('product_tmpl_id', '=', record.product_template_id.id)
                 ], limit=1)
                 amount = pricelist_item.fixed_price if pricelist_item else 0.0
