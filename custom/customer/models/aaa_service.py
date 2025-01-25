@@ -246,20 +246,20 @@ class AAAService(models.Model):
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
 
     service_time = fields.Datetime(string="Service Date Time", default=fields.Datetime.now)
-    service_time_uae_timezone = fields.Datetime(
-        string="Service Date Time UAE",
-        default=lambda self: self._get_dubai_time()
-    )
+    # service_time_uae_timezone = fields.Datetime(
+    #     string="Service Date Time UAE",
+    #     default=lambda self: self._get_dubai_time()
+    # )
 
-    def _get_dubai_time(self):
-        """Get the current time in Dubai timezone as a naive datetime."""
-        dubai_tz = timezone('Asia/Dubai')
-        # Get the current UTC time
-        utc_now = datetime.utcnow()
-        # Convert UTC time to Dubai time
-        dubai_time = utc_now.astimezone(dubai_tz)
-        # Return a naive datetime object
-        return dubai_time.replace(tzinfo=None)
+    # def _get_dubai_time(self):
+    #     """Get the current time in Dubai timezone as a naive datetime."""
+    #     dubai_tz = timezone('Asia/Dubai')
+    #     # Get the current UTC time
+    #     utc_now = datetime.utcnow()
+    #     # Convert UTC time to Dubai time
+    #     dubai_time = utc_now.astimezone(dubai_tz)
+    #     # Return a naive datetime object
+    #     return dubai_time.replace(tzinfo=None)
 # -----------------------------------------------------------------------------------------------------------------
 # ----------------------------DELETE RESTRICTION-------------------------------------------------------------------
     def unlink(self):
