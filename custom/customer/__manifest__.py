@@ -1,4 +1,5 @@
 # customer/__manifest__.py
+#custom css
 {
     'name': 'Customer',
     'version': '1.0',
