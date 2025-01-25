@@ -6,6 +6,7 @@
             <field name="name">call.center.all.service.view.tree</field>
             <field name="model">aaa.service</field>
             <field name="arch" type="xml">
+            #custom css
                 <tree string="Services" create="false"
                     duplicate="false" class="my_custom_style"
                     decoration-success="state=='done'"
