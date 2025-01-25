@@ -355,14 +355,9 @@ class ResPartnerMembers(models.Model):
     @api.depends('member_expiry_date','name')
     def _compute_member_expired(self):
         for partner in self:
-            print('partner_member expiry status',partner)
-            print('member expiry date',partner.member_expiry_date)
-            print('todays date for expiry check',fields.Date.today())
             if partner.member_expiry_date and partner.member_expiry_date < fields.Date.today():
                 partner.member_expired = True
-                print('inside expiry check')
             else:
-                print('iside expiry else')
                 partner.member_expired = False
 #-------------------------------COUNT CALCULATION---START--------------------------------------------------
     @api.depends('name')
@@ -375,6 +370,7 @@ class ResPartnerMembers(models.Model):
                 ('service_time', '<=', self.member_expiry_date),
                 ('member_type', '=', 'policy')
             ])
+            print("MEMBER ID",self.id)
             print("ACTIVATION DATE",self.member_activate_date)
             print("EXPIRY DATE",self.member_expiry_date)
             print("MEMBER SERVICES", service_member_ids.ids)
@@ -382,14 +378,15 @@ class ResPartnerMembers(models.Model):
 
 
     def action_view_policy_service(self):
-
         return {
             'name': 'Services',
             'type': 'ir.actions.act_window',
             'res_model': 'aaa.service',
             'view_mode': 'tree,form',
-            'domain': [('member_id', '=', self.id), ('member_type','=','policy'),('service_time', '>=', self.member_activate_date),
-                       ('service_time', '<=', self.member_expiry_date),('type', '=', 'non_cash')],
+            'domain': [('member_id', '=', self.id), ('member_type','=','policy'),
+                       ('service_time', '>=', self.member_activate_date),
+                       ('service_time', '<=', self.member_expiry_date),
+                       ('type', '=', 'non_cash')],
             'context': {
                 'from_res_partner_member_form': True,
                 'default_customer_id': self.parent_customer_id,
