@@ -586,7 +586,7 @@ class ResPartnerMembers(models.Model):
         card_type_name = card_type.name
 
         # Fetch the res.partner record directly by name
-        partner = self.env['res.partner'].search([('name', '=', self.name)], limit=1)
+        partner = self.env['res.partner'].search([('name', '=', self.name),('vehicle_chasis_no','=',self.vehicle_chasis_no)], limit=1)
         print("DEBUG: Partner fetched:", partner)
 
         # Pre-create the aaa.service record with the fetched partner ID
