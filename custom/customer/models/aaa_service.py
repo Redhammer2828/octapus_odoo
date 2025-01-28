@@ -42,17 +42,17 @@ class AAAService(models.Model):
     credit_customer_co = fields.Char('Customer C/O')
     sequence_id = fields.Many2one('partner.category', string="Customer Category", domain="[('partner_id','=', customer_id),('member_type','=',member_type)]")
     member_id = fields.Many2one(
-        'res.partner', 
-        string="Member", 
-        domain="[('is_company', '=', False),('member_type','=',member_type)] " 
+        'res.partner',
+        string="Member",
+        domain="[('is_company', '=', False),('member_type','=',member_type)] "
     )
-    
+
     invoice_ref_date = fields.Date(string='Invoice Reference Date')
       # Fields to track if values came from res.partner
     is_member_from_partner = fields.Boolean(string='Member from Partner', default=False)
     is_customer_from_partner = fields.Boolean(string='Customer from Partner', default=False)
     is_sequence_from_partner = fields.Boolean(string='Sequence from Partner', default=False)
-    
+
     membership_num = fields.Char('Membership Number')
     created_by = fields.Many2one(
         'res.users',
@@ -62,17 +62,17 @@ class AAAService(models.Model):
         store=False,
         readonly=False
     )
-    
+
     vehicle_type = fields.Char('Vehicle Type')   #Chaged to char
     vehicle_model = fields.Char('Vehicle Model')  #Changed to char
-    
-    product_id = fields.Many2one('product.template', string="Service",domain=[('bundle_product', '=', False)])  
+
+    product_id = fields.Many2one('product.template', string="Service",domain=[('bundle_product', '=', False)])
     uom_id = fields.Many2one('uom.uom', string="Unit of Measure")
     new_service_id = fields.Many2one('product.template', string="New Service")
     main_product_ids = fields.Many2many('product.template', string="Main Products")
     cancelled_service_id = fields.Many2one('aaa.service', string="Cancelled Service", readonly=True)
     acc_payment_id = fields.Many2one('account.payment', string="Payment")
-   
+
     # PROVIDER-------------------------------------------------------------------------------------------------------------
     provider_id = fields.Many2one('res.partner', string="Provider" ,domain=[('is_vendor', '=', True)])
     provider_contact = fields.Char(string="Provider Contact")
@@ -93,7 +93,7 @@ class AAAService(models.Model):
     driver_name = fields.Char(string="Driver Name")
     driver_num = fields.Char(string="Driver Number")
     # ============================================================================================================================
-    
+
     # SUMMARY---------------------------------------------------------------------------------------------------------------------
     credit_proforma_number = fields.Char(string="Trip Sheet Number")
     vendor_rating= fields.Selection([
@@ -106,7 +106,7 @@ class AAAService(models.Model):
     ], string='Rate this service')
     rating_user_id = fields.Many2one('res.users', string="Rating Added By")
     # ============================================================================================================================
-   
+
     member_contact_no = fields.Char(string="Mobile Number")
     email = fields.Char(string="Email")
     claim_membership = fields.Boolean(string="Claim Membership")
@@ -127,49 +127,49 @@ class AAAService(models.Model):
     vehicle_model_ok = fields.Boolean(string="Vehicle Model OK")
     vehicle = fields.Char('vehicle')
     vehicle_type = fields.Char(string="Vehicle Type")
-    
+
     vehicle_model = fields.Char(string="Vehicle Model")
-    
+
     vehicle_plate = fields.Char(string="Vehicle Plate")
-    vehicle_chasis_no = fields.Char(string="Vehicle Chasis No") 
+    vehicle_chasis_no = fields.Char(string="Vehicle Chasis No")
     policy_no = fields.Char(string="Policy No")
-    
-    
+
+
     product_type = fields.Selection([
         ('distance', 'Distance'),
         ('location', 'Location'),
         ('location_duration', 'Location Duration'),
         ('duration', 'Duration')
     ], string="Product Type")
-    
-    date_time_from = fields.Datetime(string= "From Date time") 
+
+    date_time_from = fields.Datetime(string= "From Date time")
     date_time_to = fields.Datetime(string="To Date time")
     quantity = fields.Float(string="Quantity", compute="_compute_quantity", store=True)
     quantity_with_days = fields.Char(string='Quantity with Days', compute="_compute_quantity", store=True)
     service_based = fields.Selection(related='product_id.service_based', store=True, readonly=True)
-    
+
     old_membership_number = fields.Char('Old Membership Number')
-    
+
 
     cash_collected_hidden = fields.Boolean(string="Cash Collected Hidden")
-    cash_collected = fields.Float(string="Cash Collected")     
-    
+    cash_collected = fields.Float(string="Cash Collected")
+
     addon_ok = fields.Boolean(string="Addon OK")
     waive_off = fields.Boolean(string="Waive Off")
-    
+
     # One to Many -------------------------------------------------------------------------------------------
     comment_history_ids = fields.One2many('service.comment', 'service_id', string="Comment History")
     service_history_ids = fields.One2many('service.history', 'service_id', string="Service History")
     # user_from_history = fields.Many2one(
-    #     'res.users', 
-    #     string="Agent (From History)", 
-    #     compute='_compute_user_from_history', 
+    #     'res.users',
+    #     string="Agent (From History)",
+    #     compute='_compute_user_from_history',
     #     store=True
     # )
     dispatcher_from_history = fields.Many2one(
-        'res.users', 
-        string="Dispatcher", 
-        compute='_compute_dispatcher_from_history', 
+        'res.users',
+        string="Dispatcher",
+        compute='_compute_dispatcher_from_history',
         store=True
     )
     enquiry_ids = fields.One2many('aaa.enquiry', 'service_id', string="Enquiries")
@@ -179,7 +179,7 @@ class AAAService(models.Model):
         string='Additional Services'
     )
     # =========================================================================================================
-   
+
     driver_id = fields.Many2one(
         'hr.employee',
         string="Driver",
@@ -187,8 +187,8 @@ class AAAService(models.Model):
     )
 
     is_driver_name_visible = fields.Boolean(string='Display Driver Name',default=True)
-    enquiry_ids = fields.One2many('aaa.enquiry','enq_id',string="Enquiries") # IN aaa.service  
-    
+    enquiry_ids = fields.One2many('aaa.enquiry','enq_id',string="Enquiries") # IN aaa.service
+
     completion_time = fields.Datetime(string="Completion Time")
     member_activate_date = fields.Date('Member Activate Date')
     member_expiry_date = fields.Date('Member Expiry Date')
@@ -202,7 +202,7 @@ class AAAService(models.Model):
     )
 # --------JAFZA SERVICE-----------------------------
     is_jafza_service = fields.Boolean(string='Is Jafza Service', default=False)
-    is_aditional_duty = fields.Boolean(string='Is Aditional Duty', default=False)
+    is_aditional_duty = fields.Boolean(string='Is Additional Duty', default=False)
     jafza_provider_id = fields.Many2one('res.partner', string="Provider" ,domain=[('is_vendor', '=', True)])
     jafza_driver_id = fields.Many2one(
         'hr.employee',
@@ -212,7 +212,7 @@ class AAAService(models.Model):
     jafza_driver_name = fields.Char(string="Driver Name")
 
     # # -----------LOCATION- API TESTINGs--------------------------------------------------
-    
+
     search_query = fields.Char(string='Search Locations')
     search_results = fields.Many2many('location.suggestion', string='Search Results', compute='_fetch_location_suggestions')
     selected_from_location = fields.Many2one('location.suggestion', string='From Location')
@@ -224,13 +224,13 @@ class AAAService(models.Model):
 
     from_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
     to_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
-    # quantity_with_days = fields.Char(string='Quantity with Days') 
+    # quantity_with_days = fields.Char(string='Quantity with Days')
     orgin_no = fields.Text('Orgin')
     origin_no = fields.Many2one('aaa.service', string='Origin Service', help='References the original service before changes were made.', readonly=True)
-    
+
 
     #orgin_no = fields.Char(string="Orgin No", help="Link to the original service record")
-    
+
 
     service_quantity = fields.Float(string="Service Quantity", default="1.00")
     hide_selected_locations = fields.Boolean(
@@ -285,7 +285,7 @@ class AAAService(models.Model):
                 # Check if `created_by` belongs to the 'new_agents' group
                 user_groups = record.created_by.groups_id
                 record.is_agent_user = any(group.name == 'Agent' for group in user_groups)
-    
+
     @api.depends('created_by')
     def _compute_is_dispatch_user(self):
         """Compute is_dispatch_user based on the created_by user's group membership."""
@@ -337,7 +337,7 @@ class AAAService(models.Model):
         today = fields.Date.context_today(self)
         start_of_day = datetime.combine(today, datetime.min.time())
         end_of_day = start_of_day + timedelta(days=1) - timedelta(seconds=1)
-        
+
         for record in self:
             record.is_today = (
                 record.service_time and
@@ -445,7 +445,7 @@ class AAAService(models.Model):
                     record.quantity = 0
                     record.quantity_with_days = "0 Days"
         return res
-   
+
     @api.depends('selected_from_location', 'selected_to_location')
     def _compute_amount(self):
         pass
@@ -468,26 +468,26 @@ class AAAService(models.Model):
         Extracts the emirate from the feature data JSON string and appends 'Emirate' with bold tags.
         """
         known_emirates = ['Abu Dhabi', 'Ajman', 'Dubai', 'Fujairah', 'Ras Al Khaimah', 'Sharjah', 'Umm Al-Quwain']
-        
+
         if feature_data:
             try:
                 feature_data = feature_data.replace("'", '"')  # Ensure JSON is valid
                 feature = json.loads(feature_data)  # Parse the JSON
-                
+
                 geocoding = feature.get('properties', {}).get('geocoding', {})
                 label = geocoding.get('label', '').lower()  # Convert label to lowercase
-                
+
                 # Remove "emirate" from the label if present
                 label = label.replace('emirate', '').strip()
-                
+
                 parts = [part.strip() for part in label.split(',')]  # Clean label
-                
+
                 for emirate in known_emirates:
                     # Case-insensitive match, ignoring the "Emirate" postfix
                     if emirate.lower() in [part.lower() for part in parts]:
                         # Return the emirate with 'Emirate' and wrapped in bold tags
                         return f"{emirate} Emirate"
-                
+
                 return 'Unknown Emirate'  # Default if no emirate is found
             except Exception as e:
                 print(f"Debug - Exception: {e}")
@@ -506,8 +506,8 @@ class AAAService(models.Model):
                 self.is_driver_name_visible = False  # Hide driver_name and show driver_id
             else:
                 self.is_driver_name_visible = True  # Show driver_name and hide driver_id
-#--------------------------------------------------BACKUP CODE OF ON CATEGORY FETCHING----------------------------- 
-  
+#--------------------------------------------------BACKUP CODE OF ON CATEGORY FETCHING-----------------------------
+
     @api.onchange('customer_id', 'member_type')
     def _onchange_customer_id_member_type(self):
         for record in self:
@@ -515,7 +515,7 @@ class AAAService(models.Model):
                 record.member_id = False
                 record.sequence_id = False
                 continue
- 
+
             if record.member_type == 'credit':
                 # Fetch 'credit' members ordered by ID
                 # Fetch 'credit' members ordered by ID
@@ -524,14 +524,14 @@ class AAAService(models.Model):
                     ('parent_customer_id', '=', record.customer_id.id),
                     ('member_type', '=', 'credit'),
                 ], order='id')  # Specify another field to order by if needed
- 
+
                 if members:
                     record.member_id = members[0].id
                     record.sequence_id = members[0].member_partner_category_id.id if members[0].member_partner_category_id else False
                 else:
                     record.member_id = False
                     record.sequence_id = False
- 
+
             elif record.member_type == 'adhoc':
                 # Fetch 'adhoc' member categories ordered by ID
                 # Fetch 'adhoc' member categories ordered by ID
@@ -540,7 +540,7 @@ class AAAService(models.Model):
                     ('partner_id', '=', record.customer_id.id),
                     ('member_type', '=', 'adhoc'),
                 ], order='id')  # Order by ID or another field as required
- 
+
                 if partner_categories:
                     record.sequence_id = partner_categories[0].id
                     # Fetch member linked to the fetched sequence_id
@@ -548,35 +548,35 @@ class AAAService(models.Model):
                         ('member_partner_category_id', '=', partner_categories[0].id),
                         ('member_type', '=', 'adhoc'),
                     ], order='id', limit=1)  # Limit to 1 member, ordered by ID
- 
+
                     record.member_id = member.id if member else False
                 else:
                     record.sequence_id = False
                     record.member_id = False
-    
+
     @api.onchange('sequence_id')
     def _onchange_sequence_id(self):
         for record in self:
             if not record.sequence_id:
                 record.member_id = False
                 continue
- 
+
             if record.member_type == 'credit':
                 member = self.env['res.partner'].search([
                     ('member_partner_category_id', '=', record.sequence_id.id),
                     ('member_type', '=', 'credit'),
                 ], order='id', limit=1)  # Order can be specified as needed
- 
+
                 record.member_id = member.id if member else False
- 
+
             elif record.member_type == 'adhoc':
                 member = self.env['res.partner'].search([
                     ('member_partner_category_id', '=', record.sequence_id.id),
                     ('member_type', '=', 'adhoc'),
                 ], order='id', limit=1)  # Order can be specified as needed
- 
+
                 record.member_id = member.id if member else False
-   
+
     @api.model
     def create(self, vals):
         """Override create method to set the name field and dynamically update created_by field."""
@@ -592,24 +592,24 @@ class AAAService(models.Model):
         if vals.get('name', _('New')) == _('New'):
             current_month = datetime.now().strftime('%m')  # 2-digit month
             current_year = datetime.now().strftime('%Y')   # 4-digit year
- 
+
             # Get the next sequence number (without the prefix)
             sequence_number = self.env['ir.sequence'].next_by_code('aaa.service')
- 
+
             # Extract only the numeric part of the sequence number
             numeric_part = ''.join(filter(str.isdigit, sequence_number))
             sequence_number = f"{int(numeric_part):08d}"  # Ensure it's zero-padded to 8 digits
- 
+
             # Format the service name
             vals['name'] = f"SER/{current_month}/{current_year}/{sequence_number}"
- 
+
         # Dynamically set the created_by field if not set already
         if not vals.get('created_by'):
             vals['created_by'] = self.env.user.id
- 
+
         # Create the aaa.service record
         service = super(AAAService, self).create(vals)
- 
+
         # Create the service.history record
         self.env['service.history'].create({
             'service_id': service.id,
@@ -617,9 +617,9 @@ class AAAService(models.Model):
             'time': fields.Datetime.now(),
             'status': service.state,
         })
- 
+
         return service
-  
+
     @api.depends('state')
     def _compute_created_by(self):
         """Dynamically update created_by when the record is in specified states."""
@@ -638,7 +638,7 @@ class AAAService(models.Model):
             # Get the `user` from the first relevant service.history record, if any
             service.dispatcher_from_history = relevant_history[:1].user if relevant_history else False
             print("DISPATCHER",relevant_history)
- 
+
     def write(self, vals):
         """Override the write method to ensure comments are saved and created_by is updated."""
         # Update tracking fields if values are being changed
@@ -652,15 +652,15 @@ class AAAService(models.Model):
         # If the record is in dispatch state, dynamically update created_by
         if self.state == 'dispatch' and not vals.get('created_by'):
             vals['created_by'] = self.env.user.id
- 
+
         # Handle comment appending and record creation
         if 'comments' in vals and vals['comments']:
             existing_comments = self.comments or ""
             new_comment = f"{existing_comments}\n{vals['comments']}" if existing_comments else vals['comments']
- 
+
             # Update the comments field in the service model
             vals['comments'] = new_comment
- 
+
             # Create the service.comment record for each new comment
             self.env['service.comment'].create({
                 'service_id': self.id,
@@ -669,22 +669,22 @@ class AAAService(models.Model):
                 'comment_user': self.env.user.id,
                 'comment_status': self.state,
             })
- 
+
             # Clear the comments field after saving
             vals['comments'] = ''  # Clear the comment field
- 
+
         # Call the super method to handle the actual update of the service
         return super(AAAService, self).write(vals)
- 
+
     @api.onchange('state')
     def _onchange_state(self):
         """Dynamically update created_by when state changes to specific values."""
         if self.state in {'initiate','dispatch', 'start', 'reach', 'completed_by_driver_done'} and self.created_by != self.env.user:
             self.created_by = self.env.user
-    
+
     def action_initiate_service(self):
         self.state = 'initiated'
-   
+
     def action_order_response(self, order_number, status, phone_number, vehicle_chasis_no):
         url = f"{base_url}/aaa-customer/whatsapp/whatsapp-Notification"
         payload = json.dumps({
@@ -711,7 +711,7 @@ class AAAService(models.Model):
             else:
                 self.message_post(body=_("Failed to send notification, status code: %s, message: %s") % (response.status_code, response.text))
                 print("Failed to send, status code:", response.status_code, "message:", response.text)
-                
+
         except requests.exceptions.RequestException as e:
             self.message_post(body=_("Request failed: %s") % str(e))
             print("Request failed:", str(e))
@@ -719,7 +719,7 @@ class AAAService(models.Model):
     def action_order_create(self, order_number):
         url = f"{base_url}/aaa-customer/consumers/create/road_side_service"
         payload = json.dumps({
-            "erp_order_number": order_number  
+            "erp_order_number": order_number
         })
         header = {
             'content-type':'application/json'
@@ -729,7 +729,7 @@ class AAAService(models.Model):
             print(f"API RESPONSE-ORDER CREATED,{response.text}")
         else:
             print(f"API RESPONSE-ORDER NOT CREATED,{response.text},{response.status_code}")
- 
+
 # ---------------------------------------------------NEW A CODE-----------------------------------------------
 # -----------------------------CATEOGRY LIMIT CHECK----------------------------------------------------------------------------------------
     def action_dispatch_service(self):
@@ -768,7 +768,7 @@ class AAAService(models.Model):
                 raise UserError(_("Please provide the From Location detail."))
         elif to_location_visible and not to_location_field:
             raise UserError(_("Please provide the To Location detail."))
-       
+
         # Check for Credit
         if self.member_id.member_type in ['credit', 'adhoc']:
              # Calculate quantity and quantity_with_days without validation
@@ -776,7 +776,7 @@ class AAAService(models.Model):
                 delta = self.date_time_to - self.date_time_from
                 self.quantity = delta.days
                 self.quantity_with_days = f"{self.quantity} Days" if self.quantity else "0 Days"
-           
+
             # Save the updated values to the database
             self.write({
                 'quantity': self.quantity,
@@ -787,26 +787,26 @@ class AAAService(models.Model):
             return True
         if not self.member_id:
             raise ValidationError(_("Member not found in the service record."))
- 
+
         member = self.member_id
         print("POLICY MEMBER = res_partner id =", member.id)
         product_template_id = member.product_template_id.id
         print("PACKAGE ID OF POLICY MEMBER = product.package.service", product_template_id)
- 
+
         if not product_template_id:
             raise ValidationError(_("Package not found for the member."))
- 
+
         if not self._is_service_in_package(product_template_id):
             print("SERVICE NOT IN PACKAGE - TRIGGERING CASH/CREDIT WIZARD")
             return self._trigger_cash_or_credit_service_wizard()
- 
+
         if not self._validate_service_limits(product_template_id):
             print("SERVICE VALIDITY REACHED THE CATEGORY LIMITS - TRIGGERING CASH WIZARD")
             return self._trigger_cash_service_wizard()
- 
+
         self._dispatch_service()
         return True
- 
+
     def _generate_service_name(self):
         if not self.name:
             if not self.service_sequence:
@@ -819,12 +819,12 @@ class AAAService(models.Model):
         status = self.state
         phone_number = self.member_contact_no
         vehicle_chasis_no = self.vehicle_chasis_no  # Corrected field name
- 
+
         self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
         self.action_order_create(order_number)
         print(f"checking value of order:{order_number},{status}, {phone_number}, {vehicle_chasis_no}")
         # -----------------------------------------------------------------------------------------------
- 
+
     def _is_service_in_package(self, product_template_id):
         # Search for services within the package
         package_services = self.env['product.package.service'].search([
@@ -832,53 +832,53 @@ class AAAService(models.Model):
         ])
         print("SERVICES IN THE PACKAGE", package_services)
         print("PRODUCT PACKAGE SERVICE - Service ids", package_services.product_id.ids)
- 
+
         service_product_id = self.product_id.id  # The service the member is trying to avail
         print("SERVICE TAKEN BY THE MEMBER", service_product_id)
- 
+
         # Search for matching products in product.product
         matching_products = self.env['product.product'].search([('id', 'in', package_services.product_id.ids)])
         print("MATCHING PRODUCTS", matching_products)
- 
+
         # Get product_tmpl_id from the matching products
         matching_product_tmpl_ids = matching_products.mapped('product_tmpl_id.id')
         print("MATCHING PRODUCT TEMPLATE IDS", matching_product_tmpl_ids)
- 
+
         # Check if the service product matches any of the product templates
         if service_product_id in matching_product_tmpl_ids:
             print("SERVICE MATCHES A PRODUCT IN THE PACKAGE")
             return True
-       
- 
+
+
     def _validate_service_limits(self, product_template_id):
         parent_category_id = self.product_id.categ_id.id
         print(f"PARENT CATEGORY OF CHOSEN SERVICE IN PACKAGE: {parent_category_id}")
- 
+
         if not parent_category_id:
             return True
- 
+
         category_limits = self.env['product.category.limit'].search([
             ('categ_id', '=', parent_category_id),
             ('category_id', '=', product_template_id)
         ])
         print(f"VAL_LIMITS OF PARENT_CAT: {category_limits}")
- 
+
         if not category_limits:
             return True
- 
+
         quantity_limit = 10  # Default value
         validity_period_days = 365  # Default value
- 
+
         for limit in category_limits:
             quantity_limit = float(limit.quantity)
             print(f"NO OF SERVICE ACCESS IN CAT_DURATION: {quantity_limit}")
-           
+
             # Fix: Correct handling of hours vs. days
             validity_period_days = (
                 limit.hours if limit.uom_id.name == 'Days' else limit.hours
             )
             print(f"CAT_DURATION (validity in hours or days): {validity_period_days}")
- 
+
         # Logic for 24-hour validation
             if validity_period_days == 24:
 
@@ -905,16 +905,16 @@ class AAAService(models.Model):
                     time_since_last_service = fields.Datetime.now() - last_service.service_time
                     hours_since_last_service = time_since_last_service.total_seconds() / 3600
                     print(f"HOURS SINCE LAST SERVICE: {hours_since_last_service}")
- 
+
                     # If less than 24 hours, calculate remaining quantity
                     if hours_since_last_service < 24:
                         remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
                         print(f"REMAINING SERVICE ACCESS IN THE CAT_DURATION (24 hours): {remaining_quantity}")
- 
+
                         if remaining_quantity > 0:
                             print("SERVICE WITHIN 24 HOURS - TRIGGERING CASH WIZARD")
                             self._trigger_cash_service_wizard()
-                            
+
                             raise ValidationError(
                                 _("You can only access a new service 24 hours after the last one. Remaining quantity: %d") % remaining_quantity
                             )
@@ -928,14 +928,14 @@ class AAAService(models.Model):
                 remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
                 print("COUNT AT 365 days ---------------------------",self._count_services_in_category(parent_category_id))
                 print(f"REMAINING SERVICE ACCESS IN THE CAT_DURATION ({validity_period_days} days): {remaining_quantity}")
- 
+
                 if remaining_quantity <= 0:
                     print("REMAINING SERVICE ACCESS REACHED ZERO - TRIGGERING CASH WIZARD")
                     self._trigger_cash_service_wizard()
                     return False
                 elif remaining_quantity > 0:
                     print(f"Remaining quantity is still available: {remaining_quantity}")
- 
+
         else:  # Logic for validity_period_days = 365 or other cases
             remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
             print(f"REMAINING SERVICE ACCESS IN THE CAT_DURATION ({validity_period_days} days): {remaining_quantity}")
@@ -943,11 +943,11 @@ class AAAService(models.Model):
                 print("REMAINING SERVICE ACCESS REACHED ZERO - TRIGGERING CASH WIZARD")
                 self._trigger_cash_service_wizard()
                 return False
- 
+
         if self.service_based == 'location_duration':
             period_start = fields.Datetime.now() - timedelta(days=validity_period_days)
             print(f"START OF LOCATION DURATION SERVICE PERIOD: {period_start}")
- 
+
             total_days = 0
 
             # Determine the activate date, accounting for a potentially null member_activate_date
@@ -974,38 +974,38 @@ class AAAService(models.Model):
                     print(f"SERVICE DURATION FOR LOCATION DURATION SERVICE: {service_duration}")
                     total_days += service_duration
                     print(f"TOTAL SERVICE DAYS ACCESSED: {total_days}")
- 
+
             # Calculate remaining days from the quantity limit
             remaining_days = quantity_limit - total_days
             print(f"REMAINING SERVICE DAYS ALLOWED: {remaining_days}")
- 
+
             if remaining_days <= 0:
                 print("SERVICE LIMIT EXCEEDED - TRIGGERING CASH WIZARD")
                 return False
- 
+
             # Check if the new service duration exceeds the remaining days
             new_service_duration = (self.date_time_to - self.date_time_from).total_seconds() / (3600 * 24)
             if new_service_duration > remaining_days:
                 raise ValidationError(
                     _("The service can only be accessed for the remaining %d days. Please adjust the service duration.") % remaining_days
                 )
- 
+
         if self.date_time_from and self.date_time_to:
             delta = self.date_time_to - self.date_time_from
             self.quantity = delta.days  # This updates `quantity`
             self.quantity_with_days = f"{self.quantity} Days" if self.quantity else "0 Days"
- 
+
         # Explicitly write `quantity_with_days` to save it in the database
         self.write({
             'quantity': self.quantity,
             'quantity_with_days': self.quantity_with_days,
         })
- 
+
         return True
- 
+
     def _is_service_accessible_in_24_hours(self, parent_category_id):
         last_dispatch_time = fields.Datetime.now() - timedelta(hours=24)
-        
+
         # Determine the activate date, accounting for a potentially null member_activate_date
         if self.member_activate_date:
             activate_date = self.member_activate_date
@@ -1020,9 +1020,9 @@ class AAAService(models.Model):
             ('service_time', '<=', self.member_expiry_date),
             ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
             ('create_date', '>=', last_dispatch_time),
-        ]) 
+        ])
         return recent_services == 0
- 
+
     def _count_services_in_category(self, parent_category_id):
         # Determine the activate date, accounting for a potentially null member_activate_date
         if self.member_activate_date:
@@ -1053,7 +1053,7 @@ class AAAService(models.Model):
                 'default_service_id': self.id,
             },
         }
- 
+
     def _trigger_cash_service_wizard(self):
         return {
             'name': _('Convert to Cash'),
@@ -1066,7 +1066,7 @@ class AAAService(models.Model):
                 'default_service_id': self.id,
             },
         }
- 
+
     def _dispatch_service(self):
         self.state = 'dispatch'
         self.message_post(body=_("Service dispatched successfully."))
@@ -1076,7 +1076,7 @@ class AAAService(models.Model):
             'time': fields.Datetime.now(),
             'status': self.state,
         })
- 
+
         for service in self:
             comment_content = service.comments or 'DISPATCHED'
             self.env['service.comment'].create({
@@ -1086,10 +1086,10 @@ class AAAService(models.Model):
                 'comment_user': self.env.user.id,
                 'comment_status': service.state,
             })
- 
+
             if service.comments:
                 service.comments = False
- 
+
         return True
 # --------------------------------------------------------------------------------------------------
     @api.depends('requested_date')
@@ -1121,19 +1121,19 @@ class AAAService(models.Model):
     @api.model
     def check_and_update_state(self):
         current_minute = fields.Datetime.now().replace(second=0, microsecond=0)
-        
+
         # Find records scheduled for the current minute
         domain = [
             ('state', '=', 'initiate'),
             ('next_check_time', '=', current_minute),
             ('requested_date', '<=', fields.Datetime.now())
         ]
-        
+
         services = self.search(domain)
-        
+
         for service in services:
             service.write({'state': 'dispatch'})
-            
+
             # Create history entry
             self.env['service.history'].create({
                 'service_id': service.id,
@@ -1141,7 +1141,7 @@ class AAAService(models.Model):
                 'time': service.requested_date,  # Use the original requested time
                 'status': 'dispatch'
             })
-            
+
             # Create comment entry
             self.env['service.comment'].create({
                 'service_id': service.id,
@@ -1150,11 +1150,11 @@ class AAAService(models.Model):
                 'comment_user': self.env.user.id,
                 'comment_status': 'dispatch'
             })
-            
+
         return True
 
-  
-  
+
+
     # def action_schedule_service_check(self):
     #     self.schedule_service_check = True
     #     self.state= 'initiate'
@@ -1170,27 +1170,27 @@ class AAAService(models.Model):
     #                         'default_service_id': self.id,
     #                         },
     #             }
-    
+
 
     # @api.model
     # def check_and_update_state(self):
     #     now = fields.Datetime.now()
-        
+
     #     # Search for records where requested_date is within the last minute
     #     # This ensures we catch records right at their requested time
     #     one_minute_ago = now - timedelta(minutes=1)
-        
+
     #     records = self.search([
     #         ('state', '=', 'initiate'),
     #         ('requested_date', '>=', one_minute_ago),
     #         ('requested_date', '<=', now)
     #     ])
-        
+
     #     for record in records:
     #         # Only update if we're at or past the exact requested time
     #         if record.requested_date <= now:
     #             record.write({'state': 'dispatch'})
-                
+
     #             # Create service history entry
     #             self.env['service.history'].create({
     #                 'service_id': record.id,
@@ -1198,7 +1198,7 @@ class AAAService(models.Model):
     #                 'time': fields.Datetime.now(),
     #                 'status': 'dispatch',
     #             })
-                
+
     #             # Create service comment entry
     #             self.env['service.comment'].create({
     #                 'service_id': record.id,
@@ -1207,13 +1207,13 @@ class AAAService(models.Model):
     #                 'comment_user': self.env.user.id,
     #                 'comment_status': 'dispatch',
     #             })
-            
+
     # @api.model
     # def check_and_update_state(self):
     #     now=fields.Datetime.now()
     #     records= self.search([('state', '=', 'initiate'),('requested_date', '<=', now)])
     #     records.write({'state':'dispatch'})
-    
+
     #     for record in records:
     #         self.env['service.history'].create({
     #             'service_id': record.id,
@@ -1227,7 +1227,7 @@ class AAAService(models.Model):
     #             'comment_date_and_time' : fields.Datetime.now(),
     #             'comment_user': self.env.user.id,
     #             'comment_status' : record.state,
-           
+
     #     })
 
     @api.onchange('member_id')
@@ -1236,7 +1236,7 @@ class AAAService(models.Model):
         if self.member_id and not self.member_id.member_type:
             # Automatically set member type based on service form
             self.member_id.member_type = self.member_type  # Set from selection in aaa.service
-    
+
     def action_start_service(self):
         for service in self:
             # Ensure credit_proforma_number is filled
@@ -1246,7 +1246,7 @@ class AAAService(models.Model):
             #     raise UserError("You must fill the DRIVER before starting the service.")
             # Proceed with setting the state to 'start'
             service.state = 'start'
- 
+
             # Create the service.history record
             self.env['service.history'].create({
                 'service_id': service.id,
@@ -1256,7 +1256,7 @@ class AAAService(models.Model):
             })
             # Prepare the comment content
             comment_content = service.comments or 'STARTED'
- 
+
             # Create the service.comment record
             self.env['service.comment'].create({
                 'service_id': service.id,
@@ -1269,20 +1269,20 @@ class AAAService(models.Model):
             if service.comments:
                 service.comments = False
         return True
-    
+
     def action_reach_service(self):
         self.state = 'reach'
         for service in self:
-           
+
                 self.env['service.history'].create({
                     'service_id': service.id,
                     'user': self.env.user.id,
                     'time': fields.Datetime.now(),
-                    'status': service.state,  
+                    'status': service.state,
                 })
- 
+
         comment_content = service.comments or 'REACHED'
- 
+
             # Create the service.comment record
         self.env['service.comment'].create({
             'service_id': service.id,
@@ -1291,27 +1291,27 @@ class AAAService(models.Model):
             'comment_user': self.env.user.id,
             'comment_status': service.state,
             })
- 
+
             # If a manual comment exists, clear the service.comments field after creating the record
         if service.comments:
             service.comments = False
- 
+
         return True
-    
+
     def action_completed_rac(self):
         #pass
         self.state = 'completed_by_driver'
         for service in self:
-           
+
                 self.env['service.history'].create({
                     'service_id': service.id,
                     'user': self.env.user.id,
                     'time': fields.Datetime.now(),
-                    'status': service.state,  
+                    'status': service.state,
                 })
- 
+
         comment_content = service.comments or 'COMPLETED BY DRIVER'
- 
+
             # Create the service.comment record
         self.env['service.comment'].create({
             'service_id': service.id,
@@ -1320,22 +1320,22 @@ class AAAService(models.Model):
             'comment_user': self.env.user.id,
             'comment_status': service.state,
             })
- 
+
             # If a manual comment exists, clear the service.comments field after creating the record
         if service.comments:
             service.comments = False
- 
+
         return True
-    
+
     def action_done_service(self):
         for service in self:
             # Ensure credit_proforma_number is filled
             if not service.credit_proforma_number:
                 raise UserError("You must fill the Trip Sheet Number before completing the service.")
- 
+
             # Proceed with setting the state to 'done'
             service.state = 'done'
- 
+
             # Create the service.history record
             self.env['service.history'].create({
                 'service_id': service.id,
@@ -1343,10 +1343,10 @@ class AAAService(models.Model):
                 'time': fields.Datetime.now(),
                 'status': service.state,
             })
- 
+
             # Prepare the comment content
             comment_content = service.comments or 'COMPLETED'
- 
+
             # Create the service.comment record
             self.env['service.comment'].create({
                 'service_id': service.id,
@@ -1355,11 +1355,11 @@ class AAAService(models.Model):
                 'comment_user': self.env.user.id,
                 'comment_status': service.state,
             })
- 
+
             # Clear the comments field after creating the record
             if service.comments:
                 service.comments = False
- 
+
         return True
 
     def cash_service(self):
@@ -1371,7 +1371,7 @@ class AAAService(models.Model):
     def action_cancel_service(self):
         for service in self:
             # Force setting the state to 'cancel'
-            
+
             service.sudo().write({'state': 'cancel'})
 
             # Create a service history record
@@ -1404,7 +1404,7 @@ class AAAService(models.Model):
 
     def action_discard(self):
         self.state = 'discard'
-    
+
     def action_change(self):
         self.state = 'change'
         for service in self:
@@ -1429,10 +1429,10 @@ class AAAService(models.Model):
                     'service_id': service.id,
                     'user': self.env.user.id,
                     'time': fields.Datetime.now(),
-                    'status': service.state,  
+                    'status': service.state,
                 })
             comment_content = service.comments or 'CHANGED'
- 
+
             # Create the service.comment record
         self.env['service.comment'].create({
             'service_id': service.id,
@@ -1441,11 +1441,11 @@ class AAAService(models.Model):
             'comment_user': self.env.user.id,
             'comment_status': service.state,
             })
- 
+
         # If a manual comment exists, clear the service.comments field after creating the record
         if service.comments:
             service.comments = False
- 
+
         return True
 
     def action_custom_cancel_service(self):
@@ -1481,7 +1481,7 @@ class AAAService(models.Model):
             'complaints_id': self.env['complaint.subtype'].search([], limit=1).id,
             #'enquiry_state': self.state
         })
-       
+
         # Open the Enquiry/Complaint wizard
         view_id = self.env.ref('customer.view_enquiry_complaint_wizard_form').id
         return {
@@ -1508,7 +1508,7 @@ class AAAService(models.Model):
                 #'default_enquiry_state': self.state
             }
         }
-   
+
     def action_waive_off(self):
         # self.waive_off = True
         pass
@@ -1525,7 +1525,7 @@ class AAAService(models.Model):
         for service in self:
             print("product_name:", service.product_id.name)
             print("service_type", service.product_id.service_based)
-            print("SERVICE SEQUENCE NO:", service.name)       
+            print("SERVICE SEQUENCE NO:", service.name)
             # Set up the API call
             url = f"{base_url}/carhire-order/order/service/consumers/orders/update/order-service-change"
             headers = {'Content-Type': 'application/json'}
@@ -1538,11 +1538,11 @@ class AAAService(models.Model):
             new_service_type = service_based_mapping.get(service.product_id.service_based, service.product_id.service_based)
 
             payload = {
-                "erp_order_number": service.name,  
+                "erp_order_number": service.name,
                 "new_service_name": service.product_id.name,
                 "new_service_type": new_service_type
             }
-        
+
             response = requests.put(url, json=payload, headers=headers)
 
             try:
@@ -1575,19 +1575,19 @@ class AAAService(models.Model):
             'type': 'ir.actions.client',
             'tag': 'reload',
         }
- 
+
     def action_request_service(self):
         self.state='requested'
         for service in self:
-           
+
                 self.env['service.history'].create({
                     'service_id': service.id,
                     'user': self.env.user.id,
                     'time': fields.Datetime.now(),
-                    'status': service.state,  
+                    'status': service.state,
                 })
                 comment_content = service.comments or 'REQUESTED'
- 
+
             # Create the service.comment record
         self.env['service.comment'].create({
             'service_id': service.id,
@@ -1608,7 +1608,7 @@ class AAAService(models.Model):
                 'service_id': service.id,
                 'user': self.env.user.id,
                 'time': fields.Datetime.now(),
-                'status': service.state,  
+                'status': service.state,
                 })
             self .env['service.comment'].create({
                 'service_id': service.id,
@@ -1617,7 +1617,7 @@ class AAAService(models.Model):
                 'comment_user': self.env.user.id,
                 'comment_status' : service.state,
         })
- 
+
 
 class ServiceComment(models.Model):
     _name = 'service.comment'
@@ -1641,7 +1641,7 @@ class ServiceHistory(models.Model):
 class AaaServiceAddon(models.Model):
     _name = 'aaa.service.addon'
     _description = 'Additional Service'
- 
+
     service_id = fields.Many2one('aaa.service', string='Service')
     product_id = fields.Many2one(
         'product.template',
@@ -1650,14 +1650,14 @@ class AaaServiceAddon(models.Model):
     )
     provider_from_location_id = fields.Many2one('location.internal', string="From Location")
     provider_to_location_id = fields.Many2one('location.internal', string="To Location")
-   
+
     from_date= fields.Datetime(string="From Date")
     to_date= fields.Datetime(string="To Date")
     quantity= fields.Float(string="Quantity")
     description = fields.Char(' Description')
     uom= fields.Many2one('uom.uom', string="UoM")
     price_subtotal = fields.Float('Price Subtotal')
-   
+
     @api.onchange('from_date', 'to_date', 'uom')
     def _compute_quantity_based_on_dates(self):
         """
@@ -1667,7 +1667,7 @@ class AaaServiceAddon(models.Model):
         if self.from_date and self.to_date:
             # Calculate the difference between the two dates
             delta = fields.Datetime.from_string(self.to_date) - fields.Datetime.from_string(self.from_date)
-           
+
             # Check if UoM is set and it is in days or hours (you can adjust this to your needs)
             if self.uom:
                 # Example calculation: if UoM is "hours", quantity will be the difference in hours
@@ -1681,16 +1681,16 @@ class AaaServiceAddon(models.Model):
             else:
                 # Default quantity calculation in hours if UoM is not specified
                 self.quantity = delta.total_seconds() / 3600
- 
+
               # Update the 'description' field with the date range in dd/mm/yy format
             from_date_str = fields.Datetime.to_string(self.from_date) if self.from_date else ''
             to_date_str = fields.Datetime.to_string(self.to_date) if self.to_date else ''
-           
+
             if from_date_str and to_date_str:
                 # Convert to dd/mm/yy format
                 from_date_formatted = fields.Datetime.from_string(self.from_date).strftime('%d/%m/%y')
                 to_date_formatted = fields.Datetime.from_string(self.to_date).strftime('%d/%m/%y')
- 
+
                 self.description = f"{from_date_formatted} to {to_date_formatted}"
             else:
                 self.description = ""
