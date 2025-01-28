@@ -21,15 +21,14 @@ class ServiceReportWizard(models.TransientModel):
     _name = 'service.report.wizard'
     _description = 'Service Report Wizard'
 
-    from_date = fields.Datetime(
+    from_date = fields.Date(
         string="From Date",
-        required=True,
-    )
+        required=True)
 
-    to_date = fields.Datetime(
+    to_date = fields.Date(
         string="To Date",
-        required=True,
-    )
+        required=True)
+    
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
     member_type = fields.Selection([('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type",default ='credit')
     sequence_id = fields.Many2one('partner.category', string="Customer Category",
@@ -52,8 +51,8 @@ class ServiceReportWizard(models.TransientModel):
 # FETCH RECORDS ----- INITIAL SEARCH FUNCTION
     def _fetch_service_records(self):
 
-        print("DATE FROM ---------------",self.from_date)
-        print("To DATE ---------------",self.to_date)
+        print("DATE FROM ----------CREDIT-----",self.from_date)
+        print("To DATE ------CREDIT---------",self.to_date)
                 # Convert input dates to Dubai time
         """Fetches service records based on the wizard's filter criteria."""
         domain = []

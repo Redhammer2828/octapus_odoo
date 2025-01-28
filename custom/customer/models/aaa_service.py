@@ -245,6 +245,8 @@ class AAAService(models.Model):
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
 
+    is_manager_or_admin = fields.Boolean(compute='_compute_is_manager_or_admin', string="Is Manager or Admin", store=False)
+
     service_time = fields.Datetime(string="Service Date Time", default=fields.Datetime.now)
     # service_time_uae_timezone = fields.Datetime(
     #     string="Service Date Time UAE",
@@ -294,6 +296,22 @@ class AAAService(models.Model):
                 # Check if `created_by` belongs to the 'new_agents' group
                 user_groups = record.created_by.groups_id
                 record.is_dispatch_user = any(group.name == 'Dispatcher' for group in user_groups)
+
+    @api.depends()  # Remove created_by dependency since we want current user
+    def _compute_is_manager_or_admin(self):
+        """Compute is_manager_or_admin based on the current user's group membership."""
+        for record in self:
+            # Get the current user's groups
+            user_groups = self.env.user.groups_id
+           
+            # Check if the user belongs to the 'Manager' group
+            is_manager = any(group.name == 'Manager' for group in user_groups)
+           
+            # Check if the user is an Admin
+            is_admin = any(group.name == 'IT Group' for group in user_groups)
+           
+            # Set the field to True if the user is either a Manager or an Admin
+            record.is_manager_or_admin = is_manager or is_admin
     
     #computing the dispatcher in AAA.SERVICE
     @api.depends('state', 'service_history_ids.user')
@@ -380,39 +398,6 @@ class AAAService(models.Model):
         # Trigger computation of the amount when locations are selected
         self._compute_amount()
 
-    # @api.depends('date_time_from', 'date_time_to', 'member_type')
-    # def _compute_quantity(self):
-    #     for record in self:
-    #         if record.date_time_from and record.date_time_to:
-    #             delta = record.date_time_to - record.date_time_from
-    #             days = delta.days
-    #             record.quantity = days
-    #             record.quantity_with_days = f"{days} Days"
-    #         else:
-    #             record.quantity = 0
-    #             record.quantity_with_days = "0 Days"
- 
-    # @api.onchange('date_time_from', 'date_time_to')
-    # def _onchange_from_to_date(self):
-    #     for record in self:
-    #         if record.member_type in ['credit', 'adhoc']:
-    #             if record.date_time_from and record.date_time_to:
-    #                 delta = record.date_time_to - record.date_time_from
-    #                 record.quantity = delta.days
-    #                 record.quantity_with_days = f"{record.quantity} Days" if record.quantity else "0 Days"
- 
-    # def write(self, vals):
-    #     res = super(AAAService, self).write(vals)
-    #     for record in self:
-    #         if record.member_type in ['credit', 'adhoc'] and 'date_time_to' in vals:
-    #             if record.date_time_from and record.date_time_to:
-    #                 delta = record.date_time_to - record.date_time_from
-    #                 record.quantity = delta.days
-    #                 record.quantity_with_days = f"{record.quantity} Days"
-    #             else:
-    #                 record.quantity = 0
-    #                 record.quantity_with_days = "0 Days"
-    #     return res
     @api.depends('date_time_from', 'date_time_to', 'member_type')
     def _compute_quantity(self):
         for record in self:
@@ -641,29 +626,6 @@ class AAAService(models.Model):
         for record in self:
             if record.state in {'initiate','dispatch', 'start', 'reach', 'completed_by_driver_done'} and record.created_by != self.env.user:
                 record.created_by = self.env.user
-
-    # @api.depends('state', 'service_history_ids.user')
-    # def _compute_user_from_history(self):
-    #     """Fetch the exact user from the related service.history."""
-    #     for service in self:
-    #         # Find the first related service.history record with a matching state
-    #         relevant_history = service.service_history_ids.filtered(
-    #             lambda history: history.status == service.state
-    #         )
-    #         # Get the `user` from the first relevant service.history record, if any
-    #         service.user_from_history = relevant_history[:1].user if relevant_history else False
-
-
-    # @api.depends('create_uid')
-    # def _compute_user_from_history(self):
-    #     """Fetch the user who initially created the service record."""
-    #     for service in self:
-    #         # Set the user_from_history field to the user who created the record
-    #         service.user_from_history = service.create_uid.login
-    #         print("Setting user_from_history to:", service.create_uid.login)
-
-
-
 
     @api.depends('state', 'service_history_ids.user')
     def _compute_dispatcher_from_history(self):

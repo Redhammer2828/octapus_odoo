@@ -61,9 +61,10 @@
                         <button name="action_request_service" type="object" string="Request"
                             invisible="state != 'cancel'  or is_agent_user" groups="base.group_user"
                             class="btn-primary" />
-                        <button name="action_approve_service" type="object" string="Approve"
+                        <!-- <button name="action_approve_service" type="object" string="Approve"
                             groups="base.group_system"
-                            invisible="state != 'requested'  or is_agent_user" class="btn-primary" />
+                            invisible="state != 'requested'  or is_agent_user" class="btn-primary" /> -->
+                        <button name="action_approve_service" type="object" string="Approve"  invisible="state != 'requested' or not is_manager_or_admin"  class="btn-primary" />
                         <button name="action_new_change" type="object" string="New Change"
                             invisible="state not in ('change')" />
                         <button name="action_change" type="object" string="Change"
@@ -77,6 +78,7 @@
                         <field name="state" widget="statusbar" nolabel="1"
                             statusbar_visible="initiate,dispatch,start,reach,completed_by_driver,done" />
                         <field name="is_agent_user" invisible="1" />
+                        <field name="is_manager_or_admin" invisible="1" />
                     </header>
                     <sheet>
                         <div class="row mt-2 mb-2" style="font-weight: bold; color: #7c7bad; border: solid 1px #8080805c; margin-left: 1%; margin-right: 1%; background-color: #eee; padding: 8px; border-radius: 10px;">
