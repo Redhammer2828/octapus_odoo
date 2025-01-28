@@ -21,26 +21,23 @@ class PolicyReportWizard(models.TransientModel):
     _name = 'policy.report.wizard'
     _description = 'Policy Report Wizard'
 
-    from_date = fields.Datetime(
-        string="From Date",
-        required=True,
-    )
+    from_date = fields.Date(string="From Date",required=True)
 
-    to_date = fields.Datetime(
-        string="To Date",
-        required=True,
-    )
+    to_date = fields.Date(string="To Date",required=True)
  
     product_template_id = fields.Many2one('product.template', string="Package", domain="[('bundle_product', '=', True)]")
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
-    member_type = fields.Selection([('policy', 'POLICY'), ('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type", default="policy", readonly=True)
+    
+    member_type = fields.Selection(
+        [('policy', 'POLICY'), 
+         ('credit', 'CREDIT'),
+         ('adhoc','AD-HOC')], string="Member Type", default="policy", readonly=True)
     membership_state = fields.Selection([
-    ('temp', "Temporary"),
-    ('confirm', "Confirmed"),
-    ('cancel', "Cancelled")
-    ], string="Status", readonly=True, default='confirm')
-    sequence_id = fields.Many2one('partner.category', string="Customer Category",
-    domain="[('partner_id','=', customer_id), ('member_type', '=', member_type)]")
+        ('temp', "Temporary"),
+        ('confirm', "Confirmed"),
+        ('cancel', "Cancelled")], string="Status", readonly=True, default='confirm')
+    
+    sequence_id = fields.Many2one('partner.category', string="Customer Category", domain="[('partner_id','=', customer_id), ('member_type', '=', member_type)]")
     type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type")
 
     
@@ -48,7 +45,7 @@ class PolicyReportWizard(models.TransientModel):
         """Calculate the amount for a membership record."""
         amount = 0.0
         pricelist = self.customer_id.property_product_pricelist.id
-        print("PRICELIST ID(((((((((((((((((((((((())))))))))))))))))))))))",pricelist)
+        print("POLICY REPORT PRICELIST-------",pricelist)
         if record.member_type == 'policy':
             if record.name and record.product_template_id:
                 pricelist_item = self.env['product.pricelist.item'].search([
