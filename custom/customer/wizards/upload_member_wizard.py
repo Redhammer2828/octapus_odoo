@@ -56,18 +56,19 @@ class UploadMemberWizard(models.TransientModel):
 
         # Ensure customer_code is a Python list
         customer_codes = excel_data['customer_code'].dropna().unique().tolist()
-
+        print("CUSTOMER CODE",customer_codes)
         # Search for partner IDs
         partner_ids = self.env['res.partner'].search([('customer_code', 'in', customer_codes)]).ids
-
+        partner_id = partner_ids[0]
+        print("PARTNER CODE",partner_id)
         # Use partner_ids in the second search query
         valid_category_codes = set(
             self.env['partner.category'].search([
                 ('member_type', '=', 'policy'),
-                ('partner_id', 'in', partner_ids)
+                ('partner_id', '=', partner_id)
             ]).mapped('name')
         )
-        
+        print("CATEGORY CODE",valid_category_codes)
         valid_package_ids = set(self.env['product.template'].search([]).mapped('id'))
 
         # Define required fields and regex patterns
