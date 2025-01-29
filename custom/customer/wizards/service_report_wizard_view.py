@@ -12,7 +12,7 @@ from io import BytesIO
 from reportlab.lib.utils import ImageReader  # Import ImageReader
 from datetime import datetime, time, timedelta
 from pytz import timezone
-
+from odoo.exceptions import UserError
 import logging
 # Set up logging for debugging purposes
 _logger = logging.getLogger(__name__)
@@ -203,10 +203,17 @@ class ServiceReportWizard(models.TransientModel):
                 for header in headers:
                     field_value = ''
                     if header == 'Service Date':
-                        if record.service_time and self.from_date <= record.service_time <= self.to_date:
-                            field_value = record.service_time.strftime('%d/%m/%Y')
-                        else:
-                            field_value = ''
+                        if record.service_time:
+                            # Convert datetime to date for comparison
+                            service_time_date = record.service_time.date()
+                            if self.from_date <= service_time_date <= self.to_date:
+                                field_value = record.service_time.strftime('%d/%m/%Y')
+                            else:
+                                field_value = ''
+                        # if record.service_time and self.from_date <= record.service_time <= self.to_date:
+                        #     field_value = record.service_time.strftime('%d/%m/%Y')
+                        # else:
+                        #     field_value = ''
                     elif header == 'Service Number':
                         field_value = record.name or ''
                     elif header == 'Customer C/O':
@@ -258,11 +265,22 @@ class ServiceReportWizard(models.TransientModel):
                             ], limit=1)
                             rate = pricelist_item.fixed_price if pricelist_item else 0.00
                         else:
-                            service_rate = self.env['service.rate'].search([
-                                ('product_pricelist_item_id.product_tmpl_id', '=', record.product_id.id),
-                                ('from_loc_id', '=', record.from_location.id),
-                                ('to_loc_id', '=', record.to_location.id)
-                            ], limit=1)
+                            customer_pricelist_id = self.customer_id.property_product_pricelist_id.id if self.customer_id else False
+                            print("CUSTOMER PRICELIST ID",customer_pricelist_id)
+                            if customer_pricelist_id:
+                                product_pricelist_item = self.env['product.pricelist.item'].search([
+                                    ('pricelist_id', '=', customer_pricelist_id),
+                                    ('product_tmpl_id', '=', record.product_id.id),
+                                    ('date_start', '<=', fields.Date.today())
+                                ], order="date_start desc", limit=1)
+                            else:
+                                raise UserError(f'Pricelist Not Mapped for {self.customer_id.name}')
+                            if product_pricelist_item:
+                                service_rate = self.env['service.rate'].search([
+                                    ('product_pricelist_item_id', '=', product_pricelist_item.id),
+                                    ('from_loc_id', '=', record.from_location.id),
+                                    ('to_loc_id', '=', record.to_location.id)
+                                ], limit=1)
                             rate = service_rate.price if service_rate else 0.00
                         total_rate_sum += rate  # Add to total rate
                         field_value = rate
