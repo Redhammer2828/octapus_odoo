@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_update_partner_services" model="ir.actions.server">
+        <field name="name">Update Member Reference Numbers</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="binding_model_id" ref="base.model_res_partner"/>
+        <field name="state">code</field>
+        <field name="code">
+if records:
+    partners = records.filtered(
+        lambda p: p.parent_customer_id and p.member_partner_category_id and p.card_type_id
+    )
+    for partner in partners:
+        partner._compute_member_ref_no()
+        </field>
+    </record>
+</odoo>
