@@ -65,7 +65,7 @@ class UploadMemberWizard(models.TransientModel):
         valid_category_codes = set(
             self.env['partner.category'].search([
                 ('member_type', '=', 'policy'),
-                ('partner_id', '=', partner_id)
+                ('partner_id', '=', partner_ids)
             ]).mapped('name')
         )
         print("CATEGORY CODE",valid_category_codes)
