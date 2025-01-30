@@ -28,7 +28,7 @@ class ServiceReportWizard(models.TransientModel):
     to_date = fields.Date(
         string="To Date",
         required=True)
-    
+
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
     member_type = fields.Selection([('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type",default ='credit')
     sequence_id = fields.Many2one('partner.category', string="Customer Category",
@@ -75,7 +75,7 @@ class ServiceReportWizard(models.TransientModel):
         service_records = self.env['aaa.service'].search(domain)
         _logger.debug("Fetched %d records from the aaa.service model", len(service_records))
         return service_records
-    
+
     def _calculate_amount(self, record):
         """Calculate the amount for a membership record."""
         amount = 0.0
@@ -99,7 +99,7 @@ class ServiceReportWizard(models.TransientModel):
                 amount = pricelist_item.fixed_price if pricelist_item else 0.0
         return f"{float(amount or 0):.2f}"
 
-# EXCEL REPORT GENERATOR------------  
+# EXCEL REPORT GENERATOR------------
     def action_export_excel(self):
         # Initialize buffer for Excel generation
         buffer = io.BytesIO()
@@ -160,7 +160,7 @@ class ServiceReportWizard(models.TransientModel):
             # Include 'Type' and 'Customer category' only if customer_id is "AL MASAOOD AUTOMOBILES COMPANY LLC"
             *(['Customer Category'] if self.customer_id and self.customer_id.name == 'AL MASAOOD AUTOMOBILES COMPANY LLC' else []),
             *(['Type'] if self.customer_id and self.customer_id.name == 'AL MASAOOD AUTOMOBILES COMPANY LLC' else []),
-           
+
             'Vehicle Type', 'Vehicle Model', 'Vehicle Plate', 'Chassis No', 'Service',
             'From Location', 'To Location', 'Trip Sheet No.', 'Quantity', 'Rate', 'Amount',
             'VAT(5%)', 'Total'
@@ -180,7 +180,7 @@ class ServiceReportWizard(models.TransientModel):
                 worksheet.set_column(col_num, col_num, width)
         else:
             row = 8
-           
+
 
 
            # Initialize totals
@@ -238,19 +238,19 @@ class ServiceReportWizard(models.TransientModel):
                         if record.member_id.member_type in ['policy', 'adhoc']:
                             # If selected_from_location is not set, fallback to from_location
                             field_value = record.selected_from_location.name if record.selected_from_location else (record.from_location.name if record.from_location else '')
-                            
+
                         else:
                             field_value = record.from_location.name if record.from_location else ''
-                           
+
 
                     elif header == 'To Location':
                         if record.member_id.member_type in ['policy', 'adhoc']:
                             # If selected_to_location is not set, fallback to to_location
                             field_value = record.selected_to_location.name if record.selected_to_location else (record.to_location.name if record.to_location else '')
-                           
+
                         else:
                              field_value = record.to_location.name if record.to_location else ''
-                           
+
 
                     elif header == 'Trip Sheet No.':
                         field_value = record.credit_proforma_number or ''
@@ -266,22 +266,26 @@ class ServiceReportWizard(models.TransientModel):
                             rate = pricelist_item.fixed_price if pricelist_item else 0.00
                         else:
                             customer_pricelist_id = self.customer_id.property_product_pricelist_id.id if self.customer_id else False
-                            print("CUSTOMER PRICELIST ID",customer_pricelist_id)
                             if customer_pricelist_id:
                                 product_pricelist_item = self.env['product.pricelist.item'].search([
                                     ('pricelist_id', '=', customer_pricelist_id),
                                     ('product_tmpl_id', '=', record.product_id.id),
-                                    ('date_start', '<=', fields.Date.today())
+                                    ('date_start', '<=', record.service_time),
+                                    ('date_end', '>=', record.service_time)
                                 ], order="date_start desc", limit=1)
+                                print('product_pricelist_item______________',product_pricelist_item)
+                                if product_pricelist_item:
+                                    service_rate = self.env['service.rate'].search([
+                                        ('product_pricelist_item_id', '=', product_pricelist_item.id),
+                                        ('from_loc_id', '=', record.from_location.id),
+                                        ('to_loc_id', '=', record.to_location.id)
+                                    ], limit=1)
+                                else:
+                                    raise UserError(f'validity not set for product: {record.product_id.name}')
+                                rate = service_rate.price if service_rate else 0.00
                             else:
                                 raise UserError(f'Pricelist Not Mapped for {self.customer_id.name}')
-                            if product_pricelist_item:
-                                service_rate = self.env['service.rate'].search([
-                                    ('product_pricelist_item_id', '=', product_pricelist_item.id),
-                                    ('from_loc_id', '=', record.from_location.id),
-                                    ('to_loc_id', '=', record.to_location.id)
-                                ], limit=1)
-                            rate = service_rate.price if service_rate else 0.00
+
                         total_rate_sum += rate  # Add to total rate
                         field_value = rate
                     elif header == 'Amount':
@@ -309,7 +313,7 @@ class ServiceReportWizard(models.TransientModel):
             for col_num, width in enumerate(column_widths):
                 worksheet.set_column(col_num, col_num, width)
 
-            
+
             total_row_label_col = headers.index('Trip Sheet No.')  # Find column for "Trip Sheet No."
             worksheet.write(row, total_row_label_col, 'TOTAL', total_format)  # Write "TOTAL" header
             worksheet.write(row, headers.index('Quantity'), total_service_quantity, total_format)  # Total Quantity
