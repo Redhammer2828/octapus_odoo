@@ -228,7 +228,7 @@ class ResPartnerMembers(models.Model):
         if self.membership_state == 'confirm':
             self.confirmed_by = self.env.user.id
 
-    @api.depends('parent_customer_id', 'member_partner_category_id', 'card_type_id')
+    @api.depends('vehicle_chasis_no')
     def _compute_member_ref_no(self):
         for record in self:
             if record.parent_customer_id and record.member_partner_category_id and record.card_type_id:
