@@ -68,6 +68,7 @@
         'data/scheduled_action.xml',
         'data/sequence_data.xml',
         'data/server_action.xml',
+        'data/server_action_two.xml',
     ],
     # 'assets': {
     #     'web.assets_backend': [

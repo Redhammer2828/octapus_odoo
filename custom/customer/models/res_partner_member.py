@@ -228,7 +228,7 @@ class ResPartnerMembers(models.Model):
         if self.membership_state == 'confirm':
             self.confirmed_by = self.env.user.id
 
-    @api.depends('parent_customer_id', 'member_partner_category_id', 'card_type_id')
+    @api.depends('vehicle_chasis_no')
     def _compute_member_ref_no(self):
         for record in self:
             if record.parent_customer_id and record.member_partner_category_id and record.card_type_id:
@@ -586,7 +586,7 @@ class ResPartnerMembers(models.Model):
         card_type_name = card_type.name
 
         # Fetch the res.partner record directly by name
-        partner = self.env['res.partner'].search([('name', '=', self.name)], limit=1)
+        partner = self.env['res.partner'].search([('name', '=', self.name),('vehicle_chasis_no','=',self.vehicle_chasis_no)], limit=1)
         print("DEBUG: Partner fetched:", partner)
 
         # Pre-create the aaa.service record with the fetched partner ID
