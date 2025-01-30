@@ -1,17 +1,19 @@
-from odoo import models, fields, api ,_
+from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
 from collections import defaultdict, Counter
 from datetime import datetime, date
 import time
 import re
 import logging
+
 # Set up logging for debugging purposes
 _logger = logging.getLogger(__name__)
+
 
 class DataUploadFile(models.Model):
     _name = 'data.upload.file'
     _description = 'Data Upload File'
-    
+
     name = fields.Char(string='Name', required=True)
     file = fields.Binary(string='File')
     file_type = fields.Char('File Type')
@@ -19,9 +21,9 @@ class DataUploadFile(models.Model):
     
     date = fields.Datetime('Uploaded Date', default=lambda self: fields.Datetime.now())
     upload_by = fields.Many2one('res.users', string='Uploaded By', default=lambda self: self.env.user)
-    upload_log = fields.Text( string='Log')
+    upload_log = fields.Text(string='Log')
     upload_member_ids = fields.One2many('upload.member.line', 'upload_file_id', string='Members')
-    apply_log = fields.Text( string='Apply Log')
+    apply_log = fields.Text(string='Apply Log')
     state = fields.Selection([
         ('draft', 'Draft'),
         ('validate', 'Validated'),
@@ -442,8 +444,8 @@ class DataUploadFile(models.Model):
                     'upload_member_status': 'new',
                     'comment': "*New Member"
                 })
-                
-# #---------------------------------------------------------------TEMP COMMENT--------------------------------------------------------------
+
+    # #---------------------------------------------------------------TEMP COMMENT--------------------------------------------------------------
     def apply_member_upload_wizard(self):
             # Start measuring time
             start_time = time.time()
@@ -891,7 +893,7 @@ class DataUploadFile(models.Model):
     #     # Ensure apply_log is a string
     #     if not self.apply_log:
     #         self.apply_log = ""
-        
+
     #     # Update the state and log
     #     self.state = 'done'
     #     self.apply_log += f"Processed in {time_taken:.2f} seconds."
@@ -899,7 +901,7 @@ class DataUploadFile(models.Model):
 
     def action_cancel(self):
         self.state = 'draft'
-    
+
     def action_delete_members(self):
         return {
             'name': 'Delete Members',
@@ -910,7 +912,7 @@ class DataUploadFile(models.Model):
             'domain': [('upload_file_id', '=', self.id)],
             'context': {'default_upload_file_id': self.id},
         }
-    
+
     def action_view_rejected_records(self):
         return {
             'name': 'Rejected Members',
@@ -924,7 +926,7 @@ class DataUploadFile(models.Model):
             'domain': [('upload_file_id', '=', self.id), ('upload_member_status', '=', 'rejection')],
             'context': {'default_upload_file_id': self.id},
         }
-    
+
     def action_view_added_records(self):
         return {
             'name': 'Added Members',
@@ -935,10 +937,10 @@ class DataUploadFile(models.Model):
                 (self.env.ref('customer.view_upload_member_line_tree').id, 'tree'),
                 (self.env.ref('customer.upload_member_line_form_view').id, 'form'),
             ],
-            'domain': [('upload_file_id', '=', self.id), ('upload_member_status', 'in', ['new', 'renewal', 'update', 'exist_temp'])],
+            'domain': [('upload_file_id', '=', self.id),
+                       ('upload_member_status', 'in', ['new', 'renewal', 'update', 'exist_temp'])],
             'context': {'default_upload_file_id': self.id},
         }
-    
 
     def action_discard(self):
         return {
@@ -948,16 +950,17 @@ class DataUploadFile(models.Model):
             'target': 'current',
         }
 
+
 class UploadMemberLine(models.Model):
     _name = 'upload.member.line'
     _description = 'Upload Member Line'
 
     upload_file_id = fields.Many2one('data.upload.file', string='Upload File')
     upload_credit_file_id = fields.Many2one('credit.member.upload', string='Upload File')
-    
+
     member_name = fields.Char(string='Name')
     mobile = fields.Char(string='Mobile')
-    
+
     vehicle_plate = fields.Char(string='Vehicle Plate')
     vehicle_chasis_no = fields.Char(string='Vehicle Chassis No')
     member_activate_date = fields.Date(string='Member Activate Date')
@@ -980,23 +983,23 @@ class UploadMemberLine(models.Model):
         ('replace', 'Replaced Member'),
         ('discard', 'Discarded Member'),
         ('exist_temp', 'Exist in Temp'),
-        ('company_change','Company change')
+        ('company_change', 'Company change')
     ], string='Upload Status')
     # --------------------------------------------------------------------
     customer_ref_date = fields.Date(string='Customer Reference Date')
     old_membership_number = fields.Char(string='Old Membership Number')
     policy_no = fields.Char(string='Policy No')
-    
-    vehicle_type = fields.Char('vehicle_type') 
+
+    vehicle_type = fields.Char('vehicle_type')
     vehicle_model = fields.Char('vehicle_model')
-    mail_ref = fields.Char('mail_ref') 
+    mail_ref = fields.Char('mail_ref')
 
     vehicle_mfg_year = fields.Char(string='Vehicle Manufacturing Year')
     vehicle_reg_code = fields.Char(string='Vehicle Registration Code')
-   
+
     street = fields.Char(string='Street')
-    zip = fields.Char('zip') #Created
-    
+    zip = fields.Char('zip')  # Created
+
     delivery_ref_date = fields.Date(string='Delivery Reference Date')
     comment = fields.Text(string='Comment')
     remarks = fields.Text('Remarks')
@@ -1014,5 +1017,3 @@ class UploadMemberLine(models.Model):
     if_conf_match = fields.Integer('If COnf Match')
     if_rep_match = fields.Integer('If Replace Match')
     if_cpm_match = fields.Integer('If Company change Match')
-    
-    
