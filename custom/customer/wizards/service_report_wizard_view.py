@@ -273,13 +273,18 @@ class ServiceReportWizard(models.TransientModel):
                                     ('date_start', '<=', record.service_time),
                                     ('date_end', '>=', record.service_time)
                                 ], order="date_start desc", limit=1)
-                                print('product_pricelist_item______________',product_pricelist_item)
                                 if product_pricelist_item:
-                                    service_rate = self.env['service.rate'].search([
-                                        ('product_pricelist_item_id', '=', product_pricelist_item.id),
-                                        ('from_loc_id', '=', record.from_location.id),
-                                        ('to_loc_id', '=', record.to_location.id)
-                                    ], limit=1)
+                                    if record.product_id.id in (237, 238):
+                                        service_rate = self.env['service.rate'].search([
+                                            ('product_pricelist_item_id', '=', product_pricelist_item.id),
+                                            ('to_loc_id', '=', record.to_location.id)
+                                        ], limit=1)
+                                    else:
+                                        service_rate = self.env['service.rate'].search([
+                                            ('product_pricelist_item_id', '=', product_pricelist_item.id),
+                                            ('from_loc_id', '=', record.from_location.id),
+                                            ('to_loc_id', '=', record.to_location.id)
+                                        ], limit=1)
                                 else:
                                     raise UserError(f'validity not set for product: {record.product_id.name}')
                                 rate = service_rate.price if service_rate else 0.00
