@@ -303,16 +303,16 @@ class AAAService(models.Model):
         for record in self:
             # Get the current user's groups
             user_groups = self.env.user.groups_id
-           
+
             # Check if the user belongs to the 'Manager' group
             is_manager = any(group.name == 'Manager' for group in user_groups)
-           
+
             # Check if the user is an Admin
             is_admin = any(group.name == 'IT Group' for group in user_groups)
-           
+
             # Set the field to True if the user is either a Manager or an Admin
             record.is_manager_or_admin = is_manager or is_admin
-    
+
     #computing the dispatcher in AAA.SERVICE
     @api.depends('state', 'service_history_ids.user')
     def _compute_dispatcher_from_history(self):
@@ -1268,6 +1268,26 @@ class AAAService(models.Model):
             # Clear the comments field after creating the record
             if service.comments:
                 service.comments = False
+
+            if self.is_jafza_service or self.is_aditional_duty:
+                api_url = f'{base_url}/aaa-customer/consumers/update/driver-service-type'
+                data_api = {
+                    "erp_order_number": self.name,
+                    "is_jafza_service": self.is_jafza_service,
+                    "is_after_duty": self.is_aditional_duty
+                }
+                api_header = {
+                    'content-type' : 'application/json'
+                }
+
+                response = requests.put(api_url, data=data_api, headers=api_header)
+                if response.status_code == 200:
+                    print(f"API RESPONSE- start,{response.text}")
+                else:
+                    print(f"API RESPONSE-ORDER NOT started,{response.text},{response.status_code}")
+
+
+
         return True
 
     def action_reach_service(self):
