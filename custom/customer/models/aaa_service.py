@@ -1274,11 +1274,11 @@ class AAAService(models.Model):
                 print('self.is_jafza_service___',self.is_jafza_service)
                 print('self.is_aditional_duty',self.is_aditional_duty)
                 api_url = f'{base_url}/aaa-customer/consumers/update/driver-service-type'
-                data_api = {
+                data_api = json.dumps({
                     "erp_order_number": self.name,
                     "is_jafza_service": self.is_jafza_service,
                     "is_after_duty": self.is_aditional_duty
-                }
+                })
                 api_header = {
                     'content-type' : 'application/json'
                 }
