@@ -65,6 +65,7 @@
         'wizards/aaa_timeline_wizard.xml',
         #'wizards/twentyfour_cash_wizard.xml',
         'wizards/policy_report_wizard_view.xml',
+        'wizards/vendors_report_wizard.xml',
         'data/scheduled_action.xml',
         'data/sequence_data.xml',
         'data/server_action.xml',
