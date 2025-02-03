@@ -1270,6 +1270,9 @@ class AAAService(models.Model):
                 service.comments = False
 
             if self.is_jafza_service or self.is_aditional_duty:
+                print('name__',self.name)
+                print('self.is_jafza_service___',self.is_jafza_service)
+                print('self.is_aditional_duty',self.is_aditional_duty)
                 api_url = f'{base_url}/aaa-customer/consumers/update/driver-service-type'
                 data_api = {
                     "erp_order_number": self.name,
