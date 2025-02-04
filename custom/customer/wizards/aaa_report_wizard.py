@@ -21,38 +21,15 @@ class AaaReportWizard(models.TransientModel):
     _name = 'aaa.report.wizard'
     _description = 'AAA Report Wizard'
 
-    from_date = fields.Datetime(
+    from_date = fields.Date(
         string="From Date",
-        required=True,
-        default=lambda self: self._get_start_of_day()
+        required=True
     )
 
-    to_date = fields.Datetime(
+    to_date = fields.Date(
         string="To Date",
-        required=True,
-        default=lambda self: self._get_end_of_day()
+        required=True
     )
-
-    def _get_start_of_day(self):
-        # Ensure midnight is calculated directly in UTC without shifting the date
-        utc_now = datetime.now(pytz.utc).date()  # Get today's date directly in UTC
-        midnight_utc = datetime.combine(utc_now, time(0, 0, 0))  # Midnight in UTC
-        return midnight_utc  # No need for timezone adjustments, already UTC-based
-
-
-    def _get_end_of_day(self):
-        # Get the user's timezone or default to UTC
-        user_tz = pytz.timezone(self.env.user.tz or 'UTC')
-        
-        # Get today's date in the user's timezone at 23:59:59
-        today = datetime.now(user_tz).date()
-        end_of_day_user_tz = user_tz.localize(datetime.combine(today, time(23, 59, 59)))
-        
-        # Convert to UTC without shifting the date
-        end_of_day_utc = end_of_day_user_tz.astimezone(pytz.utc)
-        
-        # Return as naive datetime for Odoo compatibility
-        return end_of_day_utc.replace(tzinfo=None)
     
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
     member_type = fields.Selection([('policy', 'POLICY'), ('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type")
@@ -132,7 +109,6 @@ class AaaReportWizard(models.TransientModel):
             'border': 1,
             'font_size': 10
         })
-
         # Title Row
         worksheet.merge_range('A1:AF1', 'SERVICE REPORT', title_format)
 
@@ -159,7 +135,7 @@ class AaaReportWizard(models.TransientModel):
             'Number', 'Service Date & Time', 'Created Date & Time', 'Customer Name', 'Category',
             'Membership Number', 'Member Name', 'Membership State', 'Mobile', 'Policy Number',
             'Member Type', 'Service Type', 'Vehicle Type', 'Vehicle Plate', 'In Progress Date and Time',
-            'Service', 'Provider', 'Driver', 'Driver Mobile Number', 'From - Location', 'To - Location',
+            'Service', 'Provider', 'Driver', 'Driver Mobile Number', 'From - Location','From - Emirate', 'To - Location','To - Emirate',
             'From - Date', 'To - Date', 'Smart Tow ID', 'Status', 'Agent', 'Dispatcher', 'Comments',
             'Trip Sheet Number', 'Amount Collected', 'Rating', 'Rating Added By'
         ]
@@ -249,15 +225,23 @@ class AaaReportWizard(models.TransientModel):
                         
                     else:
                         field_value = record.from_location.name if record.from_location else ''
+                elif header == 'From - Emirate':
+                    if record.member_id.member_type in ['policy']:
+                        field_value = record.from_location_emirate
+                    else:
+                        field_value = record.from_location_emirate if record.from_location_emirate else ''
                 elif header == 'To - Location':
                     if record.member_id.member_type in ['policy', 'adhoc']:
                         #field_value = record.selected_to_location.name if record.selected_to_location else ''
                         # If selected_to_location is not set, fallback to to_location
                         field_value = record.selected_to_location.name if record.selected_to_location else (record.to_location.name if record.to_location else '')
-                        
                     else:
                         field_value = record.to_location.name if record.to_location else ''
-
+                elif header == 'To - Emirate':
+                    if record.member_id.member_type in ['policy']:
+                        field_value = record.to_location_emirate
+                    else:
+                        field_value = record.to_location_emirate if record.to_location_emirate else ''
                 elif header == 'From - Date':
                     # field_value = record.date_time_from.strftime('%d/%m/%Y %H:%M:%S') if record.date_time_from else ''
                     if record.date_time_from:
