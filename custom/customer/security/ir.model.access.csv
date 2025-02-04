@@ -53,3 +53,4 @@ access_aaa_timeline_wizard,aaa.timeline.wizard,model_aaa_timeline_wizard,base.gr
 access_service_dashboard,service.dashboard,model_service_dashboard,base.group_user,1,1,1,1
 access_discuss_attachment_all,discuss.attachment.all,mail.model_ir_attachment,base.group_user,1,1,1,1
 access_policy_report_wizard,policy.report.wizard,model_policy_report_wizard,base.group_user,1,1,1,1
+access_vendors_report_wizard,vendors.report.wizard,model_vendors_report_wizard,base.group_user,1,1,1,1
