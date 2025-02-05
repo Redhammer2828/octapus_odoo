@@ -289,7 +289,7 @@
                                 invisible="state in ['draft']">
                                 <!-- JAFZA SERVICE -->
                                 <field name="is_jafza_service" widget="boolean_toggle"/>
-                                <field name="jafza_provider_id" string="Provider" 
+                                <field name="jafza_provider_id" string="Jafza Provider" 
                                     invisible="state in ['draft'] or is_jafza_service == False"
                                     readonly="state in ['done', 'cancel']"
                                     options="{'no_create': True, 'no_open': True}" />
