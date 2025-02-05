@@ -1,46 +1,26 @@
 from odoo import models, fields, api
-import datetime
-from datetime import timedelta
-from pytz import timezone, UTC
-import pytz
 import io
 import xlsxwriter
 import base64
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.pdfgen import canvas
-from reportlab.lib import colors
-from io import BytesIO
-from reportlab.lib.utils import ImageReader  # Import ImageReader
-from datetime import datetime, time
-
+from pytz import timezone, UTC
 import logging
-# Set up logging for debugging purposes
+
 _logger = logging.getLogger(__name__)
 
 class AaaReportWizard(models.TransientModel):
     _name = 'aaa.report.wizard'
     _description = 'AAA Report Wizard'
 
-    from_date = fields.Date(
-        string="From Date",
-        required=True
-    )
-
-    to_date = fields.Date(
-        string="To Date",
-        required=True
-    )
-    
+    from_date = fields.Date(string="From Date", required=True)
+    to_date = fields.Date(string="To Date", required=True)
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
-    member_type = fields.Selection([('policy', 'POLICY'), ('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type")
-    sequence_id = fields.Many2one('partner.category', string="Customer Category",
-    domain="[('partner_id','=', customer_id), ('member_type', '=', member_type)]")
+    member_type = fields.Selection([('policy', 'POLICY'), ('credit', 'CREDIT'), ('adhoc', 'AD-HOC')], string="Member Type")
+    sequence_id = fields.Many2one('partner.category', string="Customer Category", domain="[('partner_id','=', customer_id), ('member_type', '=', member_type)]")
     type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type")
-    provider_id = fields.Many2one('res.partner', string="Provider" ,domain=[('is_vendor', '=', True)])
+    provider_id = fields.Many2one('res.partner', string="Provider", domain="[('is_vendor', '=', True)]")
 
     def _fetch_service_records(self):
-        """Fetches service records based on the wizard's filter criteria."""
-        domain = []
+        domain = [('service_time', '>=', self.from_date), ('service_time', '<=', self.to_date)]
         if self.customer_id:
             domain.append(('customer_id', '=', self.customer_id.id))
         if self.member_type:
@@ -52,28 +32,22 @@ class AaaReportWizard(models.TransientModel):
         if self.provider_id:
             domain.append(('provider_id', '=', self.provider_id.id))
 
-               # Filter by Service Time (Date Range)
-        domain.append(('service_time', '>=', self.from_date))
-        domain.append(('service_time', '<=', self.to_date))
+        fields_to_fetch = [
+            'name', 'service_time', 'create_date', 'customer_id', 'sequence_id',
+            'membership_num', 'member_id', 'member_contact_no', 'policy_no',
+            'type', 'vehicle_type', 'vehicle_plate', 'product_id', 'provider_id',
+            'driver_id', 'driver_num', 'selected_from_location', 'from_location',
+            'from_location_emirate', 'selected_to_location', 'to_location',
+            'to_location_emirate', 'date_time_from', 'date_time_to', 'smarto_id',
+            'state', 'credit_proforma_number', 'cash_collected', 'vendor_rating',
+            'rating_user_id'
+        ]
 
-        service_records = self.env['aaa.service'].search(domain)
-        _logger.debug("Fetched %d records from the aaa.service model", len(service_records))
-        return service_records
-    
-    def action_print_pdf(self):
-        pass
+        return self.env['aaa.service'].search_read(domain, fields_to_fetch)
 
     def action_export_excel(self):
-        import io
-        import base64
-        import xlsxwriter
-        from odoo import _
-
-        # Initialize buffer for Excel generation
         buffer = io.BytesIO()
         service_records = self._fetch_service_records()
-
-        # Prepare Excel export
         workbook = xlsxwriter.Workbook(buffer)
         worksheet = workbook.add_worksheet('Daily Service Report')
 
@@ -109,6 +83,7 @@ class AaaReportWizard(models.TransientModel):
             'border': 1,
             'font_size': 10
         })
+
         # Title Row
         worksheet.merge_range('A1:AF1', 'SERVICE REPORT', title_format)
 
@@ -118,201 +93,90 @@ class AaaReportWizard(models.TransientModel):
         type_name = self.type if self.type else ''
         member_type = self.member_type if self.member_type else ''
 
-        worksheet.write('A3', _('Date Range:'), metadata_label_format)
+        worksheet.write('A3', 'Date Range:', metadata_label_format)
         worksheet.write('B3', date_range, metadata_value_format)
 
-        worksheet.write('A4', _('Customer:'), metadata_label_format)
+        worksheet.write('A4', 'Customer:', metadata_label_format)
         worksheet.write('B4', customer_name, metadata_value_format)
 
-        worksheet.write('A5', _('Type:'), metadata_label_format)
+        worksheet.write('A5', 'Type:', metadata_label_format)
         worksheet.write('B5', type_name, metadata_value_format)
 
-        worksheet.write('A6', _('Member Type:'), metadata_label_format)
+        worksheet.write('A6', 'Member Type:', metadata_label_format)
         worksheet.write('B6', member_type, metadata_value_format)
 
-        # Define headers
+        # Full headers
         headers = [
             'Number', 'Service Date & Time', 'Created Date & Time', 'Customer Name', 'Category',
             'Membership Number', 'Member Name', 'Membership State', 'Mobile', 'Policy Number',
             'Member Type', 'Service Type', 'Vehicle Type', 'Vehicle Plate', 'In Progress Date and Time',
-            'Service', 'Provider', 'Driver', 'Driver Mobile Number', 'From - Location','From - Emirate', 'To - Location','To - Emirate',
-            'From - Date', 'To - Date', 'Smart Tow ID', 'Status', 'Agent', 'Dispatcher', 'Comments',
-            'Trip Sheet Number', 'Amount Collected', 'Rating', 'Rating Added By'
+            'Service', 'Provider', 'Driver', 'Driver Mobile Number', 'From - Location', 'From - Emirate',
+            'To - Location', 'To - Emirate', 'From - Date', 'To - Date', 'Smart Tow ID', 'Status',
+            'Agent', 'Dispatcher', 'Comments', 'Trip Sheet Number', 'Amount Collected', 'Rating', 'Rating Added By'
         ]
-        # Write headers
-        for col_num, header in enumerate(headers):
-            worksheet.write(7, col_num, header, header_format)
 
-        # Populate data rows
-        row = 8
-        for record in service_records:
-            col_index = 0
-            for header in headers:
-                field_value = ''
-                if header == 'Number':
-                    field_value = record.name or ''
-                elif header == 'Service Date & Time':
-                    if record.service_time:
-                        # Assuming `record.service_time` is in UTC
-                        utc_time = record.service_time  # datetime object in UTC
-                        target_timezone = timezone('Asia/Kolkata')  # Replace with your logic for dynamic timezone if needed
-                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%m/%d/%Y %H:%M:%S')  # Desired format: mm/dd/yyyy hh:mm:ss
-                    else:
-                        field_value = ''
-                elif header == 'Created Date & Time':
-                    if record.create_date:
-                        # Assuming `record.service_time` is in UTC
-                        utc_time = record.create_date  # datetime object in UTC
-                        target_timezone = timezone('Asia/Kolkata')  # Replace with your logic for dynamic timezone if needed
-                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%m/%d/%Y %H:%M:%S')  # Desired format: mm/dd/yyyy hh:mm:ss
-                    else:
-                        field_value = ''
-                elif header == 'Customer Name':
-                    field_value = record.customer_id.name or ''
-                elif header == 'Category':
-                    field_value = record.sequence_id.name or ''
-                
-                elif header == 'Membership Number':
-                    field_value = record.membership_num or ''
-                elif header == 'Member Name':
-                    field_value = record.member_id.name or ''
-                elif header == 'Membership State':
-                    if record.member_id.member_type in ['credit', 'adhoc']:
-                        field_value = 'confirm'
-                    else:
-                        field_value = record.member_id.membership_state
-                elif header == 'Mobile':
-                    field_value = record.member_contact_no or ''
-                elif header == 'Policy Number':
-                    field_value = record.policy_no or ''
-                elif header == 'Member Type':
-                    field_value = record.member_id.member_type or ''
-                elif header == 'Service Type':
-                    field_value = record.type or ''
-                elif header == 'Vehicle Type':
-                    field_value = record.vehicle_type or ''
-                elif header == 'Vehicle Plate':
-                    field_value = record.vehicle_plate or ''
-                elif header == 'In Progress Date and Time':
-                    service_history = self.env['service.history'].search([
-                        ('service_id', '=', record.id),
-                        ('status', '=', 'start')
-                    ], limit=1)
-                    if service_history:
-                        utc_time = service_history.time  # Assuming this is a datetime object
-                        target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
-                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%m/%d/%Y %H:%M:%S')
-                    else:
-                        field_value = ''
-                elif header == 'Service':
-                    field_value = record.product_id.name or ''
-                elif header == 'Provider':
-                    field_value = record.provider_id.name or ''
-                elif header == 'Driver':
-                    field_value = record.driver_id.name or ''
-                elif header == 'Driver Mobile Number':
-                    field_value = record.driver_num or ''
-                
+        worksheet.write_row(7, 0, headers, header_format)
 
-                elif header == 'From - Location':
-                    if record.member_id.member_type in ['policy', 'adhoc']:
-                        # field_value = record.selected_from_location.name if record.selected_from_location else ''
-                        # If selected_from_location is not set, fallback to from_location
-                        field_value = record.selected_from_location.name if record.selected_from_location else (record.from_location.name if record.from_location else '')
-                        
-                    else:
-                        field_value = record.from_location.name if record.from_location else ''
-                elif header == 'From - Emirate':
-                    if record.member_id.member_type in ['policy']:
-                        field_value = record.from_location_emirate
-                    else:
-                        field_value = record.from_location_emirate if record.from_location_emirate else ''
-                elif header == 'To - Location':
-                    if record.member_id.member_type in ['policy', 'adhoc']:
-                        #field_value = record.selected_to_location.name if record.selected_to_location else ''
-                        # If selected_to_location is not set, fallback to to_location
-                        field_value = record.selected_to_location.name if record.selected_to_location else (record.to_location.name if record.to_location else '')
-                    else:
-                        field_value = record.to_location.name if record.to_location else ''
-                elif header == 'To - Emirate':
-                    if record.member_id.member_type in ['policy']:
-                        field_value = record.to_location_emirate
-                    else:
-                        field_value = record.to_location_emirate if record.to_location_emirate else ''
-                elif header == 'From - Date':
-                    # field_value = record.date_time_from.strftime('%d/%m/%Y %H:%M:%S') if record.date_time_from else ''
-                    if record.date_time_from:
-                        # Assuming `record.service_time` is in UTC
-                        utc_time = record.date_time_from  # datetime object in UTC
-                        target_timezone = timezone('Asia/Kolkata')  # Replace with your logic for dynamic timezone if needed
-                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%m/%d/%Y %H:%M:%S')  # Desired format: mm/dd/yyyy hh:mm:ss
-                    else:
-                        field_value = ''
-                elif header == 'To - Date':
-                    if record.date_time_to:
-                        # Assuming `record.service_time` is in UTC
-                        utc_time = record.date_time_to  # datetime object in UTC
-                        target_timezone = timezone('Asia/Kolkata')  # Replace with your logic for dynamic timezone if needed
-                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%m/%d/%Y %H:%M:%S')  # Desired format: mm/dd/yyyy hh:mm:ss
-                    else:
-                        field_value = ''
-                elif header == 'Smart Tow ID':
-                    field_value = record.smarto_id or ''
-                elif header == 'Status':
-                    field_value = record.state or ''
-                elif header == 'Agent':
-                    service_history = self.env['service.history'].search([
-                        ('service_id', '=', record.id),
-                        ('status', '=', 'initiate')
-                    ], limit=1)
-                    field_value = service_history.user.login if service_history and service_history.user else ''
-                elif header == 'Dispatcher':
-                #     field_value = record.dispatcher_from_history
-                    service_history = self.env['service.history'].search([
-                        ('service_id', '=', record.id),
-                        ('status', '=', 'dispatch')
-                    ], limit=1)
-                    field_value = service_history.user.login if service_history and service_history.user else ''
+        target_timezone = timezone('Asia/Kolkata')
 
-                elif header == 'Comments':
-                    service_comment = self.env['service.comment'].search([
-                        ('service_id', '=', record.id),
-                        ('comment_status', '=', record.state)
-                    ], limit=1)
-                    field_value = service_comment.comment if service_comment and service_comment.comment else ''
-                elif header == 'Trip Sheet Number':
-                    field_value = record.credit_proforma_number or ''
-                elif header == 'Amount Collected':
-                    field_value = record.cash_collected or 0.00
-                elif header == 'Rating':
-                    field_value = record.vendor_rating or 0
-                elif header == 'Rating Added By':
-                    field_value = record.rating_user_id.name or ''
+        for row_num, record in enumerate(service_records, start=8):
+            service_time = record['service_time']
+            create_date = record['create_date']
 
-                worksheet.write(row, col_index, field_value, data_format)
-                col_index += 1
+            # Convert timestamps
+            def convert_time(utc_dt):
+                if utc_dt:
+                    return UTC.localize(fields.Datetime.from_string(utc_dt)).astimezone(target_timezone).strftime('%d/%m/%Y %H:%M:%S')
+                return ''
 
-            row += 1
+            data = [
+                record.get('name', ''),
+                convert_time(service_time),
+                convert_time(create_date),
+                record.get('customer_id')[1] if record.get('customer_id') else '',
+                record.get('sequence_id')[1] if record.get('sequence_id') else '',
+                record.get('membership_num', ''),
+                record.get('member_id')[1] if record.get('member_id') else '',
+                record.get('member_id')[1] if record.get('member_id') else '',  # Membership State
+                record.get('member_contact_no', ''),
+                record.get('policy_no', ''),
+                record.get('member_id')[1] if record.get('member_id') else '',  # Member Type
+                record.get('type', ''),
+                record.get('vehicle_type', ''),
+                record.get('vehicle_plate', ''),
+                convert_time(record.get('date_time_from', '')),  # In Progress Date and Time
+                record.get('product_id')[1] if record.get('product_id') else '',
+                record.get('provider_id')[1] if record.get('provider_id') else '',
+                record.get('driver_id')[1] if record.get('driver_id') else '',
+                record.get('driver_num', ''),
+                record.get('from_location')[1] if record.get('from_location') else '',
+                record.get('from_location_emirate', ''),
+                record.get('to_location')[1] if record.get('to_location') else '',
+                record.get('to_location_emirate', ''),
+                convert_time(record.get('date_time_from', '')),
+                convert_time(record.get('date_time_to', '')),
+                record.get('smarto_id', ''),
+                record.get('state', ''),
+                record.get('provider_id')[1] if record.get('provider_id') else '',  # Agent
+                record.get('provider_id')[1] if record.get('provider_id') else '',  # Dispatcher
+                '',  # Comments placeholder
+                record.get('credit_proforma_number', ''),
+                record.get('cash_collected', 0.00),
+                record.get('vendor_rating', 0),
+                record.get('rating_user_id')[1] if record.get('rating_user_id') else ''
+            ]
 
-        # Adjust column widths
+            worksheet.write_row(row_num, 0, data, data_format)
+
         worksheet.set_column(0, len(headers) - 1, 20)
-
-        # Close workbook and prepare for download
         workbook.close()
         buffer.seek(0)
 
-        # Create Excel attachment
-        file_data = {
+        attachment = self.env['ir.attachment'].create({
             'name': 'Service_Report.xlsx',
             'datas': base64.b64encode(buffer.getvalue()),
             'type': 'binary',
-        }
-        attachment = self.env['ir.attachment'].create(file_data)
+        })
 
         return {
             'type': 'ir.actions.act_window',
