@@ -283,18 +283,21 @@
                                 <field name="driver_num" string="Contact No"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']" />
-
+                                </group>
+                                    
+                            <group string="JAFZA DETAILS"
+                                invisible="state in ['draft']">
                                 <!-- JAFZA SERVICE -->
                                 <field name="is_jafza_service" widget="boolean_toggle"/>
                                 <field name="jafza_provider_id" string="Provider" 
-                                    invisible="state in ['draft', 'initiate'] or is_jafza_service == False"
+                                    invisible="state in ['draft'] or is_jafza_service == False"
                                     readonly="state in ['done', 'cancel']"
                                     options="{'no_create': True, 'no_open': True}" />
                                 <field name="jafza_driver_id" invisible="is_driver_name_visible == True and is_jafza_service == False"
                                     readonly="state in ['done', 'cancel']"
                                     options="{'no_create': True, 'no_open': True}" />
                                 <field name="jafza_driver_name"
-                                    invisible="is_driver_name_visible == True and is_jafza_service == False" 
+                                    invisible="is_driver_name_visible == False and is_jafza_service == False" 
                                     readonly="state in ['done', 'cancel']" />
                                 <field name="is_aditional_duty" widget="boolean_toggle"/>
                             </group>
