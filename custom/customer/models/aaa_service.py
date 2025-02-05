@@ -721,7 +721,7 @@ class AAAService(models.Model):
         payload = json.dumps({
             "erp_order_number": order_number,
             "is_jafza_service": self.is_jafza_service,
-            "is_after_duty": 'false'
+            "is_after_duty": self.is_aditional_duty
         })
         header = {
             'content-type':'application/json'
