@@ -719,7 +719,9 @@ class AAAService(models.Model):
     def action_order_create(self, order_number):
         url = f"{base_url}/aaa-customer/consumers/create/road_side_service"
         payload = json.dumps({
-            "erp_order_number": order_number
+            "erp_order_number": order_number,
+            "is_jafza_service": self.is_jafza_service,
+            "is_after_duty": self.is_aditional_duty
         })
         header = {
             'content-type':'application/json'
@@ -1269,7 +1271,7 @@ class AAAService(models.Model):
             if service.comments:
                 service.comments = False
 
-            if self.is_jafza_service or self.is_aditional_duty:
+            if self.is_aditional_duty:
                 print('name__',self.name)
                 print('self.is_jafza_service___',self.is_jafza_service)
                 print('self.is_aditional_duty',self.is_aditional_duty)
