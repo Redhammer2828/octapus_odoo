@@ -203,7 +203,7 @@ class AAAService(models.Model):
 # --------JAFZA SERVICE-----------------------------
     is_jafza_service = fields.Boolean(string='Is Jafza Service', default=False)
     is_aditional_duty = fields.Boolean(string='Is Additional Duty', default=False)
-    jafza_provider_id = fields.Many2one('res.partner', string="Provider" ,domain=[('is_vendor', '=', True)])
+    jafza_provider_id = fields.Many2one('res.partner', string="Jafza Provider" ,domain=[('is_vendor', '=', True)])
     jafza_driver_id = fields.Many2one(
         'hr.employee',
         string="Driver",
