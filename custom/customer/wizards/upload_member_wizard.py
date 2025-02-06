@@ -155,7 +155,7 @@ class UploadMemberWizard(models.TransientModel):
                 'policy_no': row.get('policy_no'),
                 'vehicle_reg_country': row.get('vehicle_reg_country'),
                 'vehicle_emirate': row.get('vehicle_emirate'),
-                'delivery_ref_date': row.get('delivery_ref_date'),
+                'delivery_ref_date': row.get('delivery_date'),
                 'invoice_ref_date': row.get('invoice_ref_date'),
                 'member_expiry_date': row.get('member_expiry_date'),
                 'member_activate_date': row.get('member_activate_date'),

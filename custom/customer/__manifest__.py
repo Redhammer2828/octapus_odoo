@@ -17,7 +17,6 @@
         'views/res_partner_member.xml',
         'views/res_partner_member_temp.xml',
         'views/res_partner_member_cancel.xml',
-        #'views/mail_channel.xml',
         'views/config_product.xml',
         'views/card_type.xml',
         'views/country_code.xml',
@@ -48,7 +47,6 @@
         'views/res_partner_vendor.xml',
         'views/product_pricelist.xml',
         'views/service_dashboard.xml',
-        # 'views/assets.xml',
         'wizards/upload_member_wizard.xml',
         'wizards/membership_extension_wizard.xml',
         'wizards/membership_renewal_wizard.xml',
@@ -63,22 +61,12 @@
         'wizards/create_temporary_member_wizard.xml',
         'wizards/aaa_report_wizard.xml',
         'wizards/aaa_timeline_wizard.xml',
-        #'wizards/twentyfour_cash_wizard.xml',
         'wizards/policy_report_wizard_view.xml',
+        'wizards/vendors_report_wizard.xml',
         'data/scheduled_action.xml',
         'data/sequence_data.xml',
         'data/server_action.xml',
-        # 'data/server_action_two.xml',
     ],
-    # 'assets': {
-    #     'web.assets_backend': [
-    #         'customer/static/src/js/location_autocomplete.js',
-    #         'customer/static/src/xml/location_autocomplete_template.xml',
-    #     ],
-    # },
-
-
-
     'installable': True,
     'application': True,
     'sequence': 2,

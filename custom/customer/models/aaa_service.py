@@ -203,7 +203,7 @@ class AAAService(models.Model):
 # --------JAFZA SERVICE-----------------------------
     is_jafza_service = fields.Boolean(string='Is Jafza Service', default=False)
     is_aditional_duty = fields.Boolean(string='Is Additional Duty', default=False)
-    jafza_provider_id = fields.Many2one('res.partner', string="Provider" ,domain=[('is_vendor', '=', True)])
+    jafza_provider_id = fields.Many2one('res.partner', string="Jafza Provider" ,domain=[('is_vendor', '=', True)])
     jafza_driver_id = fields.Many2one(
         'hr.employee',
         string="Driver",
@@ -303,16 +303,16 @@ class AAAService(models.Model):
         for record in self:
             # Get the current user's groups
             user_groups = self.env.user.groups_id
-           
+
             # Check if the user belongs to the 'Manager' group
             is_manager = any(group.name == 'Manager' for group in user_groups)
-           
+
             # Check if the user is an Admin
             is_admin = any(group.name == 'IT Group' for group in user_groups)
-           
+
             # Set the field to True if the user is either a Manager or an Admin
             record.is_manager_or_admin = is_manager or is_admin
-    
+
     #computing the dispatcher in AAA.SERVICE
     @api.depends('state', 'service_history_ids.user')
     def _compute_dispatcher_from_history(self):
@@ -719,7 +719,9 @@ class AAAService(models.Model):
     def action_order_create(self, order_number):
         url = f"{base_url}/aaa-customer/consumers/create/road_side_service"
         payload = json.dumps({
-            "erp_order_number": order_number
+            "erp_order_number": order_number,
+            "is_jafza_service": self.is_jafza_service,
+            "is_after_duty": self.is_aditional_duty
         })
         header = {
             'content-type':'application/json'
@@ -1268,6 +1270,29 @@ class AAAService(models.Model):
             # Clear the comments field after creating the record
             if service.comments:
                 service.comments = False
+
+            if self.is_aditional_duty:
+                print('name__',self.name)
+                print('self.is_jafza_service___',self.is_jafza_service)
+                print('self.is_aditional_duty',self.is_aditional_duty)
+                api_url = f'{base_url}/aaa-customer/consumers/update/driver-service-type'
+                data_api = json.dumps({
+                    "erp_order_number": self.name,
+                    "is_jafza_service": self.is_jafza_service,
+                    "is_after_duty": self.is_aditional_duty
+                })
+                api_header = {
+                    'content-type' : 'application/json'
+                }
+
+                response = requests.put(api_url, data=data_api, headers=api_header)
+                if response.status_code == 200:
+                    print(f"API RESPONSE- start,{response.text}")
+                else:
+                    print(f"API RESPONSE-ORDER NOT started,{response.text},{response.status_code}")
+
+
+
         return True
 
     def action_reach_service(self):
