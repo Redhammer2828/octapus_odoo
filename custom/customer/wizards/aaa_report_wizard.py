@@ -20,7 +20,19 @@ class AaaReportWizard(models.TransientModel):
     provider_id = fields.Many2one('res.partner', string="Provider", domain="[('is_vendor', '=', True)]")
 
     def _fetch_service_records(self):
-        domain = [('service_time', '>=', self.from_date), ('service_time', '<=', self.to_date)]
+
+        server_tz = self.env.user.tz or 'UTC'
+        tz = timezone(server_tz)
+
+        # Convert user-entered dates to datetime (at 00:00:00 and 23:59:59 in server timezone)
+        from_date_dt = tz.localize(fields.Datetime.from_string(self.from_date)).replace(hour=0, minute=0, second=0)
+        to_date_dt = tz.localize(fields.Datetime.from_string(self.to_date)).replace(hour=23, minute=59, second=59)
+
+        # Convert to UTC for filtering in Odoo
+        from_date_utc = from_date_dt.astimezone(UTC)
+        to_date_utc = to_date_dt.astimezone(UTC)
+        
+        domain = [('service_time', '>=', from_date_utc), ('service_time', '<=', to_date_utc)]
         if self.customer_id:
             domain.append(('customer_id', '=', self.customer_id.id))
         if self.member_type:
@@ -110,8 +122,8 @@ class AaaReportWizard(models.TransientModel):
             'Number', 'Service Date & Time', 'Created Date & Time', 'Customer Name', 'Category',
             'Membership Number', 'Member Name', 'Membership State', 'Mobile', 'Policy Number',
             'Member Type', 'Service Type', 'Vehicle Type', 'Vehicle Plate', 'In Progress Date and Time',
-            'Service', 'Provider', 'Driver', 'Driver Mobile Number', 'From - Location', 'From - Emirate',
-            'To - Location', 'To - Emirate', 'From - Date', 'To - Date', 'Smart Tow ID', 'Status',
+            'Service', 'Provider', 'Driver', 'Driver Mobile Number', 'From - Location','To - Location','From - Emirate',
+            'To - Emirate', 'From - Date', 'To - Date', 'Smart Tow ID', 'Status',
             'Agent', 'Dispatcher', 'Comments', 'Trip Sheet Number', 'Amount Collected', 'Rating', 'Rating Added By'
         ]
 
@@ -149,10 +161,19 @@ class AaaReportWizard(models.TransientModel):
                 record.get('provider_id')[1] if record.get('provider_id') else '',
                 record.get('driver_id')[1] if record.get('driver_id') else '',
                 record.get('driver_num', ''),
-                record.get('from_location')[1] if record.get('from_location') else '',
+                # Updated From - Location Logic
+                (record.get('selected_from_location')[1] if record.get('selected_from_location') 
+                else (record.get('from_location')[1] if record.get('from_location') else '')),
+                # Updated To - Location Logic
+                (record.get('selected_to_location')[1] if record.get('selected_to_location') 
+                else (record.get('to_location')[1] if record.get('to_location') else '')),
+
                 record.get('from_location_emirate', ''),
-                record.get('to_location')[1] if record.get('to_location') else '',
                 record.get('to_location_emirate', ''),
+                # record.get('from_location')[1] if record.get('from_location') else '',
+                # record.get('from_location_emirate', ''),
+                # record.get('to_location')[1] if record.get('to_location') else '',
+                # record.get('to_location_emirate', ''),
                 convert_time(record.get('date_time_from', '')),
                 convert_time(record.get('date_time_to', '')),
                 record.get('smarto_id', ''),
