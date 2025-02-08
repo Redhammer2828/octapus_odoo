@@ -201,12 +201,18 @@ class DataUploadFile(models.Model):
                                 'comment': "Member Replaced"
                             })
                             member_line.if_rep_match = member.id
+                    else:
+                        member_line.update({
+                            'upload_member_status': 'replace',
+                            'comment': "Member Replaced"
+                        })
+                        member_line.if_rep_match = member.id
             else:
                 other_partner = self.env['res.partner'].search([
                     ('vehicle_chasis_no', '=', excel_chassis_no),
                     ('membership_state', '!=', 'cancel')
                 ], limit=1)
-
+                 
                 if other_partner:
                     current_date = fields.Date.context_today(self)
                     db_expiry_date = member.member_expiry_date
@@ -238,8 +244,7 @@ class DataUploadFile(models.Model):
                     'upload_member_status': 'new',
                     'comment': "*New Member"
                 })
-
-    # #---------------------------------------------------------------TEMP COMMENT--------------------------------------------------------------
+# #---------------------------------------------------------------TEMP COMMENT--------------------------------------------------------------
     def apply_member_upload_wizard(self):
             # Start measuring time
             start_time = time.time()
