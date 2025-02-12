@@ -1161,7 +1161,7 @@ class AAAService(models.Model):
         ]
 
         services = self.search(domain)
-        print("SERVICES",service)
+        # print("SERVICES",service)
         for service in services:
             service.write({'state': 'dispatch'})
             # Create history entry
