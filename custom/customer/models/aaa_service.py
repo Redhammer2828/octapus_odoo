@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 import os
 import logging
 from pytz import timezone
+import pytz
+from dateutil.relativedelta import relativedelta
 load_dotenv()
 _logger = logging.getLogger(__name__)
 base_url = os.getenv("BASE_URL")
@@ -228,10 +230,6 @@ class AAAService(models.Model):
     orgin_no = fields.Text('Orgin')
     origin_no = fields.Many2one('aaa.service', string='Origin Service', help='References the original service before changes were made.', readonly=True)
 
-
-    #orgin_no = fields.Char(string="Orgin No", help="Link to the original service record")
-
-
     service_quantity = fields.Float(string="Service Quantity", default="1.00")
     hide_selected_locations = fields.Boolean(
         compute="_compute_hide_selected_locations",
@@ -248,21 +246,52 @@ class AAAService(models.Model):
     is_manager_or_admin = fields.Boolean(compute='_compute_is_manager_or_admin', string="Is Manager or Admin", store=False)
 
     service_time = fields.Datetime(string="Service Date Time", default=fields.Datetime.now)
-    # service_time_uae_timezone = fields.Datetime(
-    #     string="Service Date Time UAE",
-    #     default=lambda self: self._get_dubai_time()
-    # )
-
-    # def _get_dubai_time(self):
-    #     """Get the current time in Dubai timezone as a naive datetime."""
-    #     dubai_tz = timezone('Asia/Dubai')
-    #     # Get the current UTC time
-    #     utc_now = datetime.utcnow()
-    #     # Convert UTC time to Dubai time
-    #     dubai_time = utc_now.astimezone(dubai_tz)
-    #     # Return a naive datetime object
-    #     return dubai_time.replace(tzinfo=None)
+    is_today = fields.Boolean(
+        string='Is Today',
+        compute='_compute_is_today',
+        search='_search_today'
+    )
 # -----------------------------------------------------------------------------------------------------------------
+    @api.model
+    def _get_timezone_start_end_times(self):
+        """Get UTC start/end times based on user timezone"""
+        # Get user's timezone or default to UTC
+        user_tz = pytz.timezone(self.env.user.tz or 'UTC')
+        utc_tz = pytz.UTC
+ 
+        # Get current date in user's timezone
+        now = datetime.now()
+        user_today = now.astimezone(user_tz).date()
+ 
+        # Create datetime objects for start and end of user's day
+        local_start = datetime.combine(user_today, datetime.min.time())
+        local_end = datetime.combine(user_today, datetime.max.time())
+ 
+        # Convert to UTC
+        utc_start = user_tz.localize(local_start).astimezone(utc_tz)
+        utc_end = user_tz.localize(local_end).astimezone(utc_tz)
+ 
+        return utc_start, utc_end
+ 
+    def _search_today(self, operator, value):
+        """Dynamic domain for today's records based on user timezone"""
+        if operator == '=' and value:
+            utc_start, utc_end = self._get_timezone_start_end_times()
+            return [
+                ('service_time', '>=', utc_start.strftime('%Y-%m-%d %H:%M:%S')),
+                ('service_time', '<=', utc_end.strftime('%Y-%m-%d %H:%M:%S'))
+            ]
+        return []
+    
+    @api.depends('service_time')
+    def _compute_is_today(self):
+        """Compute method for is_today field"""
+        utc_start, utc_end = self._get_timezone_start_end_times()
+        for record in self:
+            if record.service_time:
+                record.is_today = utc_start <= record.service_time <= utc_end
+            else:
+                record.is_today = False
 # ----------------------------DELETE RESTRICTION-------------------------------------------------------------------
     def unlink(self):
         """Restrict deletion for users in groups named 'Agent' or 'Dispatcher'."""
@@ -275,6 +304,7 @@ class AAAService(models.Model):
                 "You cannot delete this record"
             )
         return super(AAAService, self).unlink()
+    
     @api.depends('created_by')
     def _compute_is_agent_user(self):
         """Compute is_agent_user based on the created_by user's group membership."""
@@ -616,8 +646,7 @@ class AAAService(models.Model):
             'user': self.env.user.id,
             'time': fields.Datetime.now(),
             'status': service.state,
-        })
-
+        }) 
         return service
 
     @api.depends('state')
@@ -1132,10 +1161,9 @@ class AAAService(models.Model):
         ]
 
         services = self.search(domain)
-
+        print("SERVICES",service)
         for service in services:
             service.write({'state': 'dispatch'})
-
             # Create history entry
             self.env['service.history'].create({
                 'service_id': service.id,
