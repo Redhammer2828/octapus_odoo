@@ -50,7 +50,7 @@
                             invisible="service_based != 'location_duration' or state != 'reach'  or is_agent_user" />
                         <button name="action_done_service" string="Done" type="object"
                             class="btn-primary"
-                            invisible="service_based != 'location_duration' or state != 'completed_by_driver'  or is_agent_user" />
+                            invisible="service_based != 'location_duration' or is_agent_user" />
                         <button name="action_done_service" string="Completed" type="object"
                             class="btn-primary"
                             confirm="Complete this service, do you want to proceed?"
