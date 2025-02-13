@@ -231,14 +231,17 @@ class ResPartnerMembers(models.Model):
     @api.depends('vehicle_chasis_no')
     def _compute_member_ref_no(self):
         for record in self:
-            if record.parent_customer_id and record.member_partner_category_id and record.card_type_id:
-                customer_code = record.parent_customer_id.customer_code or ''
-                category_name = record.member_partner_category_id.name or ''
-                card_code = record.card_type_id.code or ''
-                random_digits = str(random.randint(10000, 99999))
-                record.ref_num = f"{customer_code}{category_name}{card_code}{random_digits}"
-            else:
-                record.ref_num = False
+            # Only compute/generate ref_num if it's currently empty or False
+            if not record.ref_num:
+                if record.parent_customer_id and record.member_partner_category_id and record.card_type_id:
+                    customer_code = record.parent_customer_id.customer_code or ''
+                    category_name = record.member_partner_category_id.name or ''
+                    card_code = record.card_type_id.code or ''
+                    random_digits = str(random.randint(10000, 99999))
+                    record.ref_num = f"{customer_code}{category_name}{card_code}{random_digits}"
+                else:
+                    record.ref_num = False
+
 
     def action_confirm_membership(self):
             for record in self:

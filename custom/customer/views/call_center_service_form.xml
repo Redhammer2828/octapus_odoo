@@ -39,7 +39,8 @@
                         <button name="action_dispatch_service" string="To Dispatch" type="object"
                             class="oe_highlight" invisible="state != 'initiate'" />
                         <button name="action_schedule_service_check" string="Schedule Service"
-                            type="object" class="btn-default" invisible="state not in ('initiate' , 'dispatch')" />
+                            type="object" class="btn-default"
+                            invisible="state not in ('initiate' , 'dispatch')" />
                         <button name="action_start_service" string="Start" type="object"
                             class="btn-primary" invisible="state != 'dispatch' or is_agent_user " />
                         <button name="action_reach_service" string="Reach" type="object"
@@ -48,15 +49,16 @@
                             class="btn-primary"
                             confirm="Complete this RAC service, do you want to proceed?"
                             invisible="service_based != 'location_duration' or state != 'reach'  or is_agent_user" />
+                        <!-- <button name="action_done_service" string="Done" type="object"
+                            class="btn-primary"
+                            invisible="service_based != 'location_duration' or is_agent_user" /> -->
                         <button name="action_done_service" string="Done" type="object"
-                            class="btn-primary"
-                            invisible="service_based != 'location_duration' or state != 'completed_by_driver'  or is_agent_user" />
-                        <button name="action_done_service" string="Completed" type="object"
-                            class="btn-primary"
+                            class="btn-success"
                             confirm="Complete this service, do you want to proceed?"
-                            invisible="state != 'reach' or service_based == 'location_duration'  or is_agent_user" />
+                            invisible="not (state == 'reach' or state == 'completed_by_driver') or is_agent_user"
+                        />
                         <button name="action_cancel_service" type="object" string="Cancel"
-                            confirm="Cancel this service, do you want to proceed?"
+                            confirm="Cancel this service, do you want to proceed?" class="btn-danger"
                             invisible="state not in ('initiate', 'dispatch', 'start', 'reach') or is_agent_user" />
                         <button name="action_request_service" type="object" string="Request"
                             invisible="state != 'cancel'  or is_agent_user" groups="base.group_user"
@@ -64,10 +66,12 @@
                         <!-- <button name="action_approve_service" type="object" string="Approve"
                             groups="base.group_system"
                             invisible="state != 'requested'  or is_agent_user" class="btn-primary" /> -->
-                        <button name="action_approve_service" type="object" string="Approve"  invisible="state != 'requested' or not is_manager_or_admin"  class="btn-primary" />
+                        <button name="action_approve_service" type="object" string="Approve"
+                            invisible="state != 'requested' or not is_manager_or_admin"
+                            class="btn-primary" />
                         <button name="action_new_change" type="object" string="New Change"
                             invisible="state not in ('change')" />
-                        <button name="action_change" type="object" string="Change"
+                        <button name="action_change" type="object" string="Change" class="btn-info"
                             confirm="Change this service, do you want to proceed?"
                             invisible="state not in ('initiate', 'dispatch', 'start','completed_by_driver', 'reach')" />
                         <button name="action_create_enquiry" string="Enquiry" type="object"
@@ -81,30 +85,38 @@
                         <field name="is_manager_or_admin" invisible="1" />
                     </header>
                     <sheet>
-                        <div class="row mt-2 mb-2" style="font-weight: bold; color: #7c7bad; border: solid 1px #8080805c; margin-left: 1%; margin-right: 1%; background-color: #eee; padding: 8px; border-radius: 10px;">
+                        <div class="row mt-2 mb-2"
+                            style="font-weight: bold; color: #7c7bad; border: solid 1px #8080805c; margin-left: 1%; margin-right: 1%; background-color: #eee; padding: 8px; border-radius: 10px;">
                             <div style="display: inline-block; width: 20%; padding-right: 15px;">
                                 <span style="display: inline-block; margin-right: 5px;">Number:</span>
-                                <field name="name" readonly="1" style="color: green; display: inline-block;"/>
+                                <field name="name" readonly="1"
+                                    style="color: green; display: inline-block;" />
                             </div>
                             <div style="display: inline-block; width: 16%; padding-right: 10px;">
-                                <span style="display: inline-block; margin-right: 5px;">Service Type:</span>
-                                <field name="type" readonly="1" style="color: green; display: inline-block;"/>
+                                <span style="display: inline-block; margin-right: 5px;">Service
+                                    Type:</span>
+                                <field name="type" readonly="1"
+                                    style="color: green; display: inline-block;" />
                             </div>
                             <div style="display: inline-block; width: 16%; padding-right: 10px;">
                                 <span style="display: inline-block; margin-right: 5px;">Member Type:</span>
-                                <field name="member_type" readonly="1" style="color: green; display: inline-block;"/>
+                                <field name="member_type" readonly="1"
+                                    style="color: green; display: inline-block;" />
                             </div>
                             <div style="display: inline-block; width: 16%; padding-right: 10px;">
                                 <span style="display: inline-block; margin-right: 5px;">Card Type:</span>
-                                <field name="card_type" readonly="1" style="color: green; display: inline-block;"/>
+                                <field name="card_type" readonly="1"
+                                    style="color: green; display: inline-block;" />
                             </div>
                             <div style="display: inline-block; width: 16%; padding-right: 10px;">
                                 <span style="display: inline-block; margin-right: 5px;">User:</span>
-                                <field name="created_by" widget="selection" readonly="1" style="color: green !important; display: inline-block;"/>
+                                <field name="created_by" widget="selection" readonly="1"
+                                    style="color: green !important; display: inline-block;" />
                             </div>
                             <div style="display: inline-block; width: 16%;">
                                 <span style="display: inline-block; margin-right: 5px;">Agent:</span>
-                                <field name="create_uid" widget="selection" readonly="1" style="color: green !important; display: inline-block;"/>
+                                <field name="create_uid" widget="selection" readonly="1"
+                                    style="color: green !important; display: inline-block;" />
                             </div>
                         </div>
                         <group col="3">
@@ -137,13 +149,17 @@
                                     readonly="state not in ['initiate', 'dispatch']" />
                                 <field name="deposit_amount" invisible="1" />
                                 <field name="schedule_service_check" readonly="1" invisible="1" />
-                                <field name="schedule_date_time" readonly="1" invisible="schedule_service_check == False or schedule_date_time == False" required="schedule_service_check == True " />        
+                                <field name="schedule_date_time" readonly="1"
+                                    invisible="schedule_service_check == False or schedule_date_time == False"
+                                    required="schedule_service_check == True " />
                                 <field name="service_time" readonly="1" />
-                                <field name="requested_date" readonly="1" invisible="schedule_service_check == False or requested_date == False" />
+                                <field name="requested_date" readonly="1"
+                                    invisible="schedule_service_check == False or requested_date == False" />
                                 <field name="driving_license" string="Driving License"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="claim_number" readonly="state == 'done'" />
-                                <field name="smarto" readonly="state in ['cancel', 'discard']" widget="boolean_toggle" />
+                                <field name="smarto" readonly="state in ['cancel', 'discard']"
+                                    widget="boolean_toggle" />
                                 <field name="smarto_id" readonly="state in ['cancel', 'discard']"
                                     invisible="smarto != True" required="smarto == True" />
                                 <field name="comments" string="Comments" />
@@ -283,30 +299,32 @@
                                 <field name="driver_num" string="Contact No"
                                     invisible="state in ['draft', 'initiate']"
                                     readonly="state in ['done', 'cancel']" />
-                                </group>
-                                    
+                            </group>
+
                             <group string="JAFZA DETAILS"
                                 invisible="state in ['draft']">
                                 <!-- JAFZA SERVICE -->
-                                <field name="is_jafza_service" widget="boolean_toggle"/>
-                                <field name="jafza_provider_id" string="Jafza Provider" 
+                                <field name="is_jafza_service" widget="boolean_toggle" />
+                                <field name="jafza_provider_id" string="Jafza Provider"
                                     invisible="state in ['draft'] or is_jafza_service == False"
                                     readonly="state in ['done', 'cancel']"
                                     options="{'no_create': True, 'no_open': True}" />
-                                <field name="jafza_driver_id" invisible="is_driver_name_visible == True and is_jafza_service == False"
+                                <field name="jafza_driver_id"
+                                    invisible="is_driver_name_visible == True and is_jafza_service == False"
                                     readonly="state in ['done', 'cancel']"
                                     options="{'no_create': True, 'no_open': True}" />
                                 <field name="jafza_driver_name"
-                                    invisible="is_driver_name_visible == False and is_jafza_service == False" 
+                                    invisible="is_driver_name_visible == False and is_jafza_service == False"
                                     readonly="state in ['done', 'cancel']" />
-                                <field name="is_aditional_duty" widget="boolean_toggle"/>
+                                <field name="is_aditional_duty" widget="boolean_toggle" />
                             </group>
                             <group string="SUMMARY"
                                 invisible="state in ['draft', 'initiate', 'dispatch']"
                                 readonly="state in ['done', 'cancel']">
                                 <field name="credit_proforma_number" string="Trip Sheet Number"
                                     invisible="state in ['draft', 'initiate', 'dispatch']"
-                                    required="state in ['done', 'reach']" readonly="state in ['done']"
+                                    required="state in ['done', 'reach']"
+                                    readonly="state in ['done']"
                                     class="required_field" />
                                 <field name="vendor_rating" widget="priority"
                                     string="Rate this service"
