@@ -1,0 +1,52 @@
+/* Style for rows with state 'done' */
+.o_list_renderer.aaa_service_tree table tbody tr.o_data_row.text-success {
+    background-color: #28a745 !important;  /* Green */
+}
+
+.o_list_renderer.aaa_service_tree table tbody tr.o_data_row.text-success td {
+    background-color: transparent !important;  /* Ensure td background is transparent */
+    color: white !important;  /* Set text color if needed */
+}
+
+/* Style for rows with state 'cancel' */
+.o_list_renderer.aaa_service_tree table tbody tr.o_data_row.text-danger {
+    background-color: #dc3545 !important;  /* Red */
+}
+
+.o_list_renderer.aaa_service_tree table tbody tr.o_data_row.text-danger td {
+    background-color: transparent !important;  /* Ensure td background is transparent */
+    color: white !important;  /* Set text color if needed */
+}
+
+/* Style for rows with state 'start' */
+.o_list_renderer.aaa_service_tree table tbody tr.o_data_row.text-warning {
+    background-color: #ffc107 !important;  /* Yellow/Orange */
+}
+
+.o_list_renderer.aaa_service_tree table tbody tr.o_data_row.text-warning td {
+    background-color: transparent !important;  /* Ensure td background is transparent */
+    color: black !important;  /* Set text color if needed */
+}
+
+/* Hover states for row */
+.o_list_renderer.aaa_service_tree table tbody tr.o_data_row.text-success:hover {
+    background-color: #218838 !important;  /* Darker green */
+}
+
+.o_list_renderer.aaa_service_tree table tbody tr.o_data_row.text-danger:hover {
+    background-color: #c82333 !important;  /* Darker red */
+}
+
+.o_list_renderer.aaa_service_tree table tbody tr.o_data_row.text-warning:hover {
+    background-color: #e0a800 !important;  /* Darker yellow */
+}
+
+/* Ensure the checkbox column (o_list_record_selector) is white and not affected */
+.o_list_renderer.aaa_service_tree table tbody td.o_list_record_selector {
+    background-color: white !important;
+}
+
+/* Additional row selections will not affect the background color */
+.o_list_renderer.aaa_service_tree table tbody tr.o_data_row.o_selected_row {
+    background-color: inherit !important;
+}

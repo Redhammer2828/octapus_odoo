@@ -11,6 +11,8 @@ import logging
 from pytz import timezone
 import pytz
 from dateutil.relativedelta import relativedelta
+import pytz
+from dateutil.relativedelta import relativedelta
 load_dotenv()
 _logger = logging.getLogger(__name__)
 base_url = os.getenv("BASE_URL")
@@ -251,6 +253,40 @@ class AAAService(models.Model):
         compute='_compute_is_today',
         search='_search_today'
     )
+##############  AFL FIELDS #############################
+    job_ref= fields .Char(string= "JobRefNo")
+    ser_id = fields.Char(string="SerId")
+    comment_text = fields.Text(compute='_compute_comment_text', string="Comments")
+    initate_date =fields.Datetime(string="InitDt")
+    driver_reach_date = fields.Datetime(string="DrivReachDt")
+
+       # Count fields for each state and total
+    
+    # total_count = fields.Integer(string="Total", compute='_compute_service_counts')
+    # done_count = fields.Integer(string="Done", compute='_compute_service_counts')
+    # cancelled_count = fields.Integer(string="Cancelled", compute='_compute_service_counts')
+    # driver_cancel_reach_count = fields.Integer(string="Driver Reached and Cancelled", compute='_compute_service_counts')
+    # open_count = fields.Integer(string="Open", compute='_compute_service_counts')
+    # initiate_count = fields.Integer(string="Initiate", compute='_compute_service_counts')
+    # progress_count = fields.Integer(string="Progress", compute='_compute_service_counts')
+
+    # def _compute_service_counts(self):
+    #     for record in self:
+    #         record.total_count = self.search_count([])
+    #         record.done_count = self.search_count([('state', '=', 'done')])
+    #         record.cancelled_count = self.search_count([('state', '=', 'cancel')])
+    #         record.driver_cancel_reach_count = self.search_count([('state', 'in', ['cancel', 'reach'])])
+    #         record.open_count = self.search_count([('state', '=', 'initiate')])
+    #         record.initiate_count = self.search_count([('state', '=', 'initiate')])
+    #         record.progress_count = self.search_count([('state', '=', 'start')])
+
+
+
+    @api.depends('state')
+    def _compute_comment_text(self):
+        for record in self:
+            comments = self.env['service.comment'].search([('comment_status', '=', record.state)])
+            record.comment_text = "\n".join(comments.mapped('comment'))  # Assuming 'content' is the field with comment text
 # -----------------------------------------------------------------------------------------------------------------
     @api.model
     def _get_timezone_start_end_times(self):
@@ -362,17 +398,17 @@ class AAAService(models.Model):
         for record in self:
             record.hide_selected_locations = record.member_type == 'credit'
 
-    @api.depends('service_time')
-    def _compute_is_today(self):
-        today = fields.Date.context_today(self)
-        start_of_day = datetime.combine(today, datetime.min.time())
-        end_of_day = start_of_day + timedelta(days=1) - timedelta(seconds=1)
+    # @api.depends('service_time')
+    # def _compute_is_today(self):
+    #     today = fields.Date.context_today(self)
+    #     start_of_day = datetime.combine(today, datetime.min.time())
+    #     end_of_day = start_of_day + timedelta(days=1) - timedelta(seconds=1)
 
-        for record in self:
-            record.is_today = (
-                record.service_time and
-                start_of_day <= record.service_time <= end_of_day
-            )
+    #     for record in self:
+    #         record.is_today = (
+    #             record.service_time and
+    #             start_of_day <= record.service_time <= end_of_day
+    #         )
 # --------------------------------------------API SEARCH LOCATION-------------------------------------------------------------------
     @api.depends('search_query')
     def _fetch_location_suggestions(self):
@@ -550,17 +586,37 @@ class AAAService(models.Model):
                 # Fetch 'credit' members ordered by ID
                 # Fetch 'credit' members ordered by ID
                 # Fetch 'credit' members ordered by ID
-                members = self.env['res.partner'].search([
-                    ('parent_customer_id', '=', record.customer_id.id),
-                    ('member_type', '=', 'credit'),
-                ], order='id')  # Specify another field to order by if needed
+                # members = self.env['res.partner'].search([
+                #     ('parent_customer_id', '=', record.customer_id.id),
+                #     ('member_type', '=', 'credit'),
+                # ], order='id')  # Specify another field to order by if needed
 
-                if members:
-                    record.member_id = members[0].id
-                    record.sequence_id = members[0].member_partner_category_id.id if members[0].member_partner_category_id else False
+                # if members:
+                #     record.member_id = members[0].id
+                #     record.sequence_id = members[0].member_partner_category_id.id if members[0].member_partner_category_id else False
+                # else:
+                #     record.member_id = False
+                #     record.sequence_id = False
+
+                partner_categories = self.env['partner.category'].search([
+                    ('partner_id', '=', record.customer_id.id),
+                    ('member_type', '=', 'credit'),
+                ], order='id')  # Order by ID or another field as required
+
+                if partner_categories:
+                    record.sequence_id = partner_categories[0].id
+                    # Fetch member linked to the fetched sequence_id
+                    member = self.env['res.partner'].search([
+                        ('member_partner_category_id', '=', partner_categories[0].id),
+                        ('member_type', '=', 'credit'),
+                    ], order='id', limit=1)  # Limit to 1 member, ordered by ID
+
+                    record.member_id = member.id if member else False
                 else:
-                    record.member_id = False
                     record.sequence_id = False
+                    record.member_id = False
+
+
 
             elif record.member_type == 'adhoc':
                 # Fetch 'adhoc' member categories ordered by ID
