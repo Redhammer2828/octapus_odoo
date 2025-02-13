@@ -69,17 +69,7 @@
         'data/scheduled_action.xml',
         'data/sequence_data.xml',
         'data/server_action.xml',
-        'data/server_action_two.xml',
     ],
-    # 'assets': {
-    #     'web.assets_backend': [
-    #         'customer/static/src/js/location_autocomplete.js',
-    #         'customer/static/src/xml/location_autocomplete_template.xml',
-    #     ],
-    # },
-
-
-
     'installable': True,
     'application': True,
     'sequence': 2,
