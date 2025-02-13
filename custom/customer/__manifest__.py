@@ -6,6 +6,7 @@
     'assets': {
         'web.assets_backend': [
              '/customer/static/src/css/my_custom_style.css',
+             '/customer/static/src/css/custom_tree_styles.css',
         ],
     },
     'author': 'Sasoft',
@@ -47,6 +48,8 @@
         'views/res_partner_vendor.xml',
         'views/product_pricelist.xml',
         'views/service_dashboard.xml',
+        'views/afl_service.xml',
+        #'views/afl_dashboard.xml',
         'wizards/upload_member_wizard.xml',
         'wizards/membership_extension_wizard.xml',
         'wizards/membership_renewal_wizard.xml',
@@ -66,7 +69,17 @@
         'data/scheduled_action.xml',
         'data/sequence_data.xml',
         'data/server_action.xml',
+        'data/server_action_two.xml',
     ],
+    # 'assets': {
+    #     'web.assets_backend': [
+    #         'customer/static/src/js/location_autocomplete.js',
+    #         'customer/static/src/xml/location_autocomplete_template.xml',
+    #     ],
+    # },
+
+
+
     'installable': True,
     'application': True,
     'sequence': 2,

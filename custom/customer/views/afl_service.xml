@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_aaa_service_tree" model="ir.ui.view">
+        <field name="name">aaa.service.tree</field>
+        <field name="model">aaa.service</field>
+        <field name="arch" type="xml">
+            <tree string="AFL Service Dashboard" 
+                  decoration-success="state == 'done'" 
+                  decoration-danger="state == 'cancel'" 
+                  decoration-warning="state == 'start'"
+                  class="aaa_service_tree">
+                <field name="job_ref"/>
+                <field name="service_time" string="Entry date"/>
+                <field name="member_id"/>
+                <field name="member_contact_no"/>
+                <field name="vehicle_type"/>
+                <field name="vehicle_model"/>
+                <field name="vehicle_plate"/>
+                <field name="from_location"/>
+                <field name="to_location"/>
+                <field name="product_id"/>
+                <field name="state"/>
+                <field name="ser_id"/>
+                <field name="initate_date"/>
+                <field name="driver_reach_date"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="afl_service_action" model="ir.actions.act_window">
+        <field name="name">AFL Service Dashboard</field>
+        <field name="res_model">aaa.service</field>
+        <field name="view_mode">tree</field>
+        <field name="help">This dashboard shows the current status of all services.</field>
+    </record>
+
+    <menuitem id="menu_afl_service" name="AFL SERVICE" parent="menu_all_service_root" action="afl_service_action" sequence="9"/>
+</odoo>
