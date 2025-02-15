@@ -274,7 +274,7 @@
                                 <field name="provider_id" string="Provider"
                                     invisible="state in ['draft', 'initiate']"
                                     class="required_field" readonly="state in ['done', 'cancel']"
-                                    required="state == 'start'"
+                                    required="state in ['start', 'completed_by_driver']"
                                     options="{'no_create': True, 'no_open': True}" />
                                 <field name="provider_num" string="Contact No"
                                     invisible="state in ['draft', 'initiate']"
