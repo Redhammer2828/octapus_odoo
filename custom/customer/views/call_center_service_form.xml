@@ -235,6 +235,9 @@
                                     <field name="amount" string="Cash to be Collected"
                                         invisible="member_type in ['adhoc', 'credit'] or service_based == 'none'"
                                         readonly="state in['cancel', 'done']" />
+                                    <!-- DRIVER PICKUP & DROP OFF LOCATION -->
+                                    <field name="driver_pickup" readonly="1"/>
+                                    <field name="driver_dropoff" readonly="1"/>
                                     <field name="date_time_from" string="From Date time"
                                         invisible="service_based != 'location_duration'"
                                         class="required_field" required="1"
