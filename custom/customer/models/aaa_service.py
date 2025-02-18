@@ -183,7 +183,6 @@ class AAAService(models.Model):
         string='Additional Services'
     )
     # =========================================================================================================
-
     driver_id = fields.Many2one(
         'hr.employee',
         string="Driver",
@@ -253,6 +252,8 @@ class AAAService(models.Model):
         compute='_compute_is_today',
         search='_search_today'
     )
+    driver_pickup = fields.Char('Driver Pickup Location')
+    driver_dropoff = fields.Char('Driver Dropoff Location')
 ##############  AFL FIELDS #############################
     job_ref= fields .Char(string= "JobRefNo")
     ser_id = fields.Char(string="SerId")
@@ -260,7 +261,8 @@ class AAAService(models.Model):
     initate_date =fields.Datetime(string="InitDt")
     driver_reach_date = fields.Datetime(string="DrivReachDt")
 
-       # Count fields for each state and total
+
+    # Count fields for each state and total
     
     # total_count = fields.Integer(string="Total", compute='_compute_service_counts')
     # done_count = fields.Integer(string="Done", compute='_compute_service_counts')
@@ -279,8 +281,6 @@ class AAAService(models.Model):
     #         record.open_count = self.search_count([('state', '=', 'initiate')])
     #         record.initiate_count = self.search_count([('state', '=', 'initiate')])
     #         record.progress_count = self.search_count([('state', '=', 'start')])
-
-
 
     @api.depends('state')
     def _compute_comment_text(self):
