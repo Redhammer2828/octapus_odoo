@@ -170,9 +170,11 @@
                             </group>
                             <group string="VEHICLE DETAILS" name="vehicle_details">
                                 <field name="vehicle_type" string="Vehicle Type"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" invisible="(member_type == 'credit' and not is_imported)"/>
+                                <field name="vehicle_type_id" options="{'no_create': True, 'no_open': True}" invisible="member_type == 'policy' or is_imported == True"/>
                                 <field name="vehicle_model" string="Vehicle Model"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user) " />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user) " invisible="(member_type == 'credit' and not is_imported)" />
+                                <field name="vehicle_model_id" options="{'no_create': True, 'no_open': True}" invisible="member_type == 'policy' or is_imported == True"/>
                                 <field name="vehicle_plate" string="Vehicle Plate"
                                     readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
@@ -235,6 +237,9 @@
                                     <field name="amount" string="Cash to be Collected"
                                         invisible="member_type in ['adhoc', 'credit'] or service_based == 'none'"
                                         readonly="state in['cancel', 'done']" />
+                                    <!-- DRIVER PICKUP & DROP OFF LOCATION -->
+                                    <field name="driver_pickup" readonly="1"/>
+                                    <field name="driver_dropoff" readonly="1"/>
                                     <field name="date_time_from" string="From Date time"
                                         invisible="service_based != 'location_duration'"
                                         class="required_field" required="1"

@@ -183,7 +183,6 @@ class AAAService(models.Model):
         string='Additional Services'
     )
     # =========================================================================================================
-
     driver_id = fields.Many2one(
         'hr.employee',
         string="Driver",
@@ -253,6 +252,8 @@ class AAAService(models.Model):
         compute='_compute_is_today',
         search='_search_today'
     )
+    driver_pickup = fields.Char('Driver Pickup Location')
+    driver_dropoff = fields.Char('Driver Dropoff Location')
 ##############  AFL FIELDS #############################
     job_ref= fields .Char(string= "JobRefNo")
     ser_id = fields.Char(string="SerId")
@@ -260,7 +261,28 @@ class AAAService(models.Model):
     initate_date =fields.Datetime(string="InitDt")
     driver_reach_date = fields.Datetime(string="DrivReachDt")
 
-       # Count fields for each state and total
+
+    vehicle_type_id = fields.Many2one('member.vehicle.type', string='Vehicle type')
+    vehicle_model_id = fields.Many2one('member.vehicle.model', string='Vehicle model', domain="[('type_id','=',vehicle_type_id)]")
+
+    # -----------------------------------------------VEHICEL TYPE VEHICLE MODEL CODE -------------------
+    @api.onchange('vehicle_type_id')
+    def _onchange_vehicle_type_id(self):
+        """ Updates the char field vehicle_type whenever vehicle_type_id is selected. """
+        if self.vehicle_type_id:
+            self.vehicle_type = self.vehicle_type_id.name
+        else:
+            self.vehicle_type = False  # Clear field if no selection
+ 
+    @api.onchange('vehicle_model_id')
+    def _onchange_vehicle_model_id(self):
+        """ Updates the char field vehicle_model whenever vehicle_model_id is selected. """
+        if self.vehicle_model_id:
+            self.vehicle_model = self.vehicle_model_id.name
+        else:
+            self.vehicle_model = False  # Clear field if no selection
+
+    # Count fields for each state and total
     
     # total_count = fields.Integer(string="Total", compute='_compute_service_counts')
     # done_count = fields.Integer(string="Done", compute='_compute_service_counts')
@@ -279,8 +301,6 @@ class AAAService(models.Model):
     #         record.open_count = self.search_count([('state', '=', 'initiate')])
     #         record.initiate_count = self.search_count([('state', '=', 'initiate')])
     #         record.progress_count = self.search_count([('state', '=', 'start')])
-
-
 
     @api.depends('state')
     def _compute_comment_text(self):
@@ -1208,7 +1228,9 @@ class AAAService(models.Model):
     @api.model
     def check_and_update_state(self):
         current_minute = fields.Datetime.now().replace(second=0, microsecond=0)
-
+        order_number = self.name
+        self.action_order_create(order_number)
+        print("ORDER NUMBER",order_number)
         # Find records scheduled for the current minute
         domain = [
             ('state', '=', 'initiate'),
