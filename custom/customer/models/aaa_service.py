@@ -262,8 +262,28 @@ class AAAService(models.Model):
     driver_reach_date = fields.Datetime(string="DrivReachDt")
 
 
+    vehicle_type_id = fields.Many2one('member.vehicle.type', string='Vehicle type')
+    vehicle_model_id = fields.Many2one('member.vehicle.model', string='Vehicle model', domain="[('type_id','=',vehicle_type_id)]")
+
+    # -----------------------------------------------VEHICEL TYPE VEHICLE MODEL CODE -------------------
+    @api.onchange('vehicle_type_id')
+    def _onchange_vehicle_type_id(self):
+        """ Updates the char field vehicle_type whenever vehicle_type_id is selected. """
+        if self.vehicle_type_id:
+            self.vehicle_type = self.vehicle_type_id.name
+        else:
+            self.vehicle_type = False  # Clear field if no selection
+
+    @api.onchange('vehicle_model_id')
+    def _onchange_vehicle_model_id(self):
+        """ Updates the char field vehicle_model whenever vehicle_model_id is selected. """
+        if self.vehicle_model_id:
+            self.vehicle_model = self.vehicle_model_id.name
+        else:
+            self.vehicle_model = False  # Clear field if no selection
+
     # Count fields for each state and total
-    
+
     # total_count = fields.Integer(string="Total", compute='_compute_service_counts')
     # done_count = fields.Integer(string="Done", compute='_compute_service_counts')
     # cancelled_count = fields.Integer(string="Cancelled", compute='_compute_service_counts')
@@ -294,21 +314,21 @@ class AAAService(models.Model):
         # Get user's timezone or default to UTC
         user_tz = pytz.timezone(self.env.user.tz or 'UTC')
         utc_tz = pytz.UTC
- 
+
         # Get current date in user's timezone
         now = datetime.now()
         user_today = now.astimezone(user_tz).date()
- 
+
         # Create datetime objects for start and end of user's day
         local_start = datetime.combine(user_today, datetime.min.time())
         local_end = datetime.combine(user_today, datetime.max.time())
- 
+
         # Convert to UTC
         utc_start = user_tz.localize(local_start).astimezone(utc_tz)
         utc_end = user_tz.localize(local_end).astimezone(utc_tz)
- 
+
         return utc_start, utc_end
- 
+
     def _search_today(self, operator, value):
         """Dynamic domain for today's records based on user timezone"""
         if operator == '=' and value:
@@ -318,7 +338,7 @@ class AAAService(models.Model):
                 ('service_time', '<=', utc_end.strftime('%Y-%m-%d %H:%M:%S'))
             ]
         return []
-    
+
     @api.depends('service_time')
     def _compute_is_today(self):
         """Compute method for is_today field"""
@@ -340,7 +360,7 @@ class AAAService(models.Model):
                 "You cannot delete this record"
             )
         return super(AAAService, self).unlink()
-    
+
     @api.depends('created_by')
     def _compute_is_agent_user(self):
         """Compute is_agent_user based on the created_by user's group membership."""
@@ -702,7 +722,7 @@ class AAAService(models.Model):
             'user': self.env.user.id,
             'time': fields.Datetime.now(),
             'status': service.state,
-        }) 
+        })
         return service
 
     @api.depends('state')
@@ -803,6 +823,7 @@ class AAAService(models.Model):
 
     def action_order_create(self, order_number):
         url = f"{base_url}/aaa-customer/consumers/create/road_side_service"
+        print('service number on order create',order_number)
         payload = json.dumps({
             "erp_order_number": order_number,
             "is_jafza_service": self.is_jafza_service,
@@ -820,6 +841,7 @@ class AAAService(models.Model):
 # ---------------------------------------------------NEW A CODE-----------------------------------------------
 # -----------------------------CATEOGRY LIMIT CHECK----------------------------------------------------------------------------------------
     def action_dispatch_service(self):
+        print('checking the service create dispatch')
         self.ensure_one()
         self._generate_service_name()
 
@@ -908,6 +930,7 @@ class AAAService(models.Model):
         vehicle_chasis_no = self.vehicle_chasis_no  # Corrected field name
 
         self.action_order_response(order_number, status, phone_number, vehicle_chasis_no)
+        print('generating order number',order_number)
         self.action_order_create(order_number)
         print(f"checking value of order:{order_number},{status}, {phone_number}, {vehicle_chasis_no}")
         # -----------------------------------------------------------------------------------------------
@@ -1209,6 +1232,7 @@ class AAAService(models.Model):
     def check_and_update_state(self):
         current_minute = fields.Datetime.now().replace(second=0, microsecond=0)
 
+
         # Find records scheduled for the current minute
         domain = [
             ('state', '=', 'initiate'),
@@ -1219,6 +1243,13 @@ class AAAService(models.Model):
         services = self.search(domain)
         # print("SERVICES",service)
         for service in services:
+            print('name----------------------', service.name)
+            order_number = service.name
+            print("ORDER NUMBER", order_number)
+            if order_number:
+                self.action_order_create(order_number)
+            else:
+                print('service number for order ')
             service.write({'state': 'dispatch'})
             # Create history entry
             self.env['service.history'].create({
