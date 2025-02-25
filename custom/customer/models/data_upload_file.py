@@ -163,7 +163,16 @@ class DataUploadFile(models.Model):
                                 'comment': "*Expiry Date is less than Activation Date"
                             })
                         else:
-                            if member.member_expiry_date != member_line.member_expiry_date:
+
+                             # Check if the uploaded expiry date is earlier than the database expiry date
+                            if expiry_date < db_expiry_date:
+                                member_line.update({
+                                    'upload_member_status': 'rejection',
+                                    'comment': "*The uploaded expiry date is earlier than the existing expiry date!"
+                                })
+                            
+                            elif expiry_date > db_expiry_date:
+                                # Membership renewal or extension
                                 if difference >= 365:
                                     member_line.update({
                                         'upload_member_status': 'renewal',
@@ -174,11 +183,36 @@ class DataUploadFile(models.Model):
                                         'upload_member_status': 'update',
                                         'comment': "*Membership Extension"
                                     })
-                            else:
+                            
+                            elif expiry_date == db_expiry_date:
+                                # Duplicate record scenario
                                 member_line.update({
                                     'upload_member_status': 'rejection',
-                                    'comment': "*Duplicate Record in System!"
+                                    'comment': "*Duplicate Record in System With same expiry date!"
                                 })
+                            # if member.member_expiry_date != member_line.member_expiry_date:
+                            #     if difference >= 365:
+                            #         member_line.update({
+                            #             'upload_member_status': 'renewal',
+                            #             'comment': "*Membership Renewal"
+                            #         })
+                            #     else:
+                            #         member_line.update({
+                            #             'upload_member_status': 'update',
+                            #             'comment': "*Membership Extension"
+                            #         })
+
+                            # elif member.member_expiry_date >= member_line.member_expiry_date:
+                            #     member_line.update({
+                            #         'upload_member_status': 'rejection',
+                            #         'comment': "*THE DB EXPIRY DATE IS GREATER THAN THE UPLOADED DATA"
+                            #     })
+
+                            # else:
+                            #     member_line.update({
+                            #         'upload_member_status': 'rejection',
+                            #         'comment': "*Duplicate Record in System With same expiry date!"
+                            #     })
                     else:
                         member_line.update({
                             'upload_member_status': 'new',
@@ -354,12 +388,26 @@ class DataUploadFile(models.Model):
                             # Update card_type with the found record
                             _logger.info(f"Updating partner {matching_partner.name} with CARD {card_type_record.id}")
 
-                        category_record = self.env['partner.category'].search([('name', '=', member_line.sequence_code)], limit=1)
+                        # category_record = self.env['partner.category'].search([('name', '=', member_line.sequence_code)], limit=1)
+                        # if not category_record:
+                        #     _logger.warning(f"No CATEGORY found for MEMBER: {member_line.sequence_code}")
+                        # else:
+                        #     # Update category with the found record
+                        #     _logger.info(f"Updating partner {matching_partner.name} with CATEGORY {category_record.id}")
+                        # Assuming 'partner_id' is the field name in the 'partner.category' model that refers to 'res.partner'
+                        
+                        category_record = self.env['partner.category'].search([
+                            ('name', '=', member_line.sequence_code),
+                            ('partner_id', '=', matching_partner.parent_customer_id.id),
+                            ('member_type', '=', matching_partner.member_type)  # Include this condition to match the specific partner
+                        ], limit=1)
+
                         if not category_record:
-                            _logger.warning(f"No CATEGORY found for MEMBER: {member_line.sequence_code}")
+                            _logger.warning(f"No CATEGORY found for MEMBER: {member_line.sequence_code} with Partner ID: {matching_partner.id}")
                         else:
-                            # Update category with the found record
+                            # Log successful update information
                             _logger.info(f"Updating partner {matching_partner.name} with CATEGORY {category_record.id}")
+
                         matching_partner.write({
                             'name': member_line.member_name,
                             'membership_state': 'confirm',
@@ -422,7 +470,11 @@ class DataUploadFile(models.Model):
                             # Update card_type with the found record
                             _logger.info(f"Updating partner {matching_partner.name} with CARD {card_type_record.id}")
 
-                        category_record = self.env['partner.category'].search([('name', '=', member_line.sequence_code)], limit=1)
+                        category_record = self.env['partner.category'].search([
+                            ('name', '=', member_line.sequence_code),
+                            ('partner_id', '=', matching_partner.parent_customer_id.id),
+                            ('member_type', '=', matching_partner.member_type)  # Include this condition to match the specific partner
+                        ], limit=1)
                         if not category_record:
                             _logger.warning(f"No CATEGORY found for MEMBER: {member_line.sequence_code}")
                         else:
@@ -467,7 +519,11 @@ class DataUploadFile(models.Model):
                             # Update card_type with the found record
                         _logger.info(f"Updating partner {matching_partner.name} with CARD {card_type_record.id}")
 
-                    category_record = self.env['partner.category'].search([('name', '=', member_line.sequence_code)], limit=1)
+                    category_record = self.env['partner.category'].search([
+                            ('name', '=', member_line.sequence_code),
+                            ('partner_id', '=', matching_partner.parent_customer_id.id),
+                            ('member_type', '=', matching_partner.member_type),  # Include this condition to match the specific partner
+                        ], limit=1)
                     if not category_record:
                         _logger.warning(f"No CATEGORY found for MEMBER: {member_line.sequence_code}")
                     else:
