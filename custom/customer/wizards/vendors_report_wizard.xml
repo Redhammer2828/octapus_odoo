@@ -12,9 +12,9 @@
                         <!-- <field name="product_template_id" /> -->
                     </group>
                     <group>
-                        <field name="customer_id" required="1"/>
+                        <field name="provider_id" required="1" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
                         <field name="member_type" />
-                        <field name="sequence_id" />
+                        <field name="sequence_id" options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
                         <field name="type" />
                     </group>
                 </group>
@@ -22,7 +22,7 @@
                     
                     <button name="action_export_excel" string="Export" type="object"
                         class="btn-success" />
-                    <button string="Cancel" class="btn-secondary" special="cancel" />
+                    <button string="Cancel" class="btn-danger" special="cancel" />
                 </footer>
             </form>
         </field>

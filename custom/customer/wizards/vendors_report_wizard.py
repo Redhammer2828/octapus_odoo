@@ -12,7 +12,7 @@ from reportlab.lib import colors
 from io import BytesIO
 from reportlab.lib.utils import ImageReader  # Import ImageReader
 from datetime import datetime, time, timedelta
-
+from odoo.exceptions import UserError
 import logging
 # Set up logging for debugging purposes
 _logger = logging.getLogger(__name__)
@@ -21,28 +21,55 @@ class VendorsReportWizard(models.TransientModel):
     _name = 'vendors.report.wizard'
     _description = 'Vendors Report Wizard'
 
-    from_date = fields.Datetime(
+    from_date = fields.Date(
         string="From Date",
         required=True
     )
         
 
-    to_date = fields.Datetime(
+    to_date = fields.Date(
         string="To Date",
         required=True
     )
 
+    # from_date = fields.Datetime(
+    #     string="From Date",
+    #     required=True,
+    #     default=lambda self: self._get_start_of_day()
+    # )
+
+    # to_date = fields.Datetime(
+    #     string="To Date",
+    #     required=True,
+    #     default=lambda self: self._get_end_of_day()
+    # )
+
+    # def _get_start_of_day(self):
+    #     """Return today's date at 00:00:00 and print the value."""
+    #     today = datetime.today().date()  # Get today's date
+    #     start_of_day = datetime.combine(today, time(0, 0, 0))  # Combine with 00:00:00
+    #     print(f"Calculated From Date: {start_of_day}")  # Print statement for from_date
+    #     return start_of_day
+
+    # def _get_end_of_day(self):
+    #     """Return today's date at 23:59:59 and print the value."""
+    #     today = datetime.today().date()  # Get today's date
+    #     end_of_day = datetime.combine(today, time(23, 59, 59))  # Combine with 23:59:59
+    #     print(f"Calculated To Date: {end_of_day}")  # Print statement for to_date
+    #     return end_of_day   
+
     
 
     
    
 
    
-    customer_id = fields.Many2one('res.partner', string="Vendor", domain="[('is_vendor', '=', True)]")
+    # customer_id = fields.Many2one('res.partner', string="Vendor", domain="[('is_vendor', '=', True)]")
+    provider_id = fields.Many2one('res.partner', string="Vendor", domain="[('is_vendor', '=', True)]")
     member_type = fields.Selection([('policy', 'POLICY'), ('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type")
     
     sequence_id = fields.Many2one('partner.category', string="Customer Category",
-    domain="[('partner_id','=', customer_id), ('member_type', '=', member_type)]")
+    domain="[('partner_id','=', provider_id), ('member_type', '=', member_type)]")
     type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type")
 
     
@@ -50,8 +77,8 @@ class VendorsReportWizard(models.TransientModel):
     def _fetch_service_records(self):
         """Fetches service records based on the wizard's filter criteria."""
         domain = []
-        if self.customer_id:
-            domain.append(('customer_id', '=', self.customer_id.id))
+        if self.provider_id:
+            domain.append(('provider_id', '=', self.provider_id.id))
         if self.member_type:
             domain.append(('member_type', '=', self.member_type))
         if self.type:
@@ -68,21 +95,46 @@ class VendorsReportWizard(models.TransientModel):
         service_records = self.env['aaa.service'].search(domain)
         _logger.debug("Fetched %d records from the aaa.service model", len(service_records))
         return service_records
+    # def _calculate_amount(self, record):
+    #     """Calculate the amount for a membership record."""
+    #     amount = 0.0
+    #     if record.member_type == 'credit':
+    #         if record.from_location and record.to_location and record.product_id:
+    #             service_rate = self.env['service.rate'].search([
+    #                 ('product_pricelist_item_id.product_tmpl_id', '=', record.product_id.id),
+    #                 ('from_loc_id', '=', record.from_location.id),
+    #                 ('to_loc_id', '=', record.to_location.id)
+    #             ], limit=1)
+    #             amount = service_rate.price if service_rate else 0.0
+    #     elif record.member_type == 'policy':
+    #         # if record.name and record.product_template_id:
+    #             pricelist_item = self.env['product.pricelist.item'].search([
+    #                 ('product_tmpl_id', '=', record.member_id.product_template_id.id)
+    #             ], limit=1)
+    #             amount = pricelist_item.fixed_price if pricelist_item else 0.0
+    #     return f"{float(amount or 0):.2f}"
+
     def _calculate_amount(self, record):
         """Calculate the amount for a membership record."""
         amount = 0.0
+        pricelist = self.provider_id.property_product_pricelist_id_vendor.id
+        print("PRICELIST ID------",pricelist)
         if record.member_type == 'credit':
-            if record.from_location and record.to_location and record.product_id:
+            if record.from_location and record.to_location and record.product_id and record.provider_id:
                 service_rate = self.env['service.rate'].search([
+                    ('product_pricelist_item_id.pricelist_id', '=' , pricelist),
                     ('product_pricelist_item_id.product_tmpl_id', '=', record.product_id.id),
                     ('from_loc_id', '=', record.from_location.id),
-                    ('to_loc_id', '=', record.to_location.id)
-                ], limit=1)
+                    ('to_loc_id', '=', record.to_location.id),
+                    ('date_start', '<=', record.service_time),
+                    ('date_end', '>=', record.service_time)
+                ],order="date_start desc", limit=1)
                 amount = service_rate.price if service_rate else 0.0
         elif record.member_type == 'policy':
-            # if record.name and record.product_template_id:
+            if record.name and record.product_template_id:
                 pricelist_item = self.env['product.pricelist.item'].search([
-                    ('product_tmpl_id', '=', record.member_id.product_template_id.id)
+                    ('pricelist_id' , '=' , pricelist ),
+                    ('product_tmpl_id', '=', record.product_template_id.id)
                 ], limit=1)
                 amount = pricelist_item.fixed_price if pricelist_item else 0.0
         return f"{float(amount or 0):.2f}"
@@ -136,13 +188,13 @@ class VendorsReportWizard(models.TransientModel):
 
         # Merge cells for "Date Range", "Customer", and "Category"
         worksheet.merge_range('A2:B2', 'Date Range', header_format)
-        worksheet.merge_range('C2:D2', 'Customer', header_format)
+        worksheet.merge_range('C2:D2', 'Provider', header_format)
         worksheet.merge_range('E2:F2', 'Category', header_format)
         worksheet.merge_range('E3:F3', '', header_format)
 
         # Get formatted date range
         date_range = f"{self.from_date.strftime('%d/%m/%Y')}-{self.to_date.strftime('%d/%m/%Y')}"
-        customer_name = self.customer_id.name if self.customer_id else ''
+        customer_name = self.provider_id.name if self.provider_id else ''
 
         # Write date range and customer details
         worksheet.merge_range('A3:B3', date_range, header_format)
@@ -152,8 +204,8 @@ class VendorsReportWizard(models.TransientModel):
         headers = [
             'Service Date', 'Service Number', 'Customer C/O',
             # Include 'Type' and 'Customer category' only if customer_id is "AL MASAOOD AUTOMOBILES COMPANY LLC"
-            *(['Customer Category'] if self.customer_id and self.customer_id.name == 'AL MASAOOD AUTOMOBILES COMPANY LLC' else []),
-            *(['Type'] if self.customer_id and self.customer_id.name == 'AL MASAOOD AUTOMOBILES COMPANY LLC' else []),
+            *(['Customer Category'] if self.provider_id and self.provider_id.name == 'AL MASAOOD AUTOMOBILES COMPANY LLC' else []),
+            *(['Type'] if self.provider_id and self.provider_id.name == 'AL MASAOOD AUTOMOBILES COMPANY LLC' else []),
            
             'Vehicle Type', 'Vehicle Model', 'Vehicle Plate', 'Chassis No', 'Service',
             'From Location', 'To Location', 'Trip Sheet No.', 'Quantity', 'Rate', 'Amount',
@@ -197,10 +249,13 @@ class VendorsReportWizard(models.TransientModel):
                 for header in headers:
                     field_value = ''
                     if header == 'Service Date':
-                        if record.service_time and self.from_date <= record.service_time <= self.to_date:
-                            field_value = record.service_time.strftime('%d/%m/%Y')
-                        else:
-                            field_value = ''
+                        if record.service_time:
+                            # Convert datetime to date for comparison
+                            service_time_date = record.service_time.date()
+                            if self.from_date <= service_time_date <= self.to_date:
+                                field_value = record.service_time.strftime('%d/%m/%Y')
+                            else:
+                                field_value = ''
                     elif header == 'Service Number':
                         field_value = record.name or ''
                     elif header == 'Customer C/O':
@@ -249,26 +304,58 @@ class VendorsReportWizard(models.TransientModel):
                     elif header == 'Rate':
                         
                         # Call the new calculate_rate method to get the rate value
-                        rate = self.calculate_rate(record)
-                        # total_rate_sum += rate  # Add to total rate
-                        total_rate_sum += float(rate)  # Convert to float before adding
+                        # rate = self.calculate_rate(record)
+                        if record.member_id.member_type == 'policy':
+                            pricelist_item = self.env['product.pricelist.item'].search([
+                                ('product_tmpl_id', '=', record.member_id.product_template_id.id)
+                            ], limit=1)
+                            rate = pricelist_item.fixed_price if pricelist_item else 0.00
+                        else:
+                            vendor_pricelist_id = self.provider_id.property_product_pricelist_id_vendor.id if self.provider_id else False
+                            if vendor_pricelist_id:
+                                product_pricelist_item = self.env['product.pricelist.item'].search([
+                                    ('pricelist_id', '=', vendor_pricelist_id),
+                                    ('product_tmpl_id', '=', record.product_id.id),
+                                    ('date_start', '<=', record.service_time),
+                                    ('date_end', '>=', record.service_time)
+                                ], order="date_start desc", limit=1)
+                                if product_pricelist_item:
+                                    if record.product_id.id in (237, 238):
+                                        service_rate = self.env['service.rate'].search([
+                                            ('product_pricelist_item_id', '=', product_pricelist_item.id),
+                                            ('to_loc_id', '=', record.to_location.id)
+                                        ], limit=1)
+                                    else:
+                                        service_rate = self.env['service.rate'].search([
+                                            ('product_pricelist_item_id', '=', product_pricelist_item.id),
+                                            ('from_loc_id', '=', record.from_location.id),
+                                            ('to_loc_id', '=', record.to_location.id)
+                                        ], limit=1)
+                                else:
+                                    raise UserError(f'validity not set for product: {record.product_id.name}')
+                                rate = service_rate.price if service_rate else 0.00
+                            else:
+                                raise UserError(f'Pricelist Not Mapped for {self.customer_id.name}')
+                        total_rate_sum += rate  # Add to total rate
+
+                        #total_rate_sum += float(rate)  # Convert to float before adding
                         field_value = rate
                     elif header == 'Amount':
                         # Ensure rate and amount are the same
                         amount = rate
-                        # total_service_amount_sum += amount
-                        total_service_amount_sum += float(amount)  # Convert to float before adding
+                        total_service_amount_sum += amount
+                        # total_service_amount_sum += float(amount)  # Convert to float before adding
 
                         field_value = amount
                     elif header == 'VAT(5%)':
-                        # vat = amount * 0.05
-                        vat = float(amount) * 0.05  # Convert to float before multiplying
+                        vat = amount * 0.05
+                        # vat = float(amount) * 0.05  # Convert to float before multiplying
 
                         total_vat_sum += vat
                         field_value = vat
                     elif header == 'Total':
-                        # total = amount + vat
-                        total = float(amount) + vat  # Ensure amount is a float before adding
+                        total = amount + vat
+                        # total = float(amount) + vat  # Ensure amount is a float before adding
 
                         total_sum += total
                         field_value = total
