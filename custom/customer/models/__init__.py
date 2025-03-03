@@ -21,3 +21,4 @@ from . import product_pricelist
 from . import service_dashboard
 from . import location_api
 # from . import afl_dashboard
+from . import invoice_addons

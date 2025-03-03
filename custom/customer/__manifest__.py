@@ -2,7 +2,7 @@
 {
     'name': 'Customer',
     'version': '1.0',
-    'depends': ['web','base','product','hr','mail'],
+    'depends': ['web','base','product','hr','mail','account'],
     'assets': {
         'web.assets_backend': [
              '/customer/static/src/css/my_custom_style.css',
@@ -49,6 +49,9 @@
         'views/product_pricelist.xml',
         'views/service_dashboard.xml',
         'views/afl_service.xml',
+        'views/accounts_addons.xml',
+        'views/invoice_addons.xml',
+        'views/res_partner_action.xml',
         #'views/afl_dashboard.xml',
         'wizards/upload_member_wizard.xml',
         'wizards/membership_extension_wizard.xml',
