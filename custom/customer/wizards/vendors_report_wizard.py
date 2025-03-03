@@ -335,7 +335,7 @@ class VendorsReportWizard(models.TransientModel):
                                     raise UserError(f'validity not set for product: {record.product_id.name}')
                                 rate = service_rate.price if service_rate else 0.00
                             else:
-                                raise UserError(f'Pricelist Not Mapped for {self.customer_id.name}')
+                                raise UserError(f'Pricelist Not Mapped for {self.provider_id.name}')
                         total_rate_sum += rate  # Add to total rate
 
                         #total_rate_sum += float(rate)  # Convert to float before adding
