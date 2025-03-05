@@ -51,7 +51,7 @@
         'views/afl_service.xml',
         'views/accounts_addons.xml',
         'views/invoice_addons.xml',
-        'views/res_partner_action.xml',
+        # 'views/res_partner_action.xml',
         #'views/afl_dashboard.xml',
         'wizards/upload_member_wizard.xml',
         'wizards/membership_extension_wizard.xml',
