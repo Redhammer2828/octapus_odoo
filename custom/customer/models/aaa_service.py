@@ -260,7 +260,24 @@ class AAAService(models.Model):
     comment_text = fields.Text(compute='_compute_comment_text', string="Comments")
     initate_date =fields.Datetime(string="InitDt")
     driver_reach_date = fields.Datetime(string="DrivReachDt")
+    current_time = fields.Datetime(string='Current Time', compute='_compute_current_time')
+    time_difference = fields.Float(string='Time Difference (minutes)', compute='_compute_time_difference', store=False)
 
+    @api.depends('service_time')
+    def _compute_current_time(self):
+        for record in self:
+            # Getting current time in UTC
+            record.current_time = fields.Datetime.now()
+
+    @api.depends('current_time', 'service_time')
+    def _compute_time_difference(self):
+        for record in self:
+            if record.service_time and record.current_time:
+                delta = record.current_time - record.service_time
+                # Convert time difference to minutes
+                record.time_difference = delta.total_seconds() / 60
+            else:
+                record.time_difference = 0
 
     vehicle_type_id = fields.Many2one('member.vehicle.type', string='Vehicle type')
     vehicle_model_id = fields.Many2one('member.vehicle.model', string='Vehicle model', domain="[('type_id','=',vehicle_type_id)]")
