@@ -11,3 +11,10 @@
     padding: 8px !important;
     line-height: 1.4 !important;
 }
+
+/* Apply bold text and light black background only to the specific tree view */
+.aaa_service_tree tbody tr {
+    font-weight: bold !important;
+    background-color: #4d4949 !important;  /* Light black */
+}
+

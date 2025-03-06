@@ -6,7 +6,7 @@
     'assets': {
         'web.assets_backend': [
              '/customer/static/src/css/my_custom_style.css',
-             '/customer/static/src/css/custom_tree_styles.css',
+             '/customer/static/src/css/aaa_service.css',
         ],
     },
     'author': 'Sasoft',
@@ -52,7 +52,7 @@
         'views/accounts_addons.xml',
         'views/invoice_addons.xml',
         # 'views/res_partner_action.xml',
-        #'views/afl_dashboard.xml',
+        'views/afl_dashboard.xml',
         'wizards/upload_member_wizard.xml',
         'wizards/membership_extension_wizard.xml',
         'wizards/membership_renewal_wizard.xml',

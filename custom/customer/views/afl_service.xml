@@ -4,25 +4,28 @@
         <field name="name">aaa.service.tree</field>
         <field name="model">aaa.service</field>
         <field name="arch" type="xml">
-            <tree string="AFL Service Dashboard" 
-                  decoration-success="state == 'done'" 
-                  decoration-danger="state == 'cancel'" 
-                  decoration-warning="state == 'start'"
-                  class="aaa_service_tree">
-                <field name="job_ref"/>
-                <field name="service_time" string="Entry date"/>
-                <field name="member_id"/>
-                <field name="member_contact_no"/>
-                <field name="vehicle_type"/>
-                <field name="vehicle_model"/>
-                <field name="vehicle_plate"/>
-                <field name="from_location"/>
-                <field name="to_location"/>
-                <field name="product_id"/>
-                <field name="state"/>
-                <field name="ser_id"/>
-                <field name="initate_date"/>
-                <field name="driver_reach_date"/>
+            <tree string="AFL Service Dashboard"
+                decoration-success="state == 'initiate' and time_difference &gt; 5"
+                decoration-info="state == 'start' and time_difference &gt; 30 and time_difference &lt;= 45"
+                decoration-warning="state == 'start' and time_difference &gt; 45 and time_difference &lt;= 120"
+                decoration-danger="state == 'start' and time_difference &gt;= 120"
+                class="aaa_service_tree" create="False">
+                <field name="job_ref" />
+                <field name="service_time" string="Entry date" />
+                <field name="member_id" />
+                <field name="member_contact_no" />
+                <field name="vehicle_type" />
+                <field name="vehicle_model" />
+                <field name="vehicle_plate" />
+                <field name="from_location" />
+                <field name="to_location" />
+                <field name="product_id" />
+                <field name="state" />
+                <field name="ser_id" />
+                <field name="initate_date" />
+                <field name="driver_reach_date" />
+                <field name="current_time" invisible='1' />
+                <field name="time_difference" invisible='1' />
             </tree>
         </field>
     </record>
@@ -31,8 +34,10 @@
         <field name="name">AFL Service Dashboard</field>
         <field name="res_model">aaa.service</field>
         <field name="view_mode">tree</field>
+        <field name="domain">[('customer_id', '=', 'AL FUTTAIM LOGISTICS AUTOMOTIVE COMPANY L.L.C')]</field>
         <field name="help">This dashboard shows the current status of all services.</field>
     </record>
 
-    <menuitem id="menu_afl_service" name="AFL SERVICE" parent="menu_all_service_root" action="afl_service_action" sequence="9"/>
+    <menuitem id="menu_afl_service_list" name="Afl Service List" parent="menu_afl_service_root"
+        action="afl_service_action" sequence="2" />
 </odoo>
