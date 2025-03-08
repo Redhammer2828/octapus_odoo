@@ -254,13 +254,30 @@ class AAAService(models.Model):
     )
     driver_pickup = fields.Char('Driver Pickup Location')
     driver_dropoff = fields.Char('Driver Dropoff Location')
-##############  AFL FIELDS #############################
+##############    FIELDS #############################
     job_ref= fields .Char(string= "JobRefNo")
     ser_id = fields.Char(string="SerId")
     comment_text = fields.Text(compute='_compute_comment_text', string="Comments")
     initate_date =fields.Datetime(string="InitDt")
     driver_reach_date = fields.Datetime(string="DrivReachDt")
+    current_time = fields.Datetime(string='Current Time', compute='_compute_current_time')
+    time_difference = fields.Float(string='Time Difference (minutes)', compute='_compute_time_difference', store=False)
 
+    @api.depends('service_time')
+    def _compute_current_time(self):
+        for record in self:
+            # Getting current time in UTC
+            record.current_time = fields.Datetime.now()
+
+    @api.depends('current_time', 'service_time')
+    def _compute_time_difference(self):
+        for record in self:
+            if record.service_time and record.current_time:
+                delta = record.current_time - record.service_time
+                # Convert time difference to minutes
+                record.time_difference = delta.total_seconds() / 60
+            else:
+                record.time_difference = 0
 
     vehicle_type_id = fields.Many2one('member.vehicle.type', string='Vehicle type')
     vehicle_model_id = fields.Many2one('member.vehicle.model', string='Vehicle model', domain="[('type_id','=',vehicle_type_id)]")
@@ -1212,10 +1229,60 @@ class AAAService(models.Model):
             else:
                 record.next_check_time = False
 
+    # def action_schedule_service_check(self):
+    #     self.schedule_service_check = True
+    #     self.state = 'initiate'
+    #     print("Scheduling the Service - Triggering Wizard")
+    #     return {
+    #         'name': _('Schedule Service'),
+    #         'type': 'ir.actions.act_window',
+    #         'res_model': 'schedule.service.wizard',
+    #         'view_mode': 'form',
+    #         'view_id': self.env.ref('customer.schedule_service_wizard_view_form').id,
+    #         'target': 'new',
+    #         'context': {
+    #             'default_service_id': self.id,
+    #         },
+    #     }
+
     def action_schedule_service_check(self):
         self.schedule_service_check = True
         self.state = 'initiate'
         print("Scheduling the Service - Triggering Wizard")
+ 
+        if not self.product_id:
+            raise UserError(_("Provide the service details."))
+         # Determine visible fields based on service_based and member_type
+        if self.service_based in ['location', 'location_duration', 'none']:
+            # `from_location` and `selected_from_location` are invisible
+            from_location_visible = False
+            to_location_visible = True
+        else:
+            # Both `from_location` and `selected_from_location` are visible
+            from_location_visible = True
+            to_location_visible = True
+ 
+        # Adjust field visibility based on member_type
+        if self.member_type in ['policy', 'adhoc']:
+            # Use `selected_from_location` and `selected_to_location`
+            from_location_field = self.selected_from_location
+            to_location_field = self.selected_to_location
+        elif self.member_type == 'credit':
+            # Use `from_location` and `to_location`
+            from_location_field = self.from_location
+            to_location_field = self.to_location
+        else:
+            raise UserError(_("Invalid member type specified."))
+ 
+        # Check visibility and raise appropriate errors
+        if from_location_visible and not from_location_field:
+            if to_location_visible and not to_location_field:
+                raise UserError(_("Please provide both From Location and To Location details."))
+            else:
+                raise UserError(_("Please provide the From Location detail."))
+        elif to_location_visible and not to_location_field:
+            raise UserError(_("Please provide the To Location detail."))
+ 
         return {
             'name': _('Schedule Service'),
             'type': 'ir.actions.act_window',

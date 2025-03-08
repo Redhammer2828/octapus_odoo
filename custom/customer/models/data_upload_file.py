@@ -190,29 +190,6 @@ class DataUploadFile(models.Model):
                                     'upload_member_status': 'rejection',
                                     'comment': "*Duplicate Record in System With same expiry date!"
                                 })
-                            # if member.member_expiry_date != member_line.member_expiry_date:
-                            #     if difference >= 365:
-                            #         member_line.update({
-                            #             'upload_member_status': 'renewal',
-                            #             'comment': "*Membership Renewal"
-                            #         })
-                            #     else:
-                            #         member_line.update({
-                            #             'upload_member_status': 'update',
-                            #             'comment': "*Membership Extension"
-                            #         })
-
-                            # elif member.member_expiry_date >= member_line.member_expiry_date:
-                            #     member_line.update({
-                            #         'upload_member_status': 'rejection',
-                            #         'comment': "*THE DB EXPIRY DATE IS GREATER THAN THE UPLOADED DATA"
-                            #     })
-
-                            # else:
-                            #     member_line.update({
-                            #         'upload_member_status': 'rejection',
-                            #         'comment': "*Duplicate Record in System With same expiry date!"
-                            #     })
                     else:
                         member_line.update({
                             'upload_member_status': 'new',

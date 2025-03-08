@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_afl_dashboard_form" model="ir.ui.view">
+        <field name="name">afl.dashboard.form</field>
+        <field name="model">afl.dashboard</field>
+        <field name="arch" type="xml">
+            <form string="AFL Service Dashboard">
+                <header>
+                    <div class="o_form_label" style="font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #71639e;">AFL Service Dashboard</div>
+                </header>
+                <sheet>
+                    <!-- Custom Styling -->
+                    <style>
+                        .dashboard-container {
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 20px;
+                            justify-content: space-between;
+                            margin-bottom: 20px;
+                        }
+                        .dashboard-box {
+                            flex: 1;
+                            min-width: 220px;
+                            padding: 20px;
+                            background: #007bff;
+                            color: white;
+                            text-align: center;
+                            font-size: 16px;
+                            border-radius: 10px;
+                            box-shadow: 3px 3px 15px rgba(0, 0, 0, 0.15);
+                            transition: transform 0.3s ease-in-out;
+                        }
+                        .dashboard-box:hover {
+                            transform: scale(1.02);
+                        }
+                        .dashboard-box.success { background: #28a745; }
+                        .dashboard-box.warning { background: #ffc107; color: black; }
+                        .dashboard-box.danger { background: #dc3545; }
+                        .dashboard-box.purple { background: #71639e; } /* Adding purple boxes */
+                        .dashboard-box span {
+                            display: block;
+                            font-size: 22px;
+                            font-weight: bold;
+                            margin-top: 8px;
+                        }
+                    </style>
+                    <div class="dashboard-container">
+                        <div class="dashboard-box purple">Total Services: <span><field name="total_count"/></span></div>
+                        <div class="dashboard-box success">Services Completed: <span><field name="done_count"/></span></div>
+                        <div class="dashboard-box danger">Services Cancelled: <span><field name="cancelled_count"/></span></div>
+                        <div class="dashboard-box warning">Driver Reached and Cancelled: <span><field name="driver_cancel_reach_count"/></span></div>
+                        <div class="dashboard-box purple">Open Services: <span><field name="open_count"/></span></div>
+                        <div class="dashboard-box">Services Initiated: <span><field name="initiate_count"/></span></div>
+                        <div class="dashboard-box purple">Services in Progress: <span><field name="progress_count"/></span></div>
+                    </div>
+                    <group string="Service Details" invisible='1'>
+                        <field name="comment_text"/>
+                        <tree string="AFL Services" editable="false">
+                            <field name="ser_id"/>
+                            <field name="job_ref"/>
+                            <field name="state"/>
+                            <field name="initiate_date"/>
+                            <field name="driver_reach_date"/>
+                        </tree>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="afl_dashboard_action" model="ir.actions.act_window">
+        <field name="name">AFL Service Dashboard</field>
+        <field name="res_model">afl.dashboard</field>
+        <field name="view_mode">form</field>
+    </record>
+    
+    <menuitem id="menu_afl_service_root" name="AFL Dashboard" parent="menu_call_center_root" sequence="10"/>
+    <menuitem id="menu_afl_service_dashboard" name="Dashboard" parent="menu_afl_service_root" action="afl_dashboard_action" sequence="1"/>    
+    <menuitem id="menu_afl_service_list" name="Service List" 
+        parent="menu_afl_service_root" 
+        action="afl_service_action" 
+        sequence="2"/>
+</odoo>
