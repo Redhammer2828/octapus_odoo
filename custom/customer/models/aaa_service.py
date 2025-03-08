@@ -254,7 +254,7 @@ class AAAService(models.Model):
     )
     driver_pickup = fields.Char('Driver Pickup Location')
     driver_dropoff = fields.Char('Driver Dropoff Location')
-##############  AFL FIELDS #############################
+##############    FIELDS #############################
     job_ref= fields .Char(string= "JobRefNo")
     ser_id = fields.Char(string="SerId")
     comment_text = fields.Text(compute='_compute_comment_text', string="Comments")
