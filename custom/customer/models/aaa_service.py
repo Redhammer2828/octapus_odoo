@@ -1229,10 +1229,60 @@ class AAAService(models.Model):
             else:
                 record.next_check_time = False
 
+    # def action_schedule_service_check(self):
+    #     self.schedule_service_check = True
+    #     self.state = 'initiate'
+    #     print("Scheduling the Service - Triggering Wizard")
+    #     return {
+    #         'name': _('Schedule Service'),
+    #         'type': 'ir.actions.act_window',
+    #         'res_model': 'schedule.service.wizard',
+    #         'view_mode': 'form',
+    #         'view_id': self.env.ref('customer.schedule_service_wizard_view_form').id,
+    #         'target': 'new',
+    #         'context': {
+    #             'default_service_id': self.id,
+    #         },
+    #     }
+
     def action_schedule_service_check(self):
         self.schedule_service_check = True
         self.state = 'initiate'
         print("Scheduling the Service - Triggering Wizard")
+ 
+        if not self.product_id:
+            raise UserError(_("Provide the service details."))
+         # Determine visible fields based on service_based and member_type
+        if self.service_based in ['location', 'location_duration', 'none']:
+            # `from_location` and `selected_from_location` are invisible
+            from_location_visible = False
+            to_location_visible = True
+        else:
+            # Both `from_location` and `selected_from_location` are visible
+            from_location_visible = True
+            to_location_visible = True
+ 
+        # Adjust field visibility based on member_type
+        if self.member_type in ['policy', 'adhoc']:
+            # Use `selected_from_location` and `selected_to_location`
+            from_location_field = self.selected_from_location
+            to_location_field = self.selected_to_location
+        elif self.member_type == 'credit':
+            # Use `from_location` and `to_location`
+            from_location_field = self.from_location
+            to_location_field = self.to_location
+        else:
+            raise UserError(_("Invalid member type specified."))
+ 
+        # Check visibility and raise appropriate errors
+        if from_location_visible and not from_location_field:
+            if to_location_visible and not to_location_field:
+                raise UserError(_("Please provide both From Location and To Location details."))
+            else:
+                raise UserError(_("Please provide the From Location detail."))
+        elif to_location_visible and not to_location_field:
+            raise UserError(_("Please provide the To Location detail."))
+ 
         return {
             'name': _('Schedule Service'),
             'type': 'ir.actions.act_window',
