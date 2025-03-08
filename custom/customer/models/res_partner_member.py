@@ -489,25 +489,25 @@ class ResPartnerMembers(models.Model):
 #-------------------------------COUNT CALCULATION---END--------------------------------------------------
 
     def action_membership_renewal(self):
-        mem_renewal= self.env['membership.history'].create({
-            'name': self.name,
-            'parent_customer_id': self.parent_customer_id.id,
-            'old_membership_number': self.old_membership_number,
-            'ref_num': self.ref_num,
-            'member_partner_category_id': self.member_partner_category_id.id,
-            'product_template_id' : self.product_template_id.id,
-            'member_type': self.member_type,
-            'policy_no':self.policy_no,
-            'vehicle_chasis_no': self.vehicle_chasis_no,
-            'vehicle_plate': self.vehicle_plate,
-            'vehicle_type': self.vehicle_type,
-            'member_activate_date': self.member_activate_date,
-            'member_expiry_date': self.member_expiry_date,
-            'invoice_ref_date': self.invoice_ref_date,
-            'card_type_id': self.card_type_id.id,
-            'history_id': self.id
+        # mem_renewal= self.env['membership.history'].create({
+        #     'name': self.name,
+        #     'parent_customer_id': self.parent_customer_id.id,
+        #     'old_membership_number': self.old_membership_number,
+        #     'ref_num': self.ref_num,
+        #     'member_partner_category_id': self.member_partner_category_id.id,
+        #     'product_template_id' : self.product_template_id.id,
+        #     'member_type': self.member_type,
+        #     'policy_no':self.policy_no,
+        #     'vehicle_chasis_no': self.vehicle_chasis_no,
+        #     'vehicle_plate': self.vehicle_plate,
+        #     'vehicle_type': self.vehicle_type,
+        #     'member_activate_date': self.member_activate_date,
+        #     'member_expiry_date': self.member_expiry_date,
+        #     'invoice_ref_date': self.invoice_ref_date,
+        #     'card_type_id': self.card_type_id.id,
+        #     'history_id': self.id
 
-        })
+        # })
         view_id = self.env.ref('customer.membership_renewal_wizard_form').id
         return {
             'name': 'Membership Renewal',
@@ -528,25 +528,25 @@ class ResPartnerMembers(models.Model):
         }
 
     def action_membership_extension(self):
-        mem_extension= self.env['membership.history'].create({
-            'name': self.name,
-            'parent_customer_id': self.parent_customer_id.id,
-            'old_membership_number': self.old_membership_number,
-            'ref_num': self.ref_num,
-            'member_partner_category_id': self.member_partner_category_id.id,
-            'product_template_id' : self.product_template_id.id,
-            'member_type': self.member_type,
-            'policy_no':self.policy_no,
-            'vehicle_chasis_no': self.vehicle_chasis_no,
-            'vehicle_plate': self.vehicle_plate,
-            'vehicle_type': self.vehicle_type,
-            'member_activate_date': self.member_activate_date,
-            'member_expiry_date': self.member_expiry_date,
-            'invoice_ref_date': self.invoice_ref_date,
-            'card_type_id': self.card_type_id.id,
-            'history_id': self.id
+        # mem_extension= self.env['membership.history'].create({
+        #     'name': self.name,
+        #     'parent_customer_id': self.parent_customer_id.id,
+        #     'old_membership_number': self.old_membership_number,
+        #     'ref_num': self.ref_num,
+        #     'member_partner_category_id': self.member_partner_category_id.id,
+        #     'product_template_id' : self.product_template_id.id,
+        #     'member_type': self.member_type,
+        #     'policy_no':self.policy_no,
+        #     'vehicle_chasis_no': self.vehicle_chasis_no,
+        #     'vehicle_plate': self.vehicle_plate,
+        #     'vehicle_type': self.vehicle_type,
+        #     'member_activate_date': self.member_activate_date,
+        #     'member_expiry_date': self.member_expiry_date,
+        #     'invoice_ref_date': self.invoice_ref_date,
+        #     'card_type_id': self.card_type_id.id,
+        #     'history_id': self.id
 
-        })
+        # })
         view_id = self.env.ref('customer.membership_extension_wizard_form').id
         return {
             'name': 'Membership Extension',
