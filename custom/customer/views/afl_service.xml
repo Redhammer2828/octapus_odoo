@@ -38,6 +38,4 @@
         <field name="help">This dashboard shows the current status of all services.</field>
     </record>
 
-    <menuitem id="menu_afl_service_list" name="Afl Service List" parent="menu_afl_service_root"
-        action="afl_service_action" sequence="2" />
 </odoo>

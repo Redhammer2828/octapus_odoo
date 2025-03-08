@@ -172,7 +172,7 @@
     </record>
 #latest
     <menuitem id="menu_service_dashboard"
-              name="Service Dashboard"
+              name="Driver Dashboard"
               parent="menu_call_center_root"
               action="service_dashboard_action"
               sequence="10"/> 
