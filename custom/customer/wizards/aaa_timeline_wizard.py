@@ -22,8 +22,8 @@ class AaaTimelineWizard(models.TransientModel):
     _name = 'aaa.timeline.wizard'
     _description = 'AAA Timeline Wizard'
 
-    # from_date = fields.Datetime(string="From Date", required=True)
-    # to_date = fields.Datetime(string="To Date", required=True)
+    from_date = fields.Datetime(string="From Date", required=True)
+    to_date = fields.Datetime(string="To Date", required=True)
    
 
     # from_date = fields.Datetime(
@@ -38,38 +38,38 @@ class AaaTimelineWizard(models.TransientModel):
     #     default=lambda self: self._get_datetime_with_midnight()
     # )
 
-    from_date = fields.Datetime(
-        string="From Date",
-        required=True,
-        default=lambda self: self._get_start_of_day()
-    )
+    # from_date = fields.Datetime(
+    #     string="From Date",
+    #     required=True,
+    #     default=lambda self: self._get_start_of_day()
+    # )
 
-    to_date = fields.Datetime(
-        string="To Date",
-        required=True,
-        default=lambda self: self._get_end_of_day()
-    )
+    # to_date = fields.Datetime(
+    #     string="To Date",
+    #     required=True,
+    #     default=lambda self: self._get_end_of_day()
+    # )
 
-    def _get_start_of_day(self):
-        # Ensure midnight is calculated directly in UTC without shifting the date
-        utc_now = datetime.now(pytz.utc).date()  # Get today's date directly in UTC
-        midnight_utc = datetime.combine(utc_now, time(0, 0, 0))  # Midnight in UTC
-        return midnight_utc  # No need for timezone adjustments, already UTC-based
+    # def _get_start_of_day(self):
+    #     # Ensure midnight is calculated directly in UTC without shifting the date
+    #     utc_now = datetime.now(pytz.utc).date()  # Get today's date directly in UTC
+    #     midnight_utc = datetime.combine(utc_now, time(0, 0, 0))  # Midnight in UTC
+    #     return midnight_utc  # No need for timezone adjustments, already UTC-based
 
 
-    def _get_end_of_day(self):
-        # Get the user's timezone or default to UTC
-        user_tz = pytz.timezone(self.env.user.tz or 'UTC')
+    # def _get_end_of_day(self):
+    #     # Get the user's timezone or default to UTC
+    #     user_tz = pytz.timezone(self.env.user.tz or 'UTC')
         
-        # Get today's date in the user's timezone at 23:59:59
-        today = datetime.now(user_tz).date()
-        end_of_day_user_tz = user_tz.localize(datetime.combine(today, time(23, 59, 59)))
+    #     # Get today's date in the user's timezone at 23:59:59
+    #     today = datetime.now(user_tz).date()
+    #     end_of_day_user_tz = user_tz.localize(datetime.combine(today, time(23, 59, 59)))
         
-        # Convert to UTC without shifting the date
-        end_of_day_utc = end_of_day_user_tz.astimezone(pytz.utc)
+    #     # Convert to UTC without shifting the date
+    #     end_of_day_utc = end_of_day_user_tz.astimezone(pytz.utc)
         
-        # Return as naive datetime for Odoo compatibility
-        return end_of_day_utc.replace(tzinfo=None)
+    #     # Return as naive datetime for Odoo compatibility
+    #     return end_of_day_utc.replace(tzinfo=None)
 
     # def _get_datetime_with_midnight(self):
     #     # Get today's date in the user's time zone
@@ -91,6 +91,19 @@ class AaaTimelineWizard(models.TransientModel):
     domain="[('partner_id','=', customer_id), ('member_type', '=', member_type)]")
     type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type")
     provider_id = fields.Many2one('res.partner', string="Provider" ,domain=[('is_vendor', '=', True)])
+    state = fields.Selection([
+        ('draft', 'Draft'),
+        ('initiate', 'Initiate'),
+        ('dispatch', 'Dispatch'),
+        ('start', 'Start'),
+        ('reach', 'Reach'),
+        ('completed_by_driver', 'Completed by driver'),
+        ('done', 'Done'),
+        ('cancel', 'Cancelled'),
+        ('change', 'Changed' ),
+        ('approved','Approved'),
+        ('requested','Requeted')
+    ], string="Status")
 
     def _fetch_service_records(self):
         """Fetches service records based on the wizard's filter criteria."""
@@ -109,6 +122,8 @@ class AaaTimelineWizard(models.TransientModel):
                # Filter by Service Time (Date Range)
         domain.append(('service_time', '>=', self.from_date))
         domain.append(('service_time', '<=', self.to_date))
+        # Filter by State
+        domain.append(('state', 'in', ['done', 'completed_by_driver', 'cancel']))
 
         service_records = self.env['aaa.service'].search(domain)
         _logger.debug("Fetched %d records from the aaa.service model", len(service_records))
@@ -185,11 +200,18 @@ class AaaTimelineWizard(models.TransientModel):
         worksheet.write('B6', member_type, metadata_value_format)
 
         # Define headers
+
         headers = [
-            'Id Request', 'User Details', 'User Vehicle Details', 'User Location', 'Provider', 'Driver Name',
-            'Requested Services', 'Request Date', 'Request Status', 'Request Completed On', 'Driver Start Time', 'Driver Arrival Time',
+            'Service Number', 'Member', 'Vehicle Type', 'User Location', 'Provider', 'Driver Name',
+            'Service', 'Service Date', 'Status', 'Request Completed On', 'Driver Start Time', 'Driver Arrival Time',
             'Service Started Time', 'Service Completed Time', 'Cancellation Time', 'Dispatch Center Notes'
         ]
+
+        # headers = [
+        #     'Id Request', 'User Details', 'User Vehicle Details', 'User Location', 'Provider', 'Driver Name',
+        #     'Requested Services', 'Request Date', 'Request Status', 'Request Completed On', 'Driver Start Time', 'Driver Arrival Time',
+        #     'Service Started Time', 'Service Completed Time', 'Cancellation Time', 'Dispatch Center Notes'
+        # ]
 
         # Write headers
         for col_num, header in enumerate(headers):
@@ -201,13 +223,13 @@ class AaaTimelineWizard(models.TransientModel):
             col_index = 0
             for header in headers:
                 field_value = ''
-                if header == 'Id Request':
+                if header == 'Service Number':
                     field_value = record.name or ''
                
-                elif header == 'User Details':
+                elif header == 'Member':
                     field_value = record.member_id.name or ''
                
-                elif header == 'User Vehicle Details':
+                elif header == 'Vehicle Type':
                     field_value = record.vehicle_type or ''
                 
                 elif header == 'User Location':
@@ -224,19 +246,24 @@ class AaaTimelineWizard(models.TransientModel):
                     field_value = record.provider_id.name or ''
                 elif header == 'Driver Name':
                     field_value = record.driver_id.name or ''
-                elif header == 'Requested Services':
+                elif header == 'Service':
                     field_value = record.product_id.name or ''
-                elif header == 'Request Date':
+                elif header == 'Service Date':
                     if record.service_time:
                         # Assuming `record.service_time` is in UTC
                         utc_time = record.service_time  # datetime object in UTC
                         target_timezone = timezone('Asia/Kolkata')  # Replace with your logic for dynamic timezone if needed
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%m/%d/%Y %H:%M:%S')  # Desired format: mm/dd/yyyy hh:mm:ss
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')  # Desired format: mm/dd/yyyy hh:mm:ss
                     else:
                         field_value = ''
-                elif header == 'Request Status':
-                    field_value = record.state or ''
+                # elif header == 'Status':
+                #     field_value = record.state or ''
+                elif header == 'Status':
+                    if record.state in {'done', 'completed_by_driver', 'cancel'}:
+                        field_value = record.state
+                    else:
+                        field_value = ''
                 elif header == 'Request Completed On':
                     service_history = self.env['service.history'].search([
                         ('service_id', '=', record.id),
@@ -246,7 +273,7 @@ class AaaTimelineWizard(models.TransientModel):
                         utc_time = service_history.time  # Assuming this is a datetime object
                         target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%m/%d/%Y %H:%M:%S')
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
                         field_value = ''
                
@@ -261,7 +288,7 @@ class AaaTimelineWizard(models.TransientModel):
                         utc_time = service_history.time  # Assuming this is a datetime object
                         target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%m/%d/%Y %H:%M:%S')
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
                         field_value = ''
                 elif header == 'Driver Arrival Time':
@@ -273,7 +300,7 @@ class AaaTimelineWizard(models.TransientModel):
                         utc_time = service_history.time  # Assuming this is a datetime object
                         target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%m/%d/%Y %H:%M:%S')
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
                         field_value = ''
                 elif header == 'Service Started Time':
@@ -285,7 +312,7 @@ class AaaTimelineWizard(models.TransientModel):
                         utc_time = service_history.time  # Assuming this is a datetime object
                         target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%m/%d/%Y %H:%M:%S')
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
                         field_value = ''
                 elif header == 'Service Completed Time':
@@ -297,7 +324,7 @@ class AaaTimelineWizard(models.TransientModel):
                         utc_time = service_history.time  # Assuming this is a datetime object
                         target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%m/%d/%Y %H:%M:%S')
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
                         field_value = ''
                 elif header == 'Cancellation Time':
@@ -309,15 +336,26 @@ class AaaTimelineWizard(models.TransientModel):
                         utc_time = service_history.time  # Assuming this is a datetime object
                         target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%m/%d/%Y %H:%M:%S')
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
                         field_value = ''
+
+
+
                 elif header == 'Dispatch Center Notes':
                     service_comment = self.env['service.comment'].search([
                         ('service_id', '=', record.id),
                         ('comment_status', '=', record.state)
                     ], limit=1)
-                    field_value = service_comment.comment if service_comment and service_comment.comment else ''
+                    
+                    field_value = service_comment.comment if service_comment and service_comment.comment else record.import_comments
+
+                # elif header == 'Dispatch Center Notes':
+                #     service_comment = self.env['service.comment'].search([
+                #         ('service_id', '=', record.id),
+                #         ('comment_status', '=', 'dispatch')
+                #     ], limit=1)
+                #     field_value = service_comment.comment if service_comment and service_comment.comment else ''
                 
                 
                 

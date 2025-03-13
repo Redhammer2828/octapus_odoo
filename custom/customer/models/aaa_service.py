@@ -28,6 +28,19 @@ class AAAService(models.Model):
     type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type", readonly=True)
     member_type = fields.Selection([('adhoc', 'AD-HOC'), ('policy', 'POLICY'),('credit', 'CREDIT')], string="Member Type", readonly=True)
     card_type = fields.Char(string="Card Type", readonly=True)
+    # state = fields.Selection([
+    #     ('draft', 'Draft'),
+    #     ('initiate', 'Initiate'),
+    #     ('dispatch', 'Dispatch'),
+    #     ('start', 'Start'),
+    #     ('reach', 'Reach'),
+    #     ('completed_by_driver', 'Completed by driver'),
+    #     ('done', 'Done'),
+    #     ('cancel', 'Cancelled'),
+    #     ('change', 'Changed' ),
+    #     ('approved','Approved'),
+    #     ('requested','Requeted')
+    # ], string="Status", readonly=True, default='initiate', tracking=True)
     state = fields.Selection([
         ('draft', 'Draft'),
         ('initiate', 'Initiate'),
@@ -37,6 +50,7 @@ class AAAService(models.Model):
         ('completed_by_driver', 'Completed by driver'),
         ('done', 'Done'),
         ('cancel', 'Cancelled'),
+        ('driver_cancel', 'Driver Cancelled'),
         ('change', 'Changed' ),
         ('approved','Approved'),
         ('requested','Requeted')
@@ -262,6 +276,10 @@ class AAAService(models.Model):
     driver_reach_date = fields.Datetime(string="DrivReachDt")
     current_time = fields.Datetime(string='Current Time', compute='_compute_current_time')
     time_difference = fields.Float(string='Time Difference (minutes)', compute='_compute_time_difference', store=False)
+
+
+    def action_approve_cancel_service(self):
+        self.state='cancel'
 
     @api.depends('service_time')
     def _compute_current_time(self):

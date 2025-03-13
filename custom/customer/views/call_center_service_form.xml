@@ -79,6 +79,7 @@
                             invisible="state not in ('initiate', 'dispatch', 'start', 'reach','completed_by_driver')" />
                         <button name="action_new" string="New Service" type="object"
                             invisible="state != 'discard'  or is_agent_user" />
+                        <button name="action_approve_cancel_service" type="object" string="Approve Cancel" invisible="state != 'driver_cancel'" class="btn-primary" />
                         <field name="state" widget="statusbar" nolabel="1"
                             statusbar_visible="initiate,dispatch,start,reach,completed_by_driver,done" />
                         <field name="is_agent_user" invisible="1" />
@@ -178,7 +179,7 @@
                                 <field name="vehicle_plate" string="Vehicle Plate"
                                     readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']  or member_type == 'policy'" />
+                                    readonly="state not in ['draft', 'initiate', 'dispatch','start', 'reach']  or member_type == 'policy'" />
                                 <field name="policy_no" string="Policy No"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']  or member_type == 'policy'" />
                                 <field name="member_activate_date"

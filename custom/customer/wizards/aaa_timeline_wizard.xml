@@ -33,7 +33,7 @@
                     
                     <button name="action_export_excel" string="Export" type="object"
                         class="btn-success" />
-                    <button string="Cancel" class="btn-secondary" special="cancel" />
+                    <button string="Cancel" class="btn-danger" special="cancel" />
                 </footer>
                 
             </form>
