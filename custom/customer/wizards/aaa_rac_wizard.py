@@ -3,6 +3,7 @@ import datetime
 from datetime import timedelta
 from pytz import timezone, UTC
 import pytz
+# from pytz import timezone, UTC
 import io
 import xlsxwriter
 import base64
@@ -18,12 +19,15 @@ import logging
 _logger = logging.getLogger(__name__)
 
 class AaaTimelineWizard(models.TransientModel):
-    _name = 'aaa.timeline.wizard'
-    _description = 'AAA Timeline Wizard'
+    _name = 'aaa.rac.wizard'
+    _description = 'AAA Rac Wizard'
 
     from_date = fields.Datetime(string="From Date", required=True)
     to_date = fields.Datetime(string="To Date", required=True)
-       
+   
+
+    
+    
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True)]")
     member_type = fields.Selection([('policy', 'POLICY'), ('credit', 'CREDIT'),('adhoc','AD-HOC')], string="Member Type")
     sequence_id = fields.Many2one('partner.category', string="Customer Category",
@@ -43,7 +47,11 @@ class AaaTimelineWizard(models.TransientModel):
         ('approved','Approved'),
         ('requested','Requeted')
     ], string="Status")
+    product_id = fields.Many2one('product.template', string="Service",domain=[('bundle_product', '=', False)])
+    service_based = fields.Selection(related='product_id.service_based', store=True, readonly=True)
 
+    # Convert timestamps
+    # local_tz = timezone('Asia/Kolkata')
     def _fetch_service_records(self):
         """Fetches service records based on the wizard's filter criteria."""
         domain = []
@@ -62,7 +70,8 @@ class AaaTimelineWizard(models.TransientModel):
         domain.append(('service_time', '>=', self.from_date))
         domain.append(('service_time', '<=', self.to_date))
         # Filter by State
-        domain.append(('state', 'in', ['done', 'completed_by_driver', 'cancel']))
+        #domain.append(('state', 'in', ['done', 'completed_by_driver', 'cancel']))
+        domain.append(('service_based', '=', 'location_duration'))
 
         service_records = self.env['aaa.service'].search(domain)
         _logger.debug("Fetched %d records from the aaa.service model", len(service_records))
@@ -82,7 +91,7 @@ class AaaTimelineWizard(models.TransientModel):
 
         # Prepare Excel export
         workbook = xlsxwriter.Workbook(buffer)
-        worksheet = workbook.add_worksheet('Timeline Service Report')
+        worksheet = workbook.add_worksheet('RAC Service Report')
 
         # Define formats
         title_format = workbook.add_format({
@@ -118,7 +127,7 @@ class AaaTimelineWizard(models.TransientModel):
         })
 
         # Title Row
-        worksheet.merge_range('A1:AF1', 'TIMELINE REPORT', title_format)
+        worksheet.merge_range('A1:AF1', 'RAC REPORT', title_format)
 
         # Metadata Fields
         date_range = f"{self.from_date.strftime('%d/%m/%Y')} - {self.to_date.strftime('%d/%m/%Y')}" if self.from_date and self.to_date else ''
@@ -141,9 +150,9 @@ class AaaTimelineWizard(models.TransientModel):
         # Define headers
 
         headers = [
-            'Service Number', 'Member', 'Vehicle Type', 'User Location', 'Provider', 'Driver Name',
+            'Service Number', 'Member', 'Customer', 'Category', 'Member Type', 'Type', 'Customer C/O', 'Claim No', 'Trip Sheet No', 'Vehicle Type', 'Vehicle Model', 'Vehicle Plate', 'To Location', 'To Emirate', 'From date & time', 'To date & time', 'Total Rental Days',  'Provider', 'Driver Name',
             'Service', 'Service Date', 'Status', 'Request Completed On', 'Driver Start Time', 'Driver Arrival Time',
-            'Service Started Time', 'Service Completed Time', 'Cancellation Time', 'Dispatch Center Notes'
+            'Service Started Time', 'Service Completed Time', 'Cancellation Time', 'Cash Collected', 'Dispatch Center Notes'
         ]
 
         # headers = [
@@ -167,18 +176,61 @@ class AaaTimelineWizard(models.TransientModel):
                
                 elif header == 'Member':
                     field_value = record.member_id.name or ''
+                
+                elif header == 'Customer':
+                    field_value = record.customer_id.name or ''
+
+                elif header == 'Category':
+                    field_value = record.sequence_id.name or ''
+
+                elif header == 'Member Type':
+                    field_value = record.member_type or ''
+
+                elif header == 'Type':
+                    field_value = record.type or ''
+
+                elif header == 'Customer C/O':
+                    field_value = record.credit_customer_co or ''
+
+                elif header == 'Claim No':
+                    field_value = record.claim_number or ''
+
+                elif header == 'Trip Sheet No':
+                    field_value = record.credit_proforma_number or ''
                
                 elif header == 'Vehicle Type':
                     field_value = record.vehicle_type or ''
+
+                elif header == 'Vehicle Model':
+                    field_value = record.vehicle_model or ''
+
+                elif header == 'Vehicle Plate':
+                    field_value = record.vehicle_plate or ''
                 
-                elif header == 'User Location':
+                elif header == 'To Location':
                     if record.member_id.member_type in ['policy', 'adhoc']:
                         #field_value = record.selected_from_location.name if record.selected_from_location else ''
                         # If selected_from_location is not set, fallback to from_location
-                        field_value = record.selected_from_location.name if record.selected_from_location else (record.from_location.name if record.from_location else '')
+                        field_value = record.selected_to_location.name if record.selected_to_location else (record.to_location.name if record.to_location else '')
                         
                     else:
-                        field_value = record.from_location.name if record.from_location else ''
+                        field_value = record.to_location.name if record.to_location else ''
+                elif header == 'To Emirate':
+                    if record.member_id.member_type in ['policy', 'adhoc']:
+                        #field_value = record.selected_from_location.name if record.selected_from_location else ''
+                        # If selected_from_location is not set, fallback to from_location
+                        field_value = record.to_location_emirate if record.to_location_emirate else ''
+
+                elif header == 'From date & time':
+                    local_tz = timezone('Asia/Kolkata')  # Change this to your local timezone
+                    field_value = record.date_time_from.astimezone(local_tz).strftime('%d/%m/%Y %H:%M:%S') if record.date_time_from else ''
+
+                elif header == 'To date & time':
+                    field_value = record.date_time_to.astimezone(local_tz).strftime('%d/%m/%Y %H:%M:%S') if record.date_time_to else ''
+
+
+                elif header == 'Total Rental Days':
+                    field_value = record.quantity or ''
                 
                 
                 elif header == 'Provider':
@@ -196,13 +248,13 @@ class AaaTimelineWizard(models.TransientModel):
                         field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')  # Desired format: mm/dd/yyyy hh:mm:ss
                     else:
                         field_value = ''
-                # elif header == 'Status':
-                #     field_value = record.state or ''
                 elif header == 'Status':
-                    if record.state in {'done', 'completed_by_driver', 'cancel'}:
-                        field_value = record.state
-                    else:
-                        field_value = ''
+                    field_value = record.state or ''
+                # elif header == 'Status':
+                #     if record.state in {'done', 'completed_by_driver', 'cancel'}:
+                #         field_value = record.state
+                #     else:
+                #         field_value = ''
                 elif header == 'Request Completed On':
                     service_history = self.env['service.history'].search([
                         ('service_id', '=', record.id),
@@ -279,13 +331,17 @@ class AaaTimelineWizard(models.TransientModel):
                     else:
                         field_value = ''
 
+                elif header == 'Cash Collected':
+
+                    field_value = record.amount or ''
+
 
                 elif header == 'Dispatch Center Notes':
                     service_comment = self.env['service.comment'].search([
                         ('service_id', '=', record.id),
                         ('comment_status', '=', record.state)
-                    ], order="create_date desc", limit=1)  # Fetch the latest comment
- 
+                    ], limit=1)
+                    
                     field_value = service_comment.comment if service_comment and service_comment.comment else record.import_comments
 
                 # elif header == 'Dispatch Center Notes':
@@ -312,7 +368,7 @@ class AaaTimelineWizard(models.TransientModel):
 
         # Create Excel attachment
         file_data = {
-            'name': 'Timeline_Report.xlsx',
+            'name': 'RAC_Report.xlsx',
             'datas': base64.b64encode(buffer.getvalue()),
             'type': 'binary',
         }

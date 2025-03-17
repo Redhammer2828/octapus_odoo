@@ -58,6 +58,7 @@
                     <field name="provider_id" string="Provider" />
                     <field name="driver_name" />
                     <field name="claim_number" />
+                    <field name="credit_customer_co" />
                     <field name="state" string="State" />
                     <field name="credit_proforma_number" string="Trip Sheet Number" />
                     <field name="create_uid" string="Agent" />

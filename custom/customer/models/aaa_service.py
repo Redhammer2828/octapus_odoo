@@ -53,7 +53,7 @@ class AAAService(models.Model):
         ('driver_cancel', 'Driver Cancelled'),
         ('change', 'Changed' ),
         ('approved','Approved'),
-        ('requested','Requeted')
+        ('requested','Requested')
     ], string="Status", readonly=True, default='initiate', tracking=True)
     #MANY2ONE-------------------------------------------------------------------------------------------------------
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True) ]")
@@ -277,9 +277,41 @@ class AAAService(models.Model):
     current_time = fields.Datetime(string='Current Time', compute='_compute_current_time')
     time_difference = fields.Float(string='Time Difference (minutes)', compute='_compute_time_difference', store=False)
 
+    show_new_change_button = fields.Boolean(
+        compute="_compute_show_new_change_button",
+        store=False
+    )
+ 
+    @api.depends('state', 'product_id', 'selected_from_location', 'selected_to_location', 'from_location', 'to_location')
+    def _compute_show_new_change_button(self):
+        for record in self:
+            # Check if any of the fields have changed by comparing with the previous values
+            has_changed = any(
+                record._origin[field] != record[field]
+                for field in ['product_id', 'selected_from_location', 'selected_to_location', 'from_location', 'to_location']
+            )
+            # Make the button visible if state is 'change' AND any tracked field has changed
+            record.show_new_change_button = record.state == 'change' and has_changed
 
+# ----------API FOR DRIBER CANCEL ------------------------------------------------------------
     def action_approve_cancel_service(self):
-        self.state='cancel'
+        order_number = self.name
+        # base_url = "https://gioapi-gy-dev.kirkos.ae"  # Ensure this is correct
+        _logger.info("SERVICE NUMBER: %s", order_number)
+        api_url = f"{base_url}/carhire-order/order/service/consumers/orders/cancel/order"
+        # Define query parameters
+        params = {
+            "status": "APPROVED",
+            "serviceNumber": order_number
+        }
+        try:
+            # Send request with query parameters
+            requests.put(api_url, params=params, timeout=10)
+        except requests.exceptions.RequestException as e:
+            _logger.error("API Request Failed: %s", str(e))
+            raise UserError(f"API request failed: {str(e)}")
+        # Change state after API call
+        self.state = 'cancel'
 
     @api.depends('service_time')
     def _compute_current_time(self):
@@ -316,26 +348,6 @@ class AAAService(models.Model):
             self.vehicle_model = self.vehicle_model_id.name
         else:
             self.vehicle_model = False  # Clear field if no selection
-
-    # Count fields for each state and total
-
-    # total_count = fields.Integer(string="Total", compute='_compute_service_counts')
-    # done_count = fields.Integer(string="Done", compute='_compute_service_counts')
-    # cancelled_count = fields.Integer(string="Cancelled", compute='_compute_service_counts')
-    # driver_cancel_reach_count = fields.Integer(string="Driver Reached and Cancelled", compute='_compute_service_counts')
-    # open_count = fields.Integer(string="Open", compute='_compute_service_counts')
-    # initiate_count = fields.Integer(string="Initiate", compute='_compute_service_counts')
-    # progress_count = fields.Integer(string="Progress", compute='_compute_service_counts')
-
-    # def _compute_service_counts(self):
-    #     for record in self:
-    #         record.total_count = self.search_count([])
-    #         record.done_count = self.search_count([('state', '=', 'done')])
-    #         record.cancelled_count = self.search_count([('state', '=', 'cancel')])
-    #         record.driver_cancel_reach_count = self.search_count([('state', 'in', ['cancel', 'reach'])])
-    #         record.open_count = self.search_count([('state', '=', 'initiate')])
-    #         record.initiate_count = self.search_count([('state', '=', 'initiate')])
-    #         record.progress_count = self.search_count([('state', '=', 'start')])
 
     @api.depends('state')
     def _compute_comment_text(self):
@@ -453,17 +465,6 @@ class AAAService(models.Model):
         for record in self:
             record.hide_selected_locations = record.member_type == 'credit'
 
-    # @api.depends('service_time')
-    # def _compute_is_today(self):
-    #     today = fields.Date.context_today(self)
-    #     start_of_day = datetime.combine(today, datetime.min.time())
-    #     end_of_day = start_of_day + timedelta(days=1) - timedelta(seconds=1)
-
-    #     for record in self:
-    #         record.is_today = (
-    #             record.service_time and
-    #             start_of_day <= record.service_time <= end_of_day
-    #         )
 # --------------------------------------------API SEARCH LOCATION-------------------------------------------------------------------
     @api.depends('search_query')
     def _fetch_location_suggestions(self):
@@ -638,21 +639,6 @@ class AAAService(models.Model):
                 continue
 
             if record.member_type == 'credit':
-                # Fetch 'credit' members ordered by ID
-                # Fetch 'credit' members ordered by ID
-                # Fetch 'credit' members ordered by ID
-                # members = self.env['res.partner'].search([
-                #     ('parent_customer_id', '=', record.customer_id.id),
-                #     ('member_type', '=', 'credit'),
-                # ], order='id')  # Specify another field to order by if needed
-
-                # if members:
-                #     record.member_id = members[0].id
-                #     record.sequence_id = members[0].member_partner_category_id.id if members[0].member_partner_category_id else False
-                # else:
-                #     record.member_id = False
-                #     record.sequence_id = False
-
                 partner_categories = self.env['partner.category'].search([
                     ('partner_id', '=', record.customer_id.id),
                     ('member_type', '=', 'credit'),
@@ -671,11 +657,7 @@ class AAAService(models.Model):
                     record.sequence_id = False
                     record.member_id = False
 
-
-
             elif record.member_type == 'adhoc':
-                # Fetch 'adhoc' member categories ordered by ID
-                # Fetch 'adhoc' member categories ordered by ID
                 # Fetch 'adhoc' member categories ordered by ID
                 partner_categories = self.env['partner.category'].search([
                     ('partner_id', '=', record.customer_id.id),
