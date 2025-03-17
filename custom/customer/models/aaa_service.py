@@ -306,7 +306,7 @@ class AAAService(models.Model):
         except requests.exceptions.RequestException as e:
             print("API approve_cancel_service Request Failed:", str(e))
         # Change the state after API call
-        # self.state = 'cancel'
+        self.state = 'cancel'
 
     @api.depends('service_time')
     def _compute_current_time(self):
