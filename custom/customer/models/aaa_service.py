@@ -284,28 +284,67 @@ class AAAService(models.Model):
 
         self.state='cancel'
 
+    # def action_approve_cancel_service(self):
+    #     order_number = self.name
+    #     print("SERVICE----------NUMBER",order_number)
+    #     # Define API endpoint
+    #     # api_url = "https://gioapi-gy-dev.kirkos.ae/carhire-order/order/service/consumers/orders/cancel/order"
+    #     api_url = f"{base_url}/carhire-order/order/service/consumers/orders/cancel/order"
+    #     # Define query parameters
+    #     params = {
+    #         "status": "APPROVED",
+    #         "serviceNumber": order_number
+    #     }
+    #     try:
+    #         # Make API request
+    #         response = requests.put(api_url, params=params)
+    #         # Log response
+    #         if response.status_code == 200:
+    #             print("Action approve_cancel_service API Response:", response.json())  # Print JSON response if successful
+    #         else:
+    #             print("API approve_cancel_service Error:", response.status_code, response.text)  # Log error response
+    #     except requests.exceptions.RequestException as e:
+    #         print("API approve_cancel_service Request Failed:", str(e))
+    #     # Change the state after API call
+    #     self.state = 'cancel'
+
     def action_approve_cancel_service(self):
         order_number = self.name
-        print("SERVICE----------NUMBER",order_number)
+        base_url = "https://gioapi-gy-dev.kirkos.ae"  # Ensure base_url is defined
+
+        _logger.info("SERVICE----------NUMBER: %s", order_number)
+
         # Define API endpoint
-        # api_url = "https://gioapi-gy-dev.kirkos.ae/carhire-order/order/service/consumers/orders/cancel/order"
         api_url = f"{base_url}/carhire-order/order/service/consumers/orders/cancel/order"
-        # Define query parameters
-        params = {
+
+        # Define payload correctly
+        payload = {
             "status": "APPROVED",
             "serviceNumber": order_number
         }
         try:
-            # Make API request
-            response = requests.put(api_url, params=params)
-            # Log response
+            # Make API request with correct payload format
+            response = requests.put(api_url, json=payload, timeout=10)
+            # Log response status
+            _logger.info("API Response Status Code: %s", response.status_code)
+            _logger.info("API Response Text: %s", response.text)
+
             if response.status_code == 200:
-                print("Action approve_cancel_service API Response:", response.json())  # Print JSON response if successful
+                try:
+                    json_response = response.json()  # Attempt to parse JSON
+                    _logger.info("API JSON Response: %s", json_response)
+                except ValueError:
+                    _logger.error("Invalid JSON response from API: %s", response.text)
+                    raise UserError("Invalid response from API. Please contact support.")
             else:
-                print("API approve_cancel_service Error:", response.status_code, response.text)  # Log error response
+                _logger.error("API Request Failed: %s - %s", response.status_code, response.text)
+                raise UserError(f"API request failed with status code {response.status_code}. Check API logs.")
+        
         except requests.exceptions.RequestException as e:
-            print("API approve_cancel_service Request Failed:", str(e))
-        # Change the state after API call
+            _logger.error("API approve_cancel_service Request Failed: %s", str(e))
+            raise UserError(f"API request failed: {str(e)}")
+
+        # Change state after API call
         self.state = 'cancel'
 
     @api.depends('service_time')
