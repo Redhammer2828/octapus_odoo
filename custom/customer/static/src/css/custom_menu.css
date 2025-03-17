@@ -69,4 +69,10 @@ a[data-menu-xmlid="customer.menu_call_center_report"] {
     /* background-color: rgb(255, 0, 0) !important; */
     font-weight: bold !important;
 }
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_all_service"] {
+    /* color: #8a81a5 !important; */
+    background-color: #b09cf027;
+    /* background-color: rgb(255, 0, 0) !important; */
+    font-weight: bold !important;
+}
 
