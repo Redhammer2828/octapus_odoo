@@ -53,7 +53,7 @@ class AAAService(models.Model):
         ('driver_cancel', 'Driver Cancelled'),
         ('change', 'Changed' ),
         ('approved','Approved'),
-        ('requested','Requeted')
+        ('requested','Requested')
     ], string="Status", readonly=True, default='initiate', tracking=True)
     #MANY2ONE-------------------------------------------------------------------------------------------------------
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True) ]")
