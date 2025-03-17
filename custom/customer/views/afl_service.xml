@@ -11,6 +11,7 @@
                 decoration-danger="state == 'start' and time_difference &gt;= 120"
                 class="aaa_service_tree" create="False">
                 <field name="job_ref" />
+                <field name="name" string ="ERP Number" />
                 <field name="service_time" string="Entry date" />
                 <field name="member_id" />
                 <field name="member_contact_no" />

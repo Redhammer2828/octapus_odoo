@@ -16,21 +16,46 @@ class ScheduleServiceWizard(models.TransientModel):
         if self.schedule_date:
             self.action_date = self.schedule_date - timedelta(hours=1)
  
+    # def action_schedule(self):
+    #     for record in self:
+    #         # Ensure both dates are set
+    #         if not record.action_date or not record.schedule_date:
+    #             raise UserError('Both Action Date and Schedule Date must be set.')
+ 
+    #         # Validate that action_date is at least 1 hour before schedule_date
+    #         if record.action_date >= record.schedule_date:
+    #             raise UserError('The Action Date must be at least 1 hour before the Schedule Date.')
+            
+    #         # Update service with schedule and action dates
+    #         record.service_id.write({
+    #             'schedule_date_time': record.schedule_date,
+    #             'requested_date': record.action_date,
+    #             'service_time': record.schedule_date
+    #         })
+       
+    #     return True
+
     def action_schedule(self):
         for record in self:
             # Ensure both dates are set
             if not record.action_date or not record.schedule_date:
                 raise UserError('Both Action Date and Schedule Date must be set.')
- 
             # Validate that action_date is at least 1 hour before schedule_date
             if record.action_date >= record.schedule_date:
                 raise UserError('The Action Date must be at least 1 hour before the Schedule Date.')
- 
             # Update service with schedule and action dates
             record.service_id.write({
                 'schedule_date_time': record.schedule_date,
                 'requested_date': record.action_date,
                 'service_time': record.schedule_date
             })
-       
+ 
+            # Create a record in service.history
+            self.env['service.history'].create({
+                            'service_id': record.service_id.id,  # Assuming service_id is a Many2one field
+                            'user': self.env.user.id,
+                            'time': fields.Datetime.now(),
+                            'status': 'Scheduled',
+            })
+                
         return True

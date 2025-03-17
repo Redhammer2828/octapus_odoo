@@ -277,12 +277,28 @@ class AAAService(models.Model):
     current_time = fields.Datetime(string='Current Time', compute='_compute_current_time')
     time_difference = fields.Float(string='Time Difference (minutes)', compute='_compute_time_difference', store=False)
 
+    show_new_change_button = fields.Boolean(
+        compute="_compute_show_new_change_button",
+        store=False
+    )
+ 
+    @api.depends('state', 'product_id', 'selected_from_location', 'selected_to_location', 'from_location', 'to_location')
+    def _compute_show_new_change_button(self):
+        for record in self:
+            # Check if any of the fields have changed by comparing with the previous values
+            has_changed = any(
+                record._origin[field] != record[field]
+                for field in ['product_id', 'selected_from_location', 'selected_to_location', 'from_location', 'to_location']
+            )
+            # Make the button visible if state is 'change' AND any tracked field has changed
+            record.show_new_change_button = record.state == 'change' and has_changed
 
-    def action_approve_cancel_service(self):
-        order_number = self.name
-        print("SERVICE----------NUMBER",order_number)
 
-        self.state='cancel'
+    # def action_approve_cancel_service(self):
+    #     order_number = self.name
+    #     print("SERVICE----------NUMBER",order_number)
+
+    #     self.state='cancel'
 
     # def action_approve_cancel_service(self):
     #     order_number = self.name
@@ -308,45 +324,87 @@ class AAAService(models.Model):
     #     # Change the state after API call
     #     self.state = 'cancel'
 
+    # def action_approve_cancel_service(self):
+    #     order_number = self.name
+    #     base_url = "https://gioapi-gy-dev.kirkos.ae"  # Ensure base_url is defined
+
+    #     _logger.info("SERVICE----------NUMBER: %s", order_number)
+
+    #     # Define API endpoint
+    #     api_url = f"{base_url}/carhire-order/order/service/consumers/orders/cancel/order"
+
+    #     # Define payload correctly
+    #     payload = {
+    #         "status": "APPROVED",
+    #         "serviceNumber": order_number
+    #     }
+    #     try:
+    #         # Make API request with correct payload format
+    #         response = requests.put(api_url, json=payload, timeout=10)
+    #         # Log response status
+    #         _logger.info("API Response Status Code: %s", response.status_code)
+    #         _logger.info("API Response Text: %s", response.text)
+
+    #         if response.status_code == 200:
+    #             try:
+    #                 json_response = response.json()  # Attempt to parse JSON
+    #                 _logger.info("API JSON Response: %s", json_response)
+    #             except ValueError:
+    #                 _logger.error("Invalid JSON response from API: %s", response.text)
+    #                 raise UserError("Invalid response from API. Please contact support.")
+    #         else:
+    #             _logger.error("API Request Failed: %s - %s", response.status_code, response.text)
+    #             raise UserError(f"API request failed with status code {response.status_code}. Check API logs.")
+        
+    #     except requests.exceptions.RequestException as e:
+    #         _logger.error("API approve_cancel_service Request Failed: %s", str(e))
+    #         raise UserError(f"API request failed: {str(e)}")
+
+    #     # Change state after API call
+    #     self.state = 'cancel'
     def action_approve_cancel_service(self):
         order_number = self.name
-        base_url = "https://gioapi-gy-dev.kirkos.ae"  # Ensure base_url is defined
+        base_url = "https://gioapi-gy-dev.kirkos.ae"  # Ensure this is correct
 
-        _logger.info("SERVICE----------NUMBER: %s", order_number)
+        _logger.info("SERVICE NUMBER: %s", order_number)
 
-        # Define API endpoint
         api_url = f"{base_url}/carhire-order/order/service/consumers/orders/cancel/order"
 
-        # Define payload correctly
+        # Define JSON payload
         payload = {
             "status": "APPROVED",
             "serviceNumber": order_number
         }
+
+        # Define headers
+        headers = {
+            "Content-Type": "application/json"
+        }
+
         try:
-            # Make API request with correct payload format
-            response = requests.put(api_url, json=payload, timeout=10)
-            # Log response status
+            # Use json=payload instead of params=params
+            response = requests.put(api_url, json=payload, headers=headers, timeout=10)
+
             _logger.info("API Response Status Code: %s", response.status_code)
             _logger.info("API Response Text: %s", response.text)
 
             if response.status_code == 200:
                 try:
-                    json_response = response.json()  # Attempt to parse JSON
+                    json_response = response.json()
                     _logger.info("API JSON Response: %s", json_response)
                 except ValueError:
                     _logger.error("Invalid JSON response from API: %s", response.text)
                     raise UserError("Invalid response from API. Please contact support.")
             else:
                 _logger.error("API Request Failed: %s - %s", response.status_code, response.text)
-                raise UserError(f"API request failed with status code {response.status_code}. Check API logs.")
-        
+                raise UserError(f"API request failed with status {response.status_code}: {response.text}")
+
         except requests.exceptions.RequestException as e:
-            _logger.error("API approve_cancel_service Request Failed: %s", str(e))
+            _logger.error("API Request Failed: %s", str(e))
             raise UserError(f"API request failed: {str(e)}")
 
         # Change state after API call
         self.state = 'cancel'
-
     @api.depends('service_time')
     def _compute_current_time(self):
         for record in self:

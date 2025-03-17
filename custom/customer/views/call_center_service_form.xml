@@ -69,8 +69,8 @@
                         <button name="action_approve_service" type="object" string="Approve"
                             invisible="state != 'requested' or not is_manager_or_admin"
                             class="btn-primary" />
-                        <button name="action_new_change" type="object" string="New Change"
-                            invisible="state not in ('change')" />
+                        <button name="action_new_change" type="object" string="New Change" invisible="show_new_change_button == False"/>
+                        <field name="show_new_change_button" invisible="1"/>
                         <button name="action_change" type="object" string="Change" class="btn-info"
                             confirm="Change this service, do you want to proceed?"
                             invisible="state not in ('initiate', 'dispatch', 'start','completed_by_driver', 'reach')" />
