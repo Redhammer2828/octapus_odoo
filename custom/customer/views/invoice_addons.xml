@@ -3,7 +3,7 @@
     <record id="view_move_form_inherit_member_category" model="ir.ui.view">
         <field name="name">account.move.form.inherit.member.category</field>
         <field name="model">account.move</field>
-        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="inherit_id" ref="account.view_move_form" />
         <field name="arch" type="xml">
             <!-- Add domain to partner_id field and remove create option -->
             <field name="partner_id" position="attributes">
@@ -13,10 +13,36 @@
 
             <!-- Insert category_id after partner_id and remove create option -->
             <xpath expr="//field[@name='partner_id']" position="after">
-                <field name="category_id" options="{'no_create': True, 'no_quick_create': True}"/>
+                <field name="category_id" options="{'no_create': True, 'no_quick_create': True}" />
+            </xpath>
+            <xpath expr="//form" position="inside">
+                <div>
+                    <style>
+                        .o_form_view:not(.o_field_highlight)
+                        .o_field_widget:not(.o_field_invalid):not(.o_field_highlight)
+                        .o_input:not(:hover):not(:focus) { border-bottom: 1px solid #71639e2b; }
+                        .custom_field { background-color: #d2d2ff8f; border-radius: 5px; }
+                        .required_field { background-color: #b9a4ff29; }
+                    </style>
+                </div>
             </xpath>
         </field>
     </record>
+
+
+    <record id="view_account_move_form_inherit" model="ir.ui.view">
+        <field name="name">account.move.form.inherit.date_filter</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='category_id']" position="after">
+                <field name="from_date" />
+                <field name="to_date" />
+            </xpath>
+        </field>
+    </record>
+
+
 </odoo>
 
 

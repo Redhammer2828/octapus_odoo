@@ -7,6 +7,7 @@
         'web.assets_backend': [
              '/customer/static/src/css/my_custom_style.css',
              '/customer/static/src/css/aaa_service.css',
+             '/customer/static/src/css/custom_menu.css',
         ],
     },
     'author': 'Sasoft',
@@ -69,6 +70,7 @@
         'wizards/aaa_timeline_wizard.xml',
         'wizards/policy_report_wizard_view.xml',
         'wizards/vendors_report_wizard.xml',
+        'wizards/aaa_rac_wizard.xml',
         'data/scheduled_action.xml',
         'data/sequence_data.xml',
         'data/server_action.xml',

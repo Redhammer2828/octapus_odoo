@@ -15,3 +15,4 @@ from . import aaa_timeline_wizard
 #from . import twentyfour_cash_wizard
 from . import policy_report_wizard_view
 from . import vendors_report_wizard
+from . import aaa_rac_wizard

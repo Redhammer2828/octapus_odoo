@@ -1,0 +1,72 @@
+/* a[data-menu-xmlid="customer.menu_service_policy"] {
+    font-weight: bold !important;
+}
+a[data-menu-xmlid="customer.menu_service_credit"] {
+    font-weight: bold !important;
+}
+a[data-menu-xmlid="customer.menu_service_cash_adhoc_new"] {
+    font-weight: bold !important;
+}
+a[data-menu-xmlid="customer.menu_all_service_root"] {
+    font-weight: bold !important;
+}
+a[data-menu-xmlid="customer.menu_enquiry_root"] {
+    font-weight: bold !important;
+}
+a[data-menu-xmlid="customer.menu_service_dashboard"] {
+    font-weight: bold !important;
+}
+a[data-menu-xmlid="customer.menu_afl_service_root"] {
+    font-weight: bold !important;
+}
+a[data-menu-xmlid="customer.menu_call_center_report"] {
+    font-weight: bold !important;
+} */
+
+
+
+
+
+
+
+
+
+
+/* Change color of the specific menu */
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_cancelled_service"] {
+    color: rgb(255, 0, 0) !important;
+    font-weight: bold !important;
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_completed_service"] {
+    color: rgb(0, 160, 0) !important;
+    font-weight: bold !important;
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_requested_service"] {
+    color: rgb(14, 2, 96) !important;
+    font-weight: bold !important;
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_changed_service"] {
+    color: #9a6b01 !important;
+    font-weight: bold !important;
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_driver_cancel_service"] {
+    color: rgb(16, 4, 95) !important;
+    /* background-color: rgb(255, 0, 0) !important; */
+    font-weight: bold !important;
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_in_progress_service"] {
+    color: rgb(0, 84, 14) !important;
+    /* background-color: rgb(255, 0, 0) !important; */
+    font-weight: bold !important;
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_scheduled_service"] {
+    color: rgb(1, 40, 8) !important;
+    /* background-color: rgb(255, 0, 0) !important; */
+    font-weight: bold !important;
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_to_dispatch_service"] {
+    color: #71639e !important;
+    /* background-color: rgb(255, 0, 0) !important; */
+    font-weight: bold !important;
+}
+
