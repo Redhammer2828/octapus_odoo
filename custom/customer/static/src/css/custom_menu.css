@@ -41,4 +41,10 @@
     /* background-color: rgb(255, 0, 0) !important; */
     /* font-weight: bold !important; */
 }
+.o-dropdown--menu a[data-menu-xmlid="customer.sub_menu_service_credit_new_member"] {
+    color: rgb(0, 160, 0) !important;
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_enquiry_complaint_wizard"] {
+    color: rgb(0, 160, 0) !important;
+}
 
