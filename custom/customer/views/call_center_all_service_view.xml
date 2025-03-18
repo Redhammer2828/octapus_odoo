@@ -58,6 +58,7 @@
                     <field name="provider_id" string="Provider" />
                     <field name="driver_name" />
                     <field name="claim_number" />
+                    <field name="credit_customer_co" />
                     <field name="state" string="State" />
                     <field name="credit_proforma_number" string="Trip Sheet Number" />
                     <field name="create_uid" string="Agent" />
@@ -201,6 +202,25 @@
                 ]">
             </field>
         </record>
+
+        <record id="call_center_driver_cancel_action" model="ir.actions.act_window">
+            <field name="name">Driver Cancel Request</field>
+            <field name="res_model">aaa.service</field>
+            <field name="view_mode">tree</field>
+            <field name="domain">[('state', '=','driver_cancel')]</field>
+            <field name="context">{'default_created_by': uid}</field>
+            <field name="view_ids"
+                eval="[ 
+                    (5, 0, 0),
+                    (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_scheduled_service_view_tree')}),
+                    (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
+                ]">
+            </field>
+        </record>
+
+        <menuitem id="menu_driver_cancel_service" name="Driver Cancel Request"
+            parent="menu_all_service_root" action="call_center_driver_cancel_action"
+            sequence="9" />
         <menuitem id="menu_all_service_root" name="All Services" parent="menu_call_center_root"
             sequence="3" />
         <menuitem id="menu_all_service" name="All" parent="menu_all_service_root"

@@ -660,10 +660,39 @@ class AccountAccount(models.Model):
                 for lang, tr in name_field._get_stored_translations(self).items()
             }], dirty=True)
 
-    @api.model
+    # @api.model
+    # def load(self, fields, data):
+    #     """ Overridden for better performances when importing a list of account
+    #     with opening debit/credit. In that case, the auto-balance is postpone
+    #     until the whole file has been imported.
+    #     """
+    #     importing = 'import_file' in self.env.context and 'opening_balance' in fields
+    #     if importing:
+    #         container = {'records': self.env['account.move']}
+    #         manager = self.env['account.move']._check_balanced(container)
+    #     else:
+    #         manager = nullcontext
+    #     with manager:
+    #         rslt = super(AccountAccount, self).load(fields, data)
+    #         if importing:
+    #             companies = self.search([('id', 'in', rslt['ids'])]).mapped('company_id')
+    #             container['records'] = companies.account_opening_move_id
+    #             for company in companies:
+    #                 if company.account_opening_move_id.filtered(lambda m: m.state == "posted"):
+    #                     raise UserError(_(
+    #                         'You cannot import the "openning_balance" if the opening move (%s) is already posted. '
+    #                         'If you are absolutely sure you want to modify the opening balance of your accounts, reset the move to draft.',
+    #                         company.account_opening_move_id.name,
+    #                     ))
+    #                 company._auto_balance_opening_move()
+    #                 # the current_balance of the account only includes posted moves and
+    #                 # would always amount to 0 after the import if we didn't post the opening move
+    #             companies.account_opening_move_id.action_post()
+    #     return rslt
+
     def load(self, fields, data):
-        """ Overridden for better performances when importing a list of account
-        with opening debit/credit. In that case, the auto-balance is postpone
+        """ Overridden for better performances when importing a list of accounts
+        with opening debit/credit. In that case, the auto-balance is postponed
         until the whole file has been imported.
         """
         importing = 'import_file' in self.env.context and 'opening_balance' in fields
@@ -671,8 +700,9 @@ class AccountAccount(models.Model):
             container = {'records': self.env['account.move']}
             manager = self.env['account.move']._check_balanced(container)
         else:
-            manager = nullcontext
-        with manager:
+            manager = nullcontext()  # Ensure it's callable
+
+        with manager:  # This should now work correctly
             rslt = super(AccountAccount, self).load(fields, data)
             if importing:
                 companies = self.search([('id', 'in', rslt['ids'])]).mapped('company_id')
@@ -680,13 +710,11 @@ class AccountAccount(models.Model):
                 for company in companies:
                     if company.account_opening_move_id.filtered(lambda m: m.state == "posted"):
                         raise UserError(_(
-                            'You cannot import the "openning_balance" if the opening move (%s) is already posted. '
+                            'You cannot import the "opening_balance" if the opening move (%s) is already posted. '
                             'If you are absolutely sure you want to modify the opening balance of your accounts, reset the move to draft.',
                             company.account_opening_move_id.name,
                         ))
                     company._auto_balance_opening_move()
-                    # the current_balance of the account only includes posted moves and
-                    # would always amount to 0 after the import if we didn't post the opening move
                 companies.account_opening_move_id.action_post()
         return rslt
 

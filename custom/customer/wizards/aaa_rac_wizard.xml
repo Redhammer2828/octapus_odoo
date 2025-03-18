@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="aaa_timeline_wizard_view_form" model="ir.ui.view">
-        <field name="name">aaa.timeline.wizard.view.form</field>
-        <field name="model">aaa.timeline.wizard</field>
+    <record id="aaa_rac_wizard_view_form" model="ir.ui.view">
+        <field name="name">aaa.rac.wizard.view.form</field>
+        <field name="model">aaa.rac.wizard</field>
         <field name="arch" type="xml">
-            <form string="Timeline Reports">
+            <form string="RAC Reports">
                 
                 <group col="2">
                     <group>
@@ -40,19 +40,19 @@
         </field>
     </record>
 
-    <record id="action_aaa_timeline_wizard" model="ir.actions.act_window">
-        <field name="name">Timeline Reports</field>
-        <field name="res_model">aaa.timeline.wizard</field>
+    <record id="action_aaa_rac_wizard" model="ir.actions.act_window">
+        <field name="name">RAC Reports</field>
+        <field name="res_model">aaa.rac.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
     </record>
 
     
     <menuitem 
-        id="menu_aaa_timeline_wizard"
-        name="Timeline Reports"
+        id="menu_aaa_rac_wizard"
+        name="RAC Reports"
         parent="menu_call_center_report"
-        action="action_aaa_timeline_wizard"
-        sequence="33" />
+        action="action_aaa_rac_wizard"
+        sequence="34" />
 
 </odoo>

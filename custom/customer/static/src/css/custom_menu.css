@@ -1,0 +1,50 @@
+/* Change color of the specific menu */
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_cancelled_service"] {
+    color: rgb(255, 0, 0) !important;
+    /* font-weight: bold !important; */
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_completed_service"] {
+    color: rgb(0, 160, 0) !important;
+    /* font-weight: bold !important; */
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_requested_service"] {
+    color: rgb(14, 2, 96) !important;
+    /* font-weight: bold !important; */
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_changed_service"] {
+    color: #9a6b01 !important;
+    /* font-weight: bold !important; */
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_driver_cancel_service"] {
+    color: rgb(16, 4, 95) !important;
+    /* background-color: rgb(255, 0, 0) !important; */
+    /* font-weight: bold !important; */
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_in_progress_service"] {
+    color: rgb(0, 84, 14) !important;
+    /* background-color: rgb(255, 0, 0) !important; */
+    /* font-weight: bold !important; */
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_scheduled_service"] {
+    color: rgb(1, 40, 8) !important;
+    /* background-color: rgb(255, 0, 0) !important; */
+    /* font-weight: bold !important; */
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_to_dispatch_service"] {
+    color: #71639e !important;
+    /* background-color: rgb(255, 0, 0) !important; */
+    /* font-weight: bold !important; */
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_all_service"] {
+    /* color: #8a81a5 !important; */
+    background-color: #b09cf027;
+    /* background-color: rgb(255, 0, 0) !important; */
+    /* font-weight: bold !important; */
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.sub_menu_service_credit_new_member"] {
+    color: rgb(0, 160, 0) !important;
+}
+.o-dropdown--menu a[data-menu-xmlid="customer.menu_enquiry_complaint_wizard"] {
+    color: rgb(0, 160, 0) !important;
+}
+

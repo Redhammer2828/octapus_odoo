@@ -112,6 +112,7 @@ class ResPartnerMembers(models.Model):
         readonly=False
     )
     confirmed_by = fields.Many2one('res.users', string="Confirm By")
+    member_timeline_ids = fields.One2many('membership.timeline','member_id',string="Member Timeline ")
 
     def unlink(self):
         """Restrict deletion for users in groups named '' or 'new_dispatchers'."""
@@ -765,4 +766,18 @@ class ResPartnerMembers(models.Model):
         card_type_id = fields.Many2one('card.type', string='Card Type')
         history_id = fields.Many2one('res.partner', string="Replaced Member")
         ref_num = fields.Char(string='Membership Number')
+
+    class MembershipTimeline(models.Model):
+        _name = 'membership.timeline'
+        _description = 'Membership Timeline'
+
+        member_id = fields.Many2one('res.partner', string="Member ID")
         
+        user = fields.Many2one('res.users', string="User")
+        time = fields.Datetime(string="Time")
+        status = fields.Char(string="Status")
+        timeline_status = fields.Selection([
+            ('temp', "Temporary"),
+            ('confirm', "Confirmed"),
+            ('cancel', "Cancelled")
+            ], string="Timeline Status", readonly=True)
