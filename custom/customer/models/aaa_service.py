@@ -51,7 +51,7 @@ class AAAService(models.Model):
         ('done', 'Done'),
         ('cancel', 'Cancelled'),
         ('driver_cancel', 'Driver Cancelled'),
-        ('change', 'Changed' ),
+        ('change', 'Change' ),
         ('approved','Approved'),
         ('requested','Requested')
     ], string="Status", readonly=True, default='initiate', tracking=True)
@@ -255,10 +255,11 @@ class AAAService(models.Model):
         compute="_compute_is_today",
         store=True
     )
+    # BOOLEAN CHECKS FOR ROLE BASED VISIBILTY 
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
-
     is_manager_or_admin = fields.Boolean(compute='_compute_is_manager_or_admin', string="Is Manager or Admin", store=False)
+    is_dispatcher_or_manager_or_admin = fields.Boolean(compute='_compute_is_dispatcher_or_manager_or_admin', string="Is Dispatcher or Manager or Admin", store=False)
 
     service_time = fields.Datetime(string="Service Date Time", default=fields.Datetime.now)
     is_today = fields.Boolean(
@@ -311,6 +312,13 @@ class AAAService(models.Model):
             _logger.error("API Request Failed: %s", str(e))
             raise UserError(f"API request failed: {str(e)}")
         # Change state after API call
+        self.env['service.history'].create({
+                'service_id': self.id,  # Assuming service_id is a Many2one field
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': 'Driver Cancel Request Approved',
+                'timeline_status': self.state,
+        })
         self.state = 'cancel'
 
     @api.depends('service_time')
@@ -445,6 +453,21 @@ class AAAService(models.Model):
 
             # Set the field to True if the user is either a Manager or an Admin
             record.is_manager_or_admin = is_manager or is_admin
+    @api.depends()  # Remove created_by dependency since we want current user
+    def _compute_is_dispatcher_or_manager_or_admin(self):
+        """Compute is_dispatcher_or_manager_or_admin based on the current user's group membership."""
+        for record in self:
+            # Get the current user's groups
+            user_groups = self.env.user.groups_id
+            is_dispatcher = any(group.name == 'Dispatcher' for group in user_groups)
+            # Check if the user belongs to the 'Manager' group
+            is_manager = any(group.name == 'Manager' for group in user_groups)
+
+            # Check if the user is an Admin
+            is_admin = any(group.name == 'IT Group' for group in user_groups)
+
+            # Set the field to True if the user is either a Manager or an Admin
+            record.is_dispatcher_or_manager_or_admin = is_dispatcher or is_manager or is_admin 
 
     #computing the dispatcher in AAA.SERVICE
     @api.depends('state', 'service_history_ids.user')
@@ -738,7 +761,8 @@ class AAAService(models.Model):
             'service_id': service.id,
             'user': self.env.user.id,
             'time': fields.Datetime.now(),
-            'status': service.state,
+            'status': 'Initiated',
+            'timeline_status': 'initiate',
         })
         return service
 
@@ -1201,7 +1225,8 @@ class AAAService(models.Model):
             'service_id': self.id,
             'user': self.env.user.id,
             'time': fields.Datetime.now(),
-            'status': self.state,
+            'status': 'Dispatched',
+            'timeline_status': self.state,
         })
 
         for service in self:
@@ -1298,15 +1323,12 @@ class AAAService(models.Model):
     @api.model
     def check_and_update_state(self):
         current_minute = fields.Datetime.now().replace(second=0, microsecond=0)
-
-
         # Find records scheduled for the current minute
         domain = [
             ('state', '=', 'initiate'),
             ('next_check_time', '=', current_minute),
             ('requested_date', '<=', fields.Datetime.now())
         ]
-
         services = self.search(domain)
         # print("SERVICES",service)
         for service in services:
@@ -1323,9 +1345,9 @@ class AAAService(models.Model):
                 'service_id': service.id,
                 'user': self.env.user.id,
                 'time': service.requested_date,  # Use the original requested time
-                'status': 'dispatch'
+                'status': 'Dispatched by bot',
+                'timeline_status': self.state,
             })
-
             # Create comment entry
             self.env['service.comment'].create({
                 'service_id': service.id,
@@ -1334,85 +1356,7 @@ class AAAService(models.Model):
                 'comment_user': self.env.user.id,
                 'comment_status': 'dispatch'
             })
-
         return True
-
-
-
-    # def action_schedule_service_check(self):
-    #     self.schedule_service_check = True
-    #     self.state= 'initiate'
-    #     print("Scheduling the Service - Triggering Wizard")
-    #     return {
-    #                     'name': _('Schedule Service'),
-    #                     'type': 'ir.actions.act_window',
-    #                     'res_model': 'schedule.service.wizard',
-    #                     'view_mode': 'form',
-    #                     'view_id': self.env.ref('customer.schedule_service_wizard_view_form').id,
-    #                     'target': 'new',
-    #                     'context': {
-    #                         'default_service_id': self.id,
-    #                         },
-    #             }
-
-
-    # @api.model
-    # def check_and_update_state(self):
-    #     now = fields.Datetime.now()
-
-    #     # Search for records where requested_date is within the last minute
-    #     # This ensures we catch records right at their requested time
-    #     one_minute_ago = now - timedelta(minutes=1)
-
-    #     records = self.search([
-    #         ('state', '=', 'initiate'),
-    #         ('requested_date', '>=', one_minute_ago),
-    #         ('requested_date', '<=', now)
-    #     ])
-
-    #     for record in records:
-    #         # Only update if we're at or past the exact requested time
-    #         if record.requested_date <= now:
-    #             record.write({'state': 'dispatch'})
-
-    #             # Create service history entry
-    #             self.env['service.history'].create({
-    #                 'service_id': record.id,
-    #                 'user': self.env.user.id,
-    #                 'time': fields.Datetime.now(),
-    #                 'status': 'dispatch',
-    #             })
-
-    #             # Create service comment entry
-    #             self.env['service.comment'].create({
-    #                 'service_id': record.id,
-    #                 'comment': record.comments or 'Scheduled to dispatch',
-    #                 'comment_date_and_time': fields.Datetime.now(),
-    #                 'comment_user': self.env.user.id,
-    #                 'comment_status': 'dispatch',
-    #             })
-
-    # @api.model
-    # def check_and_update_state(self):
-    #     now=fields.Datetime.now()
-    #     records= self.search([('state', '=', 'initiate'),('requested_date', '<=', now)])
-    #     records.write({'state':'dispatch'})
-
-    #     for record in records:
-    #         self.env['service.history'].create({
-    #             'service_id': record.id,
-    #             'user': self.env.user.id,
-    #             'time': fields.Datetime.now(),
-    #             'status': record.state,
-    #         })
-    #         self .env['service.comment'].create({
-    #             'service_id': record.id,
-    #             'comment' : record.comments or 'Scheduled to dispatch',
-    #             'comment_date_and_time' : fields.Datetime.now(),
-    #             'comment_user': self.env.user.id,
-    #             'comment_status' : record.state,
-
-    #     })
 
     @api.onchange('member_id')
     def _onchange_member_id(self):
@@ -1436,11 +1380,11 @@ class AAAService(models.Model):
                 'service_id': service.id,
                 'user': self.env.user.id,
                 'time': fields.Datetime.now(),
-                'status': service.state,
+                'status': 'Started',
+                'timeline_status': service.state,
             })
             # Prepare the comment content
             comment_content = service.comments or 'STARTED'
-
             # Create the service.comment record
             self.env['service.comment'].create({
                 'service_id': service.id,
@@ -1485,7 +1429,8 @@ class AAAService(models.Model):
                     'service_id': service.id,
                     'user': self.env.user.id,
                     'time': fields.Datetime.now(),
-                    'status': service.state,
+                    'status': 'Reached',
+                    'timeline_status': self.state,
                 })
 
         comment_content = service.comments or 'REACHED'
@@ -1514,7 +1459,8 @@ class AAAService(models.Model):
                     'service_id': service.id,
                     'user': self.env.user.id,
                     'time': fields.Datetime.now(),
-                    'status': service.state,
+                    'status': 'Completed by Driver',
+                    'timeline_status': self.state,
                 })
 
         comment_content = service.comments or 'COMPLETED BY DRIVER'
@@ -1548,7 +1494,8 @@ class AAAService(models.Model):
                 'service_id': service.id,
                 'user': self.env.user.id,
                 'time': fields.Datetime.now(),
-                'status': service.state,
+                'status': 'Service Completed',
+                'timeline_status': service.state,
             })
 
             # Prepare the comment content
@@ -1586,7 +1533,7 @@ class AAAService(models.Model):
                 'service_id': service.id,
                 'user': self.env.user.id,
                 'time': fields.Datetime.now(),
-                'status': 'cancel',  # Explicitly set the status
+                'status': 'Cancelled',  # Explicitly set the status
             })
 
             # Use a default comment if no comment exists
@@ -1636,18 +1583,19 @@ class AAAService(models.Model):
                     'service_id': service.id,
                     'user': self.env.user.id,
                     'time': fields.Datetime.now(),
-                    'status': service.state,
+                    'status': 'Change',
+                    'timeline_status': self.state,
                 })
-            comment_content = service.comments or 'CHANGED'
+            comment_content = service.comments or 'Change'
 
             # Create the service.comment record
-        self.env['service.comment'].create({
-            'service_id': service.id,
-            'comment': comment_content,
-            'comment_date_and_time': fields.Datetime.now(),
-            'comment_user': self.env.user.id,
-            'comment_status': service.state,
-            })
+        # self.env['service.comment'].create({
+        #     'service_id': service.id,
+        #     'comment': comment_content,
+        #     'comment_date_and_time': fields.Datetime.now(),
+        #     'comment_user': self.env.user.id,
+        #     'comment_status': service.state,
+        #     })
 
         # If a manual comment exists, clear the service.comments field after creating the record
         if service.comments:
@@ -1776,7 +1724,14 @@ class AAAService(models.Model):
             except Exception as e:
                 print("ERROR UPDATING SERVICE:", str(e))
                 # raise UserError(_("Failed to update the service: %s") % str(e))
-
+        # for service in self:
+            self.env['service.history'].create({
+                'service_id': service.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': 'Applied Changes',
+                'timeline_status': self.state,
+            })
         # Optionally, refresh the view to show changes
         return {
             'type': 'ir.actions.client',
@@ -1786,23 +1741,23 @@ class AAAService(models.Model):
     def action_request_service(self):
         self.state='requested'
         for service in self:
-
-                self.env['service.history'].create({
-                    'service_id': service.id,
-                    'user': self.env.user.id,
-                    'time': fields.Datetime.now(),
-                    'status': service.state,
-                })
-                comment_content = service.comments or 'REQUESTED'
+            self.env['service.history'].create({
+                'service_id': service.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': 'Requested to Change Cancellation State',
+                'timeline_status': service.state,
+            })
+            comment_content = service.comments or 'Requested to Change Cancellation State'
 
             # Create the service.comment record
-        self.env['service.comment'].create({
-            'service_id': service.id,
-            'comment': comment_content,
-            'comment_date_and_time': fields.Datetime.now(),
-            'comment_user': self.env.user.id,
-            'comment_status': service.state,
-            })
+            # self.env['service.comment'].create({
+            #     'service_id': service.id,
+            #     'comment': comment_content,
+            #     'comment_date_and_time': fields.Datetime.now(),
+            #     'comment_user': self.env.user.id,
+            #     'comment_status': service.state,
+            #     })
             # If a manual comment exists, clear the service.comments field after creating the record
         if service.comments:
             service.comments = False
@@ -1811,15 +1766,18 @@ class AAAService(models.Model):
     def action_approve_service(self):
         self.state='initiate'
         for service in self:
+            # TIMELINE TREE
             self.env['service.history'].create({
                 'service_id': service.id,
                 'user': self.env.user.id,
                 'time': fields.Datetime.now(),
-                'status': service.state,
+                'status': 'Request to Change Cancelled State Approved',
+                'timeline_status': self.state,
                 })
+            # COMMENTS TREE
             self .env['service.comment'].create({
                 'service_id': service.id,
-                'comment' : service.comments or 'APPROVED',
+                'comment' : service.comments or 'Request to Change Cancelled State Approved',
                 'comment_date_and_time' : fields.Datetime.now(),
                 'comment_user': self.env.user.id,
                 'comment_status' : service.state,
@@ -1843,6 +1801,21 @@ class ServiceHistory(models.Model):
     user = fields.Many2one('res.users', string="User")
     time = fields.Datetime(string="Time")
     status = fields.Char(string="Status")
+    # timeline_status = fields.Text(string="Timeline Status")
+    timeline_status = fields.Selection([
+        ('draft', 'Draft'),
+        ('initiate', 'Initiate'),
+        ('dispatch', 'Dispatch'),
+        ('start', 'Start'),
+        ('reach', 'Reach'),
+        ('completed_by_driver', 'Completed by driver'),
+        ('done', 'Done'),
+        ('cancel', 'Cancelled'),
+        ('driver_cancel', 'Driver Cancelled'),
+        ('change', 'Change' ),
+        ('approved','Approved'),
+        ('requested','Requested')
+    ], string="Timeline Status", readonly=True, default='initiate', tracking=True)
     service_id = fields.Many2one('aaa.service', string="Service")
 
 class AaaServiceAddon(models.Model):

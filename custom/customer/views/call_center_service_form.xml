@@ -58,7 +58,8 @@
                             invisible="not (state == 'reach' or state == 'completed_by_driver') or is_agent_user"
                         />
                         <button name="action_cancel_service" type="object" string="Cancel"
-                            confirm="Cancel this service, do you want to proceed?" class="btn-danger"
+                            confirm="Cancel this service, do you want to proceed?"
+                            class="btn-danger"
                             invisible="state not in ('initiate', 'dispatch', 'start', 'reach') or is_agent_user" />
                         <button name="action_request_service" type="object" string="Request"
                             invisible="state != 'cancel'  or is_agent_user" groups="base.group_user"
@@ -66,11 +67,12 @@
                         <!-- <button name="action_approve_service" type="object" string="Approve"
                             groups="base.group_system"
                             invisible="state != 'requested'  or is_agent_user" class="btn-primary" /> -->
-                        <button name="action_approve_service" type="object" string="Approve"
+                        <button name="action_approve_service" type="object" string="Approve Request"
                             invisible="state != 'requested' or not is_manager_or_admin"
-                            class="btn-primary" />
-                        <button name="action_new_change" type="object" string="New Change" invisible="show_new_change_button == False"/>
-                        <field name="show_new_change_button" invisible="1"/>
+                            class="btn-success" />
+                        <button name="action_new_change" type="object" string="Apply Change"
+                            invisible="show_new_change_button == False" class="btn-success" />
+                        <field name="show_new_change_button" invisible="1" />
                         <button name="action_change" type="object" string="Change" class="btn-info"
                             confirm="Change this service, do you want to proceed?"
                             invisible="state not in ('initiate', 'dispatch', 'start','completed_by_driver', 'reach')" />
@@ -79,11 +81,17 @@
                             invisible="state not in ('initiate', 'dispatch', 'start', 'reach','completed_by_driver')" />
                         <button name="action_new" string="New Service" type="object"
                             invisible="state != 'discard'  or is_agent_user" />
-                        <button name="action_approve_cancel_service" type="object" string="Approve For Cancel" invisible="state != 'driver_cancel'" class="btn-primary" />
+                        <button name="action_approve_cancel_service"
+                            type="object"
+                            string="Approve For Cancel"
+                            invisible="state != 'driver_cancel' or not is_dispatcher_or_manager_or_admin"
+                            class="btn-success" />
                         <field name="state" widget="statusbar" nolabel="1"
-                            statusbar_visible="initiate,dispatch,start,reach,completed_by_driver,done" invisible="is_agent_user" />
+                            statusbar_visible="initiate,dispatch,start,reach,completed_by_driver,done" />
                         <field name="is_agent_user" invisible="1" />
                         <field name="is_manager_or_admin" invisible="1" />
+                        <field name="is_dispatcher_or_manager_or_admin" invisible="1" />
+                        <!-- <field name="is_dispatch_user" invisible="1" /> -->
                     </header>
                     <sheet>
                         <div class="row mt-2 mb-2"
@@ -171,11 +179,17 @@
                             </group>
                             <group string="VEHICLE DETAILS" name="vehicle_details">
                                 <field name="vehicle_type" string="Vehicle Type"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" invisible="(member_type == 'credit' and not is_imported)"/>
-                                <field name="vehicle_type_id" options="{'no_create': True, 'no_open': True}" invisible="member_type == 'policy' or is_imported == True"/>
+                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)"
+                                    invisible="(member_type == 'credit' and not is_imported)" />
+                                <field name="vehicle_type_id"
+                                    options="{'no_create': True, 'no_open': True}"
+                                    invisible="member_type == 'policy' or is_imported == True" />
                                 <field name="vehicle_model" string="Vehicle Model"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user) " invisible="(member_type == 'credit' and not is_imported)" />
-                                <field name="vehicle_model_id" options="{'no_create': True, 'no_open': True}" invisible="member_type == 'policy' or is_imported == True"/>
+                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user) "
+                                    invisible="(member_type == 'credit' and not is_imported)" />
+                                <field name="vehicle_model_id"
+                                    options="{'no_create': True, 'no_open': True}"
+                                    invisible="member_type == 'policy' or is_imported == True" />
                                 <field name="vehicle_plate" string="Vehicle Plate"
                                     readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
@@ -239,8 +253,8 @@
                                         invisible="member_type in ['adhoc', 'credit'] or service_based == 'none'"
                                         readonly="state in['cancel', 'done']" />
                                     <!-- DRIVER PICKUP & DROP OFF LOCATION -->
-                                    <field name="driver_pickup" readonly="1"/>
-                                    <field name="driver_dropoff" readonly="1"/>
+                                    <field name="driver_pickup" readonly="1" />
+                                    <field name="driver_dropoff" readonly="1" />
                                     <field name="date_time_from" string="From Date time"
                                         invisible="service_based != 'location_duration'"
                                         class="required_field" required="1"
@@ -367,12 +381,14 @@
                                         <field name="user" />
                                         <field name="time" />
                                         <field name="status" />
+                                        <field name="timeline_status" widget="badge" readonly="1"/>
                                     </tree>
                                     <form>
                                         <group>
                                             <field name="user" />
                                             <field name="time" />
                                             <field name="status" />
+                                            <field name="timeline_status" widget="tags" readonly="1"/>
                                         </group>
                                     </form>
                                 </field>
