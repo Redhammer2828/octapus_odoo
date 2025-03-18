@@ -67,11 +67,11 @@
                         <!-- <button name="action_approve_service" type="object" string="Approve"
                             groups="base.group_system"
                             invisible="state != 'requested'  or is_agent_user" class="btn-primary" /> -->
-                        <button name="action_approve_service" type="object" string="Approve"
+                        <button name="action_approve_service" type="object" string="Approve Request"
                             invisible="state != 'requested' or not is_manager_or_admin"
-                            class="btn-primary" />
-                        <button name="action_new_change" type="object" string="New Change"
-                            invisible="show_new_change_button == False" />
+                            class="btn-success" />
+                        <button name="action_new_change" type="object" string="Apply Change"
+                            invisible="show_new_change_button == False" class="btn-success" />
                         <field name="show_new_change_button" invisible="1" />
                         <button name="action_change" type="object" string="Change" class="btn-info"
                             confirm="Change this service, do you want to proceed?"
@@ -85,7 +85,7 @@
                             type="object"
                             string="Approve For Cancel"
                             invisible="state != 'driver_cancel' or not is_dispatcher_or_manager_or_admin"
-                            class="btn-primary" />
+                            class="btn-success" />
                         <field name="state" widget="statusbar" nolabel="1"
                             statusbar_visible="initiate,dispatch,start,reach,completed_by_driver,done" />
                         <field name="is_agent_user" invisible="1" />
@@ -381,12 +381,14 @@
                                         <field name="user" />
                                         <field name="time" />
                                         <field name="status" />
+                                        <field name="timeline_status" widget="badge" readonly="1"/>
                                     </tree>
                                     <form>
                                         <group>
                                             <field name="user" />
                                             <field name="time" />
                                             <field name="status" />
+                                            <field name="timeline_status" widget="tags" readonly="1"/>
                                         </group>
                                     </form>
                                 </field>

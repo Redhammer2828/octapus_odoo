@@ -56,3 +56,4 @@ access_policy_report_wizard,policy.report.wizard,model_policy_report_wizard,base
 access_vendors_report_wizard,vendors.report.wizard,model_vendors_report_wizard,base.group_user,1,1,1,1
 access_afl_dashboard,afl.dashboard,model_afl_dashboard,base.group_user,1,1,1,1
 access_aaa_rac_wizard,aaa.rac.wizard,model_aaa_rac_wizard,base.group_user,1,1,1,1
+access_membership_timeline,membership.timeline,model_membership_timeline,base.group_user,1,1,1,1
