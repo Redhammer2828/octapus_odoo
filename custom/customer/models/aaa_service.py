@@ -255,10 +255,11 @@ class AAAService(models.Model):
         compute="_compute_is_today",
         store=True
     )
+    # BOOLEAN CHECKS FOR ROLE BASED VISIBILTY 
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
-
     is_manager_or_admin = fields.Boolean(compute='_compute_is_manager_or_admin', string="Is Manager or Admin", store=False)
+    is_dispatcher_or_manager_or_admin = fields.Boolean(compute='_compute_is_dispatcher_or_manager_or_admin', string="Is Dispatcher or Manager or Admin", store=False)
 
     service_time = fields.Datetime(string="Service Date Time", default=fields.Datetime.now)
     is_today = fields.Boolean(
@@ -445,6 +446,21 @@ class AAAService(models.Model):
 
             # Set the field to True if the user is either a Manager or an Admin
             record.is_manager_or_admin = is_manager or is_admin
+    @api.depends()  # Remove created_by dependency since we want current user
+    def _compute_is_dispatcher_or_manager_or_admin(self):
+        """Compute is_dispatcher_or_manager_or_admin based on the current user's group membership."""
+        for record in self:
+            # Get the current user's groups
+            user_groups = self.env.user.groups_id
+            is_dispatcher = any(group.name == 'Dispatcher' for group in user_groups)
+            # Check if the user belongs to the 'Manager' group
+            is_manager = any(group.name == 'Manager' for group in user_groups)
+
+            # Check if the user is an Admin
+            is_admin = any(group.name == 'IT Group' for group in user_groups)
+
+            # Set the field to True if the user is either a Manager or an Admin
+            record.is_dispatcher_or_manager_or_admin = is_dispatcher or is_manager or is_admin 
 
     #computing the dispatcher in AAA.SERVICE
     @api.depends('state', 'service_history_ids.user')
