@@ -46,7 +46,6 @@ class ResPartnerMembers(models.Model):
     website = fields.Char(string='Website', widget='url')
     lang = fields.Char(string='Language')
     #invoice_ref_date = fields.Date(string='Invoice Ref Date')
-
     invoice_ref_date = fields.Date(
         string='Invoice Ref Date',
         default=lambda self: date.today()
@@ -153,8 +152,16 @@ class ResPartnerMembers(models.Model):
 
         if not vals.get('create_uid'):
             vals['create_uid'] = self.env.user.id
+        
 
         new_partner = super(ResPartnerMembers, self).create(vals)
+        self.env['membership.timeline'].create({
+            'member_id': new_partner.id,
+            'user': self.env.user.id,
+            'time': fields.Datetime.now(),
+            'status': 'Created',
+            'timeline_status': 'temp',
+        })
         return new_partner
     
     @api.model
@@ -329,6 +336,13 @@ class ResPartnerMembers(models.Model):
                 if record.member_expiry_date <= record.member_activate_date:
                     raise ValidationError(_("The expiry date should be greater than the activation date."))
 
+            self.env['membership.timeline'].create({
+                    'member_id': record.id,
+                    'user': self.env.user.id,
+                    'time': fields.Datetime.now(),
+                    'status': 'Confirmed',
+                    'timeline_status': 'confirm',
+                })
             # Step 4: Confirm membership if all validations pass
             record.membership_state = 'confirm'
 
@@ -490,25 +504,6 @@ class ResPartnerMembers(models.Model):
 #-------------------------------COUNT CALCULATION---END--------------------------------------------------
 
     def action_membership_renewal(self):
-        # mem_renewal= self.env['membership.history'].create({
-        #     'name': self.name,
-        #     'parent_customer_id': self.parent_customer_id.id,
-        #     'old_membership_number': self.old_membership_number,
-        #     'ref_num': self.ref_num,
-        #     'member_partner_category_id': self.member_partner_category_id.id,
-        #     'product_template_id' : self.product_template_id.id,
-        #     'member_type': self.member_type,
-        #     'policy_no':self.policy_no,
-        #     'vehicle_chasis_no': self.vehicle_chasis_no,
-        #     'vehicle_plate': self.vehicle_plate,
-        #     'vehicle_type': self.vehicle_type,
-        #     'member_activate_date': self.member_activate_date,
-        #     'member_expiry_date': self.member_expiry_date,
-        #     'invoice_ref_date': self.invoice_ref_date,
-        #     'card_type_id': self.card_type_id.id,
-        #     'history_id': self.id
-
-        # })
         view_id = self.env.ref('customer.membership_renewal_wizard_form').id
         return {
             'name': 'Membership Renewal',
@@ -529,25 +524,6 @@ class ResPartnerMembers(models.Model):
         }
 
     def action_membership_extension(self):
-        # mem_extension= self.env['membership.history'].create({
-        #     'name': self.name,
-        #     'parent_customer_id': self.parent_customer_id.id,
-        #     'old_membership_number': self.old_membership_number,
-        #     'ref_num': self.ref_num,
-        #     'member_partner_category_id': self.member_partner_category_id.id,
-        #     'product_template_id' : self.product_template_id.id,
-        #     'member_type': self.member_type,
-        #     'policy_no':self.policy_no,
-        #     'vehicle_chasis_no': self.vehicle_chasis_no,
-        #     'vehicle_plate': self.vehicle_plate,
-        #     'vehicle_type': self.vehicle_type,
-        #     'member_activate_date': self.member_activate_date,
-        #     'member_expiry_date': self.member_expiry_date,
-        #     'invoice_ref_date': self.invoice_ref_date,
-        #     'card_type_id': self.card_type_id.id,
-        #     'history_id': self.id
-
-        # })
         view_id = self.env.ref('customer.membership_extension_wizard_form').id
         return {
             'name': 'Membership Extension',
@@ -617,7 +593,13 @@ class ResPartnerMembers(models.Model):
 
         # Create the service record directly
         service_record = self.env['aaa.service'].create(service_vals)
-
+        self.env['membership.timeline'].create({
+            'member_id': self.id,
+            'user': self.env.user.id,
+            'time': fields.Datetime.now(),
+            'status': 'Create Service',
+            'timeline_status': self.membership_state,
+        })
         # Return the form view for the newly created record
         return {
             'name': 'Service Policy',
@@ -635,6 +617,13 @@ class ResPartnerMembers(models.Model):
         member = self.env['res.partner'].browse(self.id)
         service_ids = member.service_ids.ids  # Assuming 'service_ids' is a One2many or Many2many field in res.partner
         view_id = self.env.ref('customer.view_enquiry_complaint_wizard_form').id
+        # self.env['membership.timeline'].create({
+        #     'member_id': self.id,
+        #     'user': self.env.user.id,
+        #     'time': fields.Datetime.now(),
+        #     'status': 'Create Enquiry',
+        #     'timeline_status': self.membership_state,
+        # })
         return {
             'name': 'Select Enquiry or Complaint',
             'type': 'ir.actions.act_window',

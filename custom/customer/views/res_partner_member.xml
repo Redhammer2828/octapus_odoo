@@ -185,6 +185,7 @@
                                 <page name="membership_history" string="Membership History">
                                     <field name="membership_history_ids">
                                         <tree create="false" delete="False">
+                                            <field name="create_date" string="Created Date" />
                                             <field name="parent_customer_id" />
                                             <field name="name" />
                                             <field name="old_membership_number" />
@@ -218,15 +219,11 @@
                                                 <field name="user" />
                                                 <field name="time" />
                                                 <field name="status" />
-                                                <field name="timeline_status" widget="tags"
+                                                <field name="timeline_status" widget="badge"
                                                     readonly="1" />
                                             </group>
                                         </form>
                                     </field>
-                                    <!-- <group> -->
-                                        <!-- <field name="new_service_id" invisible="1" /> -->
-                                        <!-- <field name="cancelled_service_id" string="Origin" /> -->
-                                    <!-- </group> -->
                                 </page>
                             </notebook>
                         </group>
