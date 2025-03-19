@@ -9,7 +9,6 @@ import logging
 # Set up logging for debugging purposes
 _logger = logging.getLogger(__name__)
 
-
 class DataUploadFile(models.Model):
     _name = 'data.upload.file'
     _description = 'Data Upload File'
@@ -350,6 +349,13 @@ class DataUploadFile(models.Model):
                             'history_id': matching_partner.id,
                             'product_template_id': matching_partner.product_template_id.id,
                         })
+                        self.env['membership.timeline'].create({
+                            'member_id': matching_partner.id,
+                            'user': self.env.user.id,
+                            'time': fields.Datetime.now(),
+                            'status': 'Membership Renewal via Upload',
+                            'timeline_status': 'confirm',
+                        })
                          # Find the product.template record based on the package value
                         package_record = self.env['product.template'].search([('id', '=', member_line.package)], limit=1)
                         if not package_record:
@@ -431,6 +437,13 @@ class DataUploadFile(models.Model):
                             'card_type_id': matching_partner.card_type_id.id,
                             'history_id': matching_partner.id,
                             'product_template_id': matching_partner.product_template_id.id,
+                        })
+                        self.env['membership.timeline'].create({
+                            'member_id': matching_partner.id,
+                            'user': self.env.user.id,
+                            'time': fields.Datetime.now(),
+                            'status': 'Membership Extended via Upload',
+                            'timeline_status': 'confirm',
                         })
                           # Find the product.template record based on the package value
                         package_record = self.env['product.template'].search([('id', '=', member_line.package)], limit=1)
@@ -528,6 +541,13 @@ class DataUploadFile(models.Model):
                             'mobile': member_line.mobile,
                             # 'confirmed_by': member_line.self.env.user_id,
                         })
+                        self.env['membership.timeline'].create({
+                            'member_id': matching_partner.id,
+                            'user': self.env.user.id,
+                            'time': fields.Datetime.now(),
+                            'status': 'Previously in Temporary Status, Confirmed via Upload',
+                            'timeline_status': 'confirm',
+                        })
                 # Handle 'REPLACE' status
                 elif member_line.upload_member_status == 'replace':
                     matching_partner = self.env['res.partner'].browse(member_line.if_rep_match)
@@ -535,8 +555,14 @@ class DataUploadFile(models.Model):
                         matching_partner.write({
                             'membership_state': 'cancel',
                             'comment': 'Member replaced with uploaded member details',
+                        })  
+                        self.env['membership.timeline'].create({
+                            'member_id': matching_partner.id,
+                            'user': self.env.user.id,
+                            'time': fields.Datetime.now(),
+                            'status': 'Cancelled via Upload – Member Name Change Detected in Upload',
+                            'timeline_status': 'confirm',
                         })
-
                     card_type_record = card_type_dict.get(member_line.card_type)
                     matching_partner = partner_dict.get(member_line.customer_code)
     
@@ -578,6 +604,13 @@ class DataUploadFile(models.Model):
                         matching_partner.write({
                             'membership_state': 'cancel',
                             'comment': 'Member replaced with uploaded member details',
+                        })
+                        self.env['membership.timeline'].create({
+                            'member_id': matching_partner.id,
+                            'user': self.env.user.id,
+                            'time': fields.Datetime.now(),
+                            'status': 'Cancelled via Upload - Company Changed',
+                            'timeline_status': 'confirm',
                         })
 
                     card_type_record = card_type_dict.get(member_line.card_type)

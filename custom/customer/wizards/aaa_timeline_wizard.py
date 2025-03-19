@@ -204,81 +204,202 @@ class AaaTimelineWizard(models.TransientModel):
                     else:
                         field_value = ''
                 elif header == 'Request Completed On':
+                    # Search for cancellation time based on `timeline_status`
                     service_history = self.env['service.history'].search([
                         ('service_id', '=', record.id),
-                        ('status', '=', 'done')
-                    ], limit=1)
+                        ('timeline_status', '=', 'done')
+                    ], order='time ASC', limit=1)
+
+                    if not service_history:
+                        # If no `timeline_status = cancel`, check for `status = cancel`
+                        service_history = self.env['service.history'].search([
+                            ('service_id', '=', record.id),
+                            ('status', '=', 'done')
+                        ], limit=1)
+
                     if service_history:
-                        utc_time = service_history.time  # Assuming this is a datetime object
-                        target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
+                        utc_time = service_history.time  # Assuming this is a datetime field
+                        target_timezone = timezone('Asia/Kolkata')
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
                         field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
                         field_value = ''
+                    # service_history = self.env['service.history'].search([
+                    #     ('service_id', '=', record.id),
+                    #     ('timeline_status', '=', 'done')
+                    # ], limit=1)
+                    # if service_history:
+                    #     utc_time = service_history.time  # Assuming this is a datetime object
+                    #     target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
+                    #     local_time = UTC.localize(utc_time).astimezone(target_timezone)
+                    #     field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
+                    # else:
+                    #     field_value = ''
                
 
                 elif header == 'Driver Start Time':
+                    # Search for cancellation time based on `timeline_status`
                     service_history = self.env['service.history'].search([
+                        ('service_id', '=', record.id),
+                        ('timeline_status', '=', 'start')
+                    ], limit=1)
+
+                    if not service_history:
+                        # If no `timeline_status = cancel`, check for `status = cancel`
+                        service_history = self.env['service.history'].search([
                             ('service_id', '=', record.id),
                             ('status', '=', 'start')
                         ], limit=1)
-                    
+
                     if service_history:
-                        utc_time = service_history.time  # Assuming this is a datetime object
-                        target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
+                        utc_time = service_history.time  # Assuming this is a datetime field
+                        target_timezone = timezone('Asia/Kolkata')
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
                         field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
                         field_value = ''
+                    # service_history = self.env['service.history'].search([
+                    #         ('service_id', '=', record.id),
+                    #         ('timeline_status', '=', 'start')
+                    #     ], limit=1)
+                    
+                    # if service_history:
+                    #     utc_time = service_history.time  # Assuming this is a datetime object
+                    #     target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
+                    #     local_time = UTC.localize(utc_time).astimezone(target_timezone)
+                    #     field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
+                    # else:
+                    #     field_value = ''
                 elif header == 'Driver Arrival Time':
+                    # Search for cancellation time based on `timeline_status`
                     service_history = self.env['service.history'].search([
+                        ('service_id', '=', record.id),
+                        ('timeline_status', '=', 'reach')
+                    ], limit=1)
+
+                    if not service_history:
+                        # If no `timeline_status = cancel`, check for `status = cancel`
+                        service_history = self.env['service.history'].search([
                             ('service_id', '=', record.id),
                             ('status', '=', 'reach')
                         ], limit=1)
-                    if service_history:
-                        utc_time = service_history.time  # Assuming this is a datetime object
-                        target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
-                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
-                    else:
-                        field_value = ''
-                elif header == 'Service Started Time':
-                    service_history = self.env['service.history'].search([
-                        ('service_id', '=', record.id),
-                        ('status', '=', 'start')
-                    ], limit=1)
-                    if service_history:
-                        utc_time = service_history.time  # Assuming this is a datetime object
-                        target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
-                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
-                    else:
-                        field_value = ''
-                elif header == 'Service Completed Time':
-                    service_history = self.env['service.history'].search([
-                        ('service_id', '=', record.id),
-                        ('status', '=', 'done')
-                    ], limit=1)
-                    if service_history:
-                        utc_time = service_history.time  # Assuming this is a datetime object
-                        target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
-                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
-                    else:
-                        field_value = ''
-                elif header == 'Cancellation Time':
-                    service_history = self.env['service.history'].search([
-                        ('service_id', '=', record.id),
-                        ('status', '=', 'cancel')
-                    ], limit=1)
-                    if service_history:
-                        utc_time = service_history.time  # Assuming this is a datetime object
-                        target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
-                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
-                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
-                    else:
-                        field_value = ''
 
+                    if service_history:
+                        utc_time = service_history.time  # Assuming this is a datetime field
+                        target_timezone = timezone('Asia/Kolkata')
+                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
+                    else:
+                        field_value = ''
+                    # service_history = self.env['service.history'].search([
+                    #         ('service_id', '=', record.id),
+                    #         ('timeline_status', '=', 'reach')
+                    #     ], limit=1)
+                    # if service_history:
+                    #     utc_time = service_history.time  # Assuming this is a datetime object
+                    #     target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
+                    #     local_time = UTC.localize(utc_time).astimezone(target_timezone)
+                    #     field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
+                    # else:
+                    #     field_value = ''
+                elif header == 'Service Started Time':
+                    # Search for cancellation time based on `timeline_status`
+                    service_history = self.env['service.history'].search([
+                        ('service_id', '=', record.id),
+                        ('timeline_status', '=', 'start')
+                    ], limit=1)
+
+                    if not service_history:
+                        # If no `timeline_status = cancel`, check for `status = cancel`
+                        service_history = self.env['service.history'].search([
+                            ('service_id', '=', record.id),
+                            ('status', '=', 'start')
+                        ], limit=1)
+
+                    if service_history:
+                        utc_time = service_history.time  # Assuming this is a datetime field
+                        target_timezone = timezone('Asia/Kolkata')
+                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
+                    else:
+                        field_value = ''
+                    # service_history = self.env['service.history'].search([
+                    #     ('service_id', '=', record.id),
+                    #     ('timeline_status', '=', 'start')
+                    # ], limit=1)
+                    # if service_history:
+                    #     utc_time = service_history.time  # Assuming this is a datetime object
+                    #     target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
+                    #     local_time = UTC.localize(utc_time).astimezone(target_timezone)
+                    #     field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
+                    # else:
+                    #     field_value = ''
+                elif header == 'Service Completed Time':
+                    # Search for cancellation time based on `timeline_status`
+                    service_history = self.env['service.history'].search([
+                        ('service_id', '=', record.id),
+                        ('timeline_status', '=', 'done')
+                    ], limit=1)
+
+                    if not service_history:
+                        # If no `timeline_status = cancel`, check for `status = cancel`
+                        service_history = self.env['service.history'].search([
+                            ('service_id', '=', record.id),
+                            ('status', '=', 'done')
+                        ], limit=1)
+
+                    if service_history:
+                        utc_time = service_history.time  # Assuming this is a datetime field
+                        target_timezone = timezone('Asia/Kolkata')
+                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
+                    else:
+                        field_value = ''
+                    # service_history = self.env['service.history'].search([
+                    #     ('service_id', '=', record.id),
+                    #     ('timeline_status', '=', 'done')
+                    # ], limit=1)
+                    # if service_history:
+                    #     utc_time = service_history.time  # Assuming this is a datetime object
+                    #     target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
+                    #     local_time = UTC.localize(utc_time).astimezone(target_timezone)
+                    #     field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
+                    # else:
+                    #     field_value = ''
+                # elif header == 'Cancellation Time':
+                #     service_history = self.env['service.history'].search([
+                #         ('service_id', '=', record.id),
+                #         ('timeline_status', '=', 'cancel')
+                #     ], limit=1)
+                #     if service_history:
+                #         utc_time = service_history.time  # Assuming this is a datetime object
+                #         target_timezone = timezone('Asia/Kolkata')  # Replace with your target timezone
+                #         local_time = UTC.localize(utc_time).astimezone(target_timezone)
+                #         field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
+                #     else:
+                #         field_value = ''
+
+                elif header == 'Cancellation Time':
+                    # Search for cancellation time based on `timeline_status`
+                    service_history = self.env['service.history'].search([
+                        ('service_id', '=', record.id),
+                        ('timeline_status', '=', 'cancel')
+                    ], limit=1)
+
+                    if not service_history:
+                        # If no `timeline_status = cancel`, check for `status = cancel`
+                        service_history = self.env['service.history'].search([
+                            ('service_id', '=', record.id),
+                            ('status', '=', 'cancel')
+                        ], limit=1)
+
+                    if service_history:
+                        utc_time = service_history.time  # Assuming this is a datetime field
+                        target_timezone = timezone('Asia/Kolkata')
+                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
+                    else:
+                        field_value = ''
 
                 elif header == 'Dispatch Center Notes':
                     service_comment = self.env['service.comment'].search([

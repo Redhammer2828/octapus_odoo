@@ -7,16 +7,11 @@ class MembershipExtensionWizard(models.TransientModel):
     expiry_date = fields.Date('Expiry Date')
     new_expiry_date = fields.Date('New Expiry Date')
 
-    # def action_extension(self):
-    #     partner = self.env['res.partner'].browse(self._context.get('active_id'))
-    #     partner.member_expiry_date = self.new_expiry_date
-
     def action_extension(self):
         partner = self.env['res.partner'].browse(self._context.get('active_id'))
  
         if not partner:
             raise UserError("No active partner found for extension.")
- 
         # Create an entry in the membership.history model before updating the partner record
         mem_renewal = self.env['membership.history'].create({
             'name': partner.name,  # Using partner name
@@ -36,8 +31,12 @@ class MembershipExtensionWizard(models.TransientModel):
             'card_type_id': partner.card_type_id.id,
             'history_id': partner.id
         })
-        # logger.info("Membership history record created with ID: %s", mem_renewal.id)
+        self.env['membership.timeline'].create({
+            'member_id': partner.id,
+            'user': self.env.user.id,
+            'time': fields.Datetime.now(),
+            'status': 'Membership Extended',
+            'timeline_status': partner.membership_state,
+        })
         # Update the partner's expiry date with the new value
         partner.member_expiry_date = self.new_expiry_date
-        # Log the updated expiry date
-        # logger.info("Updated Partner ID %s expiry date to %s", partner.id, self.new_expiry_date)
