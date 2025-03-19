@@ -22,7 +22,6 @@ class MembershipRenewalWizard(models.TransientModel):
         """
         # Fetch the default values using the parent method
         defaults = super(MembershipRenewalWizard, self).default_get(fields_list)
-
         # Get the active partner record from the context
         active_id = self.env.context.get('active_id')
         partner = self.env['res.partner'].browse(active_id)
@@ -30,34 +29,10 @@ class MembershipRenewalWizard(models.TransientModel):
         if partner:
             # Set the card_type_id from the partner in the wizard defaults
             defaults['card_type_id'] = partner.card_type_id.id
-
             # Log the card_type_id for debugging purposes
             logger.info("Default Card Type ID set in Wizard: %s", partner.card_type_id.id)
 
         return defaults
-
-    # def action_renew(self):
-    #     partner = self.env['res.partner'].browse(self._context.get('active_id'))
-        
-    #     if not partner:
-    #         raise UserError("No active partner found for renewal.")
-        
-    #     # Log the values before the update
-    #     logger.info("Updating Membership for Partner ID: %s", partner.id)
-    #     logger.info("Card Type ID in Wizard: %s", self.card_type_id.id)
-
-    #     # Update the partner record with the new membership values
-    #     partner.write({
-    #         'parent_customer_id': self.parent_customer_id.id,
-    #         'member_activate_date': self.activation_date,
-    #         'card_type_id': self.card_type_id.id,
-    #         'member_expiry_date': self.expiry_date,
-    #         'vehicle_chasis_no': self.vehicle_chasis_no,
-    #         'product_template_id': self.product_template_id.id,
-    #     })
-
-    #     # Log the updated values after the write operation
-    #     logger.info("Partner's updated Card Type ID: %s", partner.card_type_id.id)
 
     def action_renew(self):
             partner = self.env['res.partner'].browse(self._context.get('active_id'))
@@ -88,7 +63,13 @@ class MembershipRenewalWizard(models.TransientModel):
                 'card_type_id': partner.card_type_id.id,
                 'history_id': partner.id
             })
-            logger.info("Membership history record created with ID: %s", mem_renewal.id)
+            self.env['membership.timeline'].create({
+                'member_id': partner.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': 'Membership Extended',
+                'timeline_status': partner.membership_state,
+            })
             # Update the partner record with the new membership values
             partner.write({
                 'parent_customer_id': self.parent_customer_id.id,
@@ -99,4 +80,3 @@ class MembershipRenewalWizard(models.TransientModel):
                 'product_template_id': self.product_template_id.id,
             })
             # Log the updated values after the write operation
-            logger.info("Partner's updated Card Type ID: %s", partner.card_type_id.id)

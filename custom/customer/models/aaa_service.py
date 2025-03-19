@@ -884,7 +884,7 @@ class AAAService(models.Model):
     def action_dispatch_service(self):
         print('checking the service create dispatch')
         self.ensure_one()
-        self._generate_service_name()
+        # self._generate_service_name()
 
         if not self.product_id:
             raise UserError(_("Provide the service details."))
@@ -955,6 +955,7 @@ class AAAService(models.Model):
             return self._trigger_cash_service_wizard()
 
         self._dispatch_service()
+        # self._generate_service_name()
         return True
 
     def _generate_service_name(self):
@@ -1004,35 +1005,27 @@ class AAAService(models.Model):
     def _validate_service_limits(self, product_template_id):
         parent_category_id = self.product_id.categ_id.id
         print(f"PARENT CATEGORY OF CHOSEN SERVICE IN PACKAGE: {parent_category_id}")
-
         if not parent_category_id:
             return True
-
         category_limits = self.env['product.category.limit'].search([
             ('categ_id', '=', parent_category_id),
             ('category_id', '=', product_template_id)
         ])
         print(f"VAL_LIMITS OF PARENT_CAT: {category_limits}")
-
         if not category_limits:
             return True
-
         quantity_limit = 10  # Default value
         validity_period_days = 365  # Default value
 
         for limit in category_limits:
             quantity_limit = float(limit.quantity)
             print(f"NO OF SERVICE ACCESS IN CAT_DURATION: {quantity_limit}")
-
             # Fix: Correct handling of hours vs. days
             validity_period_days = (
-                limit.hours if limit.uom_id.name == 'Days' else limit.hours
-            )
+                limit.hours if limit.uom_id.name == 'Days' else limit.hours )
             print(f"CAT_DURATION (validity in hours or days): {validity_period_days}")
-
         # Logic for 24-hour validation
             if validity_period_days == 24:
-
                 if self.member_activate_date:
                     activate_date = self.member_activate_date
                 else:
@@ -1151,7 +1144,6 @@ class AAAService(models.Model):
             'quantity': self.quantity,
             'quantity_with_days': self.quantity_with_days,
         })
-
         return True
 
     def _is_service_accessible_in_24_hours(self, parent_category_id):
@@ -1189,7 +1181,6 @@ class AAAService(models.Model):
             ('service_time', '<=', self.member_expiry_date),
             ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
         ])
-        print("----------------------------------COUNTTT-------------",count)
         return count
 
     def _trigger_cash_or_credit_service_wizard(self):
@@ -1219,6 +1210,7 @@ class AAAService(models.Model):
         }
 
     def _dispatch_service(self):
+        self._generate_service_name()
         self.state = 'dispatch'
         self.message_post(body=_("Service dispatched successfully."))
         self.env['service.history'].create({
@@ -1228,7 +1220,6 @@ class AAAService(models.Model):
             'status': 'Dispatched',
             'timeline_status': self.state,
         })
-
         for service in self:
             comment_content = service.comments or 'DISPATCHED'
             self.env['service.comment'].create({
@@ -1253,22 +1244,6 @@ class AAAService(models.Model):
                 record.next_check_time = record.requested_date.replace(second=0, microsecond=0)
             else:
                 record.next_check_time = False
-
-    # def action_schedule_service_check(self):
-    #     self.schedule_service_check = True
-    #     self.state = 'initiate'
-    #     print("Scheduling the Service - Triggering Wizard")
-    #     return {
-    #         'name': _('Schedule Service'),
-    #         'type': 'ir.actions.act_window',
-    #         'res_model': 'schedule.service.wizard',
-    #         'view_mode': 'form',
-    #         'view_id': self.env.ref('customer.schedule_service_wizard_view_form').id,
-    #         'target': 'new',
-    #         'context': {
-    #             'default_service_id': self.id,
-    #         },
-    #     }
 
     def action_schedule_service_check(self):
         self.schedule_service_check = True
@@ -1346,7 +1321,7 @@ class AAAService(models.Model):
                 'user': self.env.user.id,
                 'time': service.requested_date,  # Use the original requested time
                 'status': 'Dispatched by bot',
-                'timeline_status': self.state,
+                'timeline_status': 'dispatch',
             })
             # Create comment entry
             self.env['service.comment'].create({
@@ -1525,9 +1500,7 @@ class AAAService(models.Model):
     def action_cancel_service(self):
         for service in self:
             # Force setting the state to 'cancel'
-
             service.sudo().write({'state': 'cancel'})
-
             # Create a service history record
             self.env['service.history'].sudo().create({
                 'service_id': service.id,
@@ -1553,8 +1526,6 @@ class AAAService(models.Model):
                 service.sudo().write({'comments': False})
 
         return True
-
-
 
     def action_discard(self):
         self.state = 'discard'
@@ -1587,15 +1558,6 @@ class AAAService(models.Model):
                     'timeline_status': self.state,
                 })
             comment_content = service.comments or 'Change'
-
-            # Create the service.comment record
-        # self.env['service.comment'].create({
-        #     'service_id': service.id,
-        #     'comment': comment_content,
-        #     'comment_date_and_time': fields.Datetime.now(),
-        #     'comment_user': self.env.user.id,
-        #     'comment_status': service.state,
-        #     })
 
         # If a manual comment exists, clear the service.comments field after creating the record
         if service.comments:
@@ -1750,15 +1712,6 @@ class AAAService(models.Model):
             })
             comment_content = service.comments or 'Requested to Change Cancellation State'
 
-            # Create the service.comment record
-            # self.env['service.comment'].create({
-            #     'service_id': service.id,
-            #     'comment': comment_content,
-            #     'comment_date_and_time': fields.Datetime.now(),
-            #     'comment_user': self.env.user.id,
-            #     'comment_status': service.state,
-            #     })
-            # If a manual comment exists, clear the service.comments field after creating the record
         if service.comments:
             service.comments = False
         return True
