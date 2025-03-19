@@ -67,7 +67,7 @@ class MembershipRenewalWizard(models.TransientModel):
                 'member_id': partner.id,
                 'user': self.env.user.id,
                 'time': fields.Datetime.now(),
-                'status': 'Membership Extended',
+                'status': 'Membership Renewed',
                 'timeline_status': partner.membership_state,
             })
             # Update the partner record with the new membership values

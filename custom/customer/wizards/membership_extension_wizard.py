@@ -35,7 +35,7 @@ class MembershipExtensionWizard(models.TransientModel):
             'member_id': partner.id,
             'user': self.env.user.id,
             'time': fields.Datetime.now(),
-            'status': 'Membership Renewal',
+            'status': 'Membership Extended',
             'timeline_status': partner.membership_state,
         })
         # Update the partner's expiry date with the new value
