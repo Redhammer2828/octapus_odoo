@@ -171,6 +171,7 @@ class AAAService(models.Model):
 
     cash_collected_hidden = fields.Boolean(string="Cash Collected Hidden")
     cash_collected = fields.Float(string="Cash Collected")
+    
 
     addon_ok = fields.Boolean(string="Addon OK")
     waive_off = fields.Boolean(string="Waive Off")
@@ -238,6 +239,7 @@ class AAAService(models.Model):
     to_location = fields.Many2one('aaa.location', string='To Location') #For Data IMPORT as well as CREDIT SERVICE PRICE LIST
     is_imported = fields.Boolean('Is Imported', default=False)
     amount = fields.Integer(string='Amount', compute='_compute_amount', store=True)  # Dynamically computed amount
+    credit_cash = fields.Integer(string="Credit cash")
 
     from_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
     to_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
@@ -259,8 +261,8 @@ class AAAService(models.Model):
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
     is_manager_or_admin = fields.Boolean(compute='_compute_is_manager_or_admin', string="Is Manager or Admin", store=False)
-    is_dispatcher_or_manager_or_admin = fields.Boolean(compute='_compute_is_dispatcher_or_manager_or_admin', string="Is Dispatcher or Manager or Admin", store=False)
-
+    #is_dispatcher_or_manager_or_admin = fields.Boolean(compute='_compute_is_dispatcher_or_manager_or_admin', string="Is Dispatcher or Manager or Admin", store=False)
+    is_dispatcher_or_manager_or_lead_or_admin = fields.Boolean(compute='_compute_is_dispatcher_or_manager_or_lead_or_admin', string="Is Dispatcher or Manager or Admin", store=False)
     service_time = fields.Datetime(string="Service Date Time", default=fields.Datetime.now)
     is_today = fields.Boolean(
         string='Is Today',
@@ -269,8 +271,18 @@ class AAAService(models.Model):
     )
     driver_pickup = fields.Char('Driver Pickup Location')
     driver_dropoff = fields.Char('Driver Dropoff Location')
+
+    # cash_visible = fields.Boolean(compute="_compute_cash_visibility")
+
+    # @api.depends('customer_id', 'member_type', 'service_based')
+    # def _compute_cash_visibility(self):
+    #     for record in self:
+    #         record.cash_visible = (
+    #             (record.customer_id.name == "AL FUTTAIM LOGISTICS AUTOMOTIVE COMPANY L.L.C" and record.member_type == "credit")
+    #             or (record.member_type not in ['adhoc', 'credit'] and record.service_based != 'none')
+    #         )
 ##############    FIELDS #############################
-    job_ref= fields .Char(string= "JobRefNo")
+    # job_ref= fields .Char(string= "JobRefNo")
     ser_id = fields.Char(string="SerId")
     comment_text = fields.Text(compute='_compute_comment_text', string="Comments")
     initate_date =fields.Datetime(string="InitDt") 
@@ -278,8 +290,49 @@ class AAAService(models.Model):
     current_time = fields.Datetime(string='Current Time', compute='_compute_current_time')
     time_difference = fields.Float(string='Time Difference (minutes)', compute='_compute_time_difference', store=False)
     
-    is_afl_application = fields.Boolean('is afl application')
+    # job_ref = fields.Char(string="Job Reference", compute="_compute_job_ref", store=True)
+    
 
+    # @api.depends('credit_customer_co')
+    # def _compute_job_ref(self):
+    #     """Extracts integers before the underscore from credit_customer_co and stores in job_ref."""
+    #     for record in self:
+    #         if record.credit_customer_co:
+    #             match = re.match(r"^(\d+)_", record.credit_customer_co)
+    #             record.job_ref = match.group(1) if match else ''
+
+    # @api.model
+    # def update_existing_job_refs(self):
+    #     """Updates job_ref for existing records that have credit_customer_co values."""
+    #     records = self.search([])
+    #     for rec in records:
+    #         if rec.credit_customer_co:
+    #             match = re.match(r"^(\d+)_", rec.credit_customer_co)
+    #             rec.job_ref = match.group(1) if match else ''
+
+    job_ref = fields.Char(string="Job Reference", compute="_compute_job_ref", store=True)
+
+    @api.depends('credit_customer_co')
+    def _compute_job_ref(self):
+        """Extracts integers before the underscore from credit_customer_co and stores in job_ref."""
+        for record in self:
+            if record.credit_customer_co:
+                match = re.match(r"^(\d+)_", record.credit_customer_co)
+                record.job_ref = match.group(1) if match else ''
+
+    @api.model
+    def _update_old_records(self):
+        """Automatically updates job_ref for existing records when the module is loaded."""
+        records = self.search([('credit_customer_co', '!=', False)])  # Get relevant records
+        for rec in records:
+            match = re.match(r"^(\d+)_", rec.credit_customer_co)
+            job_ref_value = match.group(1) if match else ''
+            rec.sudo().write({'job_ref': job_ref_value})  # Save to the database
+
+    @api.model
+    def init(self):
+        """This method is executed when the module is installed or updated."""
+        self._update_old_records()  # Automatically updates job_ref for old records
     show_new_change_button = fields.Boolean(
         compute="_compute_show_new_change_button",
         store=False
@@ -455,8 +508,24 @@ class AAAService(models.Model):
 
             # Set the field to True if the user is either a Manager or an Admin
             record.is_manager_or_admin = is_manager or is_admin
+    # @api.depends()  # Remove created_by dependency since we want current user
+    # def _compute_is_dispatcher_or_manager_or_admin(self):
+    #     """Compute is_dispatcher_or_manager_or_admin based on the current user's group membership."""
+    #     for record in self:
+    #         # Get the current user's groups
+    #         user_groups = self.env.user.groups_id
+    #         is_dispatcher = any(group.name == 'Dispatcher' for group in user_groups)
+    #         # Check if the user belongs to the 'Manager' group
+    #         is_manager = any(group.name == 'Manager' for group in user_groups)
+
+    #         # Check if the user is an Admin
+    #         is_admin = any(group.name == 'IT Group' for group in user_groups)
+
+    #         # Set the field to True if the user is either a Manager or an Admin
+    #         record.is_dispatcher_or_manager_or_admin = is_dispatcher or is_manager or is_admin 
+
     @api.depends()  # Remove created_by dependency since we want current user
-    def _compute_is_dispatcher_or_manager_or_admin(self):
+    def _compute_is_dispatcher_or_manager_or_lead_or_admin(self):
         """Compute is_dispatcher_or_manager_or_admin based on the current user's group membership."""
         for record in self:
             # Get the current user's groups
@@ -464,12 +533,14 @@ class AAAService(models.Model):
             is_dispatcher = any(group.name == 'Dispatcher' for group in user_groups)
             # Check if the user belongs to the 'Manager' group
             is_manager = any(group.name == 'Manager' for group in user_groups)
+            #check if the user belongs to the 'team lead' group
+            is_lead = any(group.name == 'team lead' for group in user_groups)
 
             # Check if the user is an Admin
             is_admin = any(group.name == 'IT Group' for group in user_groups)
 
             # Set the field to True if the user is either a Manager or an Admin
-            record.is_dispatcher_or_manager_or_admin = is_dispatcher or is_manager or is_admin 
+            record.is_dispatcher_or_manager_or_lead_or_admin = is_dispatcher or is_manager or is_lead or is_admin 
 
     #computing the dispatcher in AAA.SERVICE
     @api.depends('state', 'service_history_ids.user')
@@ -1781,8 +1852,13 @@ class AaaServiceAddon(models.Model):
     product_id = fields.Many2one(
         'product.template',
         string="Service",
-        domain=[('name', 'in', ['GATE PASS', 'KEY COLLECTION CHARGES', 'MECHANICAL ASSISTANCE', 'WAITING CHARGES'])]
+        domain=[('name', 'in', ['GATE PASS', 'KEY COLLECTION CHARGES', 'MECHANICAL ASSISTANCE', 'WAITING CHARGES', 'REACHED AND CANCELLED'])]
     )
+    # product_id = fields.Many2one(
+    #     'product.template',
+    #     string="Service",
+    #     domain=[('name', 'in', ['GATE PASS', 'KEY COLLECTION CHARGES', 'MECHANICAL ASSISTANCE', 'WAITING CHARGES'])]
+    # )
     provider_from_location_id = fields.Many2one('location.internal', string="From Location")
     provider_to_location_id = fields.Many2one('location.internal', string="To Location")
 
