@@ -273,10 +273,12 @@ class AAAService(models.Model):
     job_ref= fields .Char(string= "JobRefNo")
     ser_id = fields.Char(string="SerId")
     comment_text = fields.Text(compute='_compute_comment_text', string="Comments")
-    initate_date =fields.Datetime(string="InitDt")
+    initate_date =fields.Datetime(string="InitDt") 
     driver_reach_date = fields.Datetime(string="DrivReachDt")
     current_time = fields.Datetime(string='Current Time', compute='_compute_current_time')
     time_difference = fields.Float(string='Time Difference (minutes)', compute='_compute_time_difference', store=False)
+    
+    is_afl_application = fields.Boolean('is afl application')
 
     show_new_change_button = fields.Boolean(
         compute="_compute_show_new_change_button",
