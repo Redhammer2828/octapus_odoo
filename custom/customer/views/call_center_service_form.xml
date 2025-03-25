@@ -84,13 +84,14 @@
                         <button name="action_approve_cancel_service"
                             type="object"
                             string="Approve For Cancel"
-                            invisible="state != 'driver_cancel' or not is_dispatcher_or_manager_or_admin"
+                            invisible="state != 'driver_cancel' or not is_dispatcher_or_manager_or_lead_or_admin"
                             class="btn-success" />
                         <field name="state" widget="statusbar" nolabel="1"
                             statusbar_visible="initiate,dispatch,start,reach,completed_by_driver,done" />
                         <field name="is_agent_user" invisible="1" />
                         <field name="is_manager_or_admin" invisible="1" />
-                        <field name="is_dispatcher_or_manager_or_admin" invisible="1" />
+                        <field name="is_dispatcher_or_manager_or_lead_or_admin" invisible="1" />
+                        <!-- <field name="is_dispatcher_or_manager_or_admin" invisible="1" /> -->
                         <!-- <field name="is_dispatch_user" invisible="1" /> -->
                     </header>
                     <sheet>
@@ -252,6 +253,9 @@
                                     <field name="amount" string="Cash to be Collected"
                                         invisible="member_type in ['adhoc', 'credit'] or service_based == 'none'"
                                         readonly="state in['cancel', 'done']" />
+                                    <field name="credit_cash" invisible="member_type != 'credit'"/>
+                                    <!-- <field name="amount" string="Cash to be Collected" invisible="not cash_visible" readonly="state in ['cancel', 'done']"/>
+                                    <field name="cash_visible" invisible="1"/> -->
                                     <!-- DRIVER PICKUP & DROP OFF LOCATION -->
                                     <field name="driver_pickup" readonly="1" />
                                     <field name="driver_dropoff" readonly="1" />
@@ -283,6 +287,7 @@
                                             <field name="to_date" invisible="product_id == False" />
                                             <field name="uom" invisible="product_id == False" />
                                             <field name="quantity" invisible="product_id == False" />
+                                            <field name="price_subtotal" string="Rate" />
                                         </group>
                                     </form>
                                 </field>

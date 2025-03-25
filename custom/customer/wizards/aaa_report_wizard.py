@@ -36,7 +36,7 @@ class AaaReportWizard(models.TransientModel):
             'name', 'service_time', 'create_date', 'customer_id', 'sequence_id',
             'membership_num', 'member_id','member_type', 'member_contact_no', 'policy_no',
             'type', 'vehicle_type', 'vehicle_plate', 'product_id', 'provider_id',
-            'driver_id', 'driver_num', 'selected_from_location', 'from_location',
+            'driver_id', 'driver_name', 'driver_num', 'selected_from_location', 'from_location',
             'from_location_emirate', 'selected_to_location', 'to_location',
             'to_location_emirate', 'date_time_from', 'date_time_to', 'smarto_id',
             'state', 'credit_proforma_number', 'cash_collected', 'vendor_rating',
@@ -275,7 +275,9 @@ class AaaReportWizard(models.TransientModel):
                 convert_time(record.get('date_time_from', '')),
                 record.get('product_id')[1] if record.get('product_id') else '',
                 record.get('provider_id')[1] if record.get('provider_id') else '',
-                record.get('driver_id')[1] if record.get('driver_id') else '',
+                # record.get('driver_id')[1] if record.get('driver_id') else '',
+                record.get('driver_id')[1] if record.get('driver_id') else record.get('driver_name', ''),
+
                 record.get('driver_num', ''),
                 record.get('selected_from_location')[1] if (record.get('selected_from_location') and record.get('member_type') in ['policy', 'adhoc']) else (
                     record.get('from_location')[1] if record.get('from_location') else ''
