@@ -282,7 +282,7 @@ class AAAService(models.Model):
     #             or (record.member_type not in ['adhoc', 'credit'] and record.service_based != 'none')
     #         )
 ##############    FIELDS #############################
-    # job_ref= fields .Char(string= "JobRefNo")
+    job_ref= fields .Char(string= "JobRefNo")
     ser_id = fields.Char(string="SerId")
     comment_text = fields.Text(compute='_compute_comment_text', string="Comments")
     initate_date =fields.Datetime(string="InitDt") 
@@ -310,29 +310,30 @@ class AAAService(models.Model):
     #             match = re.match(r"^(\d+)_", rec.credit_customer_co)
     #             rec.job_ref = match.group(1) if match else ''
 
-    job_ref = fields.Char(string="Job Reference", compute="_compute_job_ref", store=True)
+    # job_ref = fields.Char(string="Job Reference", compute="_compute_job_ref", store=True)
 
-    @api.depends('credit_customer_co')
-    def _compute_job_ref(self):
-        """Extracts integers before the underscore from credit_customer_co and stores in job_ref."""
-        for record in self:
-            if record.credit_customer_co:
-                match = re.match(r"^(\d+)_", record.credit_customer_co)
-                record.job_ref = match.group(1) if match else ''
+    # @api.depends('credit_customer_co')
+    # def _compute_job_ref(self):
+    #     """Extracts integers before the underscore from credit_customer_co and stores in job_ref."""
+    #     for record in self:
+    #         if record.credit_customer_co:
+    #             match = re.match(r"^(\d+)_", record.credit_customer_co)
+    #             record.job_ref = match.group(1) if match else ''
 
-    @api.model
-    def _update_old_records(self):
-        """Automatically updates job_ref for existing records when the module is loaded."""
-        records = self.search([('credit_customer_co', '!=', False)])  # Get relevant records
-        for rec in records:
-            match = re.match(r"^(\d+)_", rec.credit_customer_co)
-            job_ref_value = match.group(1) if match else ''
-            rec.sudo().write({'job_ref': job_ref_value})  # Save to the database
+    # @api.model
+    # def _update_old_records(self):
+    #     """Automatically updates job_ref for existing records when the module is loaded."""
+    #     records = self.search([('credit_customer_co', '!=', False)])  # Get relevant records
+    #     for rec in records:
+    #         match = re.match(r"^(\d+)_", rec.credit_customer_co)
+    #         job_ref_value = match.group(1) if match else ''
+    #         rec.sudo().write({'job_ref': job_ref_value})  # Save to the database
 
-    @api.model
-    def init(self):
-        """This method is executed when the module is installed or updated."""
-        self._update_old_records()  # Automatically updates job_ref for old records
+    # @api.model
+    # def init(self):
+    #     """This method is executed when the module is installed or updated."""
+    #     self._update_old_records()  # Automatically updates job_ref for old records
+    
     show_new_change_button = fields.Boolean(
         compute="_compute_show_new_change_button",
         store=False
@@ -1530,6 +1531,12 @@ class AAAService(models.Model):
 
     def action_done_service(self):
         for service in self:
+            if not service.provider_id:
+                raise UserError("You must fill the Provider before completing the service.")
+            
+            # Check if provider_id is 'ARABIAN AUTOMOBILE ASSOCIATION' before validating driver_id
+            if service.provider_id.name == "ARABIAN AUTOMOBILE ASSOCIATION" and not service.driver_id:
+                raise UserError("You must fill the driver before completing the service when the provider is ARABIAN AUTOMOBILE ASSOCIATION.")
             # Ensure credit_proforma_number is filled
             if not service.credit_proforma_number:
                 raise UserError("You must fill the Trip Sheet Number before completing the service.")
