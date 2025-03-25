@@ -28,19 +28,6 @@ class AAAService(models.Model):
     type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type", readonly=True)
     member_type = fields.Selection([('adhoc', 'AD-HOC'), ('policy', 'POLICY'),('credit', 'CREDIT')], string="Member Type", readonly=True)
     card_type = fields.Char(string="Card Type", readonly=True)
-    # state = fields.Selection([
-    #     ('draft', 'Draft'),
-    #     ('initiate', 'Initiate'),
-    #     ('dispatch', 'Dispatch'),
-    #     ('start', 'Start'),
-    #     ('reach', 'Reach'),
-    #     ('completed_by_driver', 'Completed by driver'),
-    #     ('done', 'Done'),
-    #     ('cancel', 'Cancelled'),
-    #     ('change', 'Changed' ),
-    #     ('approved','Approved'),
-    #     ('requested','Requeted')
-    # ], string="Status", readonly=True, default='initiate', tracking=True)
     state = fields.Selection([
         ('draft', 'Draft'),
         ('initiate', 'Initiate'),
@@ -171,6 +158,7 @@ class AAAService(models.Model):
 
     cash_collected_hidden = fields.Boolean(string="Cash Collected Hidden")
     cash_collected = fields.Float(string="Cash Collected")
+    
 
     addon_ok = fields.Boolean(string="Addon OK")
     waive_off = fields.Boolean(string="Waive Off")
@@ -238,6 +226,7 @@ class AAAService(models.Model):
     to_location = fields.Many2one('aaa.location', string='To Location') #For Data IMPORT as well as CREDIT SERVICE PRICE LIST
     is_imported = fields.Boolean('Is Imported', default=False)
     amount = fields.Integer(string='Amount', compute='_compute_amount', store=True)  # Dynamically computed amount
+    credit_cash = fields.Integer(string="Credit cash")
 
     from_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
     to_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
@@ -259,8 +248,8 @@ class AAAService(models.Model):
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
     is_manager_or_admin = fields.Boolean(compute='_compute_is_manager_or_admin', string="Is Manager or Admin", store=False)
-    is_dispatcher_or_manager_or_admin = fields.Boolean(compute='_compute_is_dispatcher_or_manager_or_admin', string="Is Dispatcher or Manager or Admin", store=False)
-
+    #is_dispatcher_or_manager_or_admin = fields.Boolean(compute='_compute_is_dispatcher_or_manager_or_admin', string="Is Dispatcher or Manager or Admin", store=False)
+    is_dispatcher_or_manager_or_lead_or_admin = fields.Boolean(compute='_compute_is_dispatcher_or_manager_or_lead_or_admin', string="Is Dispatcher or Manager or Admin", store=False)
     service_time = fields.Datetime(string="Service Date Time", default=fields.Datetime.now)
     is_today = fields.Boolean(
         string='Is Today',
@@ -269,20 +258,19 @@ class AAAService(models.Model):
     )
     driver_pickup = fields.Char('Driver Pickup Location')
     driver_dropoff = fields.Char('Driver Dropoff Location')
-##############    FIELDS #############################
+
+    ##########    FIELDS #############################
     job_ref= fields .Char(string= "JobRefNo")
     ser_id = fields.Char(string="SerId")
     comment_text = fields.Text(compute='_compute_comment_text', string="Comments")
-    initate_date =fields.Datetime(string="InitDt")
+    initate_date =fields.Datetime(string="InitDt") 
     driver_reach_date = fields.Datetime(string="DrivReachDt")
     current_time = fields.Datetime(string='Current Time', compute='_compute_current_time')
     time_difference = fields.Float(string='Time Difference (minutes)', compute='_compute_time_difference', store=False)
+    
+    show_new_change_button = fields.Boolean(compute="_compute_show_new_change_button",store=False)
+    is_afl_application = fields.Boolean('Is AFL Application')
 
-    show_new_change_button = fields.Boolean(
-        compute="_compute_show_new_change_button",
-        store=False
-    )
- 
     @api.depends('state', 'product_id', 'selected_from_location', 'selected_to_location', 'from_location', 'to_location')
     def _compute_show_new_change_button(self):
         for record in self:
@@ -453,8 +441,24 @@ class AAAService(models.Model):
 
             # Set the field to True if the user is either a Manager or an Admin
             record.is_manager_or_admin = is_manager or is_admin
+    # @api.depends()  # Remove created_by dependency since we want current user
+    # def _compute_is_dispatcher_or_manager_or_admin(self):
+    #     """Compute is_dispatcher_or_manager_or_admin based on the current user's group membership."""
+    #     for record in self:
+    #         # Get the current user's groups
+    #         user_groups = self.env.user.groups_id
+    #         is_dispatcher = any(group.name == 'Dispatcher' for group in user_groups)
+    #         # Check if the user belongs to the 'Manager' group
+    #         is_manager = any(group.name == 'Manager' for group in user_groups)
+
+    #         # Check if the user is an Admin
+    #         is_admin = any(group.name == 'IT Group' for group in user_groups)
+
+    #         # Set the field to True if the user is either a Manager or an Admin
+    #         record.is_dispatcher_or_manager_or_admin = is_dispatcher or is_manager or is_admin 
+
     @api.depends()  # Remove created_by dependency since we want current user
-    def _compute_is_dispatcher_or_manager_or_admin(self):
+    def _compute_is_dispatcher_or_manager_or_lead_or_admin(self):
         """Compute is_dispatcher_or_manager_or_admin based on the current user's group membership."""
         for record in self:
             # Get the current user's groups
@@ -462,12 +466,14 @@ class AAAService(models.Model):
             is_dispatcher = any(group.name == 'Dispatcher' for group in user_groups)
             # Check if the user belongs to the 'Manager' group
             is_manager = any(group.name == 'Manager' for group in user_groups)
+            #check if the user belongs to the 'team lead' group
+            is_lead = any(group.name == 'team lead' for group in user_groups)
 
             # Check if the user is an Admin
             is_admin = any(group.name == 'IT Group' for group in user_groups)
 
             # Set the field to True if the user is either a Manager or an Admin
-            record.is_dispatcher_or_manager_or_admin = is_dispatcher or is_manager or is_admin 
+            record.is_dispatcher_or_manager_or_lead_or_admin = is_dispatcher or is_manager or is_lead or is_admin 
 
     #computing the dispatcher in AAA.SERVICE
     @api.depends('state', 'service_history_ids.user')
@@ -752,7 +758,8 @@ class AAAService(models.Model):
         # Dynamically set the created_by field if not set already
         if not vals.get('created_by'):
             vals['created_by'] = self.env.user.id
-
+        if self.state == 'change':
+            raise UserError("You cannot modify this record while in 'Change' state.")
         # Create the aaa.service record
         service = super(AAAService, self).create(vals)
 
@@ -764,7 +771,7 @@ class AAAService(models.Model):
             'status': 'Initiated',
             'timeline_status': 'initiate',
         })
-        return service
+        return service          
 
     @api.depends('state')
     def _compute_created_by(self):
@@ -1345,8 +1352,8 @@ class AAAService(models.Model):
             # Ensure credit_proforma_number is filled
             if not service.provider_id:
                 raise UserError("You must fill the PROVIDER before starting the service.")
-            # if not service.driver_id:
-            #     raise UserError("You must fill the DRIVER before starting the service.")
+            if service.provider_id.name == "ARABIAN AUTOMOBILE ASSOCIATION" and not service.driver_id:
+                raise UserError("You must fill the driver before completing the service when the provider is ARABIAN AUTOMOBILE ASSOCIATION.")
             # Proceed with setting the state to 'start'
             service.state = 'start'
 
@@ -1391,15 +1398,11 @@ class AAAService(models.Model):
                     print(f"API RESPONSE- start,{response.text}")
                 else:
                     print(f"API RESPONSE-ORDER NOT started,{response.text},{response.status_code}")
-
-
-
         return True
 
     def action_reach_service(self):
         self.state = 'reach'
         for service in self:
-
                 self.env['service.history'].create({
                     'service_id': service.id,
                     'user': self.env.user.id,
@@ -1407,56 +1410,49 @@ class AAAService(models.Model):
                     'status': 'Reached',
                     'timeline_status': self.state,
                 })
-
         comment_content = service.comments or 'REACHED'
-
             # Create the service.comment record
         self.env['service.comment'].create({
             'service_id': service.id,
             'comment': comment_content,
             'comment_date_and_time': fields.Datetime.now(),
             'comment_user': self.env.user.id,
-            'comment_status': service.state,
-            })
-
+            'comment_status': service.state,})
             # If a manual comment exists, clear the service.comments field after creating the record
         if service.comments:
             service.comments = False
-
         return True
 
     def action_completed_rac(self):
-        #pass
         self.state = 'completed_by_driver'
         for service in self:
-
                 self.env['service.history'].create({
                     'service_id': service.id,
                     'user': self.env.user.id,
                     'time': fields.Datetime.now(),
                     'status': 'Completed by Driver',
-                    'timeline_status': self.state,
-                })
-
+                    'timeline_status': self.state,})
         comment_content = service.comments or 'COMPLETED BY DRIVER'
-
             # Create the service.comment record
         self.env['service.comment'].create({
             'service_id': service.id,
             'comment': comment_content,
             'comment_date_and_time': fields.Datetime.now(),
             'comment_user': self.env.user.id,
-            'comment_status': service.state,
-            })
-
+            'comment_status': service.state,})
             # If a manual comment exists, clear the service.comments field after creating the record
         if service.comments:
             service.comments = False
-
         return True
 
     def action_done_service(self):
         for service in self:
+            if not service.provider_id:
+                raise UserError("You must fill the Provider before completing the service.")
+            
+            # Check if provider_id is 'ARABIAN AUTOMOBILE ASSOCIATION' before validating driver_id
+            if service.provider_id.name == "ARABIAN AUTOMOBILE ASSOCIATION" and not service.driver_id:
+                raise UserError("You must fill the driver before completing the service when the provider is ARABIAN AUTOMOBILE ASSOCIATION.")
             # Ensure credit_proforma_number is filled
             if not service.credit_proforma_number:
                 raise UserError("You must fill the Trip Sheet Number before completing the service.")
@@ -1779,8 +1775,13 @@ class AaaServiceAddon(models.Model):
     product_id = fields.Many2one(
         'product.template',
         string="Service",
-        domain=[('name', 'in', ['GATE PASS', 'KEY COLLECTION CHARGES', 'MECHANICAL ASSISTANCE', 'WAITING CHARGES'])]
+        domain=[('name', 'in', ['GATE PASS', 'KEY COLLECTION CHARGES', 'MECHANICAL ASSISTANCE', 'WAITING CHARGES', 'REACHED AND CANCELLED'])]
     )
+    # product_id = fields.Many2one(
+    #     'product.template',
+    #     string="Service",
+    #     domain=[('name', 'in', ['GATE PASS', 'KEY COLLECTION CHARGES', 'MECHANICAL ASSISTANCE', 'WAITING CHARGES'])]
+    # )
     provider_from_location_id = fields.Many2one('location.internal', string="From Location")
     provider_to_location_id = fields.Many2one('location.internal', string="To Location")
 
