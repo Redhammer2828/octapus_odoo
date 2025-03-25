@@ -319,7 +319,6 @@
                                     readonly="state in ['done', 'cancel']" />
                                 <field name="driver_id" invisible="is_driver_name_visible == True"
                                     readonly="state in ['done', 'cancel']" class="required_field"
-                                    required="state == 'start'"
                                     options="{'no_create': True, 'no_open': True}" />
                                 <field name="driver_num" string="Contact No"
                                     invisible="state in ['draft', 'initiate']"
