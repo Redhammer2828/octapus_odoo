@@ -28,19 +28,6 @@ class AAAService(models.Model):
     type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type", readonly=True)
     member_type = fields.Selection([('adhoc', 'AD-HOC'), ('policy', 'POLICY'),('credit', 'CREDIT')], string="Member Type", readonly=True)
     card_type = fields.Char(string="Card Type", readonly=True)
-    # state = fields.Selection([
-    #     ('draft', 'Draft'),
-    #     ('initiate', 'Initiate'),
-    #     ('dispatch', 'Dispatch'),
-    #     ('start', 'Start'),
-    #     ('reach', 'Reach'),
-    #     ('completed_by_driver', 'Completed by driver'),
-    #     ('done', 'Done'),
-    #     ('cancel', 'Cancelled'),
-    #     ('change', 'Changed' ),
-    #     ('approved','Approved'),
-    #     ('requested','Requeted')
-    # ], string="Status", readonly=True, default='initiate', tracking=True)
     state = fields.Selection([
         ('draft', 'Draft'),
         ('initiate', 'Initiate'),
@@ -272,16 +259,7 @@ class AAAService(models.Model):
     driver_pickup = fields.Char('Driver Pickup Location')
     driver_dropoff = fields.Char('Driver Dropoff Location')
 
-    # cash_visible = fields.Boolean(compute="_compute_cash_visibility")
-
-    # @api.depends('customer_id', 'member_type', 'service_based')
-    # def _compute_cash_visibility(self):
-    #     for record in self:
-    #         record.cash_visible = (
-    #             (record.customer_id.name == "AL FUTTAIM LOGISTICS AUTOMOTIVE COMPANY L.L.C" and record.member_type == "credit")
-    #             or (record.member_type not in ['adhoc', 'credit'] and record.service_based != 'none')
-    #         )
-##############    FIELDS #############################
+    ##########    FIELDS #############################
     job_ref= fields .Char(string= "JobRefNo")
     ser_id = fields.Char(string="SerId")
     comment_text = fields.Text(compute='_compute_comment_text', string="Comments")
@@ -290,55 +268,9 @@ class AAAService(models.Model):
     current_time = fields.Datetime(string='Current Time', compute='_compute_current_time')
     time_difference = fields.Float(string='Time Difference (minutes)', compute='_compute_time_difference', store=False)
     
-    # job_ref = fields.Char(string="Job Reference", compute="_compute_job_ref", store=True)
-    
+    show_new_change_button = fields.Boolean(compute="_compute_show_new_change_button",store=False)
+    is_afl_application = fields.Boolean('Is AFL Application')
 
-    # @api.depends('credit_customer_co')
-    # def _compute_job_ref(self):
-    #     """Extracts integers before the underscore from credit_customer_co and stores in job_ref."""
-    #     for record in self:
-    #         if record.credit_customer_co:
-    #             match = re.match(r"^(\d+)_", record.credit_customer_co)
-    #             record.job_ref = match.group(1) if match else ''
-
-    # @api.model
-    # def update_existing_job_refs(self):
-    #     """Updates job_ref for existing records that have credit_customer_co values."""
-    #     records = self.search([])
-    #     for rec in records:
-    #         if rec.credit_customer_co:
-    #             match = re.match(r"^(\d+)_", rec.credit_customer_co)
-    #             rec.job_ref = match.group(1) if match else ''
-
-    # job_ref = fields.Char(string="Job Reference", compute="_compute_job_ref", store=True)
-
-    # @api.depends('credit_customer_co')
-    # def _compute_job_ref(self):
-    #     """Extracts integers before the underscore from credit_customer_co and stores in job_ref."""
-    #     for record in self:
-    #         if record.credit_customer_co:
-    #             match = re.match(r"^(\d+)_", record.credit_customer_co)
-    #             record.job_ref = match.group(1) if match else ''
-
-    # @api.model
-    # def _update_old_records(self):
-    #     """Automatically updates job_ref for existing records when the module is loaded."""
-    #     records = self.search([('credit_customer_co', '!=', False)])  # Get relevant records
-    #     for rec in records:
-    #         match = re.match(r"^(\d+)_", rec.credit_customer_co)
-    #         job_ref_value = match.group(1) if match else ''
-    #         rec.sudo().write({'job_ref': job_ref_value})  # Save to the database
-
-    # @api.model
-    # def init(self):
-    #     """This method is executed when the module is installed or updated."""
-    #     self._update_old_records()  # Automatically updates job_ref for old records
-    
-    show_new_change_button = fields.Boolean(
-        compute="_compute_show_new_change_button",
-        store=False
-    )
- 
     @api.depends('state', 'product_id', 'selected_from_location', 'selected_to_location', 'from_location', 'to_location')
     def _compute_show_new_change_button(self):
         for record in self:
@@ -826,7 +758,8 @@ class AAAService(models.Model):
         # Dynamically set the created_by field if not set already
         if not vals.get('created_by'):
             vals['created_by'] = self.env.user.id
-
+        if self.state == 'change':
+            raise UserError("You cannot modify this record while in 'Change' state.")
         # Create the aaa.service record
         service = super(AAAService, self).create(vals)
 
@@ -838,7 +771,7 @@ class AAAService(models.Model):
             'status': 'Initiated',
             'timeline_status': 'initiate',
         })
-        return service
+        return service          
 
     @api.depends('state')
     def _compute_created_by(self):
@@ -1419,8 +1352,8 @@ class AAAService(models.Model):
             # Ensure credit_proforma_number is filled
             if not service.provider_id:
                 raise UserError("You must fill the PROVIDER before starting the service.")
-            # if not service.driver_id:
-            #     raise UserError("You must fill the DRIVER before starting the service.")
+            if service.provider_id.name == "ARABIAN AUTOMOBILE ASSOCIATION" and not service.driver_id:
+                raise UserError("You must fill the driver before completing the service when the provider is ARABIAN AUTOMOBILE ASSOCIATION.")
             # Proceed with setting the state to 'start'
             service.state = 'start'
 
@@ -1465,15 +1398,11 @@ class AAAService(models.Model):
                     print(f"API RESPONSE- start,{response.text}")
                 else:
                     print(f"API RESPONSE-ORDER NOT started,{response.text},{response.status_code}")
-
-
-
         return True
 
     def action_reach_service(self):
         self.state = 'reach'
         for service in self:
-
                 self.env['service.history'].create({
                     'service_id': service.id,
                     'user': self.env.user.id,
@@ -1481,52 +1410,39 @@ class AAAService(models.Model):
                     'status': 'Reached',
                     'timeline_status': self.state,
                 })
-
         comment_content = service.comments or 'REACHED'
-
             # Create the service.comment record
         self.env['service.comment'].create({
             'service_id': service.id,
             'comment': comment_content,
             'comment_date_and_time': fields.Datetime.now(),
             'comment_user': self.env.user.id,
-            'comment_status': service.state,
-            })
-
+            'comment_status': service.state,})
             # If a manual comment exists, clear the service.comments field after creating the record
         if service.comments:
             service.comments = False
-
         return True
 
     def action_completed_rac(self):
-        #pass
         self.state = 'completed_by_driver'
         for service in self:
-
                 self.env['service.history'].create({
                     'service_id': service.id,
                     'user': self.env.user.id,
                     'time': fields.Datetime.now(),
                     'status': 'Completed by Driver',
-                    'timeline_status': self.state,
-                })
-
+                    'timeline_status': self.state,})
         comment_content = service.comments or 'COMPLETED BY DRIVER'
-
             # Create the service.comment record
         self.env['service.comment'].create({
             'service_id': service.id,
             'comment': comment_content,
             'comment_date_and_time': fields.Datetime.now(),
             'comment_user': self.env.user.id,
-            'comment_status': service.state,
-            })
-
+            'comment_status': service.state,})
             # If a manual comment exists, clear the service.comments field after creating the record
         if service.comments:
             service.comments = False
-
         return True
 
     def action_done_service(self):

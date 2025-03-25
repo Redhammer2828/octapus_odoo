@@ -73,6 +73,8 @@ class MembershipExtensionWizard(models.TransientModel):
         # Check if the logged-in user is in the "Agent" group
         agent_group = self.env['res.groups'].search([('name', '=', 'Agent')], limit=1)
         if agent_group and agent_group in self.env.user.groups_id:
+
+            partner = self.env['res.partner'].browse(self._context.get('active_id'))
             # If user is in the "Agent" group, change membership_state and create a different timeline
             partner.membership_state = 'temp'
             
@@ -86,7 +88,7 @@ class MembershipExtensionWizard(models.TransientModel):
         else:
             # Default timeline entry for non-agent users
             self.env['membership.timeline'].create({
-                'member _id': partner.id,
+                'member_id': partner.id,
                 'user': self.env.user.id,
                 'time': fields.Datetime.now(),
                 'status': 'Membership Extended',
