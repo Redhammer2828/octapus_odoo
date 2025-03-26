@@ -1302,26 +1302,118 @@ class AAAService(models.Model):
             },
         }
 
+    # @api.model
+    # def check_and_update_state(self):
+    #     current_minute = fields.Datetime.now().replace(second=0, microsecond=0)
+    #     # Find records scheduled for the current minute
+    #     domain = [
+    #         ('state', '=', 'initiate'),
+    #         ('next_check_time', '=', current_minute),
+    #         ('requested_date', '<=', fields.Datetime.now())
+    #     ]
+    #     services = self.search(domain)
+    #     # print("SERVICES",service)
+    #     for service in services:
+    #         print('name----------------------', service.name)
+    #         order_number = service.name
+    #         print("ORDER NUMBER", order_number)
+    #         if order_number:
+    #             self.action_order_create(order_number)
+    #         else:
+    #             print('service number for order ')
+    #         service.write({'state': 'dispatch'})
+    #         # Create history entry
+    #         self.env['service.history'].create({
+    #             'service_id': service.id,
+    #             'user': self.env.user.id,
+    #             'time': service.requested_date,  # Use the original requested time
+    #             'status': 'Dispatched by bot',
+    #             'timeline_status': 'dispatch',
+    #         })
+    #         # Create comment entry
+    #         self.env['service.comment'].create({
+    #             'service_id': service.id,
+    #             'comment': service.comments or 'Scheduled to dispatch',
+    #             'comment_date_and_time': service.requested_date,  # Use the original requested time
+    #             'comment_user': self.env.user.id,
+    #             'comment_status': 'dispatch'
+    #         })
+    #     return True
+# WORKING BELOW
+    # @api.model
+    # def check_and_update_state(self):
+    #     current_minute = fields.Datetime.now().replace(second=0, microsecond=0)
+    #     _logger.info("Running check_and_update_state at %s", current_minute)
+        
+    #     # Find records scheduled for the current minute
+    #     domain = [
+    #         ('state', '=', 'initiate'),
+    #         ('next_check_time', '=', current_minute),
+    #         ('requested_date', '<=', fields.Datetime.now())
+    #     ]
+    #     services = self.search(domain)
+    #     _logger.info("Found %d services to update", len(services))
+        
+    #     for service in services:
+    #         _logger.info("Processing service: %s", service.name)
+    #         order_number = service.name
+    #         if order_number:
+    #             _logger.info("Creating order for service: %s", order_number)
+    #             self.action_order_create(order_number)
+    #         else:
+    #             _logger.warning("No order number found for service: %s", service.name)
+            
+    #         service.write({'state': 'dispatch'})
+    #         _logger.info("Service %s dispatched", service.name)
+            
+    #         # Create history entry
+    #         self.env['service.history'].create({
+    #             'service_id': service.id,
+    #             'user': self.env.user.id,
+    #             'time': service.requested_date,  # Use the original requested time
+    #             'status': 'Dispatched by bot',
+    #             'timeline_status': 'dispatch',
+    #         })
+    #         _logger.info("History entry created for service: %s", service.name)
+            
+    #         # Create comment entry
+    #         self.env['service.comment'].create({
+    #             'service_id': service.id,
+    #             'comment': service.comments or 'Scheduled to dispatch',
+    #             'comment_date_and_time': service.requested_date,  # Use the original requested time
+    #             'comment_user': self.env.user.id,
+    #             'comment_status': 'dispatch'
+    #         })
+    #         _logger.info("Comment entry created for service: %s", service.name)
+        
+    #     return True
+
     @api.model
     def check_and_update_state(self):
         current_minute = fields.Datetime.now().replace(second=0, microsecond=0)
-        # Find records scheduled for the current minute
+        _logger.info("Running check_and_update_state at %s", current_minute)
+        
+        # Find records scheduled for the current minute or earlier
         domain = [
             ('state', '=', 'initiate'),
-            ('next_check_time', '=', current_minute),
+            ('next_check_time', '<=', current_minute),  # Include services scheduled before the current time
             ('requested_date', '<=', fields.Datetime.now())
         ]
         services = self.search(domain)
-        # print("SERVICES",service)
+        _logger.info("Found %d services to update", len(services))
+        
         for service in services:
-            print('name----------------------', service.name)
+            _logger.info("Processing service: %s", service.name)
             order_number = service.name
-            print("ORDER NUMBER", order_number)
             if order_number:
+                _logger.info("Creating order for service: %s", order_number)
                 self.action_order_create(order_number)
             else:
-                print('service number for order ')
+                _logger.warning("No order number found for service: %s", service.name)
+            
             service.write({'state': 'dispatch'})
+            _logger.info("Service %s dispatched", service.name)
+            
             # Create history entry
             self.env['service.history'].create({
                 'service_id': service.id,
@@ -1330,6 +1422,8 @@ class AAAService(models.Model):
                 'status': 'Dispatched by bot',
                 'timeline_status': 'dispatch',
             })
+            _logger.info("History entry created for service: %s", service.name)
+            
             # Create comment entry
             self.env['service.comment'].create({
                 'service_id': service.id,
@@ -1338,6 +1432,8 @@ class AAAService(models.Model):
                 'comment_user': self.env.user.id,
                 'comment_status': 'dispatch'
             })
+            _logger.info("Comment entry created for service: %s", service.name)
+        
         return True
 
     @api.onchange('member_id')
