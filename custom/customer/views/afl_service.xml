@@ -9,7 +9,7 @@
                 decoration-info="state == 'start' and time_difference &gt; 30 and time_difference &lt;= 45"
                 decoration-warning="state == 'start' and time_difference &gt; 45 and time_difference &lt;= 120"
                 decoration-danger="state == 'start' and time_difference &gt;= 120"
-                class="aaa_service_tree" create="False" default_order="create_date desc">
+                class="aaa_service_tree" create="False" default_order="id desc">
                 <field name="job_ref" />
                 <field name="name" string ="ERP Number" />
                 <field name="service_time" string="Entry date" />
