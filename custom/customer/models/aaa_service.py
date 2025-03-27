@@ -268,9 +268,57 @@ class AAAService(models.Model):
     current_time = fields.Datetime(string='Current Time', compute='_compute_current_time')
     time_difference = fields.Float(string='Time Difference (minutes)', compute='_compute_time_difference', store=False)
     
-    show_new_change_button = fields.Boolean(compute="_compute_show_new_change_button",store=False)
-    is_afl_application = fields.Boolean('Is AFL Application')
+    # job_ref = fields.Char(string="Job Reference", compute="_compute_job_ref", store=True)
+    
 
+    # @api.depends('credit_customer_co')
+    # def _compute_job_ref(self):
+    #     """Extracts integers before the underscore from credit_customer_co and stores in job_ref."""
+    #     for record in self:
+    #         if record.credit_customer_co:
+    #             match = re.match(r"^(\d+)_", record.credit_customer_co)
+    #             record.job_ref = match.group(1) if match else ''
+
+    # @api.model
+    # def update_existing_job_refs(self):
+    #     """Updates job_ref for existing records that have credit_customer_co values."""
+    #     records = self.search([])
+    #     for rec in records:
+    #         if rec.credit_customer_co:
+    #             match = re.match(r"^(\d+)_", rec.credit_customer_co)
+    #             rec.job_ref = match.group(1) if match else ''
+
+    # job_ref = fields.Char(string="Job Reference", compute="_compute_job_ref", store=True)
+
+    # @api.depends('credit_customer_co')
+    # def _compute_job_ref(self):
+    #     """Extracts integers before the underscore from credit_customer_co and stores in job_ref."""
+    #     for record in self:
+    #         if record.credit_customer_co:
+    #             match = re.match(r"^(\d+)_", record.credit_customer_co)
+    #             record.job_ref = match.group(1) if match else ''
+
+    # @api.model
+    # def _update_old_records(self):
+    #     """Automatically updates job_ref for existing records when the module is loaded."""
+    #     records = self.search([('credit_customer_co', '!=', False)])  # Get relevant records
+    #     for rec in records:
+    #         match = re.match(r"^(\d+)_", rec.credit_customer_co)
+    #         job_ref_value = match.group(1) if match else ''
+    #         rec.sudo().write({'job_ref': job_ref_value})  # Save to the database
+
+    # @api.model
+    # def init(self):
+    #     """This method is executed when the module is installed or updated."""
+    #     self._update_old_records()  # Automatically updates job_ref for old records
+
+   
+    
+    show_new_change_button = fields.Boolean(
+        compute="_compute_show_new_change_button",
+        store=False
+    )
+ 
     @api.depends('state', 'product_id', 'selected_from_location', 'selected_to_location', 'from_location', 'to_location')
     def _compute_show_new_change_button(self):
         for record in self:
@@ -1253,9 +1301,17 @@ class AAAService(models.Model):
                 record.next_check_time = False
 
     def action_schedule_service_check(self):
-        self.schedule_service_check = True
-        self.state = 'initiate'
-        print("Scheduling the Service - Triggering Wizard")
+        if self.requested_date:
+            self.schedule_service_check = True
+            self.state = 'initiate'
+            print("Scheduling the Service - Triggering Wizard")
+        else:
+            print("Service scheduling failed - schedule_date_time is not set")
+    #     self.schedule_service_check = True
+    #     self.state = 'initiate'
+    #     print("Scheduling the Service - Triggering Wizard")
+
+    
  
         if not self.product_id:
             raise UserError(_("Provide the service details."))
@@ -1494,27 +1550,69 @@ class AAAService(models.Model):
                     print(f"API RESPONSE- start,{response.text}")
                 else:
                     print(f"API RESPONSE-ORDER NOT started,{response.text},{response.status_code}")
+
+
+
         return True
+
+    # def action_reach_service(self):
+    #     self.state = 'reach'
+    #     for service in self:
+
+    #             self.env['service.history'].create({
+    #                 'service_id': service.id,
+    #                 'user': self.env.user.id,
+    #                 'time': fields.Datetime.now(),
+    #                 'status': 'Reached',
+    #                 'timeline_status': self.state,
+    #             })
+
+    #     comment_content = service.comments or 'REACHED'
+
+    #         # Create the service.comment record
+    #     self.env['service.comment'].create({
+    #         'service_id': service.id,
+    #         'comment': comment_content,
+    #         'comment_date_and_time': fields.Datetime.now(),
+    #         'comment_user': self.env.user.id,
+    #         'comment_status': service.state,
+    #         })
+
+    #         # If a manual comment exists, clear the service.comments field after creating the record
+    #     if service.comments:
+    #         service.comments = False
+
+    #     return True
 
     def action_reach_service(self):
         self.state = 'reach'
         for service in self:
-                self.env['service.history'].create({
-                    'service_id': service.id,
-                    'user': self.env.user.id,
-                    'time': fields.Datetime.now(),
-                    'status': 'Reached',
-                    'timeline_status': self.state,
-                })
-        comment_content = service.comments or 'REACHED'
+            if not service.credit_proforma_number:
+                raise UserError("You must fill the Trip Sheet Number before completing the service.")
+
+            self.env['service.history'].create({
+                'service_id': service.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': 'Reached',
+                'timeline_status': self.state,
+            })
+
+            comment_content = service.comments or 'REACHED'
+
             # Create the service.comment record
-        self.env['service.comment'].create({
-            'service_id': service.id,
-            'comment': comment_content,
-            'comment_date_and_time': fields.Datetime.now(),
-            'comment_user': self.env.user.id,
-            'comment_status': service.state,})
+            self.env['service.comment'].create({
+                'service_id': service.id,
+                'comment': comment_content,
+                'comment_date_and_time': fields.Datetime.now(),
+                'comment_user': self.env.user.id,
+                'comment_status': service.state,
+            })
+
             # If a manual comment exists, clear the service.comments field after creating the record
+            if service.comments:
+                service.comments = False
+
         if service.comments:
             service.comments = False
         return True
@@ -1657,6 +1755,9 @@ class AAAService(models.Model):
 
         return True
 
+    
+
+
     def action_custom_cancel_service(self):
         self.ensure_one()
         return {
@@ -1792,6 +1893,8 @@ class AAAService(models.Model):
             'tag': 'reload',
         }
 
+    
+    
     def action_request_service(self):
         self.state='requested'
         for service in self:
