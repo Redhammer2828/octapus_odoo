@@ -160,7 +160,7 @@
                                 <field name="deposit_amount" invisible="1" />
                                 <field name="schedule_service_check" readonly="1" invisible="1" />
                                 <field name="schedule_date_time" readonly="1"
-                                    invisible="schedule_service_check == False or schedule_date_time == False"
+                                    invisible="schedule_service_check == False or schedule_date_time == False or requested_date == False"
                                     required="schedule_service_check == True " />
                                 <field name="service_time" readonly="1" />
                                 <field name="requested_date" readonly="1"
@@ -347,7 +347,7 @@
                                 readonly="state in ['done', 'cancel']">
                                 <field name="credit_proforma_number" string="Trip Sheet Number"
                                     invisible="state in ['draft', 'initiate', 'dispatch']"
-                                    required="state in ['done', 'reach']"
+                                    
                                     readonly="state in ['done']"
                                     class="required_field" />
                                 <field name="vendor_rating" widget="priority"
