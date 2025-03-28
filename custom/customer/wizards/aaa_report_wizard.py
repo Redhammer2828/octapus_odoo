@@ -84,6 +84,17 @@ class AaaReportWizard(models.TransientModel):
                 record['membership_state'] = 'confirm'
             elif record.get('member_type') == 'policy' and record.get('member_id'):
                 record['membership_state'] = member_states.get(record['member_id'][0], '')
+
+
+
+             # Fetch the latest service comment
+            service_comment = self.env['service.comment'].search([
+                ('service_id', '=', record['id']),
+                ('comment_status', '=', record['state'])
+            ], order="create_date desc", limit=1)
+
+            # Assign comment or fallback to import_comments
+            record['Comments'] = service_comment.comment if service_comment and service_comment.comment else record.get('import_comments', '')
                 
         return service_records
         
@@ -188,6 +199,8 @@ class AaaReportWizard(models.TransientModel):
         for row_num, record in enumerate(service_records, start=8):
             service_time = record['service_time']
             create_date = record['create_date']
+       
+
              # Get membership state for the member_id
             # member_id = record.get('member_id', [None])[0]  # Get the first element, member_id is a tuple
             # membership_state = partner_data.get(member_id, 'N/A')  # Get membership_state from partner_data     
@@ -302,7 +315,7 @@ class AaaReportWizard(models.TransientModel):
                 record.get('state', ''),
                 record.get('create_uid')[1] if record.get('create_uid') else '',
                 record.get('dispatcher_from_history')[1] if record.get('dispatcher_from_history') else '',
-                '',  # Comments placeholder
+                record.get('Comments', ''),  # ✅ Fetch and write Comments here
                 record.get('credit_proforma_number', ''),
                 record.get('cash_collected', 0.00),
                 record.get('vendor_rating', 0),
