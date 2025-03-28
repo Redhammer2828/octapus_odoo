@@ -1302,8 +1302,9 @@ class AAAService(models.Model):
                 record.next_check_time = False
 
     def action_schedule_service_check(self):
+        self.schedule_service_check = True  
         if self.requested_date:
-            self.schedule_service_check = True
+            # self.schedule_service_check = True
             self.state = 'initiate'
             print("Scheduling the Service - Triggering Wizard")
         else:
