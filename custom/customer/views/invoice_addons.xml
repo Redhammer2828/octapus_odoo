@@ -36,9 +36,13 @@
         <field name="inherit_id" ref="account.view_move_form" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='category_id']" position="after">
+
                 <field name="from_date" />
                 <field name="to_date" />
+                <button name="compute_services_based_on_date" type="object" string="Get Services" class="btn-primary" />
+
             </xpath>
+                                    
         </field>
     </record>
 
