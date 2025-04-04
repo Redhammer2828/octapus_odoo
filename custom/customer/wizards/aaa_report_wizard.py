@@ -194,7 +194,7 @@ class AaaReportWizard(models.TransientModel):
         # worksheet.write_row(7, 0, headers, header_format)
         worksheet.write_row(7, 0, base_headers, header_format)
  
-        target_timezone = timezone('Asia/Kolkata')
+        target_timezone = timezone('Asia/Dubai')
  
         for row_num, record in enumerate(service_records, start=8):
             service_time = record['service_time']
