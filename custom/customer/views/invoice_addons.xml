@@ -40,15 +40,15 @@
 
                 <field name="from_date" />
                 <field name="to_date" />
+                <field name="invoice_line_type" />
+                <field name="product_ids" invisible="1" />
+                <field name="product_id" invisible="invoice_line_type == 'consolidated'" />
 
             </xpath>
 
             <xpath expr="//notebook" position="before">
-                <button name="compute_services_based_on_date" type="object" string="Add Invoice Line" class="btn-primary" />
-            </xpath>
-
-            <xpath expr="//field[@name='invoice_line_ids']" position="attributes">
-                <attribute name="readonly">1</attribute>
+                <button name="compute_services_based_on_date" type="object" string="Consolidated Invoice Lines" class="btn-primary" invisible="invoice_line_type == 'separate'" />
+                <button name="compute_separate_invoice_line" type="object" string="Add to Invoice Line" class="btn-primary" invisible="invoice_line_type == 'consolidated'" />
             </xpath>
 
         </field>
