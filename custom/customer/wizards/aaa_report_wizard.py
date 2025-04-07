@@ -4,6 +4,8 @@ import xlsxwriter
 import base64
 from pytz import timezone, UTC
 import logging
+from datetime import datetime, time
+import pytz
  
 _logger = logging.getLogger(__name__)
  
@@ -19,8 +21,33 @@ class AaaReportWizard(models.TransientModel):
     type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type")
     provider_id = fields.Many2one('res.partner', string="Provider", domain="[('is_vendor', '=', True)]")
  
+    # def _fetch_service_records(self):
+    #     domain = [('service_time', '>=', self.from_date), ('service_time', '<=', self.to_date)]
+    #     if self.customer_id:
+    #         domain.append(('customer_id', '=', self.customer_id.id))
+    #     if self.member_type:
+    #         domain.append(('member_type', '=', self.member_type))
+    #     if self.type:
+    #         domain.append(('type', '=', self.type))
+    #     if self.sequence_id:
+    #         domain.append(('sequence_id', '=', self.sequence_id.id))
+    #     if self.provider_id:
+    #         domain.append(('provider_id', '=', self.provider_id.id))
+
     def _fetch_service_records(self):
-        domain = [('service_time', '>=', self.from_date), ('service_time', '<=', self.to_date)]
+        # Define timezone
+        local_tz = pytz.timezone('Asia/Dubai')
+        
+        # Convert to timezone-aware UTC datetimes
+        start_local = local_tz.localize(datetime.combine(self.from_date, time.min))
+        end_local = local_tz.localize(datetime.combine(self.to_date, time.max))
+        
+        # Convert to UTC for comparison with stored UTC timestamps
+        start_datetime = start_local.astimezone(pytz.UTC)
+        end_datetime = end_local.astimezone(pytz.UTC)
+
+        domain = [('service_time', '>=', start_datetime), ('service_time', '<=', end_datetime)]
+        
         if self.customer_id:
             domain.append(('customer_id', '=', self.customer_id.id))
         if self.member_type:
@@ -194,7 +221,7 @@ class AaaReportWizard(models.TransientModel):
         # worksheet.write_row(7, 0, headers, header_format)
         worksheet.write_row(7, 0, base_headers, header_format)
  
-        target_timezone = timezone('Asia/Kolkata')
+        target_timezone = timezone('Asia/Dubai')
  
         for row_num, record in enumerate(service_records, start=8):
             service_time = record['service_time']
