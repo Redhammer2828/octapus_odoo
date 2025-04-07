@@ -13,6 +13,7 @@
 
             <!-- Insert category_id after partner_id and remove create option -->
             <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="member_type" widget="radio" />
                 <field name="category_id" options="{'no_create': True, 'no_quick_create': True}" />
             </xpath>
             <xpath expr="//form" position="inside">
@@ -36,9 +37,20 @@
         <field name="inherit_id" ref="account.view_move_form" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='category_id']" position="after">
+
                 <field name="from_date" />
                 <field name="to_date" />
+
             </xpath>
+
+            <xpath expr="//notebook" position="before">
+                <button name="compute_services_based_on_date" type="object" string="Add Invoice Line" class="btn-primary" />
+            </xpath>
+
+            <xpath expr="//field[@name='invoice_line_ids']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+
         </field>
     </record>
 
