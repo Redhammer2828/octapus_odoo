@@ -191,7 +191,7 @@ class AaaTimelineWizard(models.TransientModel):
                     if record.service_time:
                         # Assuming `record.service_time` is in UTC
                         utc_time = record.service_time  # datetime object in UTC
-                        target_timezone = timezone('Asia/Kolkata')  # Replace with your logic for dynamic timezone if needed
+                        target_timezone = timezone('Asia/Dubai')  # Replace with your logic for dynamic timezone if needed
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
                         field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')  # Desired format: mm/dd/yyyy hh:mm:ss
                     else:
@@ -219,7 +219,7 @@ class AaaTimelineWizard(models.TransientModel):
 
                     if service_history:
                         utc_time = service_history.time  # Assuming this is a datetime field
-                        target_timezone = timezone('Asia/Kolkata')
+                        target_timezone = timezone('Asia/Dubai')
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
                         field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
@@ -253,7 +253,7 @@ class AaaTimelineWizard(models.TransientModel):
 
                     if service_history:
                         utc_time = service_history.time  # Assuming this is a datetime field
-                        target_timezone = timezone('Asia/Kolkata')
+                        target_timezone = timezone('Asia/Dubai')
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
                         field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
@@ -286,7 +286,7 @@ class AaaTimelineWizard(models.TransientModel):
 
                     if service_history:
                         utc_time = service_history.time  # Assuming this is a datetime field
-                        target_timezone = timezone('Asia/Kolkata')
+                        target_timezone = timezone('Asia/Dubai')
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
                         field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
@@ -318,7 +318,7 @@ class AaaTimelineWizard(models.TransientModel):
 
                     if service_history:
                         utc_time = service_history.time  # Assuming this is a datetime field
-                        target_timezone = timezone('Asia/Kolkata')
+                        target_timezone = timezone('Asia/Dubai')
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
                         field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
@@ -350,7 +350,7 @@ class AaaTimelineWizard(models.TransientModel):
 
                     if service_history:
                         utc_time = service_history.time  # Assuming this is a datetime field
-                        target_timezone = timezone('Asia/Kolkata')
+                        target_timezone = timezone('Asia/Dubai')
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
                         field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
@@ -395,7 +395,7 @@ class AaaTimelineWizard(models.TransientModel):
 
                     if service_history:
                         utc_time = service_history.time  # Assuming this is a datetime field
-                        target_timezone = timezone('Asia/Kolkata')
+                        target_timezone = timezone('Asia/Dubai')
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
                         field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
