@@ -40,7 +40,7 @@
 
                 <field name="from_date" />
                 <field name="to_date" />
-                <field name="invoice_line_type" />
+                <field name="invoice_line_type" widget="radio" />
                 <field name="product_ids" invisible="1" />
                 <field name="product_id" invisible="invoice_line_type == 'consolidated'" />
 
@@ -51,7 +51,21 @@
                 <button name="compute_separate_invoice_line" type="object" string="Add to Invoice Line" class="btn-primary" invisible="invoice_line_type == 'consolidated'" />
             </xpath>
 
+            <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='name']" position="attributes">
+                <attribute name="optional">"show"</attribute>
+            </xpath>
+            <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='analytic_distribution']" position="attributes">
+                <attribute name="column_invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='price_total']" position="attributes">
+                <attribute name="optional">"hide"</attribute>
+            </xpath>
+
         </field>
+    </record>
+
+    <record id="om_account_asset.view_invoice_asset_category" model="ir.ui.view">
+        <field name="active" eval="False"/>
     </record>
 
 

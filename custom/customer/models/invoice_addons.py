@@ -12,11 +12,10 @@ class AccountMove(models.Model):
 
     from_date = fields.Date(string="From Date")
     to_date = fields.Date(string="To Date")
-    invoice_line_type = fields.Selection([ ('separate', 'Separate Invoice'),
-                                          ('consolidated', 'Consolidated Invoice') ], string='Invoice Type', default="consolidated")
+    invoice_line_type = fields.Selection([ ('consolidated', 'Consolidated Invoice'),
+                                          ('separate', 'Separate Invoice')], string='Invoice Type', default="consolidated")
     product_ids = fields.Many2many('product.template','product_service_rel', 'product_id', 'service_id', string="Product Ids")
     product_id = fields.Many2one('product.template', string="Product", domain="[('id','in', product_ids)]")
-    product_quantity = fields.Integer()
 
 
     @api.onchange('member_type', 'partner_id')
@@ -63,7 +62,6 @@ class AccountMove(models.Model):
 
                 invoice_lines = [(0, 0, values)
                                     for values in product_quantity.values()]
-                print(invoice_lines)
 
                 record.write({"invoice_line_ids":invoice_lines})
 
@@ -97,14 +95,19 @@ class AccountMove(models.Model):
                     else:
                         product_quantity[product_id] = {
                             "product_id": product_id,
-                            "price_unit": rec.product_template_id.price_unit,
+                            "price_unit": 0,
                             "quantity": 1,
                             "name": rec.product_template_id.name,
                         }
 
+                for key in product_quantity.keys():
+                    pricelist_item = self.env["product.pricelist.item"].search([('product_tmpl_id','=',key), ('pricelist_id','=',record.partner_id.property_product_pricelist_id.id)])
+                    
+                    product_quantity[key]["price_unit"] = pricelist_item.fixed_price
+                    
+
                 invoice_lines = [(0, 0, values)
                                     for values in product_quantity.values()]
-                print(invoice_lines)
 
                 record.write({"invoice_line_ids":invoice_lines})
 
@@ -177,7 +180,14 @@ class AccountMove(models.Model):
             record.invoice_line_ids = [(5, 0, 0)]
 
             quantity = 0
-            record.product_quantity = 0
+
+            invoice_line_items = {
+                            "product_id": record.product_id.id,
+                            "price_unit": 0.00,
+                            "quantity": 0,
+                            "name": record.product_id.name,
+                            }
+                        
 
             if record.member_type == "credit":
 
@@ -192,7 +202,6 @@ class AccountMove(models.Model):
                     if record.from_date <= service.service_time.date() <= record.to_date:
                         quantity += 1
             
-                record.product_quantity = quantity
 
             elif record.member_type == "policy":
 
@@ -213,14 +222,13 @@ class AccountMove(models.Model):
                 for rec in all_records:
                     quantity += 1
                 
-                record.product_quantity = quantity
+                pricelist_item = self.env["product.pricelist.item"].search([('product_tmpl_id','=',record.product_id.id), ('pricelist_id','=',record.partner_id.property_product_pricelist_id.id)])
+
+                invoice_line_items["price_unit"] = pricelist_item.fixed_price
             
-            record.write({"invoice_line_ids":[(0,0,{
-                            "product_id": record.product_id.id,
-                            "price_unit": record.product_id.price_unit,
-                            "quantity": record.product_quantity,
-                            "name": record.product_id.name,
-                        })]})
+            invoice_line_items["quantity"] = quantity
+            
+            record.write({"invoice_line_ids":[(0,0,invoice_line_items)]})
                 
             
 
