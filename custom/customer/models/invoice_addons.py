@@ -15,7 +15,9 @@ class AccountMove(models.Model):
     invoice_line_type = fields.Selection([ ('consolidated', 'Consolidated Invoice'),
                                           ('separate', 'Separate Invoice')], string='Invoice Type', default="consolidated")
     product_ids = fields.Many2many('product.template','product_service_rel', 'product_id', 'service_id', string="Product Ids")
-    product_id = fields.Many2one('product.template', string="Product", domain="[('id','in', product_ids)]")
+    product_id = fields.Many2one('product.template', string="Package", domain="[('id','in', product_ids)]")
+    service_ids = fields.Many2many('aaa.service', 'service_service_rel', 'invoice_id', 'service_id')
+    service_id = fields.Many2one('aaa.service', string="Service", domain="[('id','in', service_ids)]")
 
 
     @api.onchange('member_type', 'partner_id')
@@ -131,15 +133,15 @@ class AccountMove(models.Model):
                     ("state","=","done")] 
                 )
 
-                products = []
-                if record.product_ids:
-                    record.product_ids = [(5, 0, 0)]
+                services = []
+                if record.service_ids:
+                    record.service_ids = [(5, 0, 0)]
 
                 for service in all_services:
                     if record.from_date <= service.service_time.date() <= record.to_date:
-                        products.append(service.product_id.id)
-                distinct_products = list(set(products))
-                record.product_ids = [(6,0,distinct_products)]
+                        services.append(service.id)
+                distinct_services = list(set(services))
+                record.service_ids = [(6,0,distinct_services)]
 
 
             elif record.member_type == "policy":
@@ -175,35 +177,35 @@ class AccountMove(models.Model):
     def compute_separate_invoice_line(self):
 
         for record in self:
-            if not record.product_id:
-                continue
+            
             record.invoice_line_ids = [(5, 0, 0)]
 
             quantity = 0
 
-            invoice_line_items = {
-                            "product_id": record.product_id.id,
-                            "price_unit": 0.00,
-                            "quantity": 0,
-                            "name": record.product_id.name,
-                            }
-                        
-
             if record.member_type == "credit":
 
-                all_services = self.env["aaa.service"].search(
-                    [("customer_id", "=", record.partner_id.id),
-                    ("sequence_id","=",record.category_id.id),
-                    ("state","=","done"),
-                    ("product_id","=",record.product_id.id)]
-                )
+                if not record.service_id:
+                    continue
+                
+                price_list_item = self.env["product.pricelist.item"].search([('product_tmpl_id','=',record.service_id.product_id.id), ('pricelist_id','=',record.partner_id.property_product_pricelist_id.id)])
+                
+                service_rate = self.env["service.rate"].search([('product_pricelist_item_id','=',price_list_item.id),
+                                                                ('from_loc_id','=',record.service_id.from_location.id),
+                                                                ('to_loc_id','=',record.service_id.to_location.id),])
+                
+                invoice_line_items = {
+                            "product_id": record.service_id.product_id.id,
+                            "price_unit": service_rate.price,
+                            "quantity": 1,
+                            "name": record.service_id.product_id.name,
+                            }
 
-                for service in all_services:
-                    if record.from_date <= service.service_time.date() <= record.to_date:
-                        quantity += 1
-            
+
 
             elif record.member_type == "policy":
+
+                if not record.product_id:
+                    continue
 
                 domain = [('invoice_ref_date', '>=', record.from_date), 
                         ('invoice_ref_date', '<=', record.to_date),
@@ -224,9 +226,13 @@ class AccountMove(models.Model):
                 
                 pricelist_item = self.env["product.pricelist.item"].search([('product_tmpl_id','=',record.product_id.id), ('pricelist_id','=',record.partner_id.property_product_pricelist_id.id)])
 
-                invoice_line_items["price_unit"] = pricelist_item.fixed_price
-            
-            invoice_line_items["quantity"] = quantity
+                invoice_line_items = {
+                            "product_id": record.product_id.id,
+                            "price_unit": pricelist_item.fixed_price,
+                            "quantity": quantity,
+                            "name": record.product_id.name,
+                            }
+
             
             record.write({"invoice_line_ids":[(0,0,invoice_line_items)]})
                 
