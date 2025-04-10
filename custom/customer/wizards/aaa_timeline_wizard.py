@@ -142,7 +142,7 @@ class AaaTimelineWizard(models.TransientModel):
 
         headers = [
             'Service Number', 'Member', 'Vehicle Type', 'User Location', 'Provider', 'Driver Name',
-            'Service', 'Service Date', 'Status', 'Request Completed On', 'Driver Start Time', 'Driver Arrival Time',
+            'Service', 'Service Date','Dispatch', 'Status', 'Request Completed On', 'Driver Start Time', 'Driver Arrival Time',
             'Service Started Time', 'Service Completed Time', 'Cancellation Time', 'Dispatch Center Notes'
         ]
 
@@ -194,6 +194,29 @@ class AaaTimelineWizard(models.TransientModel):
                         target_timezone = timezone('Asia/Dubai')  # Replace with your logic for dynamic timezone if needed
                         local_time = UTC.localize(utc_time).astimezone(target_timezone)
                         field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')  # Desired format: mm/dd/yyyy hh:mm:ss
+                    else:
+                        field_value = ''
+
+
+                elif header == 'Dispatch':
+                    # Search for cancellation time based on `timeline_status`
+                    service_history = self.env['service.history'].search([
+                        ('service_id', '=', record.id),
+                        ('timeline_status', '=', 'dispatch')
+                    ], order='time ASC', limit=1)
+
+                    if not service_history:
+                        # If no `timeline_status = cancel`, check for `status = cancel`
+                        service_history = self.env['service.history'].search([
+                            ('service_id', '=', record.id),
+                            ('status', '=', 'dispatch')
+                        ], limit=1)
+
+                    if service_history:
+                        utc_time = service_history.time  # Assuming this is a datetime field
+                        target_timezone = timezone('Asia/Dubai')
+                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
                         field_value = ''
                 # elif header == 'Status':
