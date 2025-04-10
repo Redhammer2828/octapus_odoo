@@ -63,6 +63,14 @@
                 <attribute name="optional">"hide"</attribute>
             </xpath>
 
+            <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='product_id']" position="attributes">
+                <attribute name="column_invisible">parent.invoice_line_type == 'consolidated' and parent.member_type == 'credit'</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='account_id']" position="before">
+                <field name="name_customer" column_invisible="not (parent.invoice_line_type == 'consolidated' and parent.member_type == 'credit')" />
+            </xpath>
+
         </field>
     </record>
 

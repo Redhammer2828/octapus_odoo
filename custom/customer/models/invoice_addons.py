@@ -43,29 +43,28 @@ class AccountMove(models.Model):
                     [("customer_id", "=", record.partner_id.id),("sequence_id","=",record.category_id.id),("state","=","done")] 
                 )
                 invoice_lines = []
-                product_quantity = {}
+                total = 0
 
                 record.invoice_line_ids = [(5, 0, 0)]
 
                 for service in all_services:
                     if record.from_date <= service.service_time.date() <= record.to_date:
-                        product_id = service.product_id.id
 
-                        if product_id in product_quantity:
-                            product_quantity[product_id]["quantity"] += 1
+                        price_list_item = self.env["product.pricelist.item"].search([('product_tmpl_id','=',service.product_id.id), ('pricelist_id','=',record.partner_id.property_product_pricelist_id.id)])
+                
+                        service_rate = self.env["service.rate"].search([('product_pricelist_item_id','=',price_list_item.id),
+                                                                ('from_loc_id','=',service.from_location.id),
+                                                                ('to_loc_id','=',service.to_location.id),])
+                        
+                        total += service_rate.price
+                tax = self.env['account.tax'].search([('amount', '=', 5), ('type_tax_use', '=', 'sale')])
 
-                        else:
-                            product_quantity[product_id] = {
-                                "product_id": product_id,
-                                "price_unit": service.product_id.price_unit,
-                                "quantity": 1,
-                                "name": service.product_id.name,
-                            }
-
-                invoice_lines = [(0, 0, values)
-                                    for values in product_quantity.values()]
-
-                record.write({"invoice_line_ids":invoice_lines})
+                invoice_lines = [(0, 0, {
+                            "name_customer": f"{record.partner_id.name} from {record.from_date} to {record.to_date}",
+                            "price_unit": total,
+                            "quantity": 1,
+                            "tax_ids": [(6, 0, [tax.id])]
+                            })]
 
 
             elif record.member_type == "policy":
@@ -111,7 +110,7 @@ class AccountMove(models.Model):
                 invoice_lines = [(0, 0, values)
                                     for values in product_quantity.values()]
 
-                record.write({"invoice_line_ids":invoice_lines})
+            record.write({"invoice_line_ids":invoice_lines})
 
 
     
@@ -238,6 +237,10 @@ class AccountMove(models.Model):
                 
             
 
+class AccountMoveLine(models.Model):
+    _inherit = 'account.move.line'
+
+    name_customer = fields.Char(string="Customer")
             
 
     
