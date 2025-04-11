@@ -43,6 +43,7 @@ class AaaTimelineWizard(models.TransientModel):
         ('approved','Approved'),
         ('requested','Requeted')
     ], string="Status")
+    #service_based = fields.Selection(related='product_id.service_based', store=True, readonly=True)
 
     def _fetch_service_records(self):
         """Fetches service records based on the wizard's filter criteria."""
@@ -142,8 +143,8 @@ class AaaTimelineWizard(models.TransientModel):
 
         headers = [
             'Service Number', 'Member', 'Vehicle Type', 'User Location', 'Provider', 'Driver Name',
-            'Service', 'Service Date','Dispatch', 'Status', 'Request Completed On', 'Driver Start Time', 'Driver Arrival Time',
-            'Service Started Time', 'Service Completed Time', 'Cancellation Time', 'Dispatch Center Notes'
+            'Service', 'Status', 'Service Date','Dispatch', 'Driver Assigned', 'Driver Start Time', 'Driver Arrival Time',
+            'Service Started Time', 'Service End Time', 'Service Completed Time', 'Request Completed On', 'Cancellation Time', 'Dispatch Center Notes'
         ]
 
         # headers = [
@@ -184,9 +185,17 @@ class AaaTimelineWizard(models.TransientModel):
                 elif header == 'Provider':
                     field_value = record.provider_id.name or ''
                 elif header == 'Driver Name':
-                    field_value = record.driver_id.name or ''
+                    field_value = record.driver_id.name if record.driver_id else record.driver_name or ''
+
+
                 elif header == 'Service':
                     field_value = record.product_id.name or ''
+
+                elif header == 'Status':
+                    if record.state in {'done', 'completed_by_driver', 'cancel'}:
+                        field_value = record.state
+                    else:
+                        field_value = ''
                 elif header == 'Service Date':
                     if record.service_time:
                         # Assuming `record.service_time` is in UTC
@@ -219,25 +228,20 @@ class AaaTimelineWizard(models.TransientModel):
                         field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
                         field_value = ''
-                # elif header == 'Status':
-                #     field_value = record.state or ''
-                elif header == 'Status':
-                    if record.state in {'done', 'completed_by_driver', 'cancel'}:
-                        field_value = record.state
-                    else:
-                        field_value = ''
-                elif header == 'Request Completed On':
+
+
+                elif header == 'Driver Assigned':
                     # Search for cancellation time based on `timeline_status`
                     service_history = self.env['service.history'].search([
                         ('service_id', '=', record.id),
-                        ('timeline_status', '=', 'done')
+                        ('status', '=', 'driver_assigned')
                     ], order='time ASC', limit=1)
 
                     if not service_history:
                         # If no `timeline_status = cancel`, check for `status = cancel`
                         service_history = self.env['service.history'].search([
                             ('service_id', '=', record.id),
-                            ('status', '=', 'done')
+                            ('status', '=', 'driver_assigned')
                         ], limit=1)
 
                     if service_history:
@@ -247,6 +251,10 @@ class AaaTimelineWizard(models.TransientModel):
                         field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                     else:
                         field_value = ''
+                # elif header == 'Status':
+                #     field_value = record.state or ''
+                
+                
                     # service_history = self.env['service.history'].search([
                     #     ('service_id', '=', record.id),
                     #     ('timeline_status', '=', 'done')
@@ -264,7 +272,7 @@ class AaaTimelineWizard(models.TransientModel):
                     # Search for cancellation time based on `timeline_status`
                     service_history = self.env['service.history'].search([
                         ('service_id', '=', record.id),
-                        ('timeline_status', '=', 'start')
+                        ('status', '=', 'start')
                     ], limit=1)
 
                     if not service_history:
@@ -297,7 +305,7 @@ class AaaTimelineWizard(models.TransientModel):
                     # Search for cancellation time based on `timeline_status`
                     service_history = self.env['service.history'].search([
                         ('service_id', '=', record.id),
-                        ('timeline_status', '=', 'reach')
+                        ('status', '=', 'reach')
                     ], limit=1)
 
                     if not service_history:
@@ -329,14 +337,37 @@ class AaaTimelineWizard(models.TransientModel):
                     # Search for cancellation time based on `timeline_status`
                     service_history = self.env['service.history'].search([
                         ('service_id', '=', record.id),
-                        ('timeline_status', '=', 'start')
+                        ('status', '=', 'service_started')
                     ], limit=1)
 
                     if not service_history:
                         # If no `timeline_status = cancel`, check for `status = cancel`
                         service_history = self.env['service.history'].search([
                             ('service_id', '=', record.id),
-                            ('status', '=', 'start')
+                            ('status', '=', 'service_started')
+                        ], limit=1)
+
+                    if service_history:
+                        utc_time = service_history.time  # Assuming this is a datetime field
+                        target_timezone = timezone('Asia/Dubai')
+                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
+                    else:
+                        field_value = ''
+
+
+                elif header == 'Service End Time':
+                    # Search for cancellation time based on `timeline_status`
+                    service_history = self.env['service.history'].search([
+                        ('service_id', '=', record.id),
+                        ('status', '=', 'service_ended')
+                    ], limit=1)
+
+                    if not service_history:
+                        # If no `timeline_status = cancel`, check for `status = cancel`
+                        service_history = self.env['service.history'].search([
+                            ('service_id', '=', record.id),
+                            ('status', '=', 'service_ended')
                         ], limit=1)
 
                     if service_history:
@@ -361,14 +392,14 @@ class AaaTimelineWizard(models.TransientModel):
                     # Search for cancellation time based on `timeline_status`
                     service_history = self.env['service.history'].search([
                         ('service_id', '=', record.id),
-                        ('timeline_status', '=', 'done')
+                        ('status', '=', 'completed_by_driver')
                     ], limit=1)
 
                     if not service_history:
                         # If no `timeline_status = cancel`, check for `status = cancel`
                         service_history = self.env['service.history'].search([
                             ('service_id', '=', record.id),
-                            ('status', '=', 'done')
+                            ('status', '=', 'completed_by_driver')
                         ], limit=1)
 
                     if service_history:
@@ -401,6 +432,29 @@ class AaaTimelineWizard(models.TransientModel):
                 #         field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
                 #     else:
                 #         field_value = ''
+
+
+                elif header == 'Request Completed On':
+                    # Search for cancellation time based on `timeline_status`
+                    service_history = self.env['service.history'].search([
+                        ('service_id', '=', record.id),
+                        ('timeline_status', '=', 'done')
+                    ], order='time ASC', limit=1)
+
+                    if not service_history:
+                        # If no `timeline_status = cancel`, check for `status = cancel`
+                        service_history = self.env['service.history'].search([
+                            ('service_id', '=', record.id),
+                            ('status', '=', 'done')
+                        ], limit=1)
+
+                    if service_history:
+                        utc_time = service_history.time  # Assuming this is a datetime field
+                        target_timezone = timezone('Asia/Dubai')
+                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
+                    else:
+                        field_value = ''
 
                 elif header == 'Cancellation Time':
                     # Search for cancellation time based on `timeline_status`
