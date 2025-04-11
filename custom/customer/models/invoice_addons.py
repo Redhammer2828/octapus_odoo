@@ -44,6 +44,7 @@ class AccountMove(models.Model):
                 )
                 invoice_lines = []
                 total = 0
+                service_count = 0
 
                 record.invoice_line_ids = [(5, 0, 0)]
 
@@ -57,10 +58,11 @@ class AccountMove(models.Model):
                                                                 ('to_loc_id','=',service.to_location.id),])
                         
                         total += service_rate.price
+                        service_count += 1
                 tax = self.env['account.tax'].search([('amount', '=', 5), ('type_tax_use', '=', 'sale')])
 
                 invoice_lines = [(0, 0, {
-                            "name_customer": f"{record.partner_id.name} from {record.from_date} to {record.to_date}",
+                            "name": f"Services Provided for Customer: {record.partner_id.name} from {record.from_date} to {record.to_date} ({service_count} services)",
                             "price_unit": total,
                             "quantity": 1,
                             "tax_ids": [(6, 0, [tax.id])]
@@ -98,7 +100,7 @@ class AccountMove(models.Model):
                             "product_id": product_id,
                             "price_unit": 0,
                             "quantity": 1,
-                            "name": rec.product_template_id.name,
+                            "name": f"{rec.product_template_id.name} MEMBERSHIP FOR THE PERIOD FROM {record.from_date} TO {record.to_date}",
                         }
 
                 for key in product_quantity.keys():
@@ -196,7 +198,7 @@ class AccountMove(models.Model):
                             "product_id": record.service_id.product_id.id,
                             "price_unit": service_rate.price,
                             "quantity": 1,
-                            "name": record.service_id.product_id.name,
+                            "name": f"{record.service_id.product_id.name} {record.service_id.vehicle_type or ''} {record.service_id.vehicle_model or ''} {record.service_id.vehicle_chasis_no} FROM: {record.service_id.from_location.name} TO: {record.service_id.to_location.name}",
                             }
 
 
@@ -229,18 +231,13 @@ class AccountMove(models.Model):
                             "product_id": record.product_id.id,
                             "price_unit": pricelist_item.fixed_price,
                             "quantity": quantity,
-                            "name": record.product_id.name,
+                            "name": f"{record.product_id.name} MEMBERSHIP FOR THE PERIOD FROM {record.from_date} TO {record.to_date}",
                             }
 
             
             record.write({"invoice_line_ids":[(0,0,invoice_line_items)]})
                 
             
-
-class AccountMoveLine(models.Model):
-    _inherit = 'account.move.line'
-
-    name_customer = fields.Char(string="Customer")
             
 
     
