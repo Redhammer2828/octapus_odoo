@@ -43,40 +43,36 @@
 
                 <field name="from_date" />
                 <field name="to_date" />
+                <field name="invoice_line_type" widget="radio" />
+                <field name="product_ids" invisible="1" />
+                <field name="product_id" invisible="invoice_line_type == 'consolidated' or member_type == 'credit'" />
+                <field name="service_ids" invisible="1" />
+                <field name="service_id" invisible="invoice_line_type == 'consolidated' or member_type == 'policy'" />
 
             </xpath>
 
             <xpath expr="//notebook" position="before">
-                <button name="compute_services_based_on_date" type="object" string="Add Invoice Line" class="btn-primary" />
+                <button name="compute_services_based_on_date" type="object" string="Consolidated Invoice Lines" class="btn-primary" invisible="invoice_line_type == 'separate'" />
+                <button name="compute_separate_invoice_line" type="object" string="Add to Invoice Line" class="btn-primary" invisible="invoice_line_type == 'consolidated'" />
             </xpath>
 
-            <xpath expr="//field[@name='invoice_line_ids']" position="attributes">
-                <attribute name="readonly">1</attribute>
+            <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='analytic_distribution']" position="attributes">
+                <attribute name="column_invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='price_total']" position="attributes">
+                <attribute name="optional">"hide"</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='product_id']" position="attributes">
+                <attribute name="column_invisible">1</attribute>
             </xpath>
 
         </field>
+    </record>
+
+    <record id="om_account_asset.view_invoice_asset_category" model="ir.ui.view">
+        <field name="active" eval="False"/>
     </record>
 
 
 </odoo>
-
-
-<!-- <?xml version="1.0" encoding="utf-8"?>
-<odoo>
-    <record id="view_move_form_inherit_member_category" model="ir.ui.view">
-        <field name="name">account.move.form.inherit.member.category</field>
-        <field name="model">account.move</field>
-        <field name="inherit_id" ref="account.view_move_form"/>
-        <field name="arch" type="xml">
-            
-            <field name="partner_id" position="attributes">
-                <attribute name="domain">[('is_company', '=', True)]</attribute>
-            </field>
-
-            
-            <xpath expr="//field[@name='partner_id']" position="after">
-                <field name="category_id"/>
-            </xpath>
-        </field>
-    </record>
-</odoo> -->
