@@ -70,30 +70,40 @@
         </field>
     </record>
 
+    <record id="view_account_move_form_inherit_credit_services" model="ir.ui.view">
+        <field name="name">account.move.form.inherit.credit.services</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form" />
+        <field name="arch" type="xml">
+
+            <xpath expr="//page[@id='invoice_tab']" position="after">
+                <page id="credit_services_tab" name="credit_services_tab" string="Service Statement" invisible="invoice_line_type == 'separate' or member_type == 'policy'">
+                    <field name="credit_service_line_ids" widget="section_and_note_one2many" mode="tree">
+                        <tree editable="bottom">
+                            <field name="credit_invoice_id" column_invisible="1" />
+                            <field name="service_date" />
+                            <field name="service_number" />
+                            <field name="trip_sheet_number" />
+                            <field name="vehicle_model" />
+                            <field name="vehicle_plate" />
+                            <field name="from_location" />
+                            <field name="to_location" />
+                            <field name="price" />
+                            <field name="add_to_invoice" />
+                        </tree>
+                    </field>
+                    <div class="d-flex justify-content-end mt-2">
+                        <button name="compute_credit_service_line_total" type="object" string="Update Invoice Price" class="btn-primary" />
+                    </div>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
     <record id="om_account_asset.view_invoice_asset_category" model="ir.ui.view">
         <field name="active" eval="False"/>
     </record>
 
 
 </odoo>
-
-
-<!-- <?xml version="1.0" encoding="utf-8"?>
-<odoo>
-    <record id="view_move_form_inherit_member_category" model="ir.ui.view">
-        <field name="name">account.move.form.inherit.member.category</field>
-        <field name="model">account.move</field>
-        <field name="inherit_id" ref="account.view_move_form"/>
-        <field name="arch" type="xml">
-            
-            <field name="partner_id" position="attributes">
-                <attribute name="domain">[('is_company', '=', True)]</attribute>
-            </field>
-
-            
-            <xpath expr="//field[@name='partner_id']" position="after">
-                <field name="category_id"/>
-            </xpath>
-        </field>
-    </record>
-</odoo> -->
