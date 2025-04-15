@@ -58,3 +58,5 @@ access_afl_dashboard,afl.dashboard,model_afl_dashboard,base.group_user,1,1,1,1
 access_aaa_rac_wizard,aaa.rac.wizard,model_aaa_rac_wizard,base.group_user,1,1,1,1
 access_membership_timeline,membership.timeline,model_membership_timeline,base.group_user,1,1,1,1
 access_credit_service_line,credit.service.line,model_credit_service_line,base.group_user,1,1,1,1
+access_credit_service_validation,credit.service.validation,model_credit_service_validation,base.group_user,1,1,1,1
+access_service_statement_line,service.statement.line,model_service_statement_line,base.group_user,1,1,1,1
