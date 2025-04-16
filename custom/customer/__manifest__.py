@@ -45,6 +45,7 @@
         'views/call_center_service_form.xml',
         'views/call_center_enquiry.xml',
         'views/call_center_all_service_view.xml',
+        'views/credit_service_validation.xml',
         'views/policy_member_service_history.xml',
         'views/res_partner_vendor.xml',
         'views/product_pricelist.xml',

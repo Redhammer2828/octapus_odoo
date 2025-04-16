@@ -12,12 +12,13 @@
             <field name="partner_id" position="attributes">
                 <attribute name="domain">[('is_company', '=', True)]</attribute>
                 <attribute name="options">{'no_create': True, 'no_quick_create': True}</attribute>
+                <attribute name="required">1</attribute>
             </field>
 
             <!-- Insert category_id after partner_id and remove create option -->
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="member_type" widget="radio" />
-                <field name="category_id" options="{'no_create': True, 'no_quick_create': True}" />
+                <field name="category_id" options="{'no_create': True, 'no_quick_create': True}" required="1" />
             </xpath>
             <xpath expr="//form" position="inside">
                 <div>
@@ -41,13 +42,13 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='category_id']" position="after">
 
-                <field name="from_date" />
-                <field name="to_date" />
+                <field name="from_date" required="1" />
+                <field name="to_date" required="1" />
                 <field name="invoice_line_type" widget="radio" />
                 <field name="product_ids" invisible="1" />
-                <field name="product_id" invisible="invoice_line_type == 'consolidated' or member_type == 'credit'" />
+                <field name="product_id" invisible="invoice_line_type == 'consolidated' or member_type == 'credit'" options="{'no_create': True, 'no_quick_create': True}" />
                 <field name="service_ids" invisible="1" />
-                <field name="service_id" invisible="invoice_line_type == 'consolidated' or member_type == 'policy'" />
+                <field name="service_id" invisible="invoice_line_type == 'consolidated' or member_type == 'policy'" options="{'no_create': True, 'no_quick_create': True}" />
 
             </xpath>
 
@@ -65,6 +66,38 @@
 
             <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='product_id']" position="attributes">
                 <attribute name="column_invisible">1</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+    <record id="view_account_move_form_inherit_credit_services" model="ir.ui.view">
+        <field name="name">account.move.form.inherit.credit.services</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form" />
+        <field name="arch" type="xml">
+
+            <xpath expr="//page[@id='invoice_tab']" position="after">
+                <page id="credit_services_tab" name="credit_services_tab" string="Service Statement" invisible="invoice_line_type == 'separate' or member_type == 'policy'">
+                    <field name="credit_service_line_ids" widget="section_and_note_one2many" mode="tree">
+                        <tree editable="bottom">
+                            <field name="credit_invoice_id" column_invisible="1" />
+                            <field name="service_date" />
+                            <field name="service_number" />
+                            <field name="trip_sheet_number" />
+                            <field name="vehicle_model" />
+                            <field name="vehicle_plate" />
+                            <field name="service_product" />
+                            <field name="from_location" />
+                            <field name="to_location" />
+                            <field name="price" />
+                            <field name="add_to_invoice" />
+                        </tree>
+                    </field>
+                    <div class="d-flex justify-content-end mt-2">
+                        <button name="compute_credit_service_line_total" type="object" string="Update Invoice Price" class="btn-primary" />
+                    </div>
+                </page>
             </xpath>
 
         </field>

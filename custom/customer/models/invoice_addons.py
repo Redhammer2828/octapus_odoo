@@ -18,6 +18,7 @@ class AccountMove(models.Model):
     product_id = fields.Many2one('product.template', string="Package", domain="[('id','in', product_ids)]")
     service_ids = fields.Many2many('aaa.service', 'service_service_rel', 'invoice_id', 'service_id')
     service_id = fields.Many2one('aaa.service', string="Service", domain="[('id','in', service_ids)]")
+    credit_service_line_ids = fields.One2many("credit.service.line", "credit_invoice_id", string="Services")
 
 
     @api.onchange('member_type', 'partner_id')
@@ -45,13 +46,18 @@ class AccountMove(models.Model):
                 invoice_lines = []
                 total = 0
                 service_count = 0
+                credit_services = {}
 
                 record.invoice_line_ids = [(5, 0, 0)]
+                record.credit_service_line_ids = [(5, 0, 0)]
 
                 for service in all_services:
-                    if record.from_date <= service.service_time.date() <= record.to_date:
+                    service_date = service.service_time.date()
+                    if record.from_date <= service_date <= record.to_date:
 
-                        price_list_item = self.env["product.pricelist.item"].search([('product_tmpl_id','=',service.product_id.id), ('pricelist_id','=',record.partner_id.property_product_pricelist_id.id)])
+                        price_list_item = self.env["product.pricelist.item"].search([('product_tmpl_id','=',service.product_id.id), ('pricelist_id','=',record.partner_id.property_product_pricelist_id.id),
+                        ('date_start', '<=', service_date),
+                        ('date_end', '>=', service_date)])
                 
                         service_rate = self.env["service.rate"].search([('product_pricelist_item_id','=',price_list_item.id),
                                                                 ('from_loc_id','=',service.from_location.id),
@@ -59,6 +65,19 @@ class AccountMove(models.Model):
                         
                         total += service_rate.price
                         service_count += 1
+
+                        credit_services[service.id] = {
+                            "service_date": service_date,
+                            "service_number": service.name,
+                            "trip_sheet_number": service.credit_proforma_number,
+                            "vehicle_model": service.vehicle_model,
+                            "vehicle_plate": service.vehicle_plate,
+                            "service_product": service.product_id.name,
+                            "from_location": service.from_location.name,
+                            "to_location": service.to_location.name,
+                            "price": service_rate.price,
+                            }
+
                 tax = self.env['account.tax'].search([('amount', '=', 5), ('type_tax_use', '=', 'sale')])
 
                 invoice_lines = [(0, 0, {
@@ -67,7 +86,11 @@ class AccountMove(models.Model):
                             "quantity": 1,
                             "tax_ids": [(6, 0, [tax.id])]
                             })]
+                credit_service_lines = [(0, 0, values)
+                                            for values in credit_services.values()]
 
+                record.write({"invoice_line_ids": invoice_lines,
+                              "credit_service_line_ids": credit_service_lines})
 
             elif record.member_type == "policy":
 
@@ -112,7 +135,7 @@ class AccountMove(models.Model):
                 invoice_lines = [(0, 0, values)
                                     for values in product_quantity.values()]
 
-            record.write({"invoice_line_ids":invoice_lines})
+                record.write({"invoice_line_ids":invoice_lines})
 
 
     
@@ -187,8 +210,12 @@ class AccountMove(models.Model):
 
                 if not record.service_id:
                     continue
+
+                service_date = record.service_id.service_time.date()
                 
-                price_list_item = self.env["product.pricelist.item"].search([('product_tmpl_id','=',record.service_id.product_id.id), ('pricelist_id','=',record.partner_id.property_product_pricelist_id.id)])
+                price_list_item = self.env["product.pricelist.item"].search([('product_tmpl_id','=',record.service_id.product_id.id), ('pricelist_id','=',record.partner_id.property_product_pricelist_id.id),
+                ('date_start', '<=', service_date),
+                ('date_end', '>=', service_date)])
                 
                 service_rate = self.env["service.rate"].search([('product_pricelist_item_id','=',price_list_item.id),
                                                                 ('from_loc_id','=',record.service_id.from_location.id),
@@ -236,5 +263,33 @@ class AccountMove(models.Model):
 
             
             record.write({"invoice_line_ids":[(0,0,invoice_line_items)]})
+
+
+    def compute_credit_service_line_total(self):
+        for record in self:
+            total_price = sum(line.price for line in record.credit_service_line_ids if line.add_to_invoice)
+            for line_id in record.invoice_line_ids: 
+                record.write({"invoice_line_ids":[(1,line_id.id,{"price_unit":total_price})]})
                 
             
+            
+class CreditServiceLine(models.Model):
+    _name = 'credit.service.line'
+    _description = 'Credit Service Lines'
+
+    credit_invoice_id = fields.Many2one('account.move', string="Invoice ID")
+    service_date = fields.Date(string="Service Date")
+    service_number = fields.Char(string="Service Number")
+    trip_sheet_number = fields.Char(string="Trip Sheet No.")
+    vehicle_model = fields.Char(string="Vehicle Model")
+    vehicle_plate = fields.Char(string="Vehicle Plate")
+    service_product = fields.Char(string="Product")
+    from_location = fields.Char(string="From Location")
+    to_location = fields.Char(string="To Location")
+    price = fields.Float(string="Price")
+    add_to_invoice = fields.Boolean(string="Add to Invoice", default=True)
+    
+        
+
+
+    

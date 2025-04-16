@@ -1,0 +1,88 @@
+from odoo import models, fields, api
+
+
+class CreditServiceValidation(models.Model):
+    _name = 'credit.service.validation'
+    _description = 'Credit Service Validation'
+
+    partner_id = fields.Many2one('res.partner', string="Customer")
+    member_type = fields.Selection([ ('credit', 'Credit Member') ], string='Member Type', default="credit")
+    category_id = fields.Many2one('partner.category', 
+                                  string="Customer Category",
+                                  domain="[('partner_id','=', partner_id),('member_type','=',member_type)]")
+    from_date = fields.Date(string="From Date")
+    to_date = fields.Date(string="To Date")
+    state = fields.Selection([  ('draft', 'Draft'),
+                                ('confirm', 'Confirmed')  ], string='Status', default="draft")
+    service_line_ids = fields.One2many("service.statement.line", "credit_service_id", string="Services")
+
+
+    def get_services(self):
+
+        for record in self:
+            if not record.from_date or not record.to_date or not record.partner_id or not record.category_id:
+                continue
+
+            all_services = self.env["aaa.service"].search(
+                    [("customer_id", "=", record.partner_id.id),("sequence_id","=",record.category_id.id),("state","=","done")] 
+                )
+            
+            credit_services = {}
+            record.service_line_ids = [(5, 0, 0)]
+
+            for service in all_services:
+                service_date = service.service_time.date()
+                if record.from_date <= service_date <= record.to_date:
+
+                    price_list_item = self.env["product.pricelist.item"].search([('product_tmpl_id','=',service.product_id.id), ('pricelist_id','=',record.partner_id.property_product_pricelist_id.id),
+                    ('date_start', '<=', service_date),
+                    ('date_end', '>=', service_date)])
+                
+                    service_rate = self.env["service.rate"].search([('product_pricelist_item_id','=',price_list_item.id),
+                                                            ('from_loc_id','=',service.from_location.id),
+                                                            ('to_loc_id','=',service.to_location.id),])
+                    
+                    credit_services[service.id] = {
+                            "service_date": service_date,
+                            "service_number": service.name,
+                            "trip_sheet_number": service.credit_proforma_number,
+                            "vehicle_model": service.vehicle_model,
+                            "vehicle_plate": service.vehicle_plate,
+                            "service_product": service.product_id.name,
+                            "from_location": service.from_location.name,
+                            "to_location": service.to_location.name,
+                            "price": service_rate.price,
+                            }    
+
+            service_lines = [(0, 0, values)
+                                for values in credit_services.values()] 
+            
+            record.write({"service_line_ids": service_lines})
+
+
+    def action_confirm(self):
+        for record in self:
+            record.state = "confirm"
+
+    
+    def action_draft(self):
+        for record in self:
+            record.state = "draft"
+
+
+class ServiceStatementLine(models.Model):
+    _name = 'service.statement.line'
+    _description = 'Service Statement Line'
+
+
+    credit_service_id = fields.Many2one('credit.service.validation', string="Credit ID")
+    service_date = fields.Date(string="Service Date")
+    service_number = fields.Char(string="Service Number")
+    trip_sheet_number = fields.Char(string="Trip Sheet No.")
+    vehicle_model = fields.Char(string="Vehicle Model")
+    vehicle_plate = fields.Char(string="Vehicle Plate")
+    service_product = fields.Char(string="Product")
+    from_location = fields.Char(string="From Location")
+    to_location = fields.Char(string="To Location")
+    price = fields.Float(string="Price")
+    add_to_report = fields.Boolean(string="Add to Report", default=True)
