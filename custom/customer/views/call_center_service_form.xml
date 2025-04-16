@@ -181,20 +181,20 @@
                             <group string="VEHICLE DETAILS" name="vehicle_details">
                                 <field name="vehicle_type" string="Vehicle Type"
                                     readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)"
-                                    invisible="(member_type == 'credit' and not is_imported)" />
+                                    invisible="(member_type == 'credit' and not is_imported) or (member_type == 'adhoc')" />
                                 <field name="vehicle_type_id"
                                     options="{'no_create': True, 'no_open': True}"
-                                    invisible="member_type == 'policy' or is_imported == True" />
+                                    invisible="member_type == 'policy' or is_imported == True" string="Vehicle Type"/>
                                 <field name="vehicle_model" string="Vehicle Model"
                                     readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user) "
-                                    invisible="(member_type == 'credit' and not is_imported)" />
+                                    invisible="(member_type == 'credit' and not is_imported) or (member_type == 'adhoc')" />
                                 <field name="vehicle_model_id"
                                     options="{'no_create': True, 'no_open': True}"
-                                    invisible="member_type == 'policy' or is_imported == True" />
+                                    invisible="member_type == 'policy' or is_imported == True" string="Vehicle Model"/>
                                 <field name="vehicle_plate" string="Vehicle Plate"
                                     readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" />
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch','start', 'reach']  or member_type == 'policy'" />
+                                    readonly="state == 'done'  or member_type == 'policy'" />
                                 <field name="policy_no" string="Policy No"
                                     readonly="state not in ['draft', 'initiate', 'dispatch']  or member_type == 'policy'" />
                                 <field name="member_activate_date"
