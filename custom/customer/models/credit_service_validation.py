@@ -15,6 +15,9 @@ class CreditServiceValidation(models.Model):
     state = fields.Selection([  ('draft', 'Draft'),
                                 ('confirm', 'Confirmed')  ], string='Status', default="draft")
     service_line_ids = fields.One2many("service.statement.line", "credit_service_id", string="Services")
+    taxable_amount = fields.Float(string="Taxable Amount")
+    vat = fields.Float(string="VAT 5%")
+    total_amount = fields.Float(string="Total Amount")
 
 
     def get_services(self):
@@ -29,6 +32,10 @@ class CreditServiceValidation(models.Model):
             
             credit_services = {}
             record.service_line_ids = [(5, 0, 0)]
+
+            taxable_amount = 0
+            vat = 0
+            total_amount = 0
 
             for service in all_services:
                 service_date = service.service_time.date()
@@ -52,12 +59,29 @@ class CreditServiceValidation(models.Model):
                             "from_location": service.from_location.name,
                             "to_location": service.to_location.name,
                             "price": service_rate.price,
-                            }    
+                            }
+
+                    taxable_amount += service_rate.price
+            vat = taxable_amount * 0.05
+            total_amount = taxable_amount + vat    
 
             service_lines = [(0, 0, values)
                                 for values in credit_services.values()] 
             
-            record.write({"service_line_ids": service_lines})
+            record.write({"service_line_ids": service_lines,
+                          "taxable_amount": taxable_amount,
+                          "vat": vat,
+                          "total_amount": total_amount})
+            
+    
+    def update_total(self):
+        for record in self:
+            taxable_amount = sum(line.price for line in record.service_line_ids if line.add_to_report)
+            vat = taxable_amount * 0.05
+            total_amount = taxable_amount + vat 
+            record.write({"taxable_amount": taxable_amount,
+                          "vat": vat,
+                          "total_amount": total_amount})
 
 
     def action_confirm(self):

@@ -2,7 +2,7 @@
 {
     'name': 'Customer',
     'version': '1.0',
-    'depends': ['web','base','product','hr','mail','account'],
+    'depends': ['web','base','product','hr','mail','account','report_xlsx'],
     'assets': {
         'web.assets_backend': [
              '/customer/static/src/css/my_custom_style.css',
@@ -15,6 +15,7 @@
     'description': 'Customers Management',
     'data': [
         'security/ir.model.access.csv',
+        'reports/reports.xml',
         'views/res_partner_customer.xml',
         'views/res_partner_member.xml',
         'views/res_partner_member_temp.xml',
