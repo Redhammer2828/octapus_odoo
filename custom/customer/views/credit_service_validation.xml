@@ -24,6 +24,7 @@
                 <header>
                     <button name="get_services" type="object" string="Get Services" class="btn-primary" invisible="state == 'confirm'" />
                     <button name="action_confirm" type="object" string="Confirm" class="btn-primary" invisible="state == 'confirm'" />
+                    <button name="customer.credit_validation_xlsx_report" type="action" string="Export" invisible="state == 'draft'" class="btn-primary" />
                     <button name="action_draft" type="object" string="Reset to Draft" invisible="state == 'draft'" />
                     <field name="state" widget="statusbar" options="{'clickale':0}" />
                 </header>
@@ -56,6 +57,23 @@
                                     <field name="add_to_report" />
                                 </tree>
                             </field>
+
+                            <div class="d-flex justify-content-end mt-2 mb-2">
+                                <button name="update_total" type="object" string="Update Total" class="btn-primary" />
+                            </div>
+                            
+                            <group col="12" class="oe_invoice_lines_tab">
+                                <group colspan="9">
+                                </group>
+                        
+                                <group colspan="3">
+                                    <group class="oe_subtotal_footer">
+                                        <field name="taxable_amount" colspan="2" readonly="1" />
+                                        <field name="vat" colspan="2" readonly="1" />
+                                        <field name="total_amount" class="oe_subtotal_footer_separator" readonly="1" />
+                                    </group>
+                                </group>
+                            </group>
                         </page>
                     </notebook>
                 </sheet>

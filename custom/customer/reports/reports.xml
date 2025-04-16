@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="credit_validation_xlsx_report" model="ir.actions.report">
+        <field name="name">Credit Service Validation Report Xlsx</field>
+        <field name="model">credit.service.validation</field>
+        <field name="report_type">xlsx</field>
+        <field name="report_name">customer.credit_validation_xlsx_report</field>
+        <field name="report_file">customer.credit_validation_xlsx_report</field>
+        <field name="binding_model_id" ref="model_credit_service_validation"/>
+        <field name="binding_type">report</field>
+    </record>
+
+</odoo>
