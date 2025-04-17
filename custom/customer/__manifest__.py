@@ -2,7 +2,7 @@
 {
     'name': 'Customer',
     'version': '1.0',
-    'depends': ['web','base','product','hr','mail','account'],
+    'depends': ['web','base','product','hr','mail','account','report_xlsx'],
     'assets': {
         'web.assets_backend': [
              '/customer/static/src/css/my_custom_style.css',
@@ -15,6 +15,7 @@
     'description': 'Customers Management',
     'data': [
         'security/ir.model.access.csv',
+        'reports/reports.xml',
         'views/res_partner_customer.xml',
         'views/res_partner_member.xml',
         'views/res_partner_member_temp.xml',
@@ -45,6 +46,7 @@
         'views/call_center_service_form.xml',
         'views/call_center_enquiry.xml',
         'views/call_center_all_service_view.xml',
+        'views/credit_service_validation.xml',
         'views/policy_member_service_history.xml',
         'views/res_partner_vendor.xml',
         'views/product_pricelist.xml',
