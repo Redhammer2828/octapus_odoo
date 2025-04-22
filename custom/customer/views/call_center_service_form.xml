@@ -60,7 +60,7 @@
                         <button name="action_cancel_service" type="object" string="Cancel"
                             confirm="Cancel this service, do you want to proceed?"
                             class="btn-danger"
-                            invisible="state not in ('initiate', 'dispatch', 'start', 'reach') or is_agent_user" />
+                            invisible="state not in ('initiate', 'dispatch', 'start', 'reach','change') or is_agent_user" />
                         <button name="action_request_service" type="object" string="Request"
                             invisible="state != 'cancel'  or is_agent_user" groups="base.group_user"
                             class="btn-primary" />
@@ -75,7 +75,7 @@
                         <field name="show_new_change_button" invisible="1" />
                         <button name="action_change" type="object" string="Change" class="btn-info"
                             confirm="Change this service, do you want to proceed?"
-                            invisible="state not in ('initiate', 'dispatch', 'start','completed_by_driver', 'reach')" />
+                            invisible="state not in ('dispatch', 'start','completed_by_driver', 'reach')" />
                         <button name="action_create_enquiry" string="Enquiry" type="object"
                             class="btn-default"
                             invisible="state not in ('initiate', 'dispatch', 'start', 'reach','completed_by_driver')" />

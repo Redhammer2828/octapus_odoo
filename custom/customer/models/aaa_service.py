@@ -13,6 +13,7 @@ import pytz
 from dateutil.relativedelta import relativedelta
 import pytz
 from dateutil.relativedelta import relativedelta
+import socket
 load_dotenv()
 _logger = logging.getLogger(__name__)
 base_url = os.getenv("BASE_URL")
@@ -268,53 +269,7 @@ class AAAService(models.Model):
     current_time = fields.Datetime(string='Current Time', compute='_compute_current_time')
     time_difference = fields.Float(string='Time Difference (minutes)', compute='_compute_time_difference', store=False)
     is_afl_application = fields.Boolean('Is AFL Application')
-    
-    # job_ref = fields.Char(string="Job Reference", compute="_compute_job_ref", store=True)
-    
-
-    # @api.depends('credit_customer_co')
-    # def _compute_job_ref(self):
-    #     """Extracts integers before the underscore from credit_customer_co and stores in job_ref."""
-    #     for record in self:
-    #         if record.credit_customer_co:
-    #             match = re.match(r"^(\d+)_", record.credit_customer_co)
-    #             record.job_ref = match.group(1) if match else ''
-
-    # @api.model
-    # def update_existing_job_refs(self):
-    #     """Updates job_ref for existing records that have credit_customer_co values."""
-    #     records = self.search([])
-    #     for rec in records:
-    #         if rec.credit_customer_co:
-    #             match = re.match(r"^(\d+)_", rec.credit_customer_co)
-    #             rec.job_ref = match.group(1) if match else ''
-
-    # job_ref = fields.Char(string="Job Reference", compute="_compute_job_ref", store=True)
-
-    # @api.depends('credit_customer_co')
-    # def _compute_job_ref(self):
-    #     """Extracts integers before the underscore from credit_customer_co and stores in job_ref."""
-    #     for record in self:
-    #         if record.credit_customer_co:
-    #             match = re.match(r"^(\d+)_", record.credit_customer_co)
-    #             record.job_ref = match.group(1) if match else ''
-
-    # @api.model
-    # def _update_old_records(self):
-    #     """Automatically updates job_ref for existing records when the module is loaded."""
-    #     records = self.search([('credit_customer_co', '!=', False)])  # Get relevant records
-    #     for rec in records:
-    #         match = re.match(r"^(\d+)_", rec.credit_customer_co)
-    #         job_ref_value = match.group(1) if match else ''
-    #         rec.sudo().write({'job_ref': job_ref_value})  # Save to the database
-
-    # @api.model
-    # def init(self):
-    #     """This method is executed when the module is installed or updated."""
-    #     self._update_old_records()  # Automatically updates job_ref for old records
-
-   
-    
+        
     show_new_change_button = fields.Boolean(
         compute="_compute_show_new_change_button",
         store=False
@@ -490,21 +445,6 @@ class AAAService(models.Model):
 
             # Set the field to True if the user is either a Manager or an Admin
             record.is_manager_or_admin = is_manager or is_admin
-    # @api.depends()  # Remove created_by dependency since we want current user
-    # def _compute_is_dispatcher_or_manager_or_admin(self):
-    #     """Compute is_dispatcher_or_manager_or_admin based on the current user's group membership."""
-    #     for record in self:
-    #         # Get the current user's groups
-    #         user_groups = self.env.user.groups_id
-    #         is_dispatcher = any(group.name == 'Dispatcher' for group in user_groups)
-    #         # Check if the user belongs to the 'Manager' group
-    #         is_manager = any(group.name == 'Manager' for group in user_groups)
-
-    #         # Check if the user is an Admin
-    #         is_admin = any(group.name == 'IT Group' for group in user_groups)
-
-    #         # Set the field to True if the user is either a Manager or an Admin
-    #         record.is_dispatcher_or_manager_or_admin = is_dispatcher or is_manager or is_admin 
 
     @api.depends()  # Remove created_by dependency since we want current user
     def _compute_is_dispatcher_or_manager_or_lead_or_admin(self):
@@ -628,23 +568,131 @@ class AAAService(models.Model):
                 else:
                     record.quantity = 0
                     record.quantity_with_days = "0 Days"
-
+# --------ALREADY EXISTED WRITE Till 17/04/2025----------------
+    # def write(self, vals):
+    #     res = super(AAAService, self).write(vals)
+    #     for record in self:
+    #         if record.member_type in ['credit', 'adhoc'] and 'date_time_to' in vals:
+    #             if record.date_time_from and record.date_time_to:
+    #                 delta = record.date_time_to - record.date_time_from
+    #                 total_hours = delta.total_seconds() / 3600  # Convert seconds to hours
+    #                 days = int(total_hours // 24)  # Full days
+    #                 if total_hours % 24 > 1:  # Count extra hour into the next day if exceeds 25 hours
+    #                     days += 1
+    #                 record.quantity = days
+    #                 record.quantity_with_days = f"{days} Day{'s' if days != 1 else ''}"
+    #             else:
+    #                 record.quantity = 0
+    #                 record.quantity_with_days = "0 Days"
+    #     return res
+# -----------------------------------------------------------------------------------------------------------
+# ---------------API Added Write function---------------------------------------------------------------------
     def write(self, vals):
-        res = super(AAAService, self).write(vals)
+        _logger.info("=== WRITE METHOD ENTERED ===")
+        _logger.info("Input values: %s", vals)
+        _logger.info("Records being updated: %s", [(r.id, r.name) for r in self])
+
+        # Capture old chassis numbers
+        old_chassis_map = {record.id: record.vehicle_chasis_no for record in self}
+
+        # Track relationship field changes
+        if 'member_id' in vals:
+            vals['is_member_from_partner'] = bool(vals['member_id'])
+        if 'customer_id' in vals:
+            vals['is_customer_from_partner'] = bool(vals['customer_id'])
+        if 'sequence_id' in vals:
+            vals['is_sequence_from_partner'] = bool(vals['sequence_id'])
+
+        # Set created_by if in dispatch state and not explicitly set
+        if self.state == 'dispatch' and not vals.get('created_by'):
+            vals['created_by'] = self.env.user.id
+
+        # Handle comment logic
+        if 'comments' in vals and vals['comments']:
+            existing_comments = self.comments or ""
+            new_comment = f"{existing_comments}\n{vals['comments']}" if existing_comments else vals['comments']
+
+            # Update comment field for display
+            vals['comments'] = new_comment
+
+            # Create new comment record
+            self.env['service.comment'].create({
+                'service_id': self.id,
+                'comment': vals['comments'],
+                'comment_date_and_time': fields.Datetime.now(),
+                'comment_user': self.env.user.id,
+                'comment_status': self.state,
+            })
+
+            # Clear input field (optional, depending on your UX)
+            vals['comments'] = ''
+
+        # Perform the write
+        try:
+            res = super(AAAService, self).write(vals)
+            _logger.info("Super write completed.")
+        except Exception as e:
+            _logger.exception("Write failed.")
+            raise
+
+        # Post-write logic
         for record in self:
+            # Recalculate quantity
             if record.member_type in ['credit', 'adhoc'] and 'date_time_to' in vals:
                 if record.date_time_from and record.date_time_to:
                     delta = record.date_time_to - record.date_time_from
-                    total_hours = delta.total_seconds() / 3600  # Convert seconds to hours
-                    days = int(total_hours // 24)  # Full days
-                    if total_hours % 24 > 1:  # Count extra hour into the next day if exceeds 25 hours
+                    total_hours = delta.total_seconds() / 3600
+                    days = int(total_hours // 24)
+                    if total_hours % 24 > 1:
                         days += 1
                     record.quantity = days
                     record.quantity_with_days = f"{days} Day{'s' if days != 1 else ''}"
                 else:
                     record.quantity = 0
                     record.quantity_with_days = "0 Days"
+
+            # Check if chassis number changed
+            old_chassis = old_chassis_map.get(record.id)
+            if old_chassis != record.vehicle_chasis_no:
+                _logger.info("Chassis changed from %s to %s", old_chassis, record.vehicle_chasis_no)
+                record._trigger_chassis_update_api()
+
+        _logger.info("=== WRITE METHOD COMPLETED ===")
         return res
+# -------------------------------------------------------------------------------------------------------------
+
+
+    def _trigger_chassis_update_api(self):
+        for record in self:
+            if not record.name or not record.vehicle_chasis_no:
+                _logger.warning("Skipping API call: Missing service number or chassis number for record ID %s", record.id)
+                continue
+
+            base_url = f"{base_url}/carhire-order/order/service/consumers/orders/update/chassis-number"
+            params = {
+                'chassisNumber': record.vehicle_chasis_no,
+                'serviceNumber': record.name,
+            }
+
+            full_url = f"{base_url}?chassisNumber={params['chassisNumber']}&serviceNumber={params['serviceNumber']}"
+            _logger.info("Sending PUT to %s", full_url)
+
+            try:
+                response = requests.put(full_url)
+
+                _logger.info("API Response: %s - %s", response.status_code, response.text)
+
+                if response.status_code == 200:
+                    record.message_post(body="✅ Chassis number updated via external API.")
+                else:
+                    _logger.warning("API call returned non-200 status. Status: %s, Response: %s",
+                                    response.status_code, response.text)
+
+            except requests.exceptions.RequestException:
+                _logger.exception("API request failed for record ID %s", record.id)
+
+
+# ----------------------------------------------------------------------------------------------------------
 
     @api.depends('selected_from_location', 'selected_to_location')
     def _compute_amount(self):
@@ -841,42 +889,42 @@ class AAAService(models.Model):
             service.dispatcher_from_history = relevant_history[:1].user if relevant_history else False
             print("DISPATCHER",relevant_history)
 
-    def write(self, vals):
-        """Override the write method to ensure comments are saved and created_by is updated."""
-        # Update tracking fields if values are being changed
-        if 'member_id' in vals:
-            vals['is_member_from_partner'] = bool(vals['member_id'])
-        if 'customer_id' in vals:
-            vals['is_customer_from_partner'] = bool(vals['customer_id'])
-        if 'sequence_id' in vals:
-            vals['is_sequence_from_partner'] = bool(vals['sequence_id'])
+    # def write(self, vals):
+    #     """Override the write method to ensure comments are saved and created_by is updated."""
+    #     # Update tracking fields if values are being changed
+    #     if 'member_id' in vals:
+    #         vals['is_member_from_partner'] = bool(vals['member_id'])
+    #     if 'customer_id' in vals:
+    #         vals['is_customer_from_partner'] = bool(vals['customer_id'])
+    #     if 'sequence_id' in vals:
+    #         vals['is_sequence_from_partner'] = bool(vals['sequence_id'])
 
-        # If the record is in dispatch state, dynamically update created_by
-        if self.state == 'dispatch' and not vals.get('created_by'):
-            vals['created_by'] = self.env.user.id
+    #     # If the record is in dispatch state, dynamically update created_by
+    #     if self.state == 'dispatch' and not vals.get('created_by'):
+    #         vals['created_by'] = self.env.user.id
 
-        # Handle comment appending and record creation
-        if 'comments' in vals and vals['comments']:
-            existing_comments = self.comments or ""
-            new_comment = f"{existing_comments}\n{vals['comments']}" if existing_comments else vals['comments']
+    #     # Handle comment appending and record creation
+    #     if 'comments' in vals and vals['comments']:
+    #         existing_comments = self.comments or ""
+    #         new_comment = f"{existing_comments}\n{vals['comments']}" if existing_comments else vals['comments']
 
-            # Update the comments field in the service model
-            vals['comments'] = new_comment
+    #         # Update the comments field in the service model
+    #         vals['comments'] = new_comment
 
-            # Create the service.comment record for each new comment
-            self.env['service.comment'].create({
-                'service_id': self.id,
-                'comment': vals['comments'],
-                'comment_date_and_time': fields.Datetime.now(),
-                'comment_user': self.env.user.id,
-                'comment_status': self.state,
-            })
+    #         # Create the service.comment record for each new comment
+    #         self.env['service.comment'].create({
+    #             'service_id': self.id,
+    #             'comment': vals['comments'],
+    #             'comment_date_and_time': fields.Datetime.now(),
+    #             'comment_user': self.env.user.id,
+    #             'comment_status': self.state,
+    #         })
 
-            # Clear the comments field after saving
-            vals['comments'] = ''  # Clear the comment field
+    #         # Clear the comments field after saving
+    #         vals['comments'] = ''  # Clear the comment field
 
-        # Call the super method to handle the actual update of the service
-        return super(AAAService, self).write(vals)
+    #     # Call the super method to handle the actual update of the service
+    #     return super(AAAService, self).write(vals)
 
     @api.onchange('state')
     def _onchange_state(self):
@@ -1471,35 +1519,6 @@ class AAAService(models.Model):
 
         return True
 
-    # def action_reach_service(self):
-    #     self.state = 'reach'
-    #     for service in self:
-
-    #             self.env['service.history'].create({
-    #                 'service_id': service.id,
-    #                 'user': self.env.user.id,
-    #                 'time': fields.Datetime.now(),
-    #                 'status': 'Reached',
-    #                 'timeline_status': self.state,
-    #             })
-
-    #     comment_content = service.comments or 'REACHED'
-
-    #         # Create the service.comment record
-    #     self.env['service.comment'].create({
-    #         'service_id': service.id,
-    #         'comment': comment_content,
-    #         'comment_date_and_time': fields.Datetime.now(),
-    #         'comment_user': self.env.user.id,
-    #         'comment_status': service.state,
-    #         })
-
-    #         # If a manual comment exists, clear the service.comments field after creating the record
-    #     if service.comments:
-    #         service.comments = False
-
-    #     return True
-
     def action_reach_service(self):
         self.state = 'reach'
         for service in self:
@@ -1671,9 +1690,6 @@ class AAAService(models.Model):
 
         return True
 
-    
-
-
     def action_custom_cancel_service(self):
         self.ensure_one()
         return {
@@ -1803,14 +1819,28 @@ class AAAService(models.Model):
                 'status': 'Applied Changes',
                 'timeline_status': self.state,
             })
+
+                        # Use a default comment if no comment exists
+            comment_content = service.comments or 'CHANGED'
+
+            # Create a service comment record
+            self.env['service.comment'].sudo().create({
+                'service_id': service.id,
+                'comment': comment_content,
+                'comment_date_and_time': fields.Datetime.now(),
+                'comment_user': self.env.user.id,
+                'comment_status': 'Applied changes',  # Explicitly set the status
+            })
+
+            # Clear the comments field if it had a manual comment
+            if service.comments:
+                service.sudo().write({'comments': False})
         # Optionally, refresh the view to show changes
         return {
             'type': 'ir.actions.client',
             'tag': 'reload',
         }
 
-    
-    
     def action_request_service(self):
         self.state='requested'
         for service in self:
