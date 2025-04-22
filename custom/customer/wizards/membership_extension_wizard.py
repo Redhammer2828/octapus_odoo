@@ -47,6 +47,8 @@ class MembershipExtensionWizard(models.TransientModel):
     #         partner.membership_state = 'temp'  # Only update if user is actually in the group
 
     def action_extension(self):
+        if self.new_expiry_date <= self.expiry_date:
+            raise UserError("New Expiry Date must be greater than old Expiry Date.")
         partner = self.env['res.partner'].browse(self._context.get('active_id'))
 
         if not partner:
@@ -91,7 +93,7 @@ class MembershipExtensionWizard(models.TransientModel):
                 'member_id': partner.id,
                 'user': self.env.user.id,
                 'time': fields.Datetime.now(),
-                'status': 'Membership Extended',
+                'status': 'Membership Extended - Manual',
                 'timeline_status': partner.membership_state,
             })
         # Update the partner's expiry date with the new value

@@ -126,12 +126,52 @@ class ResPartnerMembers(models.Model):
             )
         return super(ResPartnerMembers, self).unlink()
 
+    # @api.model
+    # def create(self, vals):
+    #     # Dynamically set the created_by field if not set already
+    #     if not vals.get('create_uid'):
+    #         vals['create_uid'] = self.env.user.id
+
+    #     if self.env.context.get('from_res_partner_member_form'):
+    #         vals['is_customer'] = True
+    #         vals['credit_member_ok'] = False
+    #         vals['adhoc_member'] = False
+    #         vals['member_type'] = 'policy'
+
+    #     if self.env.context.get('from_res_partner_credit_member_form'):
+    #         vals['is_customer'] = True
+    #         vals['credit_member_ok'] = True
+    #         vals['adhoc_member'] = False
+    #         vals['member_type'] = 'credit'
+
+    #     if self.env.context.get('from_res_partner_adhoc_member_form'):
+    #         vals['is_customer'] = True
+    #         vals['credit_member_ok'] = False
+    #         vals['adhoc_member'] = True
+    #         vals['member_type'] = 'adhoc'
+
+    #     if not vals.get('create_uid'):
+    #         vals['create_uid'] = self.env.user.id
+        
+
+    #     new_partner = super(ResPartnerMembers, self).create(vals)
+    #     self.env['membership.timeline'].create({
+    #         'member_id': new_partner.id,
+    #         'user': self.env.user.id,
+    #         'time': fields.Datetime.now(),
+    #         'status': 'Created',
+    #         'timeline_status': 'temp',
+    #     })
+    #     return new_partner
+
+    # NEW CREATE FUNCTION
     @api.model
     def create(self, vals):
         # Dynamically set the created_by field if not set already
         if not vals.get('create_uid'):
             vals['create_uid'] = self.env.user.id
 
+        # Set default values based on context
         if self.env.context.get('from_res_partner_member_form'):
             vals['is_customer'] = True
             vals['credit_member_ok'] = False
@@ -150,11 +190,18 @@ class ResPartnerMembers(models.Model):
             vals['adhoc_member'] = True
             vals['member_type'] = 'adhoc'
 
+        # Clean vehicle_chasis_no: trim spaces and convert to uppercase
+        if vals.get('vehicle_chasis_no'):
+            vals['vehicle_chasis_no'] = vals['vehicle_chasis_no'].strip().upper()
+
+        # Final safety check for create_uid
         if not vals.get('create_uid'):
             vals['create_uid'] = self.env.user.id
-        
 
+        # Create partner
         new_partner = super(ResPartnerMembers, self).create(vals)
+
+        # Add membership timeline entry
         self.env['membership.timeline'].create({
             'member_id': new_partner.id,
             'user': self.env.user.id,
@@ -162,8 +209,16 @@ class ResPartnerMembers(models.Model):
             'status': 'Created',
             'timeline_status': 'temp',
         })
+
         return new_partner
     
+    def write(self, vals):
+        # Clean vehicle_chasis_no: trim spaces and convert to uppercase
+        if vals.get('vehicle_chasis_no'):
+            vals['vehicle_chasis_no'] = vals['vehicle_chasis_no'].strip().upper()
+
+        return super(ResPartnerMembers, self).write(vals)
+   
     @api.model
     def fields_get(self, allfields=None, attributes=None):
         """Override fields_get to customize field properties based on membership state and member type."""
@@ -514,7 +569,7 @@ class ResPartnerMembers(models.Model):
             'target': 'new',
             'context': {
                 'default_parent_customer_id': self.parent_customer_id.id,
-                'default_activation_date': self.member_activate_date,
+                'default_activation_date': self.member_expiry_date,
                 'default_card_type_id': self.card_type_id.name,
                 'default_vehicle_chasis_no': self.vehicle_chasis_no,
                 'default_product_template_id': self.product_template_id.id,
