@@ -60,7 +60,7 @@
                         <button name="action_cancel_service" type="object" string="Cancel"
                             confirm="Cancel this service, do you want to proceed?"
                             class="btn-danger"
-                            invisible="state not in ('initiate', 'dispatch', 'start', 'reach','change') or is_agent_user" />
+                            invisible="state not in ('initiate', 'dispatch', 'start', 'reach','change')" />
                         <button name="action_request_service" type="object" string="Request"
                             invisible="state != 'cancel'  or is_agent_user" groups="base.group_user"
                             class="btn-primary" />
