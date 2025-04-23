@@ -14,6 +14,13 @@ from dateutil.relativedelta import relativedelta
 import pytz
 from dateutil.relativedelta import relativedelta
 import socket
+
+import base64
+import io
+import zipfile
+from odoo.http import request
+
+
 load_dotenv()
 _logger = logging.getLogger(__name__)
 base_url = os.getenv("BASE_URL")
@@ -1876,6 +1883,49 @@ class AAAService(models.Model):
                 'comment_user': self.env.user.id,
                 'comment_status' : service.state,
         })
+            
+
+
+    def download_service_attachments_zip(self):
+        # Create a binary stream to write the zip data
+        zip_stream = io.BytesIO()
+
+        with zipfile.ZipFile(zip_stream, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for record in self:
+                folder_name = f"{'service'}_{record.id}"
+                attachments = self.env['ir.attachment'].search([
+                    ('res_model', '=', 'aaa.service'),
+                    ('res_id', '=', record.id),
+                    ('type', '=', 'binary')
+                ])
+
+                for attachment in attachments:
+                    filename = attachment.name or f"file_{attachment.id}"
+                    if attachment.datas:
+                        decoded = base64.b64decode(attachment.datas)
+                        zip_path = f"{folder_name}/{filename}"
+                        zipf.writestr(zip_path, decoded)
+
+        zip_stream.seek(0)
+
+        # Create a download response using ir.actions.act_url
+        base64_zip = base64.b64encode(zip_stream.read()).decode()
+
+        # Save in ir.attachment temporarily
+        attachment = self.env['ir.attachment'].create({
+            'name': 'service_attachments.zip',
+            'type': 'binary',
+            'datas': base64_zip,
+            'mimetype': 'application/zip'
+        })
+
+        # Redirect to download the file
+        return {
+            'type': 'ir.actions.act_url',
+            'url': f'/web/content/{attachment.id}?download=true',
+            'target': 'self',
+        }
+
 
 
 class ServiceComment(models.Model):
