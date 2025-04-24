@@ -426,6 +426,8 @@ class AccountMove(models.Model):
 
             return " ".join(reversed(chunks)).strip()
 
+    
+
         def draw_invoice_first_page(pdf):
             from datetime import datetime
             import io
@@ -437,25 +439,30 @@ class AccountMove(models.Model):
             margin = 40
             logo_width, logo_height = 100, 50
             table_x = margin
-            # table_y = height - 80
-            table_y = height - 145  # Moved 20 points lower
+            table_y = height - 145
             table_width = width - 2 * margin
             table_height = 650
 
             pdf.setStrokeColorRGB(0, 0, 0)
             pdf.setFont("Helvetica", 9)
-            pdf.setLineWidth(1)  # ✅ Uniform border thickness
+            pdf.setLineWidth(1)
+
+            # Default logo_y so it's available even if no logo is set
+            logo_y = height - margin - logo_height
 
             # 1. Logo and Tagline
             company = self.env['res.company'].search([], limit=1)
             if company.logo:
                 logo_data = base64.b64decode(company.logo)
                 logo_image = ImageReader(io.BytesIO(logo_data))
-                pdf.drawImage(logo_image, table_x, height - logo_height - 10, width=logo_width, height=logo_height)
+                logo_x = width - margin - logo_width
+                pdf.drawImage(logo_image, logo_x, logo_y, width=logo_width, height=logo_height)
 
+            # Tagline just below the logo
             pdf.setFont("Helvetica", 10)
-            #pdf.drawRightString(width - margin, height - logo_height - 5, "We guarantee to get you moving...")
-            pdf.drawRightString(width - margin, height - logo_height - 65, "We guarantee to get you moving...")
+            tagline_y = logo_y - 15
+            pdf.drawRightString(width - margin, tagline_y, "We guarantee to get you moving...")
+
 
 
             # 2. Outer Box
@@ -768,7 +775,6 @@ class AccountMove(models.Model):
 
 
 
-
         def draw_service_statement_page(pdf):
             from reportlab.lib.colors import HexColor, white, black
             from reportlab.lib.utils import ImageReader
@@ -781,6 +787,7 @@ class AccountMove(models.Model):
             # PDF dimensions
             width, height = pdf._pagesize
             margin = 30
+            table_width = width - 2 * margin  # Ensures table fits within page margins
             y_position = height - margin
 
             # Draw logo
@@ -806,7 +813,7 @@ class AccountMove(models.Model):
             ]
 
             col_widths_percent = [0.10, 0.14, 0.12, 0.13, 0.13, 0.13, 0.13, 0.12]
-            col_widths = [width * pct for pct in col_widths_percent]
+            col_widths = [table_width * pct for pct in col_widths_percent]
 
             def wrap_text(text, max_width, font_name="Helvetica", font_size=8):
                 words = str(text).split()
@@ -874,12 +881,9 @@ class AccountMove(models.Model):
                         pdf.drawString(x + padding, y_position - 12 - j * 10, line)
                     x += col_widths[i]
 
-                # total_sum += service_price
                 total_sum += service_price * 1.05
 
                 y_position -= actual_row_height
-
-            
 
             # TOTAL row
             values = ["", "", "", "", "", "", "TOTAL", f"{total_sum:.2f}"]
@@ -901,6 +905,8 @@ class AccountMove(models.Model):
 
             y_position -= actual_row_height
             pdf.showPage()
+
+
 
 
 
