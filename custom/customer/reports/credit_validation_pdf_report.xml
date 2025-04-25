@@ -1,0 +1,62 @@
+<!-- <?xml version="1.0" encoding="utf-8"?>
+
+<odoo>
+  <template id="report_credit_validation_pdf">
+    <t t-call="web.html_container">
+      <t t-call="web.external_layout">
+        <div class="page">
+          <h3 style="text-align: center; font-size: 12px;">Service Statement</h3>
+          <t t-foreach="docs" t-as="line">
+            <div class="content">
+              <table style="width: 100%; font-size: 9px; border-collapse: collapse;">
+                <thead style="background-color:rgb(13, 35, 123); color: white;">
+                  <tr>
+                    <th style="padding: 4px;">Service Date</th>
+                    <th style="padding: 4px;">Service Number</th>
+                    <th style="padding: 4px;">Trip Sheet No.</th>
+                    <th style="padding: 4px;">Vehicle Model</th>
+                    <th style="padding: 4px;">Vehicle Plate</th>
+                    <th style="padding: 4px;">Product</th>
+                    <th style="padding: 4px;">From Location</th>
+                    <th style="padding: 4px;">To Location</th>
+                    <th style="padding: 4px;">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <t t-foreach="line.service_line_ids" t-as="rec">
+                    <tr>
+                      <td style="padding: 3px;"><t t-esc="rec.service_date"/></td>
+                      <td style="padding: 3px;"><t t-esc="rec.service_number"/></td>
+                      <td style="padding: 3px;"><t t-esc="rec.trip_sheet_number"/></td>
+                      <td style="padding: 3px;"><t t-esc="rec.vehicle_model"/></td>
+                      <td style="padding: 3px;"><t t-esc="rec.vehicle_plate"/></td>
+                      <td style="padding: 3px;"><t t-esc="rec.service_product"/></td>
+                      <td style="padding: 3px;"><t t-esc="rec.from_location"/></td>
+                      <td style="padding: 3px;"><t t-esc="rec.to_location"/></td>
+                      <td style="padding: 3px; text-align: right;"><t t-esc="rec.price"/></td>
+                    </tr>
+                  </t>
+                </tbody>
+              </table>
+
+              <table style="margin-top: 5px; float: right; font-size: 9px;">
+                <tr>
+                  <td style="padding: 3px;"><strong>Taxable Amount:</strong></td>
+                  <td style="padding: 3px;" t-esc="line.taxable_amount"/>
+                </tr>
+                <tr>
+                  <td style="padding: 3px;"><strong>VAT (5%):</strong></td>
+                  <td style="padding: 3px;" t-esc="line.vat"/>
+                </tr>
+                <tr>
+                  <td style="padding: 3px;"><strong>Total:</strong></td>
+                  <td style="padding: 3px;" t-esc="line.total_amount"/>
+                </tr>
+              </table>
+            </div>
+          </t>
+        </div>
+      </t>
+    </t>
+  </template>
+</odoo> -->

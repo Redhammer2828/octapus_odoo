@@ -11,4 +11,13 @@
         <field name="binding_type">report</field>
     </record>
 
+    <!-- <record id="credit_validation_pdf_report" model="ir.actions.report">
+        <field name="name">Membership Details Report Pdf</field>
+        <field name="model">credit.service.validation</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">customer.report_credit_validation_pdf</field>
+        <field name="report_file">customer.report_credit_validation_pdf</field>
+        <field name="binding_model_id" ref="model_credit_service_validation"/>
+    </record> -->
+
 </odoo>

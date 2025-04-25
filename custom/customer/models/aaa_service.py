@@ -19,6 +19,7 @@ import base64
 import io
 import zipfile
 from odoo.http import request
+from requests.auth import HTTPBasicAuth
 
 
 load_dotenv()
@@ -1067,6 +1068,9 @@ class AAAService(models.Model):
 
         self._dispatch_service()
         # self._generate_service_name()
+
+        
+
         return True
 
     def _generate_service_name(self):
@@ -1323,6 +1327,7 @@ class AAAService(models.Model):
     def _dispatch_service(self):
         self._generate_service_name()
         self.state = 'dispatch'
+        self._trigger_order_notification_api(self.name, self.state, self.member_contact_no, self.vehicle_chasis_no)
         self.message_post(body=_("Service dispatched successfully."))
         self.env['service.history'].create({
             'service_id': self.id,
@@ -1620,6 +1625,8 @@ class AAAService(models.Model):
             # Clear the comments field after creating the record
             if service.comments:
                 service.comments = False
+            
+            self._trigger_order_notification_api(service.name, service.state, service.member_contact_no, service.vehicle_chasis_no)
 
         return True
 
@@ -1925,6 +1932,58 @@ class AAAService(models.Model):
             'url': f'/web/content/{attachment.id}?download=true',
             'target': 'self',
         }
+
+   ################## Base api tocken gereration code ############################## 
+    
+    # def get_auth_token_for_client(self):
+    #     base_url_client = os.getenv("BASE_URL_CLIENT")
+    #     client_username = os.getenv("CLIENT_USERNAME")
+    #     client_password = os.getenv("CLIENT_PASSWORD") 
+
+    #     url = f'{base_url_client}/am/carhire/oauth/token?grant_type=client_credentials'
+ 
+    #     auth = HTTPBasicAuth(client_username, client_password)
+    #     response = requests.post(url, auth=auth)
+
+    #     if response.status_code == 200:
+    #         data = response.json()
+    #         return data["access_token"]
+        
+
+    def _trigger_order_notification_api(self, order_number, status, phone_number, vehicle_chasis_no):
+        for record in self:
+            # auth_token = record.get_auth_token_for_client()
+            url = 'https://gioapi-gy-dev.kirkos.ae/aaa-customer/consumers/order-notification'
+            
+            headers = {'Content-Type': 'application/json',
+                       'Accept': '*/*'
+                       }
+            
+            payload = {
+                            "order_number": order_number,
+                            "status": status,
+                        }
+            
+            try:
+                response = requests.post(url, headers=headers, json=payload)
+                print("Response Text:", response.text)
+                print(f"status code: {response.status_code}")
+                if response.status_code == 200:
+                    try:
+                        response_text = response.json()
+                        self.message_post(body=_("Notification sent successfully: %s") % response_text)
+                        print("Response sent successfully")
+                    except json.JSONDecodeError:
+                        self.message_post(body=_("Non-JSON response received: %s") % response.text)
+                        print("Non-JSON response received:", response.text)
+                else:
+                    self.message_post(body=_("Failed to send notification, status code: %s, message: %s") % (response.status_code, response.text))
+                    print("Failed to send, status code:", response.status_code, "message:", response.text)
+
+            except requests.exceptions.RequestException as e:
+                self.message_post(body=_("Request failed: %s") % str(e))
+                print("Request failed:", str(e))
+            
 
 
 
