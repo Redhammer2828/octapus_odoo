@@ -1327,7 +1327,7 @@ class AAAService(models.Model):
     def _dispatch_service(self):
         self._generate_service_name()
         self.state = 'dispatch'
-        self._trigger_order_notification_api(self.name, self.state, self.member_contact_no, self.vehicle_chasis_no)
+        self._trigger_order_notification_api(self.name, self.state)
         self.message_post(body=_("Service dispatched successfully."))
         self.env['service.history'].create({
             'service_id': self.id,
@@ -1526,8 +1526,8 @@ class AAAService(models.Model):
                     print(f"API RESPONSE- start,{response.text}")
                 else:
                     print(f"API RESPONSE-ORDER NOT started,{response.text},{response.status_code}")
-
-
+                
+            self._trigger_order_notification_api(service.name, service.state)
 
         return True
 
@@ -1559,6 +1559,8 @@ class AAAService(models.Model):
             # If a manual comment exists, clear the service.comments field after creating the record
             if service.comments:
                 service.comments = False
+            
+            self._trigger_order_notification_api(service.name, service.state)
 
         if service.comments:
             service.comments = False
@@ -1573,6 +1575,7 @@ class AAAService(models.Model):
                     'time': fields.Datetime.now(),
                     'status': 'Completed by Driver',
                     'timeline_status': self.state,})
+                self._trigger_order_notification_api(service.name, service.state)
         comment_content = service.comments or 'COMPLETED BY DRIVER'
             # Create the service.comment record
         self.env['service.comment'].create({
@@ -1626,7 +1629,7 @@ class AAAService(models.Model):
             if service.comments:
                 service.comments = False
             
-            self._trigger_order_notification_api(service.name, service.state, service.member_contact_no, service.vehicle_chasis_no)
+            self._trigger_order_notification_api(service.name, service.state)
 
         return True
 
@@ -1950,7 +1953,7 @@ class AAAService(models.Model):
     #         return data["access_token"]
         
 
-    def _trigger_order_notification_api(self, order_number, status, phone_number, vehicle_chasis_no):
+    def _trigger_order_notification_api(self, order_number, status):
         for record in self:
             # auth_token = record.get_auth_token_for_client()
             url = 'https://gioapi-gy-dev.kirkos.ae/aaa-customer/consumers/order-notification'
