@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="rac_bulk_upload_view_form" model="ir.ui.view">
+        <field name="name">rac.bulk.upload.view.form</field>
+        <field name="model">rac.bulk.upload</field>
+        <field name="arch" type="xml">
+            <form string="RAC Bulk Reports">
+                
+                <group col="2">
+                    <group>
+                        
+                        <field name="from_date" />
+                        <field name="to_date" />
+                        
+                    </group>
+                    <group>
+                        
+                        <field name="customer_id" 
+                         options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
+                        <field name="member_type" />
+                        <field name="sequence_id" 
+                         options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
+                        <field name="type" />
+                        <field name="provider_id" 
+                         options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"/>
+                        
+                    </group>
+                        
+                </group>
+
+                <footer>
+                    
+                    <button name="action_export_excel" string="Export" type="object"
+                        class="btn-success" />
+                    <button string="Cancel" class="btn-danger" special="cancel" />
+                </footer>
+                
+            </form>
+        </field>
+    </record>
+
+    <record id="action_rac_bulk_upload" model="ir.actions.act_window">
+        <field name="name">RAC Bulk Reports</field>
+        <field name="res_model">rac.bulk.upload</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    
+    <menuitem 
+        id="menu_rac_bulk_upload"
+        name="RAC Bulk Reports"
+        parent="menu_call_center_report"
+        action="action_rac_bulk_upload"
+        sequence="36" />
+
+</odoo>
