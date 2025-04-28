@@ -60,7 +60,7 @@
                         <button name="action_cancel_service" type="object" string="Cancel"
                             confirm="Cancel this service, do you want to proceed?"
                             class="btn-danger"
-                            invisible="state not in ('initiate', 'dispatch', 'start', 'reach','change')" />
+                            invisible="(is_logged_in_user_agent and state != 'initiate') or (not is_logged_in_user_agent and state not in ('initiate', 'dispatch', 'start', 'reach', 'change'))" />
                         <button name="action_request_service" type="object" string="Request"
                             invisible="state != 'cancel'  or is_agent_user" groups="base.group_user"
                             class="btn-primary" />
@@ -88,6 +88,7 @@
                             class="btn-success" />
                         <field name="state" widget="statusbar" nolabel="1"
                             statusbar_visible="initiate,dispatch,start,reach,completed_by_driver,done" />
+                        <field name="is_logged_in_user_agent" invisible="1" />
                         <field name="is_agent_user" invisible="1" />
                         <field name="is_manager_or_admin" invisible="1" />
                         <field name="is_dispatcher_or_manager_or_lead_or_admin" invisible="1" />

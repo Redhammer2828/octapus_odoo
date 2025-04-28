@@ -254,6 +254,7 @@ class AAAService(models.Model):
         store=True
     )
     # BOOLEAN CHECKS FOR ROLE BASED VISIBILTY 
+    is_logged_in_user_agent = fields.Boolean(compute='_compute_is_logged_in_user_agent', store=False)
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
     is_manager_or_admin = fields.Boolean(compute='_compute_is_manager_or_admin', string="Is Manager or Admin", store=False)
@@ -426,6 +427,13 @@ class AAAService(models.Model):
                 # Check if `created_by` belongs to the 'new_agents' group
                 user_groups = record.created_by.groups_id
                 record.is_agent_user = any(group.name == 'Agent' for group in user_groups)
+        
+    # ----------------------------Identifying Agent-------------------------------------------------------------------
+    def _compute_is_logged_in_user_agent(self):
+        agent_group = self.env['res.groups'].search([('name', '=', 'Agent')], limit=1)
+        is_agent = agent_group and agent_group in self.env.user.groups_id
+        for record in self:
+            record.is_logged_in_user_agent = is_agent
 
     @api.depends('created_by')
     def _compute_is_dispatch_user(self):
