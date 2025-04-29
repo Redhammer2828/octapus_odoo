@@ -25,24 +25,25 @@
                     <button name="get_services" type="object" string="Get Services" class="btn-primary" invisible="state == 'confirm'" />
                     <button name="action_confirm" type="object" string="Confirm" class="btn-primary" invisible="state == 'confirm'" />
                     <button name="customer.credit_validation_xlsx_report" type="action" string="Export" invisible="state == 'draft'" class="btn-primary" />
+                    <!-- <button name="customer.credit_validation_pdf_report" type="action" string="Print Report" invisible="state == 'draft'" class="btn-primary" /> -->
                     <button name="action_draft" type="object" string="Reset to Draft" invisible="state == 'draft'" />
                     <field name="state" widget="statusbar" options="{'clickale':0}" />
                 </header>
                 <sheet>
-                    <group>
+                    <group >
                         <group>
-                            <field name="partner_id" domain="[('is_company', '=', True)]" options="{'no_create': True, 'no_quick_create': True}" required="1" />
+                            <field name="partner_id" domain="[('is_company', '=', True)]" options="{'no_create': True, 'no_quick_create': True}" required="1" readonly="state == 'confirm'" />
                             <field name="member_type" readonly="1" />
-                            <field name="category_id" required="1" />
+                            <field name="category_id" required="1" readonly="state == 'confirm'" />
                         </group>
                         <group>
-                            <field name="from_date" required="1" />
-                            <field name="to_date" required="1" />
+                            <field name="from_date" required="1" readonly="state == 'confirm'" />
+                            <field name="to_date" required="1" readonly="state == 'confirm'" />
                         </group>
                     </group>
                     <notebook>
                         <page name="service_lines" string="Service Statements">
-                            <field name="service_line_ids">
+                            <field name="service_line_ids" readonly="state == 'confirm'">
                                 <tree editable="bottom">
                                     <field name="credit_service_id" column_invisible="1" />
                                     <field name="service_date" />
