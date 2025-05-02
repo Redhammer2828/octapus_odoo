@@ -62,7 +62,7 @@ class AaaReportWizard(models.TransientModel):
         fields_to_fetch = [
             'name', 'service_time', 'create_date', 'customer_id', 'sequence_id',
             'membership_num', 'member_id','member_type', 'member_contact_no', 'policy_no',
-            'type', 'vehicle_type', 'vehicle_plate', 'product_id', 'provider_id',
+            'type', 'vehicle_type', 'vehicle_plate', 'vehicle_chasis_no', 'product_id', 'provider_id',
             'driver_id', 'driver_name', 'driver_num', 'selected_from_location', 'from_location',
             'from_location_emirate', 'selected_to_location', 'to_location',
             'to_location_emirate', 'date_time_from', 'date_time_to', 'smarto_id',
@@ -203,7 +203,7 @@ class AaaReportWizard(models.TransientModel):
         base_headers = [
             'Number', 'Service Date & Time', 'Created Date & Time', 'Customer Name', 'Category',
             'Membership Number', 'Member Name', 'Membership State', 'Mobile', 'Policy Number',
-            'Member Type', 'Service Type', 'Vehicle Type', 'Vehicle Plate', 'In Progress Date and Time',
+            'Member Type', 'Service Type', 'Vehicle Type', 'Vehicle Plate', 'Vehicle Chasis No.', 'In Progress Date and Time',
             'Service', 'Provider', 'Driver', 'Driver Mobile Number', 'From - Location',
             'To - Location'
         ]
@@ -312,6 +312,7 @@ class AaaReportWizard(models.TransientModel):
                 record.get('type', ''),
                 record.get('vehicle_type', ''),
                 record.get('vehicle_plate', ''),
+                record.get('vehicle_chasis_no', ''),
                 convert_time(record.get('date_time_from', '')),
                 record.get('product_id')[1] if record.get('product_id') else '',
                 record.get('provider_id')[1] if record.get('provider_id') else '',
