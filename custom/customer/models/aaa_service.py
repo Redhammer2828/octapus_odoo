@@ -680,6 +680,7 @@ class AAAService(models.Model):
 
     def _trigger_chassis_update_api(self):
         for record in self:
+            base_url = os.getenv('BASE_URL')
             if not record.name or not record.vehicle_chasis_no:
                 _logger.warning("Skipping API call: Missing service number or chassis number for record ID %s", record.id)
                 continue
