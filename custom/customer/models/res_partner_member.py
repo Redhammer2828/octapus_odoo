@@ -165,59 +165,172 @@ class ResPartnerMembers(models.Model):
     #     return new_partner
 
     # NEW CREATE FUNCTION
+    # @api.model
+    # def create(self, vals):
+    #     # Dynamically set the created_by field if not set already
+    #     if not vals.get('create_uid'):
+    #         vals['create_uid'] = self.env.user.id
+
+    #     # Set default values based on context
+    #     if self.env.context.get('from_res_partner_member_form'):
+    #         vals['is_customer'] = True
+    #         vals['credit_member_ok'] = False
+    #         vals['adhoc_member'] = False
+    #         vals['member_type'] = 'policy'
+
+    #     if self.env.context.get('from_res_partner_credit_member_form'):
+    #         vals['is_customer'] = True
+    #         vals['credit_member_ok'] = True
+    #         vals['adhoc_member'] = False
+    #         vals['member_type'] = 'credit'
+
+    #     if self.env.context.get('from_res_partner_adhoc_member_form'):
+    #         vals['is_customer'] = True
+    #         vals['credit_member_ok'] = False
+    #         vals['adhoc_member'] = True
+    #         vals['member_type'] = 'adhoc'
+
+    #     # Clean vehicle_chasis_no: trim spaces and convert to uppercase
+    #     if vals.get('vehicle_chasis_no'):
+    #         vals['vehicle_chasis_no'] = vals['vehicle_chasis_no'].strip().upper()
+
+    #     # Final safety check for create_uid
+    #     if not vals.get('create_uid'):
+    #         vals['create_uid'] = self.env.user.id
+
+    #     # Create partner
+    #     new_partner = super(ResPartnerMembers, self).create(vals)
+
+    #     # Add membership timeline entry
+    #     self.env['membership.timeline'].create({
+    #         'member_id': new_partner.id,
+    #         'user': self.env.user.id,
+    #         'time': fields.Datetime.now(),
+    #         'status': 'Created',
+    #         'timeline_status': 'temp',
+    #     })
+
+    #     return new_partner
+    
+    # def write(self, vals):
+    #     # Clean vehicle_chasis_no: trim spaces and convert to uppercase
+    #     if vals.get('vehicle_chasis_no'):
+    #         vals['vehicle_chasis_no'] = vals['vehicle_chasis_no'].strip().upper()
+
+    #     return super(ResPartnerMembers, self).write(vals)
+
     @api.model
     def create(self, vals):
-        # Dynamically set the created_by field if not set already
         if not vals.get('create_uid'):
             vals['create_uid'] = self.env.user.id
 
-        # Set default values based on context
-        if self.env.context.get('from_res_partner_member_form'):
-            vals['is_customer'] = True
-            vals['credit_member_ok'] = False
-            vals['adhoc_member'] = False
-            vals['member_type'] = 'policy'
+        # Context-based defaults
+        context_map = {
+            'from_res_partner_member_form': {
+                'is_customer': True,
+                'credit_member_ok': False,
+                'adhoc_member': False,
+                'member_type': 'policy',
+            },
+            'from_res_partner_credit_member_form': {
+                'is_customer': True,
+                'credit_member_ok': True,
+                'adhoc_member': False,
+                'member_type': 'credit',
+            },
+            'from_res_partner_adhoc_member_form': {
+                'is_customer': True,
+                'credit_member_ok': False,
+                'adhoc_member': True,
+                'member_type': 'adhoc',
+            },
+        }
+        for key, defaults in context_map.items():
+            if self.env.context.get(key):
+                vals.update(defaults)
 
-        if self.env.context.get('from_res_partner_credit_member_form'):
-            vals['is_customer'] = True
-            vals['credit_member_ok'] = True
-            vals['adhoc_member'] = False
-            vals['member_type'] = 'credit'
-
-        if self.env.context.get('from_res_partner_adhoc_member_form'):
-            vals['is_customer'] = True
-            vals['credit_member_ok'] = False
-            vals['adhoc_member'] = True
-            vals['member_type'] = 'adhoc'
-
-        # Clean vehicle_chasis_no: trim spaces and convert to uppercase
         if vals.get('vehicle_chasis_no'):
             vals['vehicle_chasis_no'] = vals['vehicle_chasis_no'].strip().upper()
 
-        # Final safety check for create_uid
-        if not vals.get('create_uid'):
-            vals['create_uid'] = self.env.user.id
-
-        # Create partner
         new_partner = super(ResPartnerMembers, self).create(vals)
-
-        # Add membership timeline entry
-        self.env['membership.timeline'].create({
-            'member_id': new_partner.id,
-            'user': self.env.user.id,
-            'time': fields.Datetime.now(),
-            'status': 'Created',
-            'timeline_status': 'temp',
-        })
-
+        new_partner.with_context(skip_validation=True)._validate_membership_logic()
         return new_partner
-    
+
     def write(self, vals):
-        # Clean vehicle_chasis_no: trim spaces and convert to uppercase
         if vals.get('vehicle_chasis_no'):
             vals['vehicle_chasis_no'] = vals['vehicle_chasis_no'].strip().upper()
 
-        return super(ResPartnerMembers, self).write(vals)
+        result = super(ResPartnerMembers, self).write(vals)
+
+        # Avoid infinite recursion
+        if not self.env.context.get('skip_validation'):
+            self.with_context(skip_validation=True)._validate_membership_logic()
+
+        return result
+
+    def _validate_membership_logic(self):
+        for record in self:
+            record.sudo().write({'create_uid': self.env.user.id})
+            company = record.parent_customer_id
+
+            if company:
+                existing_members = self.env['res.partner'].search([
+                    ('vehicle_chasis_no', '=', record.vehicle_chasis_no),
+                    ('parent_customer_id', '=', company.id),
+                    ('membership_state', 'in', ['temp', 'confirm']),
+                    ('id', '!=', record.id)
+                ])
+
+                for existing_member in existing_members:
+                    existing_expiry_date = existing_member.member_expiry_date
+                    current_expiry_date = record.member_expiry_date
+
+                    if existing_expiry_date and existing_expiry_date < date.today():
+                        existing_member.sudo().write({'membership_state': 'cancel'})
+                    else:
+                        if existing_member.name != record.name:
+                            raise ValidationError(_("An active policy with the same chassis number under the selected company already exists!"))
+
+                        if current_expiry_date and existing_expiry_date:
+                            if current_expiry_date == existing_expiry_date:
+                                raise ValidationError(_("A record with the same chassis number and expiry date already exists!"))
+
+                            date_difference = (current_expiry_date - existing_expiry_date).days
+                            if date_difference >= 365:
+                                raise ValidationError(_("An already existing record has an expiry difference of >= 365 days. Please proceed with membership renewal."))
+                            elif date_difference < 365:
+                                raise ValidationError(_("The same record exists with an expiry date difference of < 365 days. Please proceed with membership extension."))
+
+            # Check for chassis in other companies
+            chassis_in_another_company = self.env['res.partner'].search([
+                ('vehicle_chasis_no', '=', record.vehicle_chasis_no),
+                ('parent_customer_id', '!=', company.id),
+                ('membership_state', 'in', ['temp', 'confirm']),
+            ])
+
+            for other_member in chassis_in_another_company:
+                another_expiry = other_member.member_expiry_date
+                if another_expiry and another_expiry >= date.today():
+                    raise ValidationError(_("The same chassis number exists under another company with an active policy!"))
+                else:
+                    other_member.sudo().write({'membership_state': 'cancel'})
+
+            # Validate expiry > activation
+            if record.member_activate_date and record.member_expiry_date:
+                if record.member_expiry_date <= record.member_activate_date:
+                    raise ValidationError(_("The expiry date should be greater than the activation date."))
+
+            # Add membership timeline
+            self.env['membership.timeline'].create({
+                'member_id': record.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': 'Temporary',
+                'timeline_status': 'temp',
+            })
+
+            # Set membership state safely
+            record.sudo().write({'membership_state': 'temp'})
    
     @api.model
     def fields_get(self, allfields=None, attributes=None):
