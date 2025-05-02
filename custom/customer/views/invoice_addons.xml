@@ -17,8 +17,8 @@
 
             <!-- Insert category_id after partner_id and remove create option -->
             <xpath expr="//field[@name='partner_id']" position="after">
-                <field name="member_type" widget="radio" />
-                <field name="category_id" options="{'no_create': True, 'no_quick_create': True}" required="1" />
+                <field name="member_type" widget="radio" readonly="state != 'draft'" />
+                <field name="category_id" options="{'no_create': True, 'no_quick_create': True}" required="1" readonly="state != 'draft'" />
             </xpath>
             <xpath expr="//form" position="inside">
                 <div>
@@ -31,6 +31,11 @@
                     </style>
                 </div>
             </xpath>
+
+            <xpath expr="//group[@id='header_left_group']/field[@name='partner_id']" position="attributes">
+                <attribute name="readonly">state != 'draft'</attribute>
+            </xpath>
+
         </field>
     </record>
 
@@ -42,13 +47,13 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='category_id']" position="after">
 
-                <field name="from_date" required="1" />
-                <field name="to_date" required="1" />
-                <field name="invoice_line_type" widget="radio" />
+                <field name="from_date" required="1" readonly="state != 'draft'" />
+                <field name="to_date" required="1" readonly="state != 'draft'" />
+                <field name="invoice_line_type" widget="radio" readonly="state != 'draft'" />
                 <field name="product_ids" invisible="1" />
-                <field name="product_id" invisible="invoice_line_type == 'consolidated' or member_type == 'credit'" options="{'no_create': True, 'no_quick_create': True}" />
+                <field name="product_id" invisible="invoice_line_type == 'consolidated' or member_type == 'credit'" options="{'no_create': True, 'no_quick_create': True}" readonly="state != 'draft'" />
                 <field name="service_ids" invisible="1" />
-                <field name="service_id" invisible="invoice_line_type == 'consolidated' or member_type == 'policy'" options="{'no_create': True, 'no_quick_create': True}" />
+                <field name="service_id" invisible="invoice_line_type == 'consolidated' or member_type == 'policy'" options="{'no_create': True, 'no_quick_create': True}" readonly="state != 'draft'" />
 
             </xpath>
 
@@ -79,7 +84,7 @@
 
             <xpath expr="//page[@id='invoice_tab']" position="after">
                 <page id="credit_services_tab" name="credit_services_tab" string="Service Statement" invisible="invoice_line_type == 'separate' or member_type == 'policy'">
-                    <field name="credit_service_line_ids" widget="section_and_note_one2many" mode="tree">
+                    <field name="credit_service_line_ids" widget="section_and_note_one2many" mode="tree" readonly="state != 'draft'">
                         <tree editable="bottom">
                             <field name="credit_invoice_id" column_invisible="1" />
                             <field name="service_date" />

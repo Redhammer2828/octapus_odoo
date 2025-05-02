@@ -19,6 +19,7 @@ import base64
 import io
 import zipfile
 from odoo.http import request
+from requests.auth import HTTPBasicAuth
 
 
 load_dotenv()
@@ -253,6 +254,7 @@ class AAAService(models.Model):
         store=True
     )
     # BOOLEAN CHECKS FOR ROLE BASED VISIBILTY 
+    is_logged_in_user_agent = fields.Boolean(compute='_compute_is_logged_in_user_agent', store=False)
     is_agent_user = fields.Boolean(string="Is Agent User", compute='_compute_is_agent_user', store=False)
     is_dispatch_user = fields.Boolean(string="Is Dispatcher User", compute='_compute_is_dispatch_user', store=False)
     is_manager_or_admin = fields.Boolean(compute='_compute_is_manager_or_admin', string="Is Manager or Admin", store=False)
@@ -425,6 +427,13 @@ class AAAService(models.Model):
                 # Check if `created_by` belongs to the 'new_agents' group
                 user_groups = record.created_by.groups_id
                 record.is_agent_user = any(group.name == 'Agent' for group in user_groups)
+        
+    # ----------------------------Identifying Agent-------------------------------------------------------------------
+    def _compute_is_logged_in_user_agent(self):
+        agent_group = self.env['res.groups'].search([('name', '=', 'Agent')], limit=1)
+        is_agent = agent_group and agent_group in self.env.user.groups_id
+        for record in self:
+            record.is_logged_in_user_agent = is_agent
 
     @api.depends('created_by')
     def _compute_is_dispatch_user(self):
@@ -671,6 +680,7 @@ class AAAService(models.Model):
 
     def _trigger_chassis_update_api(self):
         for record in self:
+            base_url = os.getenv('BASE_URL')
             if not record.name or not record.vehicle_chasis_no:
                 _logger.warning("Skipping API call: Missing service number or chassis number for record ID %s", record.id)
                 continue
@@ -1067,6 +1077,9 @@ class AAAService(models.Model):
 
         self._dispatch_service()
         # self._generate_service_name()
+
+        
+
         return True
 
     def _generate_service_name(self):
@@ -1323,6 +1336,7 @@ class AAAService(models.Model):
     def _dispatch_service(self):
         self._generate_service_name()
         self.state = 'dispatch'
+        self._trigger_order_notification_api(self.name, self.state)
         self.message_post(body=_("Service dispatched successfully."))
         self.env['service.history'].create({
             'service_id': self.id,
@@ -1521,8 +1535,8 @@ class AAAService(models.Model):
                     print(f"API RESPONSE- start,{response.text}")
                 else:
                     print(f"API RESPONSE-ORDER NOT started,{response.text},{response.status_code}")
-
-
+                
+            self._trigger_order_notification_api(service.name, service.state)
 
         return True
 
@@ -1554,6 +1568,8 @@ class AAAService(models.Model):
             # If a manual comment exists, clear the service.comments field after creating the record
             if service.comments:
                 service.comments = False
+            
+            self._trigger_order_notification_api(service.name, service.state)
 
         if service.comments:
             service.comments = False
@@ -1568,6 +1584,7 @@ class AAAService(models.Model):
                     'time': fields.Datetime.now(),
                     'status': 'Completed by Driver',
                     'timeline_status': self.state,})
+                self._trigger_order_notification_api(service.name, service.state)
         comment_content = service.comments or 'COMPLETED BY DRIVER'
             # Create the service.comment record
         self.env['service.comment'].create({
@@ -1620,6 +1637,8 @@ class AAAService(models.Model):
             # Clear the comments field after creating the record
             if service.comments:
                 service.comments = False
+            
+            self._trigger_order_notification_api(service.name, service.state)
 
         return True
 
@@ -1925,6 +1944,58 @@ class AAAService(models.Model):
             'url': f'/web/content/{attachment.id}?download=true',
             'target': 'self',
         }
+
+   ################## Base api tocken gereration code ############################## 
+    
+    # def get_auth_token_for_client(self):
+    #     base_url_client = os.getenv("BASE_URL_CLIENT")
+    #     client_username = os.getenv("CLIENT_USERNAME")
+    #     client_password = os.getenv("CLIENT_PASSWORD") 
+
+    #     url = f'{base_url_client}/am/carhire/oauth/token?grant_type=client_credentials'
+ 
+    #     auth = HTTPBasicAuth(client_username, client_password)
+    #     response = requests.post(url, auth=auth)
+
+    #     if response.status_code == 200:
+    #         data = response.json()
+    #         return data["access_token"]
+        
+
+    def _trigger_order_notification_api(self, order_number, status):
+        for record in self:
+            # auth_token = record.get_auth_token_for_client()
+            url = 'https://gioapi-gy-dev.kirkos.ae/aaa-customer/consumers/order-notification'
+            
+            headers = {'Content-Type': 'application/json',
+                       'Accept': '*/*'
+                       }
+            
+            payload = {
+                            "order_number": order_number,
+                            "status": status,
+                        }
+            
+            try:
+                response = requests.post(url, headers=headers, json=payload)
+                print("Response Text:", response.text)
+                print(f"status code: {response.status_code}")
+                if response.status_code == 200:
+                    try:
+                        response_text = response.json()
+                        self.message_post(body=_("Notification sent successfully: %s") % response_text)
+                        print("Response sent successfully")
+                    except json.JSONDecodeError:
+                        self.message_post(body=_("Non-JSON response received: %s") % response.text)
+                        print("Non-JSON response received:", response.text)
+                else:
+                    self.message_post(body=_("Failed to send notification, status code: %s, message: %s") % (response.status_code, response.text))
+                    print("Failed to send, status code:", response.status_code, "message:", response.text)
+
+            except requests.exceptions.RequestException as e:
+                self.message_post(body=_("Request failed: %s") % str(e))
+                print("Request failed:", str(e))
+            
 
 
 
