@@ -126,52 +126,12 @@ class ResPartnerMembers(models.Model):
             )
         return super(ResPartnerMembers, self).unlink()
 
-    # @api.model
-    # def create(self, vals):
-    #     # Dynamically set the created_by field if not set already
-    #     if not vals.get('create_uid'):
-    #         vals['create_uid'] = self.env.user.id
-
-    #     if self.env.context.get('from_res_partner_member_form'):
-    #         vals['is_customer'] = True
-    #         vals['credit_member_ok'] = False
-    #         vals['adhoc_member'] = False
-    #         vals['member_type'] = 'policy'
-
-    #     if self.env.context.get('from_res_partner_credit_member_form'):
-    #         vals['is_customer'] = True
-    #         vals['credit_member_ok'] = True
-    #         vals['adhoc_member'] = False
-    #         vals['member_type'] = 'credit'
-
-    #     if self.env.context.get('from_res_partner_adhoc_member_form'):
-    #         vals['is_customer'] = True
-    #         vals['credit_member_ok'] = False
-    #         vals['adhoc_member'] = True
-    #         vals['member_type'] = 'adhoc'
-
-    #     if not vals.get('create_uid'):
-    #         vals['create_uid'] = self.env.user.id
-        
-
-    #     new_partner = super(ResPartnerMembers, self).create(vals)
-    #     self.env['membership.timeline'].create({
-    #         'member_id': new_partner.id,
-    #         'user': self.env.user.id,
-    #         'time': fields.Datetime.now(),
-    #         'status': 'Created',
-    #         'timeline_status': 'temp',
-    #     })
-    #     return new_partner
-
-    # NEW CREATE FUNCTION
     @api.model
     def create(self, vals):
         # Dynamically set the created_by field if not set already
         if not vals.get('create_uid'):
             vals['create_uid'] = self.env.user.id
 
-        # Set default values based on context
         if self.env.context.get('from_res_partner_member_form'):
             vals['is_customer'] = True
             vals['credit_member_ok'] = False
@@ -190,18 +150,11 @@ class ResPartnerMembers(models.Model):
             vals['adhoc_member'] = True
             vals['member_type'] = 'adhoc'
 
-        # Clean vehicle_chasis_no: trim spaces and convert to uppercase
-        if vals.get('vehicle_chasis_no'):
-            vals['vehicle_chasis_no'] = vals['vehicle_chasis_no'].strip().upper()
-
-        # Final safety check for create_uid
         if not vals.get('create_uid'):
             vals['create_uid'] = self.env.user.id
+        
 
-        # Create partner
         new_partner = super(ResPartnerMembers, self).create(vals)
-
-        # Add membership timeline entry
         self.env['membership.timeline'].create({
             'member_id': new_partner.id,
             'user': self.env.user.id,
@@ -209,16 +162,8 @@ class ResPartnerMembers(models.Model):
             'status': 'Created',
             'timeline_status': 'temp',
         })
-
         return new_partner
     
-    def write(self, vals):
-        # Clean vehicle_chasis_no: trim spaces and convert to uppercase
-        if vals.get('vehicle_chasis_no'):
-            vals['vehicle_chasis_no'] = vals['vehicle_chasis_no'].strip().upper()
-
-        return super(ResPartnerMembers, self).write(vals)
-   
     @api.model
     def fields_get(self, allfields=None, attributes=None):
         """Override fields_get to customize field properties based on membership state and member type."""
@@ -306,100 +251,168 @@ class ResPartnerMembers(models.Model):
                     record.ref_num = False
 
 
+    # def action_confirm_membership(self):
+    #         for record in self:
+    #             record.confirmed_by = self.env.user.id
+    #             company = record.parent_customer_id  # Get the company directly
+
+    #             if company:
+    #                 # Step 1: Check if a vehicle with the same chassis number exists within the same company, excluding the current record
+    #                 existing_members = self.env['res.partner'].search([
+    #                     ('vehicle_chasis_no', '=', record.vehicle_chasis_no),
+    #                     ('parent_customer_id', '=', company.id),
+    #                     ('membership_state', '=', 'confirm'),
+    #                     ('id', '!=', record.id)  # Exclude the current record from the search
+    #                 ])
+    #                 print("Existing members", existing_members)
+
+    #                 if existing_members:
+    #                     for existing_member in existing_members:
+    #                         existing_expiry_date = existing_member.member_expiry_date
+    #                         current_expiry_date = record.member_expiry_date
+
+    #                         # Log for debugging purposes
+    #                         print("Existing member expiry date", existing_expiry_date)
+    #                         print("COMPANY",company)
+
+    #                         # Handle case where the existing member's expiry date has passed
+    #                         if existing_expiry_date and existing_expiry_date < date.today():
+    #                             # Expired policy: Cancel the existing membership and confirm the new one
+    #                             existing_member.membership_state = 'cancel'
+    #                             record.membership_state = 'confirm'
+    #                         else:
+    #                             # Active policy exists: Raise validation error
+    #                             if existing_member.name != record.name:
+    #                                 # If the existing member has a different name, raise an error
+    #                                 raise ValidationError(_("An active policy with the same chassis number under the selected company already exists!"))
+    #                             else:
+    #                             # If the same name and chassis number exist, handle expiry date difference
+
+    #                                     current_expiry_date = record.member_expiry_date  # Ensure that you fetch the current record's expiry date
+    #                                     existing_expiry_date = existing_member.member_expiry_date
+
+    #                                     # **New validation check**: If the expiry dates are the same, raise an error
+    #                                     if current_expiry_date == existing_expiry_date:
+    #                                         raise ValidationError(_("A record with the same chassis number and expiry date already exists!"))
+
+    #                                     # Calculate the difference in expiry dates
+    #                                     date_difference = (current_expiry_date - existing_expiry_date).days
+
+    #                                     if date_difference >= 365:
+    #                                         # If the difference is greater than or equal to 365 days, suggest renewal
+    #                                         raise ValidationError(_("An already existing record has an expiry difference of >= 365 days. Please proceed with membership renewal."))
+    #                                     elif date_difference < 365:
+    #                                         # If the difference is less than 365 days, suggest extension
+    #                                         raise ValidationError(_("The same record exists with an expiry date difference of < 365 days. Please proceed with membership extension."))
+
+    #                     # If none of the existing members are active (i.e., all expired and cancelled), confirm the current record
+    #                     record.membership_state = 'confirm'
+
+    #         # Step 2: Check if the same chassis number exists under another company
+    #         chassis_in_another_company = self.env['res.partner'].search([
+    #             ('vehicle_chasis_no', '=', record.vehicle_chasis_no),
+    #             ('parent_customer_id', '!=', company.id),  # Check if the chassis number exists under a different company
+    #             ('membership_state', '=', 'confirm')
+    #         ])
+
+    #         if chassis_in_another_company:
+    #             # Loop through each record that has the same chassis number in another company
+    #             for other_member in chassis_in_another_company:
+    #                 another_company_expiry_date = other_member.member_expiry_date
+    #                 print("Another company expiry date", another_company_expiry_date)
+
+    #                 if another_company_expiry_date and another_company_expiry_date >= date.today():
+    #                     # If the existing record's expiry date is greater than or equal to the current date, raise an error
+    #                     raise ValidationError(_("The same chassis number exists under another company with an active policy!"))
+    #                 else:
+    #                     # If the policy is expired, you can handle it as needed (e.g., cancel it)
+    #                     other_member.membership_state = 'cancel'
+
+    #             # If all the other company's records have expired policies, confirm the current record
+    #             record.membership_state = 'confirm'
+
+    #         # Step 3: Check that the expiry date is greater than the activation date if both are set
+    #         if record.member_activate_date and record.member_expiry_date:
+    #             if record.member_expiry_date <= record.member_activate_date:
+    #                 raise ValidationError(_("The expiry date should be greater than the activation date."))
+
+    #         self.env['membership.timeline'].create({
+    #                 'member_id': record.id,
+    #                 'user': self.env.user.id,
+    #                 'time': fields.Datetime.now(),
+    #                 'status': 'Confirmed',
+    #                 'timeline_status': 'confirm',
+    #             })
+    #         # Step 4: Confirm membership if all validations pass
+    #         record.membership_state = 'confirm'
+
     def action_confirm_membership(self):
-            for record in self:
-                record.confirmed_by = self.env.user.id
-                company = record.parent_customer_id  # Get the company directly
+        for record in self:
+            record.confirmed_by = self.env.user.id
+            company = record.parent_customer_id
 
-                if company:
-                    # Step 1: Check if a vehicle with the same chassis number exists within the same company, excluding the current record
-                    existing_members = self.env['res.partner'].search([
-                        ('vehicle_chasis_no', '=', record.vehicle_chasis_no),
-                        ('parent_customer_id', '=', company.id),
-                        ('membership_state', '=', 'confirm'),
-                        ('id', '!=', record.id)  # Exclude the current record from the search
-                    ])
-                    print("Existing members", existing_members)
+            if not company:
+                raise ValidationError(_("No parent company set for this member."))
 
-                    if existing_members:
-                        for existing_member in existing_members:
-                            existing_expiry_date = existing_member.member_expiry_date
-                            current_expiry_date = record.member_expiry_date
+            # Step 1: Check for existing members in the same company
+            existing_members = self.env['res.partner'].search([
+                ('vehicle_chasis_no', '=', record.vehicle_chasis_no),
+                ('parent_customer_id', '=', company.id),
+                ('membership_state', '=', 'confirm'),
+                ('id', '!=', record.id)
+            ])
 
-                            # Log for debugging purposes
-                            print("Existing member expiry date", existing_expiry_date)
-                            print("COMPANY",company)
+            for existing_member in existing_members:
+                existing_expiry_date = existing_member.member_expiry_date
+                current_expiry_date = record.member_expiry_date
 
-                            # Handle case where the existing member's expiry date has passed
-                            if existing_expiry_date and existing_expiry_date < date.today():
-                                # Expired policy: Cancel the existing membership and confirm the new one
-                                existing_member.membership_state = 'cancel'
-                                record.membership_state = 'confirm'
-                            else:
-                                # Active policy exists: Raise validation error
-                                if existing_member.name != record.name:
-                                    # If the existing member has a different name, raise an error
-                                    raise ValidationError(_("An active policy with the same chassis number under the selected company already exists!"))
-                                else:
-                                # If the same name and chassis number exist, handle expiry date difference
+                if existing_expiry_date and existing_expiry_date < date.today():
+                    # Expired policy - cancel the old one
+                    existing_member.membership_state = 'cancel'
+                else:
+                    # Active policy
+                    if existing_member.name != record.name:
+                        raise ValidationError(_("An active policy with the same chassis number under the selected company already exists!"))
+                    else:
+                        if current_expiry_date == existing_expiry_date:
+                            raise ValidationError(_("A record with the same chassis number and expiry date already exists!"))
 
-                                        current_expiry_date = record.member_expiry_date  # Ensure that you fetch the current record's expiry date
-                                        existing_expiry_date = existing_member.member_expiry_date
+                        date_difference = (current_expiry_date - existing_expiry_date).days
+                        if date_difference >= 365:
+                            raise ValidationError(_("An existing record has an expiry difference of >= 365 days. Please proceed with membership renewal."))
+                        elif date_difference < 365:
+                            raise ValidationError(_("The same record exists with an expiry date difference of < 365 days. Please proceed with membership extension."))
 
-                                        # **New validation check**: If the expiry dates are the same, raise an error
-                                        if current_expiry_date == existing_expiry_date:
-                                            raise ValidationError(_("A record with the same chassis number and expiry date already exists!"))
-
-                                        # Calculate the difference in expiry dates
-                                        date_difference = (current_expiry_date - existing_expiry_date).days
-
-                                        if date_difference >= 365:
-                                            # If the difference is greater than or equal to 365 days, suggest renewal
-                                            raise ValidationError(_("An already existing record has an expiry difference of >= 365 days. Please proceed with membership renewal."))
-                                        elif date_difference < 365:
-                                            # If the difference is less than 365 days, suggest extension
-                                            raise ValidationError(_("The same record exists with an expiry date difference of < 365 days. Please proceed with membership extension."))
-
-                        # If none of the existing members are active (i.e., all expired and cancelled), confirm the current record
-                        record.membership_state = 'confirm'
-
-            # Step 2: Check if the same chassis number exists under another company
+            # Step 2: Check for chassis number in another company
             chassis_in_another_company = self.env['res.partner'].search([
                 ('vehicle_chasis_no', '=', record.vehicle_chasis_no),
-                ('parent_customer_id', '!=', company.id),  # Check if the chassis number exists under a different company
+                ('parent_customer_id', '!=', company.id),
                 ('membership_state', '=', 'confirm')
             ])
 
-            if chassis_in_another_company:
-                # Loop through each record that has the same chassis number in another company
-                for other_member in chassis_in_another_company:
-                    another_company_expiry_date = other_member.member_expiry_date
-                    print("Another company expiry date", another_company_expiry_date)
+            for other_member in chassis_in_another_company:
+                another_expiry = other_member.member_expiry_date
+                if another_expiry and another_expiry >= date.today():
+                    raise ValidationError(_("The same chassis number exists under another company with an active policy!"))
+                else:
+                    other_member.membership_state = 'cancel'
 
-                    if another_company_expiry_date and another_company_expiry_date >= date.today():
-                        # If the existing record's expiry date is greater than or equal to the current date, raise an error
-                        raise ValidationError(_("The same chassis number exists under another company with an active policy!"))
-                    else:
-                        # If the policy is expired, you can handle it as needed (e.g., cancel it)
-                        other_member.membership_state = 'cancel'
-
-                # If all the other company's records have expired policies, confirm the current record
-                record.membership_state = 'confirm'
-
-            # Step 3: Check that the expiry date is greater than the activation date if both are set
+            # Step 3: Expiry date must be after activation date
             if record.member_activate_date and record.member_expiry_date:
                 if record.member_expiry_date <= record.member_activate_date:
                     raise ValidationError(_("The expiry date should be greater than the activation date."))
 
-            self.env['membership.timeline'].create({
-                    'member_id': record.id,
-                    'user': self.env.user.id,
-                    'time': fields.Datetime.now(),
-                    'status': 'Confirmed',
-                    'timeline_status': 'confirm',
-                })
-            # Step 4: Confirm membership if all validations pass
+            # Step 4: All validations passed, confirm membership
             record.membership_state = 'confirm'
+
+            # Step 5: Log timeline
+            self.env['membership.timeline'].create({
+                'member_id': record.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': 'Confirmed',
+                'timeline_status': 'confirm',
+            })
 
     def copy(self, default=None):
         if default is None:
@@ -569,7 +582,7 @@ class ResPartnerMembers(models.Model):
             'target': 'new',
             'context': {
                 'default_parent_customer_id': self.parent_customer_id.id,
-                'default_activation_date': self.member_expiry_date,
+                'default_activation_date': self.member_activate_date,
                 'default_card_type_id': self.card_type_id.name,
                 'default_vehicle_chasis_no': self.vehicle_chasis_no,
                 'default_product_template_id': self.product_template_id.id,
