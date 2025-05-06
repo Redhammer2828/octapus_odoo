@@ -60,4 +60,5 @@ access_membership_timeline,membership.timeline,model_membership_timeline,base.gr
 access_credit_service_line,credit.service.line,model_credit_service_line,base.group_user,1,1,1,1
 access_credit_service_validation,credit.service.validation,model_credit_service_validation,base.group_user,1,1,1,1
 access_service_statement_line,service.statement.line,model_service_statement_line,base.group_user,1,1,1,1
+access_policy_membership_line,policy.membership.line,model_policy_membership_line,base.group_user,1,1,1,1
 access_rac_bulk_upload,rac.bulk.upload,model_rac_bulk_upload,base.group_user,1,1,1,1
