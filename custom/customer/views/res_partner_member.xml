@@ -155,6 +155,12 @@
                                 <field name="delivery_ref_date" string="Delivery Date"
                                     class="custom-field" date_format="%d/%m/%Y" />
                                 <field name="mail_ref" class="custom-field" />
+                                <field name="renewal_in_queue" invisible="1" />
+                                <field name="next_activation_date" invisible="1" />
+                                <field name="next_expiry_date" invisible="1" />
+                                <field name="next_product_template_id" invisible="1" />
+                                <field name="timeline_user_id" invisible="1" />
+
                                 <field name="related_company_customer_code"
                                     placeholder="Related Customer Code"
                                     string="Related Customer Code" invisible="1"
