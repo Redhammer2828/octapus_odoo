@@ -16,7 +16,7 @@
     'data': [
         'security/ir.model.access.csv',
         # 'reports/credit_validation_pdf_report.xml',
-        'reports\credit_invoice_pdf_report.xml',
+        'reports/credit_invoice_pdf_report.xml',
         'reports/reports.xml',
         'views/res_partner_customer.xml',
         'views/res_partner_member.xml',
