@@ -17,3 +17,4 @@ from . import policy_report_wizard_view
 from . import vendors_report_wizard
 from . import aaa_rac_wizard
 from . import rac_bulk_upload
+from . import aaa_cancel_report

@@ -62,3 +62,4 @@ access_credit_service_validation,credit.service.validation,model_credit_service_
 access_service_statement_line,service.statement.line,model_service_statement_line,base.group_user,1,1,1,1
 access_policy_membership_line,policy.membership.line,model_policy_membership_line,base.group_user,1,1,1,1
 access_rac_bulk_upload,rac.bulk.upload,model_rac_bulk_upload,base.group_user,1,1,1,1
+access_aaa_cancel_report,aaa.cancel.report,model_aaa_cancel_report,base.group_user,1,1,1,1

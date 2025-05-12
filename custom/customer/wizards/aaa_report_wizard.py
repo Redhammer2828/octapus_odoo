@@ -199,24 +199,41 @@ class AaaReportWizard(models.TransientModel):
         #     'Agent', 'Dispatcher', 'Comments', 'Trip Sheet Number', 'Amount Collected', 'Rating', 'Rating Added By'
         # ]
 
-         # Base headers without emirate columns
+        #  # Base headers without emirate columns
+        # base_headers = [
+        #     'Number', 'Service Date & Time', 'Created Date & Time', 'Customer Name', 'Category',
+        #     'Membership Number', 'Member Name', 'Membership State', 'Mobile', 'Policy Number',
+        #     'Member Type', 'Service Type', 'Vehicle Type', 'Vehicle Plate', 'Vehicle Chasis No.', 'In Progress Date and Time',
+        #     'Service', 'Provider', 'Driver', 'Driver Mobile Number', 'From - Location',
+        #     'To - Location'
+        # ]
+        
+        # # Add emirate columns conditionally
+        # if self.member_type in ['policy', 'adhoc']:
+        #     base_headers.extend(['From Emirate', 'To Emirate'])
+        
+        # # Add remaining headers
+        # base_headers.extend([
+        #     'From - Date', 'To - Date', 'Smart Tow ID', 'Status',
+        #     'Agent', 'Dispatcher', 'Comments', 'Trip Sheet Number', 'Amount Collected', 'Rating', 'Rating Added By'
+        # ])
+
+        # Base headers without emirate columns
         base_headers = [
             'Number', 'Service Date & Time', 'Created Date & Time', 'Customer Name', 'Category',
             'Membership Number', 'Member Name', 'Membership State', 'Mobile', 'Policy Number',
             'Member Type', 'Service Type', 'Vehicle Type', 'Vehicle Plate', 'Vehicle Chasis No.', 'In Progress Date and Time',
             'Service', 'Provider', 'Driver', 'Driver Mobile Number', 'From - Location',
-            'To - Location'
+            'To - Location',
+            'From Emirate', 'To Emirate'  # Always include these columns now
         ]
-        
-        # Add emirate columns conditionally
-        if self.member_type in ['policy', 'adhoc']:
-            base_headers.extend(['From Emirate', 'To Emirate'])
-        
+
         # Add remaining headers
         base_headers.extend([
             'From - Date', 'To - Date', 'Smart Tow ID', 'Status',
             'Agent', 'Dispatcher', 'Comments', 'Trip Sheet Number', 'Amount Collected', 'Rating', 'Rating Added By'
         ])
+
  
         # worksheet.write_row(7, 0, headers, header_format)
         worksheet.write_row(7, 0, base_headers, header_format)
@@ -325,15 +342,17 @@ class AaaReportWizard(models.TransientModel):
                 ),
                 record.get('selected_to_location')[1] if (record.get('selected_to_location') and record.get('member_type') in ['policy', 'adhoc']) else (
                     record.get('to_location')[1] if record.get('to_location') else ''
-                )
+                ),
+                record.get('from_location_emirate', ''),
+                record.get('to_location_emirate', '')
             ]
 
             # Add emirate data conditionally
-            if self.member_type in ['policy', 'adhoc']:
-                base_data.extend([
-                    record.get('from_location_emirate', ''),
-                    record.get('to_location_emirate', '')
-                ])
+            # if self.member_type in ['policy', 'adhoc']:
+            #     base_data.extend([
+            #         record.get('from_location_emirate', ''),
+            #         record.get('to_location_emirate', '')
+            #     ])
 
             # Add remaining data
             base_data.extend([

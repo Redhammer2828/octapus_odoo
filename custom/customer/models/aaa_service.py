@@ -49,7 +49,8 @@ class AAAService(models.Model):
         ('driver_cancel', 'Driver Cancelled'),
         ('change', 'Change' ),
         ('approved','Approved'),
-        ('requested','Requested')
+        ('requested','Requested'),
+        ('done_cancel', 'Done Cancelled')
     ], string="Status", readonly=True, default='initiate', tracking=True)
     #MANY2ONE-------------------------------------------------------------------------------------------------------
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True) ]")
@@ -1902,6 +1903,27 @@ class AAAService(models.Model):
                 'comment_user': self.env.user.id,
                 'comment_status' : service.state,
         })
+    ###############  CANCELLING DONE SERVICES ACTION###################        
+    def action_cancel_done_service(self):
+        self.state='done_cancel'
+        for service in self:
+            # TIMELINE TREE
+            self.env['service.history'].create({
+                'service_id': service.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': 'CANCELLED DONE SERVICES',
+                'timeline_status': self.state,
+                })
+            # COMMENTS TREE
+            self .env['service.comment'].create({
+                'service_id': service.id,
+                'comment' : service.comments or 'CANCELLED DONE SERVICES',
+                'comment_date_and_time' : fields.Datetime.now(),
+                'comment_user': self.env.user.id,
+                'comment_status' : service.state,
+        })
+
             
 
 
@@ -2029,7 +2051,8 @@ class ServiceHistory(models.Model):
         ('driver_cancel', 'Driver Cancelled'),
         ('change', 'Change' ),
         ('approved','Approved'),
-        ('requested','Requested')
+        ('requested','Requested'),
+        ('done_cancel', 'Done Cancelled')
     ], string="Timeline Status", readonly=True, default='initiate', tracking=True)
     service_id = fields.Many2one('aaa.service', string="Service")
 

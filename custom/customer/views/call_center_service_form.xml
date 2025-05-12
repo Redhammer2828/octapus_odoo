@@ -6,8 +6,7 @@
             <field name="name">call.center.service.form</field>
             <field name="model">aaa.service</field>
             <field name="arch" type="xml">
-                <form string="Service" delete="false" duplicate="false"
-                    readonly="state in['cancel', 'done']">
+                <form string="Service" delete="false" duplicate="false" readonly="state in['cancel', 'done']">
                     <style>
                         .o_form_view:not(.o_field_highlight)
                         .o_field_widget:not(.o_field_invalid):not(.o_field_highlight)
@@ -34,60 +33,26 @@
                         }
                     </style>
                     <header>
-                        <button name="action_initiate_service" string="Initiate" type="object"
-                            class="btn-primary" invisible="state != 'draft'" />
-                        <button name="action_dispatch_service" string="To Dispatch" type="object"
-                            class="oe_highlight" invisible="state != 'initiate'" />
-                        <button name="action_schedule_service_check" string="Schedule Service"
-                            type="object" class="btn-default"
-                            invisible="state not in ('initiate' , 'dispatch')" />
-                        <button name="action_start_service" string="Start" type="object"
-                            class="btn-primary" invisible="state != 'dispatch' or is_agent_user " />
-                        <button name="action_reach_service" string="Reach" type="object"
-                            class="btn-primary" invisible="state != 'start'  or is_agent_user" />
-                        <button name="action_completed_rac" string="Completed RAC" type="object"
-                            class="btn-primary"
-                            confirm="Complete this RAC service, do you want to proceed?"
-                            invisible="service_based != 'location_duration' or state != 'reach'  or is_agent_user" />
-                        <!-- <button name="action_done_service" string="Done" type="object"
-                            class="btn-primary"
-                            invisible="service_based != 'location_duration' or is_agent_user" /> -->
-                        <button name="action_done_service" string="Done" type="object"
-                            class="btn-success"
-                            confirm="Complete this service, do you want to proceed?"
-                            invisible="not (state == 'reach' or state == 'completed_by_driver') or is_agent_user"
-                        />
-                        <button name="action_cancel_service" type="object" string="Cancel"
-                            confirm="Cancel this service, do you want to proceed?"
-                            class="btn-danger"
-                            invisible="(is_logged_in_user_agent and state != 'initiate') or (not is_logged_in_user_agent and state not in ('initiate', 'dispatch', 'start', 'reach', 'change'))" />
-                        <button name="action_request_service" type="object" string="Request"
-                            invisible="state != 'cancel'  or is_agent_user" groups="base.group_user"
-                            class="btn-primary" />
-                        <!-- <button name="action_approve_service" type="object" string="Approve"
-                            groups="base.group_system"
-                            invisible="state != 'requested'  or is_agent_user" class="btn-primary" /> -->
-                        <button name="action_approve_service" type="object" string="Approve Request"
-                            invisible="state != 'requested' or not is_manager_or_admin"
-                            class="btn-success" />
-                        <button name="action_new_change" type="object" string="Apply Change"
-                            invisible="show_new_change_button == False" class="btn-success" />
+                        <button name="action_initiate_service" string="Initiate" type="object" class="btn-primary" invisible="state != 'draft'" />
+                        <button name="action_dispatch_service" string="To Dispatch" type="object" class="oe_highlight" invisible="state != 'initiate'" />
+                        <button name="action_schedule_service_check" string="Schedule Service" type="object" class="btn-default" invisible="state not in ('initiate' , 'dispatch')" />
+                        <button name="action_start_service" string="Start" type="object" class="btn-primary" invisible="state != 'dispatch' or is_agent_user " />
+                        <button name="action_reach_service" string="Reach" type="object" class="btn-primary" invisible="state != 'start'  or is_agent_user" />
+                        <button name="action_completed_rac" string="Completed RAC" type="object" class="btn-primary" confirm="Complete this RAC service, do you want to proceed?" invisible="service_based != 'location_duration' or state != 'reach'  or is_agent_user" />
+                        <!-- <button name="action_done_service" string="Done" type="object" class="btn-primary" invisible="service_based != 'location_duration' or is_agent_user" /> -->
+                        <button name="action_done_service" string="Done" type="object" class="btn-success" confirm="Complete this service, do you want to proceed?" invisible="not (state == 'reach' or state == 'completed_by_driver') or is_agent_user" />
+                        <button name="action_cancel_service" type="object" string="Cancel" confirm="Cancel this service, do you want to proceed?" class="btn-danger" invisible="(is_logged_in_user_agent and state != 'initiate') or (not is_logged_in_user_agent and state not in ('initiate', 'dispatch', 'start', 'reach', 'change'))" />
+                        <button name="action_request_service" type="object" string="Request" invisible="state != 'cancel'  or is_agent_user" groups="base.group_user" class="btn-primary" />
+                        <!-- <button name="action_approve_service" type="object" string="Approve" groups="base.group_system" invisible="state != 'requested'  or is_agent_user" class="btn-primary" /> -->
+                        <button name="action_approve_service" type="object" string="Approve Request" invisible="state != 'requested' or not is_manager_or_admin" class="btn-success" />
+                        <button name="action_new_change" type="object" string="Apply Change" invisible="show_new_change_button == False" class="btn-success" />
                         <field name="show_new_change_button" invisible="1" />
-                        <button name="action_change" type="object" string="Change" class="btn-info"
-                            confirm="Change this service, do you want to proceed?"
-                            invisible="state not in ('dispatch', 'start','completed_by_driver', 'reach')" />
-                        <button name="action_create_enquiry" string="Enquiry" type="object"
-                            class="btn-default"
-                            invisible="state not in ('initiate', 'dispatch', 'start', 'reach','completed_by_driver')" />
-                        <button name="action_new" string="New Service" type="object"
-                            invisible="state != 'discard'  or is_agent_user" />
-                        <button name="action_approve_cancel_service"
-                            type="object"
-                            string="Approve For Cancel"
-                            invisible="state != 'driver_cancel' or not is_dispatcher_or_manager_or_lead_or_admin"
-                            class="btn-success" />
-                        <field name="state" widget="statusbar" nolabel="1"
-                            statusbar_visible="initiate,dispatch,start,reach,completed_by_driver,done" />
+                        <button name="action_change" type="object" string="Change" class="btn-info" confirm="Change this service, do you want to proceed?" invisible="state not in ('dispatch', 'start','completed_by_driver', 'reach')" />
+                        <button name="action_create_enquiry" string="Enquiry" type="object" class="btn-default" invisible="state not in ('initiate', 'dispatch', 'start', 'reach','completed_by_driver')" />
+                        <button name="action_new" string="New Service" type="object" invisible="state != 'discard'  or is_agent_user" />
+                        <button name="action_approve_cancel_service" type="object" string="Approve For Cancel" invisible="state != 'driver_cancel' or not is_dispatcher_or_manager_or_lead_or_admin" class="btn-success" />
+                        <button name="action_cancel_done_service" type="object" string="CANCEL SERVICE" confirm="Cancel the DONE service, do you want to proceed?" class="btn-warning" invisible="state != 'done' or not is_manager_or_admin" />
+                        <field name="state" widget="statusbar" nolabel="1" statusbar_visible="initiate,dispatch,start,reach,completed_by_driver,done" />
                         <field name="is_logged_in_user_agent" invisible="1" />
                         <field name="is_agent_user" invisible="1" />
                         <field name="is_manager_or_admin" invisible="1" />
@@ -96,38 +61,31 @@
                         <!-- <field name="is_dispatch_user" invisible="1" /> -->
                     </header>
                     <sheet>
-                        <div class="row mt-2 mb-2"
-                            style="font-weight: bold; color: #7c7bad; border: solid 1px #8080805c; margin-left: 1%; margin-right: 1%; background-color: #eee; padding: 8px; border-radius: 10px;">
+                        <div class="row mt-2 mb-2" style="font-weight: bold; color: #7c7bad; border: solid 1px #8080805c; margin-left: 1%; margin-right: 1%; background-color: #eee; padding: 8px; border-radius: 10px;">
                             <div style="display: inline-block; width: 20%; padding-right: 15px;">
                                 <span style="display: inline-block; margin-right: 5px;">Number:</span>
-                                <field name="name" readonly="1"
-                                    style="color: green; display: inline-block;" />
+                                <field name="name" readonly="1" style="color: green; display: inline-block;" />
                             </div>
                             <div style="display: inline-block; width: 16%; padding-right: 10px;">
                                 <span style="display: inline-block; margin-right: 5px;">Service
                                     Type:</span>
-                                <field name="type" readonly="1"
-                                    style="color: green; display: inline-block;" />
+                                <field name="type" readonly="1" style="color: green; display: inline-block;" />
                             </div>
                             <div style="display: inline-block; width: 16%; padding-right: 10px;">
                                 <span style="display: inline-block; margin-right: 5px;">Member Type:</span>
-                                <field name="member_type" readonly="1"
-                                    style="color: green; display: inline-block;" />
+                                <field name="member_type" readonly="1" style="color: green; display: inline-block;" />
                             </div>
                             <div style="display: inline-block; width: 16%; padding-right: 10px;">
                                 <span style="display: inline-block; margin-right: 5px;">Card Type:</span>
-                                <field name="card_type" readonly="1"
-                                    style="color: green; display: inline-block;" />
+                                <field name="card_type" readonly="1" style="color: green; display: inline-block;" />
                             </div>
                             <div style="display: inline-block; width: 16%; padding-right: 10px;">
                                 <span style="display: inline-block; margin-right: 5px;">User:</span>
-                                <field name="created_by" widget="selection" readonly="1"
-                                    style="color: green !important; display: inline-block;" />
+                                <field name="created_by" widget="selection" readonly="1" style="color: green !important; display: inline-block;" />
                             </div>
                             <div style="display: inline-block; width: 16%;">
                                 <span style="display: inline-block; margin-right: 5px;">Agent:</span>
-                                <field name="create_uid" widget="selection" readonly="1"
-                                    style="color: green !important; display: inline-block;" />
+                                <field name="create_uid" widget="selection" readonly="1" style="color: green !important; display: inline-block;" />
                             </div>
                         </div>
                         <group col="3">
@@ -135,147 +93,65 @@
                                 <field name="is_member_from_partner" invisible="1" />
                                 <field name="is_customer_from_partner" invisible="1" />
                                 <field name="is_sequence_from_partner" invisible="1" />
-                                <field name="customer_id" string="Customer"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch'] or member_type == 'policy' or is_customer_from_partner == True "
-                                    class="required_field" required="1"
-                                    options="{'no_create': True, 'no_open': True}" />
-                                <field name="credit_customer_co" string="Customer C/O"
-                                    readonly="state in['cancel', 'done']"
-                                    invisible="member_type in ('policy', 'adhoc')" />
-                                <field name="sequence_id" string="Customer Category"
-                                    class="required_field" required="1"
-                                    options="{'no_create': True, 'no_open': True}"
-                                    readonly="state in['start','reach','cancel', 'done'] or member_type == 'policy' or is_sequence_from_partner == True" />
-                                <field name="member_id" string="Member"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch'] or member_type == 'policy' or is_member_from_partner == True"
-                                    class="required_field" required="1"
-                                    options="{'no_create': True, 'no_open': True}" />
-                                <field name="membership_num" readonly="1"
-                                    invisible="member_type in ['credit','adhoc']" />
-                                <field name="member_contact_no" string="Mobile Number"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
-                                <field name="email" string="Email"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
-                                <field name="claim_membership" invisible="type != 'cash'"
-                                    readonly="state not in ['initiate', 'dispatch']" />
+                                <field name="customer_id" string="Customer" readonly="state not in ['draft', 'initiate', 'dispatch'] or member_type == 'policy' or is_customer_from_partner == True " class="required_field" required="1" options="{'no_create': True, 'no_open': True}" />
+                                <field name="credit_customer_co" string="Customer C/O" readonly="state in['cancel', 'done']" invisible="member_type in ('policy', 'adhoc')" />
+                                <field name="sequence_id" string="Customer Category" class="required_field" required="1" options="{'no_create': True, 'no_open': True}" readonly="state in['start','reach','cancel', 'done'] or member_type == 'policy' or is_sequence_from_partner == True" />
+                                <field name="member_id" string="Member" readonly="state not in ['draft', 'initiate', 'dispatch'] or member_type == 'policy' or is_member_from_partner == True" class="required_field" required="1" options="{'no_create': True, 'no_open': True}" />
+                                <field name="membership_num" readonly="1" invisible="member_type in ['credit','adhoc']" />
+                                <field name="member_contact_no" string="Mobile Number" readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                <field name="email" string="Email" readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                <field name="claim_membership" invisible="type != 'cash'" readonly="state not in ['initiate', 'dispatch']" />
                                 <field name="deposit_amount" invisible="1" />
                                 <field name="schedule_service_check" readonly="1" invisible="1" />
-                                <field name="schedule_date_time" readonly="1"
-                                    invisible="schedule_service_check == False or schedule_date_time == False or requested_date == False"
-                                    required="schedule_service_check == True " />
+                                <field name="schedule_date_time" readonly="1" invisible="schedule_service_check == False or schedule_date_time == False or requested_date == False" required="schedule_service_check == True " />
                                 <field name="service_time" readonly="1" />
-                                <field name="requested_date" readonly="1"
-                                    invisible="schedule_service_check == False or requested_date == False" />
-                                <field name="driving_license" string="Driving License"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                <field name="requested_date" readonly="1" invisible="schedule_service_check == False or requested_date == False" />
+                                <field name="driving_license" string="Driving License" readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="claim_number" readonly="state == 'done'" />
-                                <field name="smarto" readonly="state in ['cancel', 'discard']"
-                                    widget="boolean_toggle" />
-                                <field name="smarto_id" readonly="state in ['cancel', 'discard']"
-                                    invisible="smarto != True" required="smarto == True" />
+                                <field name="smarto" readonly="state in ['cancel', 'discard']" widget="boolean_toggle" />
+                                <field name="smarto_id" readonly="state in ['cancel', 'discard']" invisible="smarto != True" required="smarto == True" />
                                 <field name="comments" string="Comments" />
-                                <field name="import_comments" string="Comments"
-                                    invisible="is_imported == False" readonly='1' />
-                                <field name="orgin_no" string="Orgin"
-                                    invisible="state not in ('change', 'initiate')" readonly="1" />
+                                <field name="import_comments" string="Comments" invisible="is_imported == False" readonly='1' />
+                                <field name="orgin_no" string="Orgin" invisible="state not in ('change', 'initiate')" readonly="1" />
                             </group>
                             <group string="VEHICLE DETAILS" name="vehicle_details">
-                                <field name="vehicle_type" string="Vehicle Type"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)"
-                                    invisible="(member_type == 'credit' and not is_imported) or (member_type == 'adhoc')" />
-                                <field name="vehicle_type_id"
-                                    options="{'no_create': True, 'no_open': True}"
-                                    invisible="member_type == 'policy' or is_imported == True" string="Vehicle Type"/>
-                                <field name="vehicle_model" string="Vehicle Model"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user) "
-                                    invisible="(member_type == 'credit' and not is_imported) or (member_type == 'adhoc')" />
-                                <field name="vehicle_model_id"
-                                    options="{'no_create': True, 'no_open': True}"
-                                    invisible="member_type == 'policy' or is_imported == True" string="Vehicle Model"/>
-                                <field name="vehicle_plate" string="Vehicle Plate"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" />
-                                <field name="vehicle_chasis_no" string="Vehicle Chasis No"
-                                    readonly="state == 'done'  or member_type == 'policy'" />
-                                <field name="policy_no" string="Policy No"
-                                    readonly="state not in ['draft', 'initiate', 'dispatch']  or member_type == 'policy'" />
-                                <field name="member_activate_date"
-                                    readonly="member_activate_date != False or member_type == 'policy'"
-                                    invisible="member_type in ('credit', 'adhoc') or state == 'change'" />
-                                <field name="member_expiry_date"
-                                    readonly="member_expiry_date != False or member_type == 'policy'"
-                                    invisible="member_type in ('credit', 'adhoc') or state == 'change'" />
+                                <field name="vehicle_type" string="Vehicle Type" readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" invisible="(member_type == 'credit' and not is_imported) or (member_type == 'adhoc')" />
+                                <field name="vehicle_type_id" options="{'no_create': True, 'no_open': True}" invisible="member_type == 'policy' or is_imported == True" string="Vehicle Type"/>
+                                <field name="vehicle_model" string="Vehicle Model" readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user) " invisible="(member_type == 'credit' and not is_imported) or (member_type == 'adhoc')" />
+                                <field name="vehicle_model_id" options="{'no_create': True, 'no_open': True}" invisible="member_type == 'policy' or is_imported == True" string="Vehicle Model"/>
+                                <field name="vehicle_plate" string="Vehicle Plate" readonly="state not in ['draft', 'initiate', 'dispatch', 'start','completed_by_driver','reach'] or (member_type == 'policy') or (state in ('dispatch','start') and is_agent_user)" />
+                                <field name="vehicle_chasis_no" string="Vehicle Chasis No" readonly="state == 'done'  or member_type == 'policy'" />
+                                <field name="policy_no" string="Policy No" readonly="state not in ['draft', 'initiate', 'dispatch']  or member_type == 'policy'" />
+                                <field name="member_activate_date" readonly="member_activate_date != False or member_type == 'policy'" invisible="member_type in ('credit', 'adhoc') or state == 'change'" />
+                                <field name="member_expiry_date" readonly="member_expiry_date != False or member_type == 'policy'" invisible="member_type in ('credit', 'adhoc') or state == 'change'" />
                             </group>
                             <group string="SERVICE DETAILS" name="service_details">
                                 <group class="product_field">
-                                    <field name="product_id" string="Service" class="required_field"
-                                        required="state == 'dispatch'"
-                                        options="{'no_create': True, 'no_open': True}"
-                                        readonly="state in['start','reach','completed_by_driver','cancel', 'done']" />
+                                    <field name="product_id" string="Service" class="required_field" required="state == 'dispatch'" options="{'no_create': True, 'no_open': True}" readonly="state in['start','reach','completed_by_driver','cancel', 'done']" />
                                     <field name="service_based" invisible="1" />
-                                    <field name="search_query"
-                                        style="background-color: #e6dddd;border-radius: 9px;"
-                                        placeholder="Type Location name..."
-                                        readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']"
-                                        invisible="(is_imported == True) or (is_imported == False and member_type == 'credit') or (service_based == 'none')" />
-                                    <field name="search_results" widget="many2many_tags"
-                                        options="{'no_create': True}"
-                                        invisible="(is_imported == True) or (member_type == 'credit') or (service_based == 'none')" />
-                                    <field name="selected_from_location"
-                                        domain="[('id', 'in', search_results)]"
-                                        options="{'no_create': True, 'no_open': True}"
-                                        invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'none') or (service_based == 'location_duration') or (member_type == 'credit')"
-                                        class="required_field" required="state == 'dispatch'"
-                                        readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" />
+                                    <field name="search_query" style="background-color: #e6dddd;border-radius: 9px;" placeholder="Type Location name..." readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" invisible="(is_imported == True) or (is_imported == False and member_type == 'credit') or (service_based == 'none')" />
+                                    <field name="search_results" widget="many2many_tags" options="{'no_create': True}" invisible="(is_imported == True) or (member_type == 'credit') or (service_based == 'none')" />
+                                    <field name="selected_from_location" domain="[('id', 'in', search_results)]" options="{'no_create': True, 'no_open': True}" invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'none') or (service_based == 'location_duration') or (member_type == 'credit')" class="required_field" required="state == 'dispatch'" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" />
                                     <field name="is_imported" invisible="1" />
-                                    <field name="from_location"
-                                        invisible="not (is_imported or member_type == 'credit') or service_based in ('location', 'location_duration','none')"
-                                        options="{'no_create': True, 'no_open': True}"
-                                        required="state == 'dispatch'" class="required_field"
-                                        readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" />
-                                    <field name="from_location_emirate"
-                                        style="font-weight: 500;color: #28a745;"
-                                        invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'none') or (service_based == 'location_duration') or (member_type == 'credit')" />
-                                    <field name="selected_to_location"
-                                        domain="[('id', 'in', search_results)]"
-                                        options="{'no_create': True, 'no_open': True}"
-                                        class="required_field" required="state == 'dispatch'"
-                                        readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']"
-                                        invisible="(is_imported == True) or (service_based == 'none') or (member_type == 'credit')" />
-                                    <field name="to_location"
-                                        invisible="not (is_imported or member_type == 'credit') or service_based == 'none'"
-                                        options="{'no_create': True, 'no_open': True}"
-                                        required="state == 'dispatch'" class="required_field"
-                                        readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" />
-                                    <field name="to_location_emirate"
-                                        style="font-weight: 500;color: #28a745;"
-                                        invisible="(is_imported == True) or (member_type == 'credit') or (service_based == 'none')" />
-                                    <field name="cash_collected" invisible="member_type != 'adhoc'"
-                                        readonly="state in['start','reach','completed_by_driver','cancel', 'done']" />
-                                    <field name="amount" string="Cash to be Collected"
-                                        invisible="member_type in ['adhoc', 'credit'] or service_based == 'none'"
-                                        readonly="state in['cancel', 'done']" />
+                                    <field name="from_location" invisible="not (is_imported or member_type == 'credit') or service_based in ('location', 'location_duration','none')" options="{'no_create': True, 'no_open': True}" required="state == 'dispatch'" class="required_field" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" />
+                                    <field name="from_location_emirate" style="font-weight: 500;color: #28a745;" invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'none') or (service_based == 'location_duration') or (member_type == 'credit')" />
+                                    <field name="selected_to_location" domain="[('id', 'in', search_results)]" options="{'no_create': True, 'no_open': True}" class="required_field" required="state == 'dispatch'" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" invisible="(is_imported == True) or (service_based == 'none') or (member_type == 'credit')" />
+                                    <field name="to_location" invisible="not (is_imported or member_type == 'credit') or service_based == 'none'" options="{'no_create': True, 'no_open': True}" required="state == 'dispatch'" class="required_field" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" />
+                                    <field name="to_location_emirate" style="font-weight: 500;color: #28a745;" invisible="(is_imported == True) or (member_type == 'credit') or (service_based == 'none')" />
+                                    <field name="cash_collected" invisible="member_type != 'adhoc'" readonly="state in['start','reach','completed_by_driver','cancel', 'done']" />
+                                    <field name="amount" string="Cash to be Collected" invisible="member_type in ['adhoc', 'credit'] or service_based == 'none'" readonly="state in['cancel', 'done']" />
                                     <field name="credit_cash" invisible="member_type != 'credit'"/>
                                     <!-- <field name="amount" string="Cash to be Collected" invisible="not cash_visible" readonly="state in ['cancel', 'done']"/>
                                     <field name="cash_visible" invisible="1"/> -->
                                     <!-- DRIVER PICKUP & DROP OFF LOCATION -->
                                     <field name="driver_pickup" readonly="1" />
                                     <field name="driver_dropoff" readonly="1" />
-                                    <field name="date_time_from" string="From Date time"
-                                        invisible="service_based != 'location_duration'"
-                                        class="required_field" required="1"
-                                        readonly="state in['cancel', 'done']" />
-                                    <field name="date_time_to" string="To Date time"
-                                        invisible="service_based != 'location_duration'"
-                                        class="required_field" required="1"
-                                        readonly="state in['cancel', 'done']" />
-                                    <field name="quantity" string="Quantity (Days)"
-                                        invisible="service_based != 'location_duration'"
-                                        class="required_field" readonly="1" />
+                                    <field name="date_time_from" string="From Date time" invisible="service_based != 'location_duration'" class="required_field" required="1" readonly="state in['cancel', 'done']" />
+                                    <field name="date_time_to" string="To Date time" invisible="service_based != 'location_duration'" class="required_field" required="1" readonly="state in['cancel', 'done']" />
+                                    <field name="quantity" string="Quantity (Days)" invisible="service_based != 'location_duration'" class="required_field" readonly="1" />
                                 </group>
                                 <separator string="ADDON SERVICES" colspan="4" />
-                                <field name="addon_service_ids" nolabel="1"
-                                    invisible="product_id == False"
-                                    readonly="state in['cancel', 'done']">
+                                <field name="addon_service_ids" nolabel="1" invisible="product_id == False" readonly="state in['cancel', 'done']">
                                     <tree string="Additional Services" class="addon_tree">
                                         <field name="product_id" string="Service" />
                                         <field name="description" string="Description" />
@@ -295,69 +171,30 @@
                             </group>
                         </group>
                         <group col="2">
-                            <group string="PROVIDER DETAILS"
-                                invisible="state in ['draft', 'initiate']">
-                                <field name="provider_id" string="Provider"
-                                    invisible="state in ['draft', 'initiate']"
-                                    class="required_field" readonly="state in ['done', 'cancel']"
-                                    required="state in ['start', 'completed_by_driver']"
-                                    options="{'no_create': True, 'no_open': True}" />
-                                <field name="provider_num" string="Contact No"
-                                    invisible="state in ['draft', 'initiate']"
-                                    readonly="state in ['done', 'cancel']" />
-                                <field name="route_rate" string="Route Rate"
-                                    invisible="state in ['draft', 'initiate']"
-                                    readonly="state in ['done', 'cancel']" />
-                                <field name="avg_rating" widget="priority" string="Average Rating"
-                                    invisible="state in ['draft', 'initiate']"
-                                    readonly="state in ['done', 'cancel']" />
-                                <field name="vehicle" string="Vehicle"
-                                    invisible="state in ['draft', 'initiate']"
-                                    readonly="state in ['done', 'cancel']" />
+                            <group string="PROVIDER DETAILS" invisible="state in ['draft', 'initiate']">
+                                <field name="provider_id" string="Provider" invisible="state in ['draft', 'initiate']" class="required_field" readonly="state in ['done', 'cancel']" required="state in ['start', 'completed_by_driver']" options="{'no_create': True, 'no_open': True}" />
+                                <field name="provider_num" string="Contact No" invisible="state in ['draft', 'initiate']" readonly="state in ['done', 'cancel']" />
+                                <field name="route_rate" string="Route Rate" invisible="state in ['draft', 'initiate']" readonly="state in ['done', 'cancel']" />
+                                <field name="avg_rating" widget="priority" string="Average Rating" invisible="state in ['draft', 'initiate']" readonly="state in ['done', 'cancel']" />
+                                <field name="vehicle" string="Vehicle" invisible="state in ['draft', 'initiate']" readonly="state in ['done', 'cancel']" />
                                 <field name="is_driver_name_visible" invisible="1" />
-                                <field name="driver_name"
-                                    invisible="is_driver_name_visible == False"
-                                    readonly="state in ['done', 'cancel']" />
-                                <field name="driver_id" invisible="is_driver_name_visible == True"
-                                    readonly="state in ['done', 'cancel']" class="required_field"
-                                    options="{'no_create': True, 'no_open': True}" />
-                                <field name="driver_num" string="Contact No"
-                                    invisible="state in ['draft', 'initiate']"
-                                    readonly="state in ['done', 'cancel']" />
+                                <field name="driver_name" invisible="is_driver_name_visible == False" readonly="state in ['done', 'cancel']" />
+                                <field name="driver_id" invisible="is_driver_name_visible == True" readonly="state in ['done', 'cancel']" class="required_field" options="{'no_create': True, 'no_open': True}" />
+                                <field name="driver_num" string="Contact No" invisible="state in ['draft', 'initiate']" readonly="state in ['done', 'cancel']" />
                             </group>
 
-                            <group string="JAFZA DETAILS"
-                                invisible="state in ['draft']">
+                            <group string="JAFZA DETAILS" invisible="state in ['draft']">
                                 <!-- JAFZA SERVICE -->
                                 <field name="is_jafza_service" widget="boolean_toggle" />
-                                <field name="jafza_provider_id" string="Jafza Provider"
-                                    invisible="state in ['draft'] or is_jafza_service == False"
-                                    readonly="state in ['done', 'cancel']"
-                                    options="{'no_create': True, 'no_open': True}" />
-                                <field name="jafza_driver_id"
-                                    invisible="is_driver_name_visible == True and is_jafza_service == False"
-                                    readonly="state in ['done', 'cancel']"
-                                    options="{'no_create': True, 'no_open': True}" />
-                                <field name="jafza_driver_name"
-                                    invisible="is_driver_name_visible == False and is_jafza_service == False"
-                                    readonly="state in ['done', 'cancel']" />
+                                <field name="jafza_provider_id" string="Jafza Provider" invisible="state in ['draft'] or is_jafza_service == False" readonly="state in ['done', 'cancel']" options="{'no_create': True, 'no_open': True}" />
+                                <field name="jafza_driver_id" invisible="is_driver_name_visible == True and is_jafza_service == False" readonly="state in ['done', 'cancel']" options="{'no_create': True, 'no_open': True}" />
+                                <field name="jafza_driver_name" invisible="is_driver_name_visible == False and is_jafza_service == False" readonly="state in ['done', 'cancel']" />
                                 <field name="is_aditional_duty" widget="boolean_toggle" />
                             </group>
-                            <group string="SUMMARY"
-                                invisible="state in ['draft', 'initiate', 'dispatch']"
-                                readonly="state in ['done', 'cancel']">
-                                <field name="credit_proforma_number" string="Trip Sheet Number"
-                                    invisible="state in ['draft', 'initiate', 'dispatch']"
-                                    
-                                    readonly="state in ['done']"
-                                    class="required_field" />
-                                <field name="vendor_rating" widget="priority"
-                                    string="Rate this service"
-                                    invisible="state in ['draft', 'initiate', 'dispatch']"
-                                    readonly="state in ['done']" />
-                                <field name="rating_user_id" string="Rating Added By"
-                                    invisible="state in ['draft', 'initiate', 'dispatch']"
-                                    readonly="state in ['done']" />
+                            <group string="SUMMARY" invisible="state in ['draft', 'initiate', 'dispatch']" readonly="state in ['done', 'cancel']">
+                                <field name="credit_proforma_number" string="Trip Sheet Number" invisible="state in ['draft', 'initiate', 'dispatch']" readonly="state in ['done']" class="required_field" />
+                                <field name="vendor_rating" widget="priority" string="Rate this service" invisible="state in ['draft', 'initiate', 'dispatch']" readonly="state in ['done']" />
+                                <field name="rating_user_id" string="Rating Added By" invisible="state in ['draft', 'initiate', 'dispatch']" readonly="state in ['done']" />
                             </group>
                         </group>
                         <notebook>
@@ -373,8 +210,7 @@
                                         <group>
                                             <field name="comment" />
                                             <field name="comment_date_and_time" />
-                                            <field name="comment_user"
-                                                options="{'no_create': True, 'no_open': True}" />
+                                            <field name="comment_user" options="{'no_create': True, 'no_open': True}" />
                                             <field name="comment_status" />
                                         </group>
                                     </form>
@@ -429,8 +265,7 @@
             <field name="res_model">aaa.service</field>
             <field name="view_mode">form</field>
             <field name="context">{'default_member_type': 'credit', 'default_type': 'non_cash'}</field>
-            <field name="view_ids"
-                eval="[
+            <field name="view_ids" eval="[
           (5, 0, 0),
           (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
         ]">
@@ -441,19 +276,14 @@
             <field name="res_model">aaa.service</field>
             <field name="view_mode">form</field>
             <field name="context">{'default_member_type': 'adhoc', 'default_type': 'cash'}</field>
-            <field name="view_ids"
-                eval="[
+            <field name="view_ids" eval="[
           (5, 0, 0),
           (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
         ]">
             </field>
         </record>
 
-        <menuitem id="sub_menu_service_credit_new_member" name="New Member"
-            parent="menu_service_credit" action="action_call_center_credit_service_credit_new"
-            sequence="1" />
-        <menuitem id="menu_service_cash_adhoc_new" name="Service - Cash"
-            parent="menu_call_center_root" action="action_call_center_adhoc_service_new"
-            sequence="3" />
+        <menuitem id="sub_menu_service_credit_new_member" name="New Member" parent="menu_service_credit" action="action_call_center_credit_service_credit_new" sequence="1" />
+        <menuitem id="menu_service_cash_adhoc_new" name="Service - Cash" parent="menu_call_center_root" action="action_call_center_adhoc_service_new" sequence="3" />
     </data>
 </odoo>
