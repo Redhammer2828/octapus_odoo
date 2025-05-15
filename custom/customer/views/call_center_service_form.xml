@@ -47,7 +47,7 @@
                         <button name="action_approve_service" type="object" string="Approve Request" invisible="state != 'requested' or not is_manager_or_admin" class="btn-success" />
                         <button name="action_new_change" type="object" string="Apply Change" invisible="show_new_change_button == False" class="btn-success" />
                         <field name="show_new_change_button" invisible="1" />
-                        <button name="action_change" type="object" string="Change" class="btn-info" confirm="Change this service, do you want to proceed?" invisible="state not in ('dispatch', 'start','completed_by_driver', 'reach')" />
+                        <button name="action_change" type="object" string="Change" class="btn-info" confirm="Change this service, do you want to proceed?" invisible="state not in ('dispatch', 'start','completed_by_driver', 'reach') or is_agent_user" />
                         <button name="action_create_enquiry" string="Enquiry" type="object" class="btn-default" invisible="state not in ('initiate', 'dispatch', 'start', 'reach','completed_by_driver')" />
                         <button name="action_new" string="New Service" type="object" invisible="state != 'discard'  or is_agent_user" />
                         <button name="action_approve_cancel_service" type="object" string="Approve For Cancel" invisible="state != 'driver_cancel' or not is_dispatcher_or_manager_or_lead_or_admin" class="btn-success" />
@@ -146,6 +146,17 @@
                                     <!-- DRIVER PICKUP & DROP OFF LOCATION -->
                                     <field name="driver_pickup" readonly="1" />
                                     <field name="driver_dropoff" readonly="1" />
+<!-- 
+                                    <field name="location_from" widget="location_search"/>
+                                    <field name="location_from_id" invisible="1"/>
+                                    <field name="location_from_latitude" invisible="1"/>
+                                    <field name="location_from_longitude" invisible="1"/>
+                                    
+                                    <field name="location_to" widget="location_search"/>
+                                    <field name="location_to_id" invisible="1"/>
+                                    <field name="location_to_latitude" invisible="1"/>
+                                    <field name="location_to_longitude" invisible="1"/>
+ -->
                                     <field name="date_time_from" string="From Date time" invisible="service_based != 'location_duration'" class="required_field" required="1" readonly="state in['cancel', 'done']" />
                                     <field name="date_time_to" string="To Date time" invisible="service_based != 'location_duration'" class="required_field" required="1" readonly="state in['cancel', 'done']" />
                                     <field name="quantity" string="Quantity (Days)" invisible="service_based != 'location_duration'" class="required_field" readonly="1" />
