@@ -1,6 +1,7 @@
 from odoo import models, fields, api
 import logging
 from odoo.exceptions import ValidationError, UserError
+from datetime import date
 
 logger = logging.getLogger(__name__)
 
@@ -95,55 +96,92 @@ class MembershipRenewalWizard(models.TransientModel):
         logger.info("Updating Membership for Partner ID: %s", partner.id)
         logger.info("Card Type ID in Wizard: %s", self.card_type_id.id)
 
-        # Create an entry in the membership.history model before updating the partner record
-        mem_renewal = self.env['membership.history'].create({
-            'name': partner.name,  
-            'parent_customer_id': partner.parent_customer_id.id,
-            'old_membership_number': partner.old_membership_number,  
-            'ref_num': partner.ref_num,
-            'member_partner_category_id': partner.member_partner_category_id.id,
-            'product_template_id': partner.product_template_id.id,
-            'member_type': partner.member_type,
-            'policy_no': partner.policy_no,
-            'vehicle_chasis_no': partner.vehicle_chasis_no,
-            'vehicle_plate': partner.vehicle_plate,
-            'vehicle_type': partner.vehicle_type,
-            'member_activate_date': partner.member_activate_date,
-            'member_expiry_date': partner.member_expiry_date,
-            'invoice_ref_date': partner.invoice_ref_date,
-            'card_type_id': partner.card_type_id.id,
-            'history_id': partner.id
-        })
-
-        # Check if the logged-in user is in the "Agent" group
-        agent_group = self.env['res.groups'].search([('name', '=', 'Agent')], limit=1)
-        if agent_group and agent_group in self.env.user.groups_id:
-            # If user is in the "Agent" group, change membership_state and create a different timeline
-            partner.membership_state = 'temp'
-
-            self.env['membership.timeline'].create({
+        membership_timeline = {
                 'member_id': partner.id,
                 'user': self.env.user.id,
                 'time': fields.Datetime.now(),
-                'status': 'Membership Renewed (Handled by Agent)',
-                'timeline_status': 'temp',
+                'status': '',
+                'timeline_status': '',
+            }
+
+        today = date.today()
+
+        if today >= self.activation_date:
+
+            # Create an entry in the membership.history model before updating the partner record
+            self.env['membership.history'].create({
+                'name': partner.name,  
+                'parent_customer_id': partner.parent_customer_id.id,
+                'old_membership_number': partner.old_membership_number,  
+                'ref_num': partner.ref_num,
+                'member_partner_category_id': partner.member_partner_category_id.id,
+                'product_template_id': partner.product_template_id.id,
+                'member_type': partner.member_type,
+                'policy_no': partner.policy_no,
+                'vehicle_chasis_no': partner.vehicle_chasis_no,
+                'vehicle_plate': partner.vehicle_plate,
+                'vehicle_type': partner.vehicle_type,
+                'member_activate_date': partner.member_activate_date,
+                'member_expiry_date': partner.member_expiry_date,
+                'invoice_ref_date': partner.invoice_ref_date,
+                'card_type_id': partner.card_type_id.id,
+                'history_id': partner.id
             })
+
+        
+            # Check if the logged-in user is in the "Agent" group
+            agent_group = self.env['res.groups'].search([('name', '=', 'Agent')], limit=1)
+            if agent_group and agent_group in self.env.user.groups_id:
+                # If user is in the "Agent" group, change membership_state and create a different timeline
+                partner.membership_state = 'temp'
+                membership_timeline['status'] = 'Membership Renewed - Handled by Agent'
+                membership_timeline['timeline_status'] = 'temp'
+                self.env['membership.timeline'].create(membership_timeline)
+            else:
+                # Default timeline entry for non-agent users
+                membership_timeline['status'] = 'Membership Renewed - Manual'
+                membership_timeline['timeline_status'] = partner.membership_state
+                self.env['membership.timeline'].create(membership_timeline)
+
+            # Update the partner record with the new membership values
+            
+            partner.write({
+                'parent_customer_id': self.parent_customer_id.id,
+                'member_activate_date': self.activation_date,
+                'card_type_id': self.card_type_id.id,
+                'member_expiry_date': self.expiry_date,
+                'vehicle_chasis_no': self.vehicle_chasis_no,
+                'product_template_id': self.product_template_id.id,
+            })
+
+            logger.info("Membership renewed for Partner ID: %s", partner.id)
+
         else:
-            # Default timeline entry for non-agent users
-            self.env['membership.timeline'].create({
-                'member_id': partner.id,
-                'user': self.env.user.id,
-                'time': fields.Datetime.now(),
-                'status': 'Membership Renewed - Manual',
-                'timeline_status': partner.membership_state,
-            })
 
-        # Update the partner record with the new membership values
-        partner.write({
-            'parent_customer_id': self.parent_customer_id.id,
-            'member_activate_date': self.activation_date,
-            'card_type_id': self.card_type_id.id,
-            'member_expiry_date': self.expiry_date,
-            'vehicle_chasis_no': self.vehicle_chasis_no,
-            'product_template_id': self.product_template_id.id,
-        })
+            if partner.renewal_in_queue:
+                raise UserError(f"Membership renewal already initiated. Will be automatically renewed on {partner.next_activation_date}")
+            
+            else:
+                # Check if the logged-in user is in the "Agent" group
+                agent_group = self.env['res.groups'].search([('name', '=', 'Agent')], limit=1)
+                if agent_group and agent_group in self.env.user.groups_id:
+                    # If user is in the "Agent" group, change membership_state and create a different timeline
+
+                    membership_timeline['status'] = f'Membership Renewal in queue - Handled by Agent (Activation Date: {self.activation_date})'
+                    membership_timeline['timeline_status'] = partner.membership_state
+                    self.env['membership.timeline'].create(membership_timeline)
+                else:
+                    # Default timeline entry for non-agent users
+                    membership_timeline['status'] = f'Membership Renewal in queue - Manual (Activation Date: {self.activation_date})'
+                    membership_timeline['timeline_status'] = partner.membership_state
+                    self.env['membership.timeline'].create(membership_timeline)
+
+                partner.write({
+                    'next_activation_date': self.activation_date,
+                    'next_expiry_date': self.expiry_date,
+                    'next_product_template_id': self.product_template_id.id,
+                    'timeline_user_id': self.env.user.id,
+                    'renewal_in_queue': True,
+                })
+
+                logger.info(f"Membership for Partner ID: {partner.id} will be renewed on {self.activation_date}")

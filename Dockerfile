@@ -31,13 +31,9 @@ RUN apt-get update \
         libxext6 \
         libxrender1 \
         zlib1g \
+        wkhtmltopdf \
     && rm -rf /var/lib/apt/lists/*
 
-# Install wkhtmltopdf
-# RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.bionic_amd64.deb \
-#     && dpkg -i wkhtmltox_0.12.6-1.bionic_amd64.deb \
-#     && apt-get -f install -y \
-#     && rm wkhtmltox_0.12.6-1.bionic_amd64.deb
 
 # Create Odoo user
 RUN adduser --system --home=$ODOO_HOME --group $ODOO_USER

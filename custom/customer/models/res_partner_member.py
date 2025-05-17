@@ -573,6 +573,13 @@ class ResPartnerMembers(models.Model):
 
     def action_membership_renewal(self):
         view_id = self.env.ref('customer.membership_renewal_wizard_form').id
+
+        today = date.today()
+        if today >= self.member_expiry_date:
+            default_activation_date = today
+        else:
+            default_activation_date = self.member_expiry_date
+
         return {
             'name': 'Membership Renewal',
             'type': 'ir.actions.act_window',
@@ -582,7 +589,7 @@ class ResPartnerMembers(models.Model):
             'target': 'new',
             'context': {
                 'default_parent_customer_id': self.parent_customer_id.id,
-                'default_activation_date': self.member_activate_date,
+                'default_activation_date': default_activation_date,
                 'default_card_type_id': self.card_type_id.name,
                 'default_vehicle_chasis_no': self.vehicle_chasis_no,
                 'default_product_template_id': self.product_template_id.id,
