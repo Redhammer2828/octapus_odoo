@@ -63,14 +63,16 @@
                     <field name="credit_proforma_number" string="Trip Sheet Number" />
                     <field name="create_uid" string="Agent" />
                     <field name="dispatcher_from_history" string="Dispatcher" />
+                    <field name="is_today_service_time"/> <!-- Optional -->
                     <!-- <filter name="today_records" string="Today's Records"
                         domain="[('service_time', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00')), 
                   ('service_time', '&lt;=', context_today().strftime('%Y-%m-%d 23:59:59'))]" /> -->
-                    <filter name="today_records" string="Today's Records"
+                    <!-- <filter name="today_records" string="Today's Records"
                         domain="[
                 ('service_time', '&gt;=', (context_today() - relativedelta(hours=4)).strftime('%Y-%m-%d 00:00:00')),
                 ('service_time', '&lt;=', (context_today() + relativedelta(days=1, hours=-4)).strftime('%Y-%m-%d 23:59:59'))
-            ]" />
+            ]" /> -->
+                    <filter string="Today" name="filter_today" domain="[('is_today_service_time', '=', True)]"/>
                 </search>
             </field>
         </record>
