@@ -16,6 +16,7 @@
     'data': [
         'security/ir.model.access.csv',
         # 'reports/credit_validation_pdf_report.xml',
+        'reports/credit_invoice_pdf_report.xml',
         'reports/reports.xml',
         'views/res_partner_customer.xml',
         'views/res_partner_member.xml',
@@ -75,6 +76,7 @@
         'wizards/vendors_report_wizard.xml',
         'wizards/aaa_rac_wizard.xml',
         'wizards/rac_bulk_upload.xml',
+        'wizards/aaa_cancel_report.xml',
         'data/scheduled_action.xml',
         'data/sequence_data.xml',
         'data/server_action.xml',

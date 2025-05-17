@@ -12,4 +12,17 @@
         <field name="priority">0</field>
         <field name="active" eval="True"/>
     </record>
+
+    <record id="ir_cron_renew_policy_membership" model="ir.cron">
+        <field name="name">Renew Policy Membership</field>
+        <field name="model_id" ref="model_res_partner"/>
+        <field name="state">code</field>
+        <field name="code">model.action_membership_renewal_scheduler()</field>
+        <field name="interval_number">1</field>  <!-- Minimum possible interval in Odoo 17 -->
+        <field name="interval_type">minutes</field>
+        <field name="numbercall">-1</field>  <!-- Infinite execution -->
+        <field name="doall" eval="False"/>
+        <field name="priority">0</field>
+        <field name="active" eval="True"/>
+    </record>
 </odoo>

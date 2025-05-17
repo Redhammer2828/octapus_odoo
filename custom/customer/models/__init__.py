@@ -24,3 +24,5 @@ from . import afl_dashboard
 from . import invoice_addons
 from . import accounts_addons
 from . import credit_service_validation
+from . import res_partner_member_addons
+from . import aaa_service_addons

@@ -58,7 +58,7 @@ class MemberSearch(models.Model):
             'view_mode': 'tree,form',
             'res_model': 'res.partner',
             'type': 'ir.actions.act_window',
-            'domain': [('id', 'in', partner_ids.ids)],
+            'domain': [('id', 'in', partner_ids.ids), ('membership_state', '!=', 'cancel')],
             'context': {
                 'default_member_type': 'policy',
             },

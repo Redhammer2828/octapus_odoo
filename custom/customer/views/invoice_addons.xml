@@ -6,7 +6,9 @@
         <field name="inherit_id" ref="account.view_move_form" />
         <field name="arch" type="xml">
             <xpath expr="//header/button[@name='button_draft']" position="after">
-                <button name="action_report_invoice" string="GENERATE INVOICE" type="object" class="btn-primary" data-hotkey="m" groups="account.group_account_invoice" invisible="state != 'posted'"/>
+                <!-- <button name="action_report_invoice" string="GENERATE INVOICE" type="object" class="btn-primary" data-hotkey="m" groups="account.group_account_invoice" invisible="state != 'posted'"/> -->
+
+                <button name="customer.credit_invoice_pdf_report" type="action" string="Generate Invoice" invisible="state == 'draft'" class="btn-primary" />
             </xpath>
             <!-- Add domain to partner_id field and remove create option -->
             <field name="partner_id" position="attributes">
@@ -58,8 +60,8 @@
             </xpath>
 
             <xpath expr="//notebook" position="before">
-                <button name="compute_services_based_on_date" type="object" string="Consolidated Invoice Lines" class="btn-primary" invisible="invoice_line_type == 'separate'" />
-                <button name="compute_separate_invoice_line" type="object" string="Add to Invoice Line" class="btn-primary" invisible="invoice_line_type == 'consolidated'" />
+                <button name="compute_services_based_on_date" type="object" string="Consolidated Invoice Lines" class="btn-primary" invisible="invoice_line_type == 'separate' or state != 'draft'" />
+                <button name="compute_separate_invoice_line" type="object" string="Add to Invoice Line" class="btn-primary" invisible="invoice_line_type == 'consolidated' or state != 'draft'" />
             </xpath>
 
             <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='analytic_distribution']" position="attributes">
@@ -100,8 +102,25 @@
                         </tree>
                     </field>
                     <div class="d-flex justify-content-end mt-2">
-                        <button name="compute_credit_service_line_total" type="object" string="Update Invoice Price" class="btn-primary" />
+                        <button name="compute_credit_service_line_total" type="object" string="Update Invoice Price" class="btn-primary" invisible="state != 'draft'" />
                     </div>
+                </page>
+
+                <page id="policy_memberships_tab" name="policy_memberships_tab" string="Membership Details" invisible="invoice_line_type == 'separate' or member_type == 'credit'">
+                    <field name="policy_membership_line_ids" widget="section_and_note_one2many" mode="tree" readonly="state != 'draft'">
+                        <tree editable="bottom">
+                            <field name="policy_invoice_id" column_invisible="1" />
+                            <field name="membership_no" />
+                            <field name="name" />
+                            <field name="plate_no" />
+                            <field name="chasis_no" />
+                            <field name="policy_no" />
+                            <field name="start_date" />
+                            <field name="expiry_date" />
+                            <field name="car_make" />
+                            <field name="amount" />
+                        </tree>
+                    </field>
                 </page>
             </xpath>
 

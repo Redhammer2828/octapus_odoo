@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="paperformat_tax_invoice_no_margin" model="report.paperformat">
+        <field name="name">Tax Invoice No Margin</field>
+        <field name="default" eval="True"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">5</field>
+        <field name="margin_bottom">10</field>
+        <field name="margin_left">7</field>
+        <field name="margin_right">7</field>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <template id="report_credit_invoice_pdf">
+        <t t-name="tax_invoice_template">
+            <t t-call="web.basic_layout">
+                <div class="page" style="font-family: 'Arial';">
+                    <style>
+                        .header, .footer {
+                            display: none !important;
+                            height: 0 !important;
+                            visibility: hidden;
+                        }
+                        body {
+                            margin: 0;
+                            padding: 0;
+                        }
+                        @page {
+                            margin: 0mm;
+                        }
+                    </style>
+                    
+                    <main>
+                        <div style="text-align: right; margin-bottom: 10px; padding-right: 10px;">
+                            <div style="text-align: right; margin-bottom: 5px;">
+                                <img t-attf-src="data:image/*;base64, #{res_company.logo}" alt="Company Logo" style="max-width: 150px; height: auto;"/>
+                            </div>
+                            <span>We guarantee to get you moving....</span>
+                        </div>
+                        
+                        <table style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+                            <tr>
+                                <td colspan="7" style="text-align: center; border: 1px solid black; padding: 8px; font-weight: bold; font-size: 20px;">
+                                    TAX INVOICE
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td colspan="3" style="width: 50%; border: 1px solid black; vertical-align: top; padding: 5px;">
+                                    <div style="padding: 0; margin: 0;">
+                                        <div style="padding: 5px; font-weight: normal;"><span t-field="docs.partner_id.name"/></div>
+                                        <div style="padding: 5px; font-weight: normal;"><span t-field="docs.partner_id.street"/></div>
+                                        <div style="padding: 5px; font-weight: normal;"><span t-field="docs.partner_id.country_id.name"/></div>
+                                        <div style="padding: 5px; font-weight: normal;"><span t-field="docs.partner_id.phone"/></div>
+                                    </div>
+                                </td>
+                                <td colspan="4" style="width: 50%; border: 1px solid black; vertical-align: top;">
+                                    <table style="width: 100%;">
+                                        <tr>
+                                            <td style="width: 30%; border-right: 1px solid black; border-bottom: 1px solid black; padding: 10px; font-weight: bold;">Invoice No :</td>
+                                            <td style="width: 70%; border-bottom: 1px solid black; padding: 10px;"><span t-field="docs.name"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td style="width: 30%; border-right: 1px solid black; border-bottom: 1px solid black; padding: 10px; font-weight: bold;">Date :</td>
+                                            <td style="width: 70%; border-bottom: 1px solid black; padding: 10px;"><span t-field="docs.invoice_date"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td style="width: 30%; border-right: 1px solid black; border-bottom: 1px solid black; padding: 10px; font-weight: bold;">TRN :</td>
+                                            <td style="width: 70%; border-bottom: 1px solid black; padding: 10px;"><span t-field="docs.partner_id.trn_number"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td style="width: 30%; border-right: 1px solid black; padding: 10px; font-weight: bold;">REF :</td>
+                                            <td style="width: 70%; padding: 10px;"><span t-field="docs.partner_id.name"/></td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <th style="width: 5%; border: 1px solid black; padding: 8px; font-weight: bold; text-align: center;">SL No.</th>
+                                <th style="width: 45%; border: 1px solid black; padding: 8px; font-weight: bold; text-align: left;">Particular</th>
+                                <th style="width: 7%; border: 1px solid black; padding: 8px; font-weight: bold; text-align: center;">Qty</th>
+                                <th style="width: 11%; border: 1px solid black; padding: 8px; font-weight: bold; text-align: center;">Rate</th>
+                                <th style="width: 11%; border: 1px solid black; padding: 8px; font-weight: bold; text-align: center;">Taxable Amount</th>
+                                <th style="width: 10%; border: 1px solid black; padding: 8px; font-weight: bold; text-align: center;">VAT</th>
+                                <th style="width: 11%; border: 1px solid black; padding: 8px; font-weight: bold; text-align: center;">Total Amount</th>
+                            </tr>
+                            
+                            <t t-foreach="docs" t-as="line">
+                                <t t-foreach="line.invoice_line_ids" t-as="rec">
+                                    <tr>
+                                        <td style="border: 1px solid black; padding: 8px; text-align: center;"><span t-esc="line_index + 1"/></td>
+                                        <td style="border: 1px solid black; padding: 8px;"><span t-field="rec.name"/></td>
+                                        <td style="border: 1px solid black; padding: 8px; text-align: center;"><span t-field="rec.quantity"/></td>
+                                        <td style="border: 1px solid black; padding: 8px; text-align: right;"><span t-field="rec.price_unit"/></td>
+                                        <td style="border: 1px solid black; padding: 8px; text-align: right;"><span t-field="rec.price_subtotal"/></td>
+                                        <td style="border: 1px solid black; padding: 8px; text-align: right;"><span t-field="docs.amount_tax"/></td>
+                                        <td style="border: 1px solid black; padding: 8px; text-align: right;"><span t-field="rec.price_total"/></td>
+                                    </tr>
+                                </t>
+                            </t>
+                            
+                            <t t-if="len(docs.invoice_line_ids) &lt; 3">
+                                <tr style="height: 100px;">
+                                    <td style="border: 1px solid black;"></td>
+                                    <td style="border: 1px solid black;"></td>
+                                    <td style="border: 1px solid black;"></td>
+                                    <td style="border: 1px solid black;"></td>
+                                    <td style="border: 1px solid black;"></td>
+                                    <td style="border: 1px solid black;"></td>
+                                    <td style="border: 1px solid black;"></td>
+                                </tr>
+                            </t>
+                            
+                            <tr>
+                                <td colspan="4" style="border: 1px solid black; padding: 8px; text-align: left;">
+                                    <span style="font-weight: bold;">Invoice Value (In Words):</span> 
+                                    <span t-field="docs.amount_total_words"/> Only
+                                </td>
+                                <td style="border: 1px solid black; padding: 8px; text-align: right; font-weight: bold;">
+                                    <span t-field="docs.amount_untaxed"/>
+                                </td>
+                                <td style="border: 1px solid black; padding: 8px; text-align: right; font-weight: bold;">
+                                    <span t-field="docs.amount_tax"/>
+                                </td>
+                                <td style="border: 1px solid black; padding: 8px; text-align: right; font-weight: bold;">
+                                    <span t-field="docs.amount_total"/>
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td colspan="7" style="border: 1px solid black; padding: 8px; text-align: left; height: 100px; vertical-align: top;">
+                                    <div style="width: 100%; margin: 0; padding: 0;">
+                                        <div style="font-weight: bold; padding: 3px;">Bank Details</div>
+                                        <div style="font-weight: normal; padding: 3px;">Beneficiary: ARABIAN AUTOMOBILE ASSOCIATION</div>
+                                        <div style="font-weight: normal; padding: 3px;">AED Account No: 101 20410956 01</div>
+                                        <div style="font-weight: normal; padding: 3px;">IBAN: AE72 0260 0010 1204 1095 601</div>
+                                        <div style="font-weight: normal; padding: 3px;">EMIRATES NBD Group Head Office Dubai United Arab Emirates</div>
+                                        <div style="font-weight: normal; padding: 3px;">Swift Code: EBILAEAD</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td colspan="7" style="border: 1px solid black; padding: 10px; vertical-align: top;">
+                                    <div style="width: 100%; margin: 0; padding: 0; overflow: hidden;">
+                                        <div style="width: 30%; float: left; text-align: left; padding: 10px;">
+                                            <span>Prepared by:</span>
+                                        </div>
+                                        <div style="width: 40%; float: left; text-align: center; padding: 10px;">
+                                            <t t-if="docs.company_seal">
+                                                <img t-attf-src="data:image/*;base64, #{docs.company_seal}"
+                                                    style="max-height: 150px; vertical-align: top;"/>
+                                            </t>
+                                        </div>
+                                        <div style="width: 30%; float: left; text-align: right; padding: 10px;">
+                                            <span>Received by:</span>
+                                        </div>
+                                    </div>
+                                    <div style="width: 100%; margin: 0; padding: 0; overflow: hidden; clear: both;">
+                                        <div style="width: 30%; float: left; text-align: left; padding: 10px; height: 15px;">
+                                            <span style="white-space: nowrap;">for Arabian Automobile Association</span>
+                                        </div>
+                                        <div style="width: 40%; float: left; text-align: center; padding: 10px;">
+                                            <span> </span>
+                                        </div>
+                                        <div style="width: 30%; float: left; text-align: right; padding: 10px;">
+                                            <span>Customer Signature</span>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td colspan="7" style="border: 1px solid black; height: 25px; font-weight: normal; text-align: center; font-size: 12px; padding: 10px;">
+                                    P.O.BOX 80846, DUBAI, U.A.E TEL NO: 04-2578484 FAX NO: 04-2578351 EMAIL: accounts@aaaemirates.com WEBSITE:www.aaaemirates.com
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="7" style="border: 1px solid black; height: 25px; font-weight: normal; text-align: center; font-size: 12px; padding: 10px;">
+                                    This Tax Invoice has been electronically approved and signed by an authorised personnel of AAA
+                                </td>
+                            </tr>
+                        </table>
+                    </main>
+                </div>
+                <t t-if="docs.invoice_line_type == 'consolidated' and docs.member_type == 'credit'">
+                    <div style="page-break-before: always;">
+                        <div style="text-align: right; margin-bottom: 10px; padding-right: 10px;">
+                            <div style="text-align: right; margin-bottom: 5px;">
+                                <img t-attf-src="data:image/*;base64, #{res_company.logo}" alt="Company Logo" style="max-width: 150px; height: auto;"/>
+                            </div>
+                        </div>
+                        <h3 style="text-align: center; font-size: 17px;">SERVICE STATEMENT</h3>
+                        <t t-foreach="docs" t-as="line">
+                            <div class="content">
+                                <div style="width: 100%; font-size: 10px; overflow: hidden; background-color:rgb(13, 35, 123); color: white;">
+                                    <div style="width: 11.11%; float: left; padding: 4px; box-sizing: border-box;">Service Date</div>
+                                    <div style="width: 11.11%; float: left; padding: 4px; box-sizing: border-box;">Service Number</div>
+                                    <div style="width: 11.11%; float: left; padding: 4px; box-sizing: border-box;">Trip Sheet No.</div>
+                                    <div style="width: 11.11%; float: left; padding: 4px; box-sizing: border-box;">Vehicle Model</div>
+                                    <div style="width: 11.11%; float: left; padding: 4px; box-sizing: border-box;">Vehicle Plate</div>
+                                    <div style="width: 11.11%; float: left; padding: 4px; box-sizing: border-box;">Product</div>
+                                    <div style="width: 11.11%; float: left; padding: 4px; box-sizing: border-box;">From Location</div>
+                                    <div style="width: 11.11%; float: left; padding: 4px; box-sizing: border-box;">To Location</div>
+                                    <div style="width: 11.11%; float: left; padding: 4px; text-align: right; box-sizing: border-box;">Price</div>
+                                </div>
+                                
+                                <t t-foreach="line.credit_service_line_ids" t-as="rec">
+                                    <div style="width: 100%; font-size: 10px; overflow: hidden; clear: both;">
+                                        <div style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.service_date"/></div>
+                                        <div style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.service_number"/></div>
+                                        <div style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.trip_sheet_number"/></div>
+                                        <div style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.vehicle_model"/></div>
+                                        <div style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.vehicle_plate"/></div>
+                                        <div style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.service_product"/></div>
+                                        <div style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.from_location"/></div>
+                                        <div style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.to_location"/></div>
+                                        <div style="width: 11.11%; float: left; padding: 3px; text-align: right; box-sizing: border-box;"><t t-esc="rec.price"/></div>
+                                    </div>
+                                </t>
+                                
+                                <div style="width: 100%; font-size: 10px; margin-top: 5px; overflow: hidden; clear: both;">
+                                    <div style="float: right; width: 200px;">
+                                        <div style="width: 100%; overflow: hidden; clear: both;">
+                                            <div style="width: 60%; float: left; padding: 4px; text-align: right;"><strong>Taxable Amount:</strong></div>
+                                            <div style="width: 40%; float: left; padding: 4px; text-align: right;"><t t-esc="docs.invoice_line_ids.price_subtotal"/></div>
+                                        </div>
+                                        <div style="width: 100%; overflow: hidden; clear: both;">
+                                            <div style="width: 60%; float: left; padding: 4px; text-align: right;"><strong>VAT (5%):</strong></div>
+                                            <div style="width: 40%; float: left; padding: 4px; text-align: right;"><t t-esc="docs.amount_tax"/></div>
+                                        </div>
+                                        <div style="width: 100%; overflow: hidden; clear: both;">
+                                            <div style="width: 60%; float: left; padding: 4px; text-align: right;"><strong>Total:</strong></div>
+                                            <div style="width: 40%; float: left; padding: 4px; text-align: right;"><t t-esc="docs.invoice_line_ids.price_total"/></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+
+                <t t-if="docs.invoice_line_type == 'consolidated' and docs.member_type == 'policy'">
+                    <div style="page-break-before: always;">
+                        <div style="text-align: right; margin-bottom: 10px; padding-right: 10px;">
+                            <div style="text-align: right; margin-bottom: 5px;">
+                                <img t-attf-src="data:image/*;base64, #{res_company.logo}" alt="Company Logo" style="max-width: 150px; height: auto;"/>
+                            </div>
+                        </div>
+                        <h4 style="text-align:center; color:#333333; font-size: 17px;">MEMBERSHIP DETAILS</h4>
+                        <t t-foreach="docs" t-as="line">
+                            <div class="content">
+                                <table style="width:100%; border-collapse: collapse; font-size: 12px;">
+                                    <thead>
+                                        <tr style="background-color: #f2f2f2;">
+                                            <th style="border: 1px solid #dddddd; padding: 8px;">MEMBERSHIP NO.</th>
+                                            <th style="border: 1px solid #dddddd; padding: 8px;">NAME</th>
+                                            <th style="border: 1px solid #dddddd; padding: 8px;">PLATE NO.</th>
+                                            <th style="border: 1px solid #dddddd; padding: 8px;">CHASSIS NO.</th>
+                                            <th style="border: 1px solid #dddddd; padding: 8px;">POLICY NO.</th>
+                                            <th style="border: 1px solid #dddddd; padding: 8px;">START DATE</th>
+                                            <th style="border: 1px solid #dddddd; padding: 8px;">EXPIRY DATE</th>
+                                            <th style="border: 1px solid #dddddd; padding: 8px;">CAR MAKE</th>
+                                            <th style="border: 1px solid #dddddd; padding: 8px;">AMOUNT</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="line.policy_membership_line_ids" t-as="rec">
+                                            <td style="border: 1px solid #dddddd; padding: 8px;"><t t-esc="rec.membership_no"/></td>
+                                            <td style="border: 1px solid #dddddd; padding: 8px;"><t t-esc="rec.name"/></td>
+                                            <td style="border: 1px solid #dddddd; padding: 8px;"><t t-esc="rec.plate_no"/></td>
+                                            <td style="border: 1px solid #dddddd; padding: 8px;"><t t-esc="rec.chasis_no"/></td>
+                                            <td style="border: 1px solid #dddddd; padding: 8px;"><t t-esc="rec.policy_no"/></td>
+                                            <td style="border: 1px solid #dddddd; padding: 8px;"><t t-esc="rec.start_date"/></td>
+                                            <td style="border: 1px solid #dddddd; padding: 8px;"><t t-esc="rec.expiry_date"/></td>
+                                            <td style="border: 1px solid #dddddd; padding: 8px;"><t t-esc="rec.car_make"/></td>
+                                            <td style="border: 1px solid #dddddd; padding: 8px;"><t t-esc="rec.amount"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
+
+
