@@ -214,8 +214,8 @@
                                     <tree>
                                         <field name="comment" />
                                         <field name="comment_date_and_time" />
-                                        <field name="comment_user" />
-                                        <field name="comment_status" />
+                                        <field name="comment_user" max-width="100px" />
+                                        <field name="comment_status" width="450px" />
                                     </tree>
                                     <form>
                                         <group>
