@@ -63,7 +63,7 @@
                     <field name="credit_proforma_number" string="Trip Sheet Number" />
                     <field name="create_uid" string="Agent" />
                     <field name="dispatcher_from_history" string="Dispatcher" />
-                    <field name="is_today_service_time"/> <!-- Optional -->
+                    <!-- <field name="is_today_service_time"/> Optional -->
                     <!-- <filter name="today_records" string="Today's Records"
                         domain="[('service_time', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00')), 
                   ('service_time', '&lt;=', context_today().strftime('%Y-%m-%d 23:59:59'))]" /> -->
@@ -72,7 +72,9 @@
                 ('service_time', '&gt;=', (context_today() - relativedelta(hours=4)).strftime('%Y-%m-%d 00:00:00')),
                 ('service_time', '&lt;=', (context_today() + relativedelta(days=1, hours=-4)).strftime('%Y-%m-%d 23:59:59'))
             ]" /> -->
-                    <filter string="Today" name="filter_today" domain="[('is_today_service_time', '=', True)]"/>
+                    <filter string="Today's" name="todays_record_filter" domain="['&amp;', ('service_time', '&gt;=', datetime.datetime.combine(context_today(), datetime.time(0, 0, 0)).to_utc()), ('service_time', '&lt;=', datetime.datetime.combine(context_today(), datetime.time(23, 59, 59)).to_utc())]" context="{'search_default_todays_record_filter': 1}" />
+
+                    <filter string="Today's Scheduled" name="todays_scheduled_record_filter" domain="['&amp;', ('requested_date', '&gt;=', datetime.datetime.combine(context_today(), datetime.time(0, 0, 0)).to_utc()), ('requested_date', '&lt;=', datetime.datetime.combine(context_today(), datetime.time(23, 59, 59)).to_utc())]" />
                 </search>
             </field>
         </record>
@@ -83,7 +85,7 @@
             <field name="view_mode">tree,form</field>
             <field name="search_view_id" ref="call_center_all_service_view_search" />
             <field name="domain">[]</field>
-            <field name="context">{}</field>
+            <field name="context">{'search_default_todays_record_filter': 1}</field>
             <field name="view_ids"
                 eval="[
                   (5, 0, 0),
@@ -97,8 +99,9 @@
             <field name="name">To Dispatch</field>
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
+            <field name="search_view_id" ref="call_center_all_service_view_search" />
             <field name="domain">[('state', '=', 'dispatch')]</field>
-            <field name="context">{'default_created_by': uid}</field>
+            <field name="context">{'search_default_todays_record_filter': 1, 'default_created_by': uid}</field>
             <field name="view_ids"
                 eval="[
               (5, 0, 0),
@@ -111,8 +114,9 @@
             <field name="name">In Progress</field>
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
+            <field name="search_view_id" ref="call_center_all_service_view_search" />
             <field name="domain">[('state', 'in', ['inprogress', 'start', 'reach'])]</field>
-            <field name="context">{'default_created_by': uid}</field>
+            <field name="context">{'default_created_by': uid, 'search_default_todays_record_filter': 1}</field>
             <field name="view_ids"
                 eval="[
               (5, 0, 0),
@@ -125,8 +129,9 @@
             <field name="name">Completed</field>
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
+            <field name="search_view_id" ref="call_center_all_service_view_search" />
             <field name="domain">[('state', '=', 'done')]</field>
-            <field name="context">{'default_created_by': uid}</field>
+            <field name="context">{'default_created_by': uid, 'search_default_todays_record_filter': 1}</field>
             <field name="view_ids"
                 eval="[
               (5, 0, 0),
@@ -139,8 +144,9 @@
             <field name="name">Cancelled</field>
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
+            <field name="search_view_id" ref="call_center_all_service_view_search" />
             <field name="domain">[('state', '=', 'cancel')]</field>
-            <field name="context">{'default_created_by': uid}</field>
+            <field name="context">{'default_created_by': uid, 'search_default_todays_record_filter': 1}</field>
             <field name="view_ids"
                 eval="[
               (5, 0, 0),
@@ -153,8 +159,9 @@
             <field name="name">Requested</field>
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
+            <field name="search_view_id" ref="call_center_all_service_view_search" />
             <field name="domain">[('state', '=','requested')]</field>
-            <field name="context">{'default_created_by': uid}</field>
+            <field name="context">{'default_created_by': uid, 'search_default_todays_record_filter': 1}</field>
             <field name="view_ids"
                 eval="[
               (5, 0, 0),
@@ -167,8 +174,9 @@
             <field name="name">Change</field>
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
+            <field name="search_view_id" ref="call_center_all_service_view_search" />
             <field name="domain">[('state', '=','change')]</field>
-            <field name="context">{'default_created_by': uid}</field>
+            <field name="context">{'default_created_by': uid, 'search_default_todays_record_filter': 1}</field>
             <field name="view_ids"
                 eval="[
               (5, 0, 0),
@@ -193,9 +201,10 @@
             <field name="name">Scheduled</field>
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
+            <field name="search_view_id" ref="call_center_all_service_view_search" />
             <field name="domain">[('state', '=', 'initiate'), ('schedule_date_time', '!=',
                 False),('requested_date', '!=', False)]</field>
-            <field name="context">{'default_created_by': uid}</field>
+            <field name="context">{'default_created_by': uid, 'search_default_todays_scheduled_record_filter': 1}</field>
             <field name="view_ids"
                 eval="[ 
                     (5, 0, 0),
@@ -209,8 +218,9 @@
             <field name="name">Driver Cancel Request</field>
             <field name="res_model">aaa.service</field>
             <field name="view_mode">tree</field>
+            <field name="search_view_id" ref="call_center_all_service_view_search" />
             <field name="domain">[('state', '=','driver_cancel')]</field>
-            <field name="context">{'default_created_by': uid}</field>
+            <field name="context">{'default_created_by': uid, 'search_default_todays_record_filter': 1}</field>
             <field name="view_ids"
                 eval="[ 
                     (5, 0, 0),
