@@ -6,8 +6,8 @@
             <field name="name">policy.member.upload.history.view.tree</field>
             <field name="model">data.upload.file</field>
             <field name="arch" type="xml">
-                <tree string="Cancellation History" create="false" edit="false" delete="true">
-                    <!-- <field name="name" /> -->
+                <tree string="Cancellation History" create="false" edit="false" delete="true" default_order="date desc">
+                    <field name="name" />
                     <field name="date" />
                     <field name="upload_log" />
                     <field name="upload_by" />

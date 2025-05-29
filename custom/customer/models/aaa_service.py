@@ -1689,15 +1689,6 @@ class AAAService(models.Model):
         self.state = 'change'
         for service in self:
                 # Prepare the origin_no content based on member_type
-
-            original_values = {
-                'product_id': service.product_id.id,
-                'from_location': service.from_location.id,
-                'to_location': service.to_location.id,
-            }
-            # Store as JSON string in a new field on the model
-            service.write({'original_values': json.dumps(original_values)})
-
             if service.member_type == 'credit':
                 origin_info = (
                     f"Service: {service.product_id.name if service.product_id else 'N/A'}\n"
@@ -1826,46 +1817,6 @@ class AAAService(models.Model):
 
             response = requests.put(url, json=payload, headers=headers)
 
-            original_values = json.loads(service.original_values or '{}')
-
-            changes = []
-            field_labels = {
-                'product_id': 'Service',
-                'from_location': 'From Location',
-                'to_location': 'To Location',
-            }
-            
-            # Compare values and build changes list for tracked fields
-            for field in ['product_id', 'from_location', 'to_location']:
-                current_value = None
-                if field == 'product_id':
-                    current_value = service.product_id.id
-                elif field == 'from_location':
-                    current_value = service.from_location.id
-                elif field == 'to_location':
-                    current_value = service.to_location.id
-                    
-                # Check if field has changed
-                if field in original_values and original_values[field] != current_value:
-                    old_record = "None"
-                    new_record = "None"
-                    
-                    # Get name of record instead of ID
-                    if field == 'product_id':
-                        if original_values[field]:
-                            old_record = self.env['product.product'].browse(original_values[field]).name
-                        if current_value:
-                            new_record = service.product_id.name
-                    elif field in ['from_location', 'to_location']:
-                        if original_values[field]:
-                            old_record = self.env['res.country.state'].browse(original_values[field]).name
-                        if current_value:
-                            new_record = service.from_location.name if field == 'from_location' else service.to_location.name
-                    
-                    changes.append(f"{field_labels[field]}: {old_record} → {new_record}")
-
-            change_comment = ", ".join(changes)
-
             try:
                 service.write({
                     'state': 'initiate',  # Update the state to 'initiate'
@@ -1885,7 +1836,6 @@ class AAAService(models.Model):
                     'selected_to_location': service.selected_to_location.id,
                     'from_location': service.from_location.id,
                     'to_location': service.to_location.id,
-                    'original_values': False,
                 })
                 print("SERVICE UPDATED, NEW STATE:", service.state)
             except Exception as e:
@@ -1901,20 +1851,20 @@ class AAAService(models.Model):
             })
 
                         # Use a default comment if no comment exists
-            comment_content = service.comments or 'CHANGED'
+            # comment_content = service.comments or 'CHANGED'
 
-            # Create a service comment record
-            self.env['service.comment'].sudo().create({
-                'service_id': service.id,
-                'comment': comment_content,
-                'comment_date_and_time': fields.Datetime.now(),
-                'comment_user': self.env.user.id,
-                'comment_status': change_comment,  
-            })
+            # # Create a service comment record
+            # self.env['service.comment'].sudo().create({
+            #     'service_id': service.id,
+            #     'comment': comment_content,
+            #     'comment_date_and_time': fields.Datetime.now(),
+            #     'comment_user': self.env.user.id,
+            #     'comment_status': change_comment,  
+            # })
 
             # Clear the comments field if it had a manual comment
-            if service.comments:
-                service.sudo().write({'comments': False})
+            # if service.comments:
+            #     service.sudo().write({'comments': False})
         # Optionally, refresh the view to show changes
         return {
             'type': 'ir.actions.client',
