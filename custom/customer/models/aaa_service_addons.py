@@ -157,12 +157,20 @@ class AAAServiceAddons(models.Model):
             if changes:
                 change_comment = ", ".join(changes)
                 
-                self.env['service.comment'].sudo().create({
+                # self.env['service.comment'].sudo().create({
+                #     'service_id': record.id,
+                #     'comment': 'CHANGED',
+                #     'comment_date_and_time': fields.Datetime.now(),
+                #     'comment_user': self.env.user.id,
+                #     'comment_status': change_comment,
+                # })
+
+                self.env['service.history'].create({
                     'service_id': record.id,
-                    'comment': 'CHANGED',
-                    'comment_date_and_time': fields.Datetime.now(),
-                    'comment_user': self.env.user.id,
-                    'comment_status': change_comment,
+                    'user': self.env.user.id,
+                    'time': fields.Datetime.now(),
+                    'status': change_comment,
+                    'timeline_status': record.state,
                 })
         
         return result
