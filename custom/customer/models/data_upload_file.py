@@ -172,11 +172,18 @@ class DataUploadFile(models.Model):
                             
                             elif expiry_date > db_expiry_date:
                                 # Membership renewal or extension
+                                today = date.today()
                                 if difference >= 365:
-                                    member_line.update({
-                                        'upload_member_status': 'renewal',
-                                        'comment': "*Membership Renewal"
+                                    if today < activate_date:
+                                        member_line.update({
+                                        'upload_member_status': 'renewal_in_queue',
+                                        'comment': "*Membership Renewal in Queue"
                                     })
+                                    else:
+                                        member_line.update({
+                                            'upload_member_status': 'renewal',
+                                            'comment': "*Membership Renewal"
+                                        })
                                 else:
                                     member_line.update({
                                         'upload_member_status': 'update',
@@ -320,6 +327,24 @@ class DataUploadFile(models.Model):
                         'product_template_id': member_line.package,
                         # Add more fields to create as needed
                     })
+
+                elif member_line.upload_member_status in ['renewal_in_queue']:
+                    matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
+                    if matching_partner:
+                        _logger.info(f"Renewal in queue for member: {matching_partner.name} with package {member_line.package}")
+
+                        package_record = self.env['product.template'].search([('id', '=', member_line.package)], limit=1)
+                        if not package_record:
+                            _logger.warning(f"No product.template found for package: {member_line.package}")
+
+                        matching_partner.write({
+                            'next_activation_date': member_line.member_activate_date,
+                            'next_expiry_date': member_line.member_expiry_date,
+                            'next_product_template_id': package_record.id,
+                            'timeline_user_id': self.env.user.id,
+                            'renewal_in_queue': True,
+                        })
+
                 # Handle 'renewal' or 'update' status
                 elif member_line.upload_member_status in ['renewal']:
                     matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
@@ -741,6 +766,7 @@ class UploadMemberLine(models.Model):
         ('new', 'New Member'),
         ('rejection', 'Rejected Member'),
         ('renewal', 'Renewal Member'),
+        ('renewal_in_queue', 'Renewal in Queue'),
         ('update', 'Update Member'),
         ('replace', 'Replaced Member'),
         ('discard', 'Discarded Member'),

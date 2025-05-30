@@ -1347,7 +1347,7 @@ class AAAService(models.Model):
             'user': self.env.user.id,
             'time': fields.Datetime.now(),
             'status': 'Dispatched',
-            'timeline_status': self.state,
+            'timeline_status': 'dispatch',
         })
         for service in self:
             comment_content = service.comments or 'DISPATCHED'
@@ -1851,20 +1851,20 @@ class AAAService(models.Model):
             })
 
                         # Use a default comment if no comment exists
-            # comment_content = service.comments or 'CHANGED'
+            comment_content = service.comments or 'CHANGED'
 
             # # Create a service comment record
-            # self.env['service.comment'].sudo().create({
-            #     'service_id': service.id,
-            #     'comment': comment_content,
-            #     'comment_date_and_time': fields.Datetime.now(),
-            #     'comment_user': self.env.user.id,
-            #     'comment_status': change_comment,  
-            # })
+            self.env['service.comment'].sudo().create({
+                'service_id': service.id,
+                'comment': comment_content,
+                'comment_date_and_time': fields.Datetime.now(),
+                'comment_user': self.env.user.id,
+                'comment_status': 'Applied Changes',  
+            })
 
             # Clear the comments field if it had a manual comment
-            # if service.comments:
-            #     service.sudo().write({'comments': False})
+            if service.comments:
+                service.sudo().write({'comments': False})
         # Optionally, refresh the view to show changes
         return {
             'type': 'ir.actions.client',
