@@ -118,6 +118,7 @@ class DataUploadFile(models.Model):
         updated_member_count = status_counts['update']
         renewal_member_count = status_counts['renewal']
         replaced_member_count = status_counts['replace']
+        renewal_in_queue_count = status_counts['renewal_in_queue']
         added_member_count = total_count - rejected_count
 
         self.upload_log = (
@@ -127,6 +128,7 @@ class DataUploadFile(models.Model):
             f"New Records: {new_member_count} | "
             f"Extension Records: {updated_member_count} | "
             f"Renewal Records: {renewal_member_count} | "
+            f"Renewal in Queue Records: {renewal_in_queue_count} | "
             f"Changed Records: {replaced_member_count} | "
             f"Time to Process: {processing_time} seconds"
         )
@@ -153,6 +155,7 @@ class DataUploadFile(models.Model):
                         member_line.if_conf_match = member.id
                         expiry_date = fields.Date.from_string(member_line.member_expiry_date)
                         db_expiry_date = fields.Date.from_string(member.member_expiry_date)
+                        db_next_expiry_date = fields.Date.from_string(member.next_expiry_date)
                         difference = (expiry_date - db_expiry_date).days
 
                         activate_date = fields.Date.from_string(member_line.member_activate_date)
@@ -168,6 +171,13 @@ class DataUploadFile(models.Model):
                                 member_line.update({
                                     'upload_member_status': 'rejection',
                                     'comment': "*The uploaded expiry date is earlier than the existing expiry date!"
+                                })
+
+                            elif expiry_date == db_expiry_date or expiry_date == db_next_expiry_date:
+                                # Duplicate record scenario
+                                member_line.update({
+                                    'upload_member_status': 'rejection',
+                                    'comment': "*Duplicate Record in System With same expiry date!"
                                 })
                             
                             elif expiry_date > db_expiry_date:
@@ -190,12 +200,6 @@ class DataUploadFile(models.Model):
                                         'comment': "*Membership Extension"
                                     })
                             
-                            elif expiry_date == db_expiry_date:
-                                # Duplicate record scenario
-                                member_line.update({
-                                    'upload_member_status': 'rejection',
-                                    'comment': "*Duplicate Record in System With same expiry date!"
-                                })
                     else:
                         member_line.update({
                             'upload_member_status': 'new',
