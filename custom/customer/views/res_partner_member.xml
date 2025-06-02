@@ -170,6 +170,7 @@
                                 <field name="adhoc_member" invisible="1" />
                                 <field name="credit_member_ok" invisible="1" />
                                 <field name="active" invisible="1" />
+                                <field name="cancellation_comment" readonly="1" invisible="cancellation_comment == False" />
                             </group>
                             <notebook colspan="4">
                                 <page name="package" string="Package">
