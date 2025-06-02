@@ -95,7 +95,7 @@ class ResPartnerMembers(models.Model):
     ('cancel', "Cancelled")
     ], string="Status", readonly=True, default='temp', tracking=True)
     # ---------------------------------------
-    cancellation_comment = fields.Text('Cancelation Comment')
+    cancellation_comment = fields.Text('Cancellation Comment')
     # ----------------------------
     membership_history_ids= fields.One2many('membership.history','history_id', string='Membership History')
     #-------------ROLES----------------
