@@ -303,6 +303,14 @@ class DataUploadFile(models.Model):
     
                     matching_category = category_dict.get((member_line.sequence_code, matching_partner.id))
                     matching_package = package_dict.get(member_line.package)
+
+                    if type(member_line.package) == str:
+                        package_id = int(member_line.package)
+                    else:
+                        package_id = member_line.package
+
+                    services = self.env['product.package.service'].search([('product_template_id', '=', package_id)])
+                    product_ids = services.mapped('product_id').ids
     
                     # Create a new partner record
                     new_partner = self.env['res.partner'].create({
@@ -329,6 +337,7 @@ class DataUploadFile(models.Model):
                         'membership_state': 'confirm',
                         'member_partner_category_id': matching_category.id if matching_category else None,
                         'product_template_id': member_line.package,
+                        'service_ids': [(6, 0, product_ids)],
                         # Add more fields to create as needed
                     })
 
