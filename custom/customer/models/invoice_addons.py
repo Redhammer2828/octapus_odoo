@@ -1,7 +1,5 @@
 from odoo import models, fields, api
-from itertools import chain
-
-from odoo import models, fields, api
+import pytz
 from itertools import chain
 import io
 import base64
@@ -38,6 +36,7 @@ class AccountMove(models.Model):
     credit_service_line_ids = fields.One2many("credit.service.line", "credit_invoice_id", string="Services")
     policy_membership_line_ids = fields.One2many("policy.membership.line", "policy_invoice_id", string="Memberships")
     company_seal = fields.Binary(string="Stamp Image")
+    is_rent_a_car = fields.Boolean(string="Is Rent a Car Service", default=False)
 
     @api.model
     def create(self, vals):
@@ -87,6 +86,7 @@ class AccountMove(models.Model):
                 total = 0
                 service_count = 0
                 credit_services = {}
+                # quantity = 0
 
                 record.invoice_line_ids = [(5, 0, 0)]
                 record.credit_service_line_ids = [(5, 0, 0)]
@@ -107,7 +107,6 @@ class AccountMove(models.Model):
                         service_count += 1
   
 
-
                         credit_services[service.id] = {
                             "service_date": service_date,
                             "service_number": service.name,
@@ -117,14 +116,23 @@ class AccountMove(models.Model):
                             "service_product": service.product_id.name,
                             "from_location": service.from_location.name,
                             "to_location": service.to_location.name,
+                            "date_time_from": service.date_time_from if service.product_id.name == "RENT A CAR" or service.product_id.name == "RENT A CAR - UPGRADE" else False,
+                            "date_time_to": service.date_time_to if service.product_id.name == "RENT A CAR" or service.product_id.name == "RENT A CAR - UPGRADE" else False,
+                            "quantity": service.quantity if service.product_id.name == "RENT A CAR" or service.product_id.name == "RENT A CAR - UPGRADE" else False,
                             "price": service_rate.price,
                             }
+                        
+                        if service.product_id.name == "RENT A CAR" or service.product_id.name == "RENT A CAR - UPGRADE":
+                            record.is_rent_a_car = True
+                        else:
+                            record.is_rent_a_car = False
+
                        
 
                 tax = self.env['account.tax'].search([('amount', '=', 5), ('type_tax_use', '=', 'sale')])
 
                 invoice_lines = [(0, 0, {
-                            "name": f"Services Provided for Customer: {record.partner_id.name} from {record.from_date} to {record.to_date} ({service_count} services)",
+                            "name": f"Services Provided for Customer: {record.partner_id.name} from {record.from_date.strftime('%d/%m/%Y')} to {record.to_date.strftime('%d/%m/%Y')} ({service_count} services)",
                             "price_unit": total,
                             "quantity": 1,
                             "tax_ids": [(6, 0, [tax.id])]
@@ -134,6 +142,10 @@ class AccountMove(models.Model):
 
                 record.write({"invoice_line_ids": invoice_lines,
                               "credit_service_line_ids": credit_service_lines})
+                
+                for line in record.invoice_line_ids:
+                    line.vat_amount = line.price_total - line.price_subtotal
+
 
             elif record.member_type == "policy":
 
@@ -182,7 +194,7 @@ class AccountMove(models.Model):
                             "product_id": product_id,
                             "price_unit": 0,
                             "quantity": 1,
-                            "name": f"{rec.product_template_id.name} MEMBERSHIP FOR THE PERIOD FROM {record.from_date} TO {record.to_date}",
+                            "name": f"{rec.product_template_id.name} MEMBERSHIP FOR THE PERIOD FROM {record.from_date.strftime('%d/%m/%Y')} TO {record.to_date.strftime('%d/%m/%Y')}",
                         }
 
                 for key in product_quantity.keys():
@@ -198,6 +210,9 @@ class AccountMove(models.Model):
 
                 record.write({"invoice_line_ids": invoice_lines,
                               "policy_membership_line_ids": policy_membership_lines})
+                
+                for line in record.invoice_line_ids:
+                    line.vat_amount = line.price_total - line.price_subtotal
 
 
     
@@ -205,10 +220,11 @@ class AccountMove(models.Model):
 
         for record in self:
 
-            
-
             record.invoice_line_ids = [(5, 0, 0)]
+            record.credit_service_line_ids = [(5, 0, 0)]
+            record.policy_membership_line_ids = [(5, 0, 0)]
             record.product_id = False
+            record.service_id = False
 
             if not record.from_date or not record.to_date or not record.partner_id or not record.category_id or record.invoice_line_type != "separate":
                 continue
@@ -292,17 +308,28 @@ class AccountMove(models.Model):
                                                                 ('from_loc_id','=',record.service_id.from_location.id),
                                                                 ('to_loc_id','=',record.service_id.to_location.id)],limit=1)
                 
+                if record.service_id.product_id.name == "RENT A CAR" or record.service_id.product_id.name == "RENT A CAR - UPGRADE":
+
+                    from_time = fields.Datetime.context_timestamp(record, record.service_id.date_time_from).strftime('%d/%m/%Y %H:%M:%S')
+                    to_time = fields.Datetime.context_timestamp(record, record.service_id.date_time_to).strftime('%d/%m/%Y %H:%M:%S')
+
+                    name = f"{record.service_id.product_id.name} {record.service_id.vehicle_type or ''} {record.service_id.vehicle_model or ''} {record.service_id.vehicle_chasis_no} FROM: {from_time} TO: {to_time}"
+
+                    quantity = record.service_id.quantity
+                
+                else:
+                    name = f"{record.service_id.product_id.name} {record.service_id.vehicle_type or ''} {record.service_id.vehicle_model or ''} {record.service_id.vehicle_chasis_no} FROM: {record.service_id.from_location.name} TO: {record.service_id.to_location.name}"
+
+                    quantity = 1
+
                 invoice_line_items = {
                             "product_id": record.service_id.product_id.id,
                             "price_unit": service_rate.price,
-                            "quantity": 1,
-                            "name": f"{record.service_id.product_id.name} {record.service_id.vehicle_type or ''} {record.service_id.vehicle_model or ''} {record.service_id.vehicle_chasis_no} FROM: {record.service_id.from_location.name} TO: {record.service_id.to_location.name}",
+                            "quantity": quantity,
+                            "name": name,
                             }
 
     
-
-
-
 
             elif record.member_type == "policy":
 
@@ -332,11 +359,14 @@ class AccountMove(models.Model):
                             "product_id": record.product_id.id,
                             "price_unit": pricelist_item.fixed_price,
                             "quantity": quantity,
-                            "name": f"{record.product_id.name} MEMBERSHIP FOR THE PERIOD FROM {record.from_date} TO {record.to_date}",
+                            "name": f"{record.product_id.name} MEMBERSHIP FOR THE PERIOD FROM {record.from_date.strftime('%d/%m/%Y')} TO {record.to_date.strftime('%d/%m/%Y')}",
                             }
 
             
             record.write({"invoice_line_ids":[(0,0,invoice_line_items)]})
+
+            for line in record.invoice_line_ids:
+                    line.vat_amount = line.price_total - line.price_subtotal
 
 
     def compute_credit_service_line_total(self):
@@ -1151,7 +1181,12 @@ class AccountMove(models.Model):
         #     'target': 'new',
         # }
 
-                
+
+class AccountMoveLine(models.Model):
+    _inherit = "account.move.line"
+
+    vat_amount = fields.Monetary(string="Tax Amount", readonly=True,
+        currency_field='company_currency_id')                
             
             
 class CreditServiceLine(models.Model):
@@ -1167,6 +1202,9 @@ class CreditServiceLine(models.Model):
     service_product = fields.Char(string="Product")
     from_location = fields.Char(string="From Location")
     to_location = fields.Char(string="To Location")
+    date_time_from = fields.Datetime(string="From Date")
+    date_time_to = fields.Datetime(string="To Date")
+    quantity = fields.Float(string="Quantity")
     price = fields.Float(string="Price")
     add_to_invoice = fields.Boolean(string="Add to Invoice", default=True)
 
