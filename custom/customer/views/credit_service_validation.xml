@@ -24,8 +24,8 @@
                 <header>
                     <button name="get_services" type="object" string="Get Services" class="btn-primary" invisible="state == 'confirm'" />
                     <button name="action_confirm" type="object" string="Confirm" class="btn-primary" invisible="state == 'confirm'" />
-                    <button name="customer.credit_validation_xlsx_report" type="action" string="Export" invisible="state == 'draft'" class="btn-primary" />
-                    <!-- <button name="customer.credit_validation_pdf_report" type="action" string="Print Report" invisible="state == 'draft'" class="btn-primary" /> -->
+                    <button name="customer.credit_validation_xlsx_report" type="action" string="Export Report" invisible="state == 'draft'" class="btn-primary" />
+                    <button name="customer.credit_validation_pdf_report" type="action" string="Print Report" invisible="state == 'draft'" class="btn-primary" />
                     <button name="action_draft" type="object" string="Reset to Draft" invisible="state == 'draft'" />
                     <field name="state" widget="statusbar" options="{'clickale':0}" />
                 </header>
@@ -39,6 +39,7 @@
                         <group>
                             <field name="from_date" required="1" readonly="state == 'confirm'" />
                             <field name="to_date" required="1" readonly="state == 'confirm'" />
+                            <field name="is_rent_a_car" invisible="1" />
                         </group>
                     </group>
                     <notebook>
@@ -52,8 +53,11 @@
                                     <field name="vehicle_model" />
                                     <field name="vehicle_plate" />
                                     <field name="service_product" />
-                                    <field name="from_location" />
-                                    <field name="to_location" />
+                                    <field name="date_time_from" column_invisible="parent.is_rent_a_car == False" />
+                                    <field name="date_time_to" column_invisible="parent.is_rent_a_car == False" />
+                                    <field name="from_location" column_invisible="parent.is_rent_a_car == True" />
+                                    <field name="to_location" column_invisible="parent.is_rent_a_car == True" />
+                                    <field name="quantity" column_invisible="parent.is_rent_a_car == False" />
                                     <field name="price" />
                                     <field name="add_to_report" />
                                 </tree>
