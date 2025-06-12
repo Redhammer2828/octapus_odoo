@@ -287,6 +287,9 @@ class AAAService(models.Model):
 
     original_values = fields.Text(string='Original Values', readonly=True, 
                                  help="Temporary storage of original values for change tracking")
+    dispatch_done_by = fields.Many2one('res.users', string="Dispatch Completed By")
+    reach_done_by = fields.Many2one('res.users', string="Reach Completed By")
+    done_done_by = fields.Many2one('res.users', string="Done Completed By")
  
     @api.depends('state', 'product_id', 'selected_from_location', 'selected_to_location', 'from_location', 'to_location')
     def _compute_show_new_change_button(self):
@@ -704,7 +707,7 @@ class AAAService(models.Model):
                 _logger.info("API Response: %s - %s", response.status_code, response.text)
 
                 if response.status_code == 200:
-                    record.message_post(body="✅ Chassis number updated via external API.")
+                    _logger.info("Chassis number updated via external API.")
                 else:
                     _logger.warning("API call returned non-200 status. Status: %s, Response: %s",
                                     response.status_code, response.text)
@@ -973,18 +976,18 @@ class AAAService(models.Model):
             if response.status_code == 200:
                 try:
                     response_text = response.json()
-                    self.message_post(body=_("Notification sent successfully: %s") % response_text)
+                    _logger.info("Notification sent successfully: %s", response_text)
                     print("Response sent successfully")
                 except json.JSONDecodeError:
                     # Handle non-JSON response here
-                    self.message_post(body=_("Non-JSON response received: %s") % response.text)
+                    _logger.info("Non-JSON response received: %s", response.text)
                     print("Non-JSON response received:", response.text)
             else:
-                self.message_post(body=_("Failed to send notification, status code: %s, message: %s") % (response.status_code, response.text))
+                _logger.info("Failed to send notification, status code: %s, message: %s", response.status_code, response.text)
                 print("Failed to send, status code:", response.status_code, "message:", response.text)
 
         except requests.exceptions.RequestException as e:
-            self.message_post(body=_("Request failed: %s") % str(e))
+            _logger.info("Request failed: %s", str(e))
             print("Request failed:", str(e))
 
     def action_order_create(self, order_number):
@@ -1341,7 +1344,7 @@ class AAAService(models.Model):
         self._generate_service_name()
         self.state = 'dispatch'
         self._trigger_order_notification_api(self.name, self.state)
-        self.message_post(body=_("Service dispatched successfully."))
+        _logger.info("Service dispatched successfully.")
         self.env['service.history'].create({
             'service_id': self.id,
             'user': self.env.user.id,
@@ -1361,6 +1364,8 @@ class AAAService(models.Model):
 
             if service.comments:
                 service.comments = False
+
+            service.dispatch_done_by = self.env.user.id
 
         return True
 # --------------------------------------------------------------------------------------------------
@@ -1572,6 +1577,8 @@ class AAAService(models.Model):
             # If a manual comment exists, clear the service.comments field after creating the record
             if service.comments:
                 service.comments = False
+
+            service.reach_done_by = self.env.user.id
             
             self._trigger_order_notification_api(service.name, service.state)
 
@@ -1641,6 +1648,8 @@ class AAAService(models.Model):
             # Clear the comments field after creating the record
             if service.comments:
                 service.comments = False
+
+            service.done_done_by = self.env.user.id
             
             self._trigger_order_notification_api(service.name, service.state)
 
@@ -2008,17 +2017,17 @@ class AAAService(models.Model):
                 if response.status_code == 200:
                     try:
                         response_text = response.json()
-                        self.message_post(body=_("Notification sent successfully: %s") % response_text)
+                        _logger.info("Notification sent successfully: %s", response_text)
                         print("Response sent successfully")
                     except json.JSONDecodeError:
-                        self.message_post(body=_("Non-JSON response received: %s") % response.text)
+                        _logger.info("Non-JSON response received: %s", response.text)
                         print("Non-JSON response received:", response.text)
                 else:
-                    self.message_post(body=_("Failed to send notification, status code: %s, message: %s") % (response.status_code, response.text))
+                    _logger.info("Failed to send notification, status code: %s, message: %s", response.status_code, response.text)
                     print("Failed to send, status code:", response.status_code, "message:", response.text)
 
             except requests.exceptions.RequestException as e:
-                self.message_post(body=_("Request failed: %s") % str(e))
+                _logger.info("Request failed: %s", str(e))
                 print("Request failed:", str(e))
             
 

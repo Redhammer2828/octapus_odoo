@@ -27,7 +27,8 @@
                     <field name="to_location" string="To" />
                     <field name="provider_id" string="Provider" />
                     <field name="create_uid" string="Agent" />
-                    <field name="dispatcher_from_history" string="Dispatcher" />
+                    <!-- <field name="dispatcher_from_history" string="Dispatcher" /> -->
+                    <field name="dispatch_done_by" />
                     <field name="state" string="Status" />
                 </tree>
             </field>
@@ -62,7 +63,10 @@
                     <field name="state" string="State" />
                     <field name="credit_proforma_number" string="Trip Sheet Number" />
                     <field name="create_uid" string="Agent" />
-                    <field name="dispatcher_from_history" string="Dispatcher" />
+                    <field name="dispatch_done_by" />
+                    <field name="reach_done_by" />
+                    <field name="done_done_by" />
+                    <!-- <field name="dispatcher_from_history" string="Dispatcher" /> -->
                     <!-- <field name="is_today_service_time"/> Optional -->
                     <!-- <filter name="today_records" string="Today's Records"
                         domain="[('service_time', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00')), 
