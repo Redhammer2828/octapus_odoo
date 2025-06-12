@@ -106,7 +106,7 @@ class CreditValidationXlsx(models.AbstractModel):
             headers = [
                 "Service Date", "Service Number", "Trip Sheet No.",
                 "Vehicle Model", "Vehicle Plate", "Product",
-                "From Location", "To Location", "From Date",
+                "From Location", "To Location", "Date From",
                 "Date To", "Quantity", "Price"
             ]
         else:
