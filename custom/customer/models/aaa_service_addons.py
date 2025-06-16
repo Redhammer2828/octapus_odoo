@@ -21,6 +21,8 @@ base_url = os.getenv("BASE_URL")
 class AAAServiceAddons(models.Model):
     _inherit = 'aaa.service'
 
+    service_from_app = fields.Boolean(string="Service From App", default=False)
+
     # # Regular char fields for storing the selected locations
     # location_from = fields.Char(string="Location From")
     # location_to = fields.Char(string="Location To")
