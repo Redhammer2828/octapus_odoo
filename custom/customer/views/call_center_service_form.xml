@@ -57,6 +57,7 @@
                         <field name="is_agent_user" invisible="1" />
                         <field name="is_manager_or_admin" invisible="1" />
                         <field name="is_dispatcher_or_manager_or_lead_or_admin" invisible="1" />
+                        <field name="service_from_app" invisible="1" />
                         <!-- <field name="is_dispatcher_or_manager_or_admin" invisible="1" /> -->
                         <!-- <field name="is_dispatch_user" invisible="1" /> -->
                     </header>
