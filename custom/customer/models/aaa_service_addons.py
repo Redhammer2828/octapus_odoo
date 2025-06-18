@@ -175,4 +175,20 @@ class AAAServiceAddons(models.Model):
                     'timeline_status': record.state,
                 })
         
+            record.sudo().reload()
+
         return result
+    
+
+    @api.model
+    def create(self, vals):
+        record = super().create(vals)
+        record.sudo().reload()
+        return record
+    
+
+
+    def reload(self):
+        self.env["bus.bus"].sudo()._sendone(
+            "broadcast", "page_refresh", {"model_name": self._name}
+        )

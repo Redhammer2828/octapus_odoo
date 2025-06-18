@@ -2,7 +2,7 @@
 {
     'name': 'Customer',
     'version': '1.0',
-    'depends': ['web','base','product','hr','mail','account','report_xlsx'],
+    'depends': ['web','base','product','hr','mail','account','report_xlsx','bus'],
     'assets': {
         'web.assets_backend': [
              '/customer/static/src/css/my_custom_style.css',
@@ -11,6 +11,7 @@
             #  '/customer/static/src/css/location_field.css',
             #  '/customer/static/src/js/location_field.js',
             #  '/customer/static/src/xml/location_field.xml',
+            '/customer/static/src/js/realtime_updates.js',
         ],
         'web.report_assets_common': [
             '/customer/static/src/css/fonts.css',
