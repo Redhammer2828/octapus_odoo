@@ -2,12 +2,19 @@
 {
     'name': 'Customer',
     'version': '1.0',
-    'depends': ['web','base','product','hr','mail','account','report_xlsx'],
+    'depends': ['web','base','product','hr','mail','account','report_xlsx','bus'],
     'assets': {
         'web.assets_backend': [
              '/customer/static/src/css/my_custom_style.css',
              '/customer/static/src/css/aaa_service.css',
              '/customer/static/src/css/custom_menu.css',
+            #  '/customer/static/src/css/location_field.css',
+            #  '/customer/static/src/js/location_field.js',
+            #  '/customer/static/src/xml/location_field.xml',
+            '/customer/static/src/js/realtime_updates.js',
+        ],
+        'web.report_assets_common': [
+            '/customer/static/src/css/fonts.css',
         ],
     },
     'author': 'Sasoft',
@@ -15,11 +22,12 @@
     'description': 'Customers Management',
     'data': [
         'security/ir.model.access.csv',
-        # 'reports/credit_validation_pdf_report.xml',
+        'reports/credit_validation_pdf_report.xml',
         'reports/credit_invoice_pdf_report.xml',
         'reports/reports.xml',
         'views/res_partner_customer.xml',
         'views/res_partner_member.xml',
+        'views/res_partner_member_renewal_queue.xml',
         'views/res_partner_member_temp.xml',
         'views/res_partner_member_cancel.xml',
         'views/config_product.xml',

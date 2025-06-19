@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="res_partner_member_renewal_queue_tree" model="ir.ui.view">
+            <field name="name">res.partner.member.renewal.queue.tree</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <tree string="Renewal in Queue Members">
+                    <field name="id"/>
+                    <field name="name" />
+                    <field name="ref_num" />
+                    <field name="parent_customer_id" />
+                    <field name="policy_no" />
+                    <field name="old_membership_number" />
+                    <field name="mobile" />
+                    <field name="email" />
+                    <field name="vehicle_chasis_no" />
+                    <field name="vehicle_type" />
+                    <field name="vehicle_plate" />
+                    <field name="vehicle_model" />
+                    <field name="member_expiry_date" />
+                    <field name="next_activation_date" />
+                    <field name="next_expiry_date" />
+                    <field name="create_date" />
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_res_partner_member_renewal_queue" model="ir.actions.act_window">
+            <field name="name">Renewal in Queue</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">tree,form</field>
+            <field name="context">{'from_res_partner_member_form': True ,
+                'default_member_type': 'policy' }</field>
+            <field name="domain">[('is_company','=',false),('member_type','=','policy'),
+                ('membership_state','=','confirm'), ('renewal_in_queue', '=', 'True')]</field>
+            <field name="view_ids"
+                eval="[
+          (5, 0, 0),
+          (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.res_partner_member_renewal_queue_tree')}),
+          (0, 0, {'view_mode': 'form', 'view_id': ref('customer.res_partner_member_form')})
+        ]">
+            </field>
+        </record>
+
+        <menuitem
+            id="menu_renewal_queue_policy_member"
+            name="Renewal in Queue"
+            parent="menu_member"
+            sequence = "10"
+            action="action_res_partner_member_renewal_queue"
+        />
+    </data>
+</odoo>

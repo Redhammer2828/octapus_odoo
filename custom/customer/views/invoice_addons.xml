@@ -5,10 +5,16 @@
         <field name="model">account.move</field>
         <field name="inherit_id" ref="account.view_move_form" />
         <field name="arch" type="xml">
-            <xpath expr="//header/button[@name='button_draft']" position="after">
+            <xpath expr="//header/button[@name='action_invoice_sent']" position="before">
                 <!-- <button name="action_report_invoice" string="GENERATE INVOICE" type="object" class="btn-primary" data-hotkey="m" groups="account.group_account_invoice" invisible="state != 'posted'"/> -->
 
                 <button name="customer.credit_invoice_pdf_report" type="action" string="Generate Invoice" invisible="state == 'draft'" class="btn-primary" />
+            </xpath>
+            <xpath expr="//header/button[@name='action_invoice_sent']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//header/button[@name='preview_invoice']" position="attributes">
+                <attribute name="invisible">1</attribute>
             </xpath>
             <!-- Add domain to partner_id field and remove create option -->
             <field name="partner_id" position="attributes">
@@ -56,6 +62,7 @@
                 <field name="product_id" invisible="invoice_line_type == 'consolidated' or member_type == 'credit'" options="{'no_create': True, 'no_quick_create': True}" readonly="state != 'draft'" />
                 <field name="service_ids" invisible="1" />
                 <field name="service_id" invisible="invoice_line_type == 'consolidated' or member_type == 'policy'" options="{'no_create': True, 'no_quick_create': True}" readonly="state != 'draft'" />
+                <field name="is_rent_a_car" invisible="1" />
 
             </xpath>
 
@@ -69,6 +76,9 @@
             </xpath>
             <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='price_total']" position="attributes">
                 <attribute name="optional">"hide"</attribute>
+            </xpath>
+            <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='tax_ids']" position="after">
+                <field name="vat_amount" />
             </xpath>
 
             <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='product_id']" position="attributes">
@@ -86,7 +96,7 @@
 
             <xpath expr="//page[@id='invoice_tab']" position="after">
                 <page id="credit_services_tab" name="credit_services_tab" string="Service Statement" invisible="invoice_line_type == 'separate' or member_type == 'policy'">
-                    <field name="credit_service_line_ids" widget="section_and_note_one2many" mode="tree" readonly="state != 'draft'">
+                    <field name="credit_service_line_ids" widget="one2many" mode="tree" readonly="state != 'draft'">
                         <tree editable="bottom">
                             <field name="credit_invoice_id" column_invisible="1" />
                             <field name="service_date" />
@@ -95,8 +105,11 @@
                             <field name="vehicle_model" />
                             <field name="vehicle_plate" />
                             <field name="service_product" />
-                            <field name="from_location" />
-                            <field name="to_location" />
+                            <field name="date_time_from" column_invisible="parent.is_rent_a_car == False" />
+                            <field name="date_time_to" column_invisible="parent.is_rent_a_car == False" />
+                            <field name="from_location" column_invisible="parent.is_rent_a_car == True" />
+                            <field name="to_location" column_invisible="parent.is_rent_a_car == True" />
+                            <field name="quantity" column_invisible="parent.is_rent_a_car == False" />
                             <field name="price" />
                             <field name="add_to_invoice" />
                         </tree>

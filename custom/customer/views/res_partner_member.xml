@@ -155,12 +155,14 @@
                                 <field name="delivery_ref_date" string="Delivery Date"
                                     class="custom-field" date_format="%d/%m/%Y" />
                                 <field name="mail_ref" class="custom-field" />
-                                <field name="renewal_in_queue" invisible="1" />
-                                <field name="next_activation_date" invisible="1" />
-                                <field name="next_expiry_date" invisible="1" />
-                                <field name="next_product_template_id" invisible="1" />
-                                <field name="timeline_user_id" invisible="1" />
 
+                                <separator string="Renewal in Queue" invisible="renewal_in_queue == False"/>
+                                <field name="renewal_in_queue" readonly="1" widget="toggle" string="Scheduled" invisible="renewal_in_queue == False"/>
+                                <field name="next_activation_date" readonly="1" invisible="renewal_in_queue == False"/>
+                                <field name="next_expiry_date" readonly="1" invisible="renewal_in_queue == False"/>
+                                <field name="next_product_template_id" readonly="1" invisible="renewal_in_queue == False"/>
+                                <field name="timeline_user_id" readonly="1" string="Scheduled by" invisible="renewal_in_queue == False"/>
+                                
                                 <field name="related_company_customer_code"
                                     placeholder="Related Customer Code"
                                     string="Related Customer Code" invisible="1"
@@ -168,6 +170,7 @@
                                 <field name="adhoc_member" invisible="1" />
                                 <field name="credit_member_ok" invisible="1" />
                                 <field name="active" invisible="1" />
+                                <field name="cancellation_comment" readonly="1" invisible="cancellation_comment == False" />
                             </group>
                             <notebook colspan="4">
                                 <page name="package" string="Package">

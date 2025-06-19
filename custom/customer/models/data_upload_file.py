@@ -118,6 +118,7 @@ class DataUploadFile(models.Model):
         updated_member_count = status_counts['update']
         renewal_member_count = status_counts['renewal']
         replaced_member_count = status_counts['replace']
+        renewal_in_queue_count = status_counts['renewal_in_queue']
         added_member_count = total_count - rejected_count
 
         self.upload_log = (
@@ -127,6 +128,7 @@ class DataUploadFile(models.Model):
             f"New Records: {new_member_count} | "
             f"Extension Records: {updated_member_count} | "
             f"Renewal Records: {renewal_member_count} | "
+            f"Renewal in Queue Records: {renewal_in_queue_count} | "
             f"Changed Records: {replaced_member_count} | "
             f"Time to Process: {processing_time} seconds"
         )
@@ -153,6 +155,7 @@ class DataUploadFile(models.Model):
                         member_line.if_conf_match = member.id
                         expiry_date = fields.Date.from_string(member_line.member_expiry_date)
                         db_expiry_date = fields.Date.from_string(member.member_expiry_date)
+                        db_next_expiry_date = fields.Date.from_string(member.next_expiry_date)
                         difference = (expiry_date - db_expiry_date).days
 
                         activate_date = fields.Date.from_string(member_line.member_activate_date)
@@ -169,26 +172,34 @@ class DataUploadFile(models.Model):
                                     'upload_member_status': 'rejection',
                                     'comment': "*The uploaded expiry date is earlier than the existing expiry date!"
                                 })
+
+                            elif expiry_date == db_expiry_date or expiry_date == db_next_expiry_date:
+                                # Duplicate record scenario
+                                member_line.update({
+                                    'upload_member_status': 'rejection',
+                                    'comment': "*Duplicate Record in System With same expiry date!"
+                                })
                             
                             elif expiry_date > db_expiry_date:
                                 # Membership renewal or extension
+                                today = date.today()
                                 if difference >= 365:
-                                    member_line.update({
-                                        'upload_member_status': 'renewal',
-                                        'comment': "*Membership Renewal"
+                                    if today < activate_date:
+                                        member_line.update({
+                                        'upload_member_status': 'renewal_in_queue',
+                                        'comment': "*Membership Renewal in Queue"
                                     })
+                                    else:
+                                        member_line.update({
+                                            'upload_member_status': 'renewal',
+                                            'comment': "*Membership Renewal"
+                                        })
                                 else:
                                     member_line.update({
                                         'upload_member_status': 'update',
                                         'comment': "*Membership Extension"
                                     })
                             
-                            elif expiry_date == db_expiry_date:
-                                # Duplicate record scenario
-                                member_line.update({
-                                    'upload_member_status': 'rejection',
-                                    'comment': "*Duplicate Record in System With same expiry date!"
-                                })
                     else:
                         member_line.update({
                             'upload_member_status': 'new',
@@ -292,6 +303,14 @@ class DataUploadFile(models.Model):
     
                     matching_category = category_dict.get((member_line.sequence_code, matching_partner.id))
                     matching_package = package_dict.get(member_line.package)
+
+                    if type(member_line.package) == str:
+                        package_id = int(member_line.package)
+                    else:
+                        package_id = member_line.package
+
+                    services = self.env['product.package.service'].search([('product_template_id', '=', package_id)])
+                    product_ids = services.mapped('product_id').ids
     
                     # Create a new partner record
                     new_partner = self.env['res.partner'].create({
@@ -318,8 +337,27 @@ class DataUploadFile(models.Model):
                         'membership_state': 'confirm',
                         'member_partner_category_id': matching_category.id if matching_category else None,
                         'product_template_id': member_line.package,
+                        'service_ids': [(6, 0, product_ids)],
                         # Add more fields to create as needed
                     })
+
+                elif member_line.upload_member_status in ['renewal_in_queue']:
+                    matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
+                    if matching_partner:
+                        _logger.info(f"Renewal in queue for member: {matching_partner.name} with package {member_line.package}")
+
+                        package_record = self.env['product.template'].search([('id', '=', member_line.package)], limit=1)
+                        if not package_record:
+                            _logger.warning(f"No product.template found for package: {member_line.package}")
+
+                        matching_partner.write({
+                            'next_activation_date': member_line.member_activate_date,
+                            'next_expiry_date': member_line.member_expiry_date,
+                            'next_product_template_id': package_record.id,
+                            'timeline_user_id': self.env.user.id,
+                            'renewal_in_queue': True,
+                        })
+
                 # Handle 'renewal' or 'update' status
                 elif member_line.upload_member_status in ['renewal']:
                     matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
@@ -741,6 +779,7 @@ class UploadMemberLine(models.Model):
         ('new', 'New Member'),
         ('rejection', 'Rejected Member'),
         ('renewal', 'Renewal Member'),
+        ('renewal_in_queue', 'Renewal in Queue'),
         ('update', 'Update Member'),
         ('replace', 'Replaced Member'),
         ('discard', 'Discarded Member'),
