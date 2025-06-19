@@ -22,6 +22,7 @@ class AAAServiceAddons(models.Model):
     _inherit = 'aaa.service'
 
     service_from_app = fields.Boolean(string="Service From App", default=False)
+    driver_comment = fields.Text(string="Driver Comment")
 
     # # Regular char fields for storing the selected locations
     # location_from = fields.Char(string="Location From")
