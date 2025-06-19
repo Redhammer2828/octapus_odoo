@@ -23,6 +23,7 @@ class AAAServiceAddons(models.Model):
 
     service_from_app = fields.Boolean(string="Service From App", default=False)
     driver_comment = fields.Text(string="Driver Comment")
+    garage_driver_comment = fields.Text(string="Garage Driver Comment")
 
     # # Regular char fields for storing the selected locations
     # location_from = fields.Char(string="Location From")
