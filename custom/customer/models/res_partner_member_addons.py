@@ -9,6 +9,7 @@ class ResPartnerMemberAddons(models.Model):
     next_product_template_id = fields.Many2one('product.template', string="Next Package")
     timeline_user_id = fields.Many2one('res.users', string="User")
     renewal_in_queue = fields.Boolean(string="Renewal in queue", default=False)
+    remarks = fields.Text(string="Remarks")
 
     def action_membership_renewal_scheduler(self):
 

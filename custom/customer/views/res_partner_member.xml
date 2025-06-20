@@ -155,6 +155,7 @@
                                 <field name="delivery_ref_date" string="Delivery Date"
                                     class="custom-field" date_format="%d/%m/%Y" />
                                 <field name="mail_ref" class="custom-field" />
+                                <field name="remarks" invisible="remarks == False" />
 
                                 <separator string="Renewal in Queue" invisible="renewal_in_queue == False"/>
                                 <field name="renewal_in_queue" readonly="1" widget="toggle" string="Scheduled" invisible="renewal_in_queue == False"/>
