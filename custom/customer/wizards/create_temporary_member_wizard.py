@@ -35,7 +35,7 @@ class CreateTemporaryMemberWizard(models.TransientModel):
         """
 
         # Fetch the parent customer ID for 'ARABIAN AUTOMOBILE ASSOCIATION QATAR'
-        parent_customer = self.env['res.partner'].search([('name', '=', 'ARABIAN AUTOMOBILE ASSOCIATION')], limit=1)
+        parent_customer = self.env['res.partner'].search([('name', '=', 'ARABIAN AUTOMOBILE ASSOCIATION'), ('is_company', '=', True)], limit=1)
         parent_customer_id = parent_customer.id if parent_customer else False
         # Open the member form view to create a new member
         return {

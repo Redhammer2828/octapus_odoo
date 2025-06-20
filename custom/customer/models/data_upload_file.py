@@ -338,8 +338,12 @@ class DataUploadFile(models.Model):
                         'member_partner_category_id': matching_category.id if matching_category else None,
                         'product_template_id': member_line.package,
                         'service_ids': [(6, 0, product_ids)],
+                        'remarks': member_line.remarks,
                         # Add more fields to create as needed
                     })
+                    for rec in new_partner.member_timeline_ids:
+                        rec.status = "Created via Bulk Upload"
+                        rec.timeline_status = "confirm"
 
                 elif member_line.upload_member_status in ['renewal_in_queue']:
                     matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
@@ -447,6 +451,7 @@ class DataUploadFile(models.Model):
                             'vehicle_chasis_no': member_line.vehicle_chasis_no,
                             'street': member_line.street,
                             'mobile': member_line.mobile,
+                            'remarks': member_line.remarks,
                             
                         })
                 elif member_line.upload_member_status in ['update']:
@@ -527,6 +532,7 @@ class DataUploadFile(models.Model):
                             'vehicle_chasis_no': member_line.vehicle_chasis_no,
                             'street': member_line.street,
                             'mobile': member_line.mobile,
+                            'remarks': member_line.remarks,
                         })
                 # Handle 'TEMP' status
                 elif member_line.upload_member_status == 'exist_temp':
@@ -577,6 +583,7 @@ class DataUploadFile(models.Model):
                             # 'vehicle_chasis_no': member_line.vehicle_chasis_no,
                             'street': member_line.street,
                             'mobile': member_line.mobile,
+                            'remarks': member_line.remarks,
                             # 'confirmed_by': member_line.self.env.user_id,
                         })
                         self.env['membership.timeline'].create({
@@ -633,6 +640,7 @@ class DataUploadFile(models.Model):
                         'membership_state': 'confirm',
                         'member_partner_category_id': matching_category.id if matching_category else None,
                         'product_template_id': member_line.package,
+                        'remarks': member_line.remarks,
                         # Add more fields to create as needed
                     })
                 # Handle 'replace' status
@@ -683,6 +691,7 @@ class DataUploadFile(models.Model):
                         'membership_state': 'confirm',
                         'member_partner_category_id': matching_category.id if matching_category else None,
                         'product_template_id': member_line.package,
+                        'remarks': member_line.remarks,
                         # Add more fields to create as needed
                     })  
             # Measure the time taken
