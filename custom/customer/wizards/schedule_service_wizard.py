@@ -28,7 +28,8 @@ class ScheduleServiceWizard(models.TransientModel):
             record.service_id.write({
                 'schedule_date_time': record.schedule_date,
                 'requested_date': record.action_date,
-                'service_time': record.schedule_date
+                'service_time': record.schedule_date,
+                'state': "initiate",
             })
             # Create a record in service.history
             self.env['service.history'].create({
