@@ -18,7 +18,12 @@ class CreditServiceValidation(models.Model):
     taxable_amount = fields.Float(string="Taxable Amount")
     vat = fields.Float(string="VAT 5%")
     total_amount = fields.Float(string="Total Amount")
+    is_rent_a_car = fields.Boolean(string="Is Rent a Car Service", default=False)
 
+    @api.onchange('partner_id', 'category_id', 'from_date', 'to_date')
+    def _onchange_any_field(self):
+        for record in self:
+            record.service_line_ids = [(5, 0, 0)]
 
     def get_services(self):
 
@@ -47,7 +52,7 @@ class CreditServiceValidation(models.Model):
                 
                     service_rate = self.env["service.rate"].search([('product_pricelist_item_id','=',price_list_item.id),
                                                             ('from_loc_id','=',service.from_location.id),
-                                                            ('to_loc_id','=',service.to_location.id),])
+                                                            ('to_loc_id','=',service.to_location.id),], limit=1)
                     
                     credit_services[service.id] = {
                             "service_date": service_date,
@@ -58,8 +63,16 @@ class CreditServiceValidation(models.Model):
                             "service_product": service.product_id.name,
                             "from_location": service.from_location.name,
                             "to_location": service.to_location.name,
+                            "date_time_from": service.date_time_from if service.product_id.name == "RENT A CAR" or service.product_id.name == "RENT A CAR - UPGRADE" else False,
+                            "date_time_to": service.date_time_to if service.product_id.name == "RENT A CAR" or service.product_id.name == "RENT A CAR - UPGRADE" else False,
+                            "quantity": service.quantity if service.product_id.name == "RENT A CAR" or service.product_id.name == "RENT A CAR - UPGRADE" else False,
                             "price": service_rate.price,
                             }
+                    
+                    if service.product_id.name == "RENT A CAR" or service.product_id.name == "RENT A CAR - UPGRADE":
+                        record.is_rent_a_car = True
+                    else:
+                        record.is_rent_a_car = False
 
                     taxable_amount += service_rate.price
             vat = taxable_amount * 0.05
@@ -108,5 +121,8 @@ class ServiceStatementLine(models.Model):
     service_product = fields.Char(string="Product")
     from_location = fields.Char(string="From Location")
     to_location = fields.Char(string="To Location")
+    date_time_from = fields.Datetime(string="From Date")
+    date_time_to = fields.Datetime(string="To Date")
+    quantity = fields.Float(string="Quantity")
     price = fields.Float(string="Price")
     add_to_report = fields.Boolean(string="Add to Report", default=True)

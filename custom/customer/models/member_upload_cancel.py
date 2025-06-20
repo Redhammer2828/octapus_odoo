@@ -100,8 +100,16 @@ class MemberUploadCancel(models.Model):
         for member, member_line in zip(members, member_lines):
             member.write({
                 'membership_cancel_date': member_line.cancellation_date,
-                'membership_state': 'cancel'
+                'membership_state': 'cancel',
+                'cancellation_comment': member_line.comment
             })
+            self.env['membership.timeline'].create({
+                            'member_id': member.id,
+                            'user': self.env.user.id,
+                            'time': fields.Datetime.now(),
+                            'status': 'Membership Cancelled via Upload',
+                            'timeline_status': 'cancel',
+                        })
         self.state = 'done'
 
 # --------------------------------------------------------------------------------------------------

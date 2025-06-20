@@ -151,7 +151,7 @@ class AAACancelReport(models.TransientModel):
         # Define headers
 
         headers = [
-            'Service Date Time', 'Service Number', 'User']
+            'Service Date Time', 'Service Number', 'Service Cancelled by', 'Service Completed by', 'Comments']
 
         
 
@@ -180,12 +180,26 @@ class AAACancelReport(models.TransientModel):
                 elif header == 'Service Number':
                     field_value = record.name or ''
 
-                # elif header == 'User':
-                #     field_value = record.create_uid.name or ''
+                
 
-                elif header == 'User':
+                elif header == 'Service Cancelled by':
                     latest_history = record.service_history_ids.sorted('create_date', reverse=True)[:1]
                     field_value = latest_history.user.name if latest_history and latest_history.user else ''
+
+                elif header == 'Service Completed by':
+               
+                    latest_comment = record.comment_history_ids.sorted('create_date', reverse=True)[:1]
+                    latest_comment = latest_comment[0] if latest_comment else None
+                    field_value = latest_comment.comment_user.name if latest_comment and latest_comment.comment_user else ''
+
+                elif header == 'Comments':
+                    done_comments = record.comment_history_ids.filtered(lambda c: c.comment_status == 'done')
+                    latest_comment = done_comments.sorted('create_date', reverse=True)[:1]
+                    latest_comment = latest_comment[0] if latest_comment else None
+                    field_value = latest_comment.comment if latest_comment and latest_comment.comment else ''
+
+
+
 
 
                 

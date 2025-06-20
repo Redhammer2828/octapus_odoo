@@ -4,7 +4,7 @@
         <field name="name">res.partner.member.cancel.tree</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
-            <tree string="Cancelled Members" create="false" edit="false" delete="true">
+            <tree string="Cancelled Members" create="false" edit="false" delete="true" default_order="write_date desc" >
                 <field name="id" />
                 <field name="name" />
                 <field name="ref_num" />
@@ -19,6 +19,7 @@
                 <field name="vehicle_model" />
                 <field name="member_expiry_date" />
                 <field name="create_date" />
+                <!-- <field name="membership_cancel_date" /> -->
             </tree>
         </field>
     </record>
