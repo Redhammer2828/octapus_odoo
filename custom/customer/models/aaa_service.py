@@ -618,6 +618,16 @@ class AAAService(models.Model):
         # Capture old chassis numbers
         old_chassis_map = {record.id: record.vehicle_chasis_no for record in self}
 
+        afl_old_info_map = {
+            record.id: {
+                'vehicle_chasis_no': record.vehicle_chasis_no,
+                'vehicle_plate': record.vehicle_plate,
+                'vehicle_model_name': record.vehicle_model_id.name,
+            }
+            for record in self
+            if record.customer_id.customer_code == 'FULAE'
+        }
+
         # Track relationship field changes
         if 'member_id' in vals:
             vals['is_member_from_partner'] = bool(vals['member_id'])
@@ -675,14 +685,62 @@ class AAAService(models.Model):
                     record.quantity_with_days = "0 Days"
 
             # Check if chassis number changed
-            old_chassis = old_chassis_map.get(record.id)
-            if old_chassis != record.vehicle_chasis_no:
-                _logger.info("Chassis changed from %s to %s", old_chassis, record.vehicle_chasis_no)
-                record._trigger_chassis_update_api()
+            if record.customer_id.customer_code != 'FULAE':
+                old_chassis = old_chassis_map.get(record.id)
+                if old_chassis != record.vehicle_chasis_no:
+                    _logger.info("Chassis changed from %s to %s", old_chassis, record.vehicle_chasis_no)
+                    record._trigger_chassis_update_api()
+
+            if record.customer_id.customer_code == 'FULAE':
+                old_info = afl_old_info_map.get(record.id, {})
+                new_info = {
+                    'vehicle_chasis_no': record.vehicle_chasis_no,
+                    'vehicle_plate': record.vehicle_plate,
+                    'vehicle_model_name': record.vehicle_model_id.name,
+                }
+
+                if (
+                    old_info.get('vehicle_chasis_no') != new_info['vehicle_chasis_no'] or
+                    old_info.get('vehicle_plate') != new_info['vehicle_plate'] or
+                    old_info.get('vehicle_model_name') != new_info['vehicle_model_name']
+                ):
+                    _logger.info("Vehicle info changed for target customer: %s", record.id)
+                    record._trigger_afl_info_update_api()
 
         _logger.info("=== WRITE METHOD COMPLETED ===")
         return res
 # -------------------------------------------------------------------------------------------------------------
+
+    def _trigger_afl_info_update_api(self):
+        for record in self:
+            base_url = os.getenv('BASE_URL')
+            if not record.name or not record.vehicle_chasis_no:
+                _logger.warning("Skipping API call: Missing service number or chassis number for record ID %s", record.id)
+                continue
+
+            base_url = f"{base_url}/carhire-order/order/service/afl-order/update/order-details"
+            params = {
+                'erp_order_number': record.name,
+                'chassis_number': record.vehicle_chasis_no,
+                "plate_number": record.vehicle_plate,
+                "vehicle_model" : record.vehicle_model_id.name,
+            }
+            headers = {'Content-Type': 'application/json'}
+
+            _logger.info("Sending PUT API Request")
+            try:
+                response = requests.put(base_url, json=params, headers=headers)
+
+                _logger.info("API Response: %s - %s", response.status_code, response.text)
+
+                if response.status_code == 200:
+                    _logger.info("AFL info updated via external API.")
+                else:
+                    _logger.warning("API call returned non-200 status. Status: %s, Response: %s",
+                                    response.status_code, response.text)
+
+            except requests.exceptions.RequestException:
+                _logger.exception("API request failed for record ID %s", record.id)
 
 
     def _trigger_chassis_update_api(self):
