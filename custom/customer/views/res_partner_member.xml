@@ -159,12 +159,12 @@
                                 <field name="remarks" invisible="remarks == False" />
 
                                 <separator string="Renewal in Queue" invisible="is_it_user == False" />
-                                <field name="renewal_in_queue" readonly="1" widget="boolean_toggle" string="Scheduled" invisible="0" />
-                                <field name="next_activation_date" readonly="is_renewal_in_queue_edit_mode == False" invisible="next_activation_date == False" />
-                                <field name="next_expiry_date" readonly="is_renewal_in_queue_edit_mode == False" invisible="next_expiry_date == False" />
-                                <field name="next_product_template_id" readonly="is_renewal_in_queue_edit_mode == False" invisible="next_product_template_id == False" />
-                                <field name="timeline_user_id" readonly="1" string="Scheduled by" invisible="timeline_user_id == False" />
-                                <field name="scheduled_on_date" readonly="1" invisible="scheduled_on_date == False" />
+                                <field name="renewal_in_queue" readonly="1" widget="boolean_toggle" string="Scheduled" invisible="is_it_user == False" />
+                                <field name="next_activation_date" readonly="is_renewal_in_queue_edit_mode == False" invisible="next_activation_date == False or is_it_user == False" />
+                                <field name="next_expiry_date" readonly="is_renewal_in_queue_edit_mode == False" invisible="next_expiry_date == False or is_it_user == False" />
+                                <field name="next_product_template_id" readonly="is_renewal_in_queue_edit_mode == False" invisible="next_product_template_id == False or is_it_user == False" />
+                                <field name="timeline_user_id" readonly="1" string="Scheduled by" invisible="timeline_user_id == False or is_it_user == False" />
+                                <field name="scheduled_on_date" readonly="1" invisible="scheduled_on_date == False or is_it_user == False" />
                                 
                                 
                                 <field name="related_company_customer_code"
