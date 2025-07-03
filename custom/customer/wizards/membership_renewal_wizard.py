@@ -9,12 +9,17 @@ class MembershipRenewalWizard(models.TransientModel):
     _name = 'membership.renewal.wizard'
     _description = "Membership Renewal Wizard"
 
+    name = fields.Char(string="Name")
     parent_customer_id = fields.Many2one('res.partner', string='Parent Customer')
     activation_date = fields.Date('Activation Date', required=True)
-    card_type_id = fields.Many2one('card.type', string='Card Type', readonly=True)  # Read-only as it's fetched automatically
+    card_type_id = fields.Many2one('card.type', string='Card Type', readonly=False)  # Read-only as it's fetched automatically
     expiry_date = fields.Date('Expiry Date', required=True)
     vehicle_chasis_no = fields.Char(string='Vehicle Chasis Number')
     product_template_id = fields.Many2one('product.template', string="Packages")
+    policy_no = fields.Char(string='Policy Number')
+    invoice_ref_date = fields.Date(string='Invoice Date')
+    delivery_ref_date = fields.Date(string='Delivery Date')
+    vehicle_plate = fields.Char(string='Vehicle Plate')
 
     @api.model
     def default_get(self, fields_list):
@@ -29,7 +34,12 @@ class MembershipRenewalWizard(models.TransientModel):
 
         if partner:
             # Set the card_type_id from the partner in the wizard defaults
+            defaults['name'] = partner.name
             defaults['card_type_id'] = partner.card_type_id.id
+            defaults['policy_no'] = partner.policy_no
+            defaults['invoice_ref_date'] = partner.invoice_ref_date
+            defaults['delivery_ref_date'] = partner.delivery_ref_date
+            defaults['vehicle_plate'] = partner.vehicle_plate
             # Log the card_type_id for debugging purposes
             logger.info("Default Card Type ID set in Wizard: %s", partner.card_type_id.id)
 
@@ -146,12 +156,17 @@ class MembershipRenewalWizard(models.TransientModel):
             # Update the partner record with the new membership values
             
             partner.write({
+                'name': self.name,
                 'parent_customer_id': self.parent_customer_id.id,
                 'member_activate_date': self.activation_date,
                 'card_type_id': self.card_type_id.id,
                 'member_expiry_date': self.expiry_date,
                 'vehicle_chasis_no': self.vehicle_chasis_no,
                 'product_template_id': self.product_template_id.id,
+                'policy_no': self.policy_no,
+                'vehicle_plate': self.vehicle_plate,
+                'invoice_ref_date': self.invoice_ref_date,
+                'delivery_ref_date': self.delivery_ref_date,
             })
 
             logger.info("Membership renewed for Partner ID: %s", partner.id)
@@ -196,21 +211,36 @@ class MembershipRenewalWizard(models.TransientModel):
                     self.env['membership.timeline'].create(membership_timeline)
 
                     partner.write({
+                        'name': self.name,
                         'parent_customer_id': self.parent_customer_id.id,
                         'member_activate_date': self.activation_date,
                         'card_type_id': self.card_type_id.id,
                         'member_expiry_date': self.expiry_date,
                         'vehicle_chasis_no': self.vehicle_chasis_no,
                         'product_template_id': self.product_template_id.id,
+                        'policy_no': self.policy_no,
+                        'vehicle_plate': self.vehicle_plate,
+                        'invoice_ref_date': self.invoice_ref_date,
+                        'delivery_ref_date': self.delivery_ref_date,
                     })
 
                     logger.info("Membership renewed for Partner ID: %s", partner.id)
 
                 elif it_group and it_group in self.env.user.groups_id:
                     # Default timeline entry for non-agent users
-                    membership_timeline['status'] = f'Membership Renewal in queue - Manual (Activation Date: {self.activation_date})'
+                    membership_timeline['status'] = f'Membership Renewal in Queue - Manual (Activation Date: {self.activation_date}, Expiry Date: {self.expiry_date})'
                     membership_timeline['timeline_status'] = partner.membership_state
                     self.env['membership.timeline'].create(membership_timeline)
+
+                    renewal_queue_data_ids_items = {
+                        'name': self.name,
+                        'card_type_id': self.card_type_id.id,
+                        'policy_no': self.policy_no,
+                        'vehicle_plate': self.vehicle_plate,
+                        'vehicle_chasis_no': self.vehicle_chasis_no,
+                        'invoice_ref_date': self.invoice_ref_date,
+                        'delivery_ref_date': self.delivery_ref_date,
+                    }
 
                     partner.write({
                         'next_activation_date': self.activation_date,
@@ -219,6 +249,8 @@ class MembershipRenewalWizard(models.TransientModel):
                         'timeline_user_id': self.env.user.id,
                         'scheduled_on_date': fields.Datetime.now(),
                         'renewal_in_queue': True,
+                        'show_renewal_queue_data_page': True,
+                        'renewal_queue_data_ids':[(0,0,renewal_queue_data_ids_items)]
                     })
 
                     logger.info(f"Membership for Partner ID: {partner.id} will be renewed on {self.activation_date}")

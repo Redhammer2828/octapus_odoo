@@ -66,6 +66,7 @@ class ResPartnerMemberAddons(models.Model):
                     record.card_type_id = record.renewal_queue_data_ids[0].card_type_id
                     record.member_partner_category_id = record.renewal_queue_data_ids[0].member_partner_category_id
                     record.vehicle_chasis_no = record.renewal_queue_data_ids[0].vehicle_chasis_no
+                    record.vehicle_plate = record.renewal_queue_data_ids[0].vehicle_plate
                     record.street = record.renewal_queue_data_ids[0].street
                     record.mobile = record.renewal_queue_data_ids[0].mobile
                     record.remarks = record.renewal_queue_data_ids[0].remarks
@@ -127,6 +128,7 @@ class RenewalQueueData(models.Model):
         card_type_id = fields.Many2one('card.type', string='Card Type')
         member_partner_category_id = fields.Many2one('partner.category',string='Category')
         vehicle_chasis_no = fields.Char(string='Vehicle Chasis No')
+        vehicle_plate = fields.Char(string='Vehicle Plate')
         street = fields.Char(string='Street')
         mobile = fields.Char(string='Mobile', widget='phone')
         remarks = fields.Text(string="Remarks")
