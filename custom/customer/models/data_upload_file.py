@@ -173,7 +173,7 @@ class DataUploadFile(models.Model):
                                     'comment': "*The uploaded expiry date is earlier than the existing expiry date!"
                                 })
 
-                            elif expiry_date == db_expiry_date or expiry_date == db_next_expiry_date:
+                            elif expiry_date == db_expiry_date:
                                 # Duplicate record scenario
                                 member_line.update({
                                     'upload_member_status': 'rejection',
@@ -381,6 +381,7 @@ class DataUploadFile(models.Model):
                             'scheduled_on_date': fields.Datetime.now(),
                             'renewal_in_queue': True,
                             'show_renewal_queue_data_page': True,
+                            'renewal_queue_data_ids':[(5, 0, 0)],
                         })
 
                         self.env['renewal.queue.data'].create({
@@ -395,9 +396,18 @@ class DataUploadFile(models.Model):
                             'card_type_id' : card_type_record.id,
                             'member_partner_category_id': category_record.id,
                             'vehicle_chasis_no': member_line.vehicle_chasis_no,
+                            'vehicle_plate': member_line.vehicle_plate,
                             'street': member_line.street,
                             'mobile': member_line.mobile,
                             'remarks': member_line.remarks,
+                        })
+
+                        self.env['membership.timeline'].create({
+                            'member_id': matching_partner.id,
+                            'user': self.env.user.id,
+                            'time': fields.Datetime.now(),
+                            'status': f'Membership Renewal in Queue - Bulk Upload (Activation Date: {member_line.member_activate_date}, Expiry Date: {member_line.member_expiry_date})',
+                            'timeline_status': 'confirm',
                         })
 
                 # Handle 'renewal' or 'update' status
