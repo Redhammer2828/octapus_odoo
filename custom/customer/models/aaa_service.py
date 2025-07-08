@@ -1743,8 +1743,8 @@ class AAAService(models.Model):
                             _logger.info("AFL service not completed since fields are missing in app")
 
                             if missing_fields:
-                                fields = "\n - ".join(missing_fields)
-                                raise UserError(f"The following fields are missing in app:\n - {fields}")
+                                all_missing_fields = "\n - ".join(missing_fields)
+                                raise UserError(f"The following fields are missing in app:\n - {all_missing_fields}")
 
                     else:
                         _logger.warning("API call returned non-200 status. Status: %s, Response: %s",
