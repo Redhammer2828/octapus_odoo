@@ -724,6 +724,12 @@ class AAAService(models.Model):
                 'chassis_number': record.vehicle_chasis_no,
                 "plate_number": record.vehicle_plate,
                 "vehicle_model" : record.vehicle_model_id.name,
+                "phone_number": record.member_contact_no,
+                "customer_email": record.email,
+                "policy_number": record.policy_no,
+                "provider_name": record.provider_id.name,
+                "driver_name": record.driver_id.name,
+                "driver_phone": record.driver_num,
             }
             headers = {'Content-Type': 'application/json'}
 
@@ -1678,38 +1684,107 @@ class AAAService(models.Model):
             # Ensure credit_proforma_number is filled
             if not service.credit_proforma_number:
                 raise UserError("You must fill the Trip Sheet Number before completing the service.")
-
-            # Proceed with setting the state to 'done'
-            service.state = 'done'
-
-            # Create the service.history record
-            self.env['service.history'].create({
-                'service_id': service.id,
-                'user': self.env.user.id,
-                'time': fields.Datetime.now(),
-                'status': 'Service Completed',
-                'timeline_status': service.state,
-            })
-
-            # Prepare the comment content
-            comment_content = service.comments or 'COMPLETED'
-
-            # Create the service.comment record
-            self.env['service.comment'].create({
-                'service_id': service.id,
-                'comment': comment_content,
-                'comment_date_and_time': fields.Datetime.now(),
-                'comment_user': self.env.user.id,
-                'comment_status': service.state,
-            })
-
-            # Clear the comments field after creating the record
-            if service.comments:
-                service.comments = False
-
-            service.done_done_by = self.env.user.id
             
-            self._trigger_order_notification_api(service.name, service.state)
+            if service.is_afl_application == True:
+                base_url = os.getenv('BASE_URL')
+
+                base_url = f"{base_url}/carhire-order/order/service/afl-order/check-service-complete-status"
+                params = {
+                    'serviceNumber': service.name,
+                }
+                headers = {'Content-Type': 'application/json'}
+
+                _logger.info("Sending GET API Request")
+                try:
+                    response = requests.get(base_url, params=params, headers=headers)
+
+                    _logger.info("API Response: %s - %s", response.status_code, response.text)
+
+                    if response.status_code == 200:
+                        data = response.json()
+                        is_ready = data.get("ready")
+                        missing_fields = data.get("missingFields") or []
+
+                        if is_ready == True:
+                            service.state = 'done'
+
+                            # Create the service.history record
+                            self.env['service.history'].create({
+                                'service_id': service.id,
+                                'user': self.env.user.id,
+                                'time': fields.Datetime.now(),
+                                'status': 'Service Completed',
+                                'timeline_status': service.state,
+                            })
+
+                            # Prepare the comment content
+                            comment_content = service.comments or 'COMPLETED'
+
+                            # Create the service.comment record
+                            self.env['service.comment'].create({
+                                'service_id': service.id,
+                                'comment': comment_content,
+                                'comment_date_and_time': fields.Datetime.now(),
+                                'comment_user': self.env.user.id,
+                                'comment_status': service.state,
+                            })
+
+                            # Clear the comments field after creating the record
+                            if service.comments:
+                                service.comments = False
+
+                            service.done_done_by = self.env.user.id
+                            
+                            self._trigger_order_notification_api(service.name, service.state)
+
+                            _logger.info("AFL service completed")
+
+                        else:
+                            _logger.info("AFL service not completed since fields are missing in app")
+
+                            if missing_fields:
+                                all_missing_fields = "\n - ".join(missing_fields)
+                                raise UserError(f"The following fields are missing in app:\n - {all_missing_fields}")
+
+                    else:
+                        _logger.warning("API call returned non-200 status. Status: %s, Response: %s",
+                                        response.status_code, response.text)
+
+                except requests.exceptions.RequestException:
+                    _logger.exception("API request failed for record ID %s", service.id)
+
+            else:
+            # Proceed with setting the state to 'done'
+                service.state = 'done'
+
+                # Create the service.history record
+                self.env['service.history'].create({
+                    'service_id': service.id,
+                    'user': self.env.user.id,
+                    'time': fields.Datetime.now(),
+                    'status': 'Service Completed',
+                    'timeline_status': service.state,
+                })
+
+                # Prepare the comment content
+                comment_content = service.comments or 'COMPLETED'
+
+                # Create the service.comment record
+                self.env['service.comment'].create({
+                    'service_id': service.id,
+                    'comment': comment_content,
+                    'comment_date_and_time': fields.Datetime.now(),
+                    'comment_user': self.env.user.id,
+                    'comment_status': service.state,
+                })
+
+                # Clear the comments field after creating the record
+                if service.comments:
+                    service.comments = False
+
+                service.done_done_by = self.env.user.id
+                
+                self._trigger_order_notification_api(service.name, service.state)
 
         return True
 

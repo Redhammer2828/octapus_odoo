@@ -130,6 +130,7 @@
                                 <field name="create_uid" string="Created By" readonly="1" />
                                 <field name="confirmed_by" string="Confirmed By" readonly="1"
                                     invisible="membership_state == 'temp'" />
+                                <field name="cancellation_comment" readonly="1" invisible="cancellation_comment == False" />
                             </group>
                             <group>
                                 <field name="vehicle_type" string="Vehicle Type" />
@@ -157,12 +158,14 @@
                                 <field name="mail_ref" class="custom-field" />
                                 <field name="remarks" invisible="remarks == False" />
 
-                                <separator string="Renewal in Queue" invisible="renewal_in_queue == False"/>
-                                <field name="renewal_in_queue" readonly="1" widget="toggle" string="Scheduled" invisible="renewal_in_queue == False"/>
-                                <field name="next_activation_date" readonly="1" invisible="renewal_in_queue == False"/>
-                                <field name="next_expiry_date" readonly="1" invisible="renewal_in_queue == False"/>
-                                <field name="next_product_template_id" readonly="1" invisible="renewal_in_queue == False"/>
-                                <field name="timeline_user_id" readonly="1" string="Scheduled by" invisible="renewal_in_queue == False"/>
+                                <separator string="Renewal in Queue" invisible="is_it_user == False" />
+                                <field name="renewal_in_queue" readonly="1" widget="boolean_toggle" string="Scheduled" invisible="is_it_user == False" />
+                                <field name="next_activation_date" readonly="is_renewal_in_queue_edit_mode == False" invisible="next_activation_date == False or is_it_user == False" />
+                                <field name="next_expiry_date" readonly="is_renewal_in_queue_edit_mode == False" invisible="next_expiry_date == False or is_it_user == False" />
+                                <field name="next_product_template_id" readonly="is_renewal_in_queue_edit_mode == False" invisible="next_product_template_id == False or is_it_user == False" />
+                                <field name="timeline_user_id" readonly="1" string="Scheduled by" invisible="timeline_user_id == False or is_it_user == False" />
+                                <field name="scheduled_on_date" readonly="1" invisible="scheduled_on_date == False or is_it_user == False" />
+                                
                                 
                                 <field name="related_company_customer_code"
                                     placeholder="Related Customer Code"
@@ -171,72 +174,100 @@
                                 <field name="adhoc_member" invisible="1" />
                                 <field name="credit_member_ok" invisible="1" />
                                 <field name="active" invisible="1" />
-                                <field name="cancellation_comment" readonly="1" invisible="cancellation_comment == False" />
+                                <field name="is_renewal_in_queue_edit_mode" invisible="1" />
+                                
                             </group>
-                            <notebook colspan="4">
-                                <page name="package" string="Package">
-                                    <group>
-                                        <field name="product_template_id" class="required_field"
-                                            required="1"
-                                            options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
-                                            domain="[('bundle_product', '=', True)]"
-                                            readonly="membership_state in ['cancel', 'confirm'] and is_it_user == False" />
-                                    </group>
-                                    <group>
-                                        <field name="service_ids" widget="many2many_tags"
-                                            options="{'no_create':False,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
-                                            domain="[('bundle_product', '=', False)]"
-                                            readonly="is_readonly" />
-                                    </group>
-                                </page>
-                                <page name="internal_notes" string="Internal Notes">
-                                    <field name="comment" placeholder="Internal note..." />
-                                </page>
-                                <page name="membership_history" string="Membership History">
-                                    <field name="membership_history_ids">
-                                        <tree create="false" delete="False">
-                                            <field name="create_date" string="Created Date" />
-                                            <field name="parent_customer_id" />
-                                            <field name="name" />
-                                            <field name="old_membership_number" />
-                                            <field name="ref_num" />
-                                            <field name="member_partner_category_id" />
-                                            <field name="product_template_id" />
-                                            <field name="member_type" />
-                                            <field name="vehicle_chasis_no" />
-                                            <field name="vehicle_type" />
-                                            <field name="vehicle_plate" />
-                                            <field name="policy_no" />
-                                            <field name="member_activate_date" />
-                                            <field name="member_expiry_date" />
-                                            <field name="invoice_ref_date" />
-                                            <field name="card_type_id"
-                                                options="{'no_create_edit':1}" />
-                                        </tree>
-                                    </field>
-                                </page>
-                                <page string="Timeline">
-                                    <field name="member_timeline_ids" readonly="1">
-                                        <tree>
+                        </group>
+                        <div class="d-flex justify-content-end mt-2" invisible="is_it_user == False">
+                            <button name="renewal_in_queue_edit_mode_on" string="Edit" type="object" text-align="right" invisible="renewal_in_queue == False or is_renewal_in_queue_edit_mode == True" class="btn-primary" />
+                            <button name="renewal_in_queue_edit_mode_off" string="Save" type="object" text-align="right" invisible="renewal_in_queue == False or is_renewal_in_queue_edit_mode == False" class="btn-primary" />
+                            <button name="cancel_renewal_in_queue" string="Cancel Renewal" type="object" text-align="right" invisible="renewal_in_queue == False or is_renewal_in_queue_edit_mode == True" class="btn btn-secondary ms-2" />
+                        </div>
+                        <notebook colspan="4">
+                            <page name="package" string="Package">
+                                <group>
+                                    <field name="product_template_id" class="required_field"
+                                        required="1"
+                                        options="{'no_create':True,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
+                                        domain="[('bundle_product', '=', True)]"
+                                        readonly="membership_state in ['cancel', 'confirm'] and is_it_user == False" />
+                                </group>
+                                <group>
+                                    <field name="service_ids" widget="many2many_tags"
+                                        options="{'no_create':False,'no_quick_create':True, 'no_create_edit':True, 'no_open':True}"
+                                        domain="[('bundle_product', '=', False)]"
+                                        readonly="is_readonly" />
+                                </group>
+                            </page>
+                            <page name="internal_notes" string="Internal Notes">
+                                <field name="comment" placeholder="Internal note..." />
+                            </page>
+                            <page name="membership_history" string="Membership History">
+                                <field name="membership_history_ids">
+                                    <tree create="false" delete="False">
+                                        <field name="create_date" string="Created Date" />
+                                        <field name="parent_customer_id" />
+                                        <field name="name" />
+                                        <field name="old_membership_number" />
+                                        <field name="ref_num" />
+                                        <field name="member_partner_category_id" />
+                                        <field name="product_template_id" />
+                                        <field name="member_type" />
+                                        <field name="vehicle_chasis_no" />
+                                        <field name="vehicle_type" />
+                                        <field name="vehicle_plate" />
+                                        <field name="policy_no" />
+                                        <field name="member_activate_date" />
+                                        <field name="member_expiry_date" />
+                                        <field name="invoice_ref_date" />
+                                        <field name="card_type_id"
+                                            options="{'no_create_edit':1}" />
+                                    </tree>
+                                </field>
+                            </page>
+                            <page string="Timeline">
+                                <field name="member_timeline_ids" readonly="1">
+                                    <tree>
+                                        <field name="user" />
+                                        <field name="time" />
+                                        <field name="status" />
+                                        <field name="timeline_status" widget="badge"
+                                            readonly="1" />
+                                    </tree>
+                                    <form>
+                                        <group>
                                             <field name="user" />
                                             <field name="time" />
                                             <field name="status" />
                                             <field name="timeline_status" widget="badge"
                                                 readonly="1" />
-                                        </tree>
-                                        <form>
-                                            <group>
-                                                <field name="user" />
-                                                <field name="time" />
-                                                <field name="status" />
-                                                <field name="timeline_status" widget="badge"
-                                                    readonly="1" />
-                                            </group>
-                                        </form>
-                                    </field>
-                                </page>
-                            </notebook>
-                        </group>
+                                        </group>
+                                    </form>
+                                </field>
+                            </page>
+                            <field name="show_renewal_queue_data_page" invisible="1" />
+                            <page string="Renewal Queue Data" invisible="is_it_user == False or show_renewal_queue_data_page == False">
+                                <field name="renewal_queue_data_ids" readonly="is_renewal_in_queue_edit_mode == False">
+                                    <tree create="0" delete="0" editable="bottom">
+                                        <field name="member_id" column_invisible="1" />
+                                        <field name="name" />
+                                        <!-- <field name="member_expiry_date" /> -->
+                                        <!-- <field name="member_activate_date" /> -->
+                                        <!-- <field name="product_template_id" /> -->
+                                        <field name="card_type_id" />
+                                        <!-- <field name="member_partner_category_id" /> -->
+                                        <field name="policy_no" />
+                                        <field name="vehicle_chasis_no" readonly="1" />
+                                        <field name="vehicle_plate" />
+                                        <field name="invoice_ref_date" />
+                                        <field name="delivery_ref_date" />
+                                        <!-- <field name="street" /> -->
+                                        <!-- <field name="mobile" /> -->
+                                        <!-- <field name="remarks" /> -->
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
                     </sheet>
                 </form>
             </field>

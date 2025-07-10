@@ -63,3 +63,4 @@ access_service_statement_line,service.statement.line,model_service_statement_lin
 access_policy_membership_line,policy.membership.line,model_policy_membership_line,base.group_user,1,1,1,1
 access_rac_bulk_upload,rac.bulk.upload,model_rac_bulk_upload,base.group_user,1,1,1,1
 access_aaa_cancel_report,aaa.cancel.report,model_aaa_cancel_report,base.group_user,1,1,1,1
+access_renewal_queue_data,renewal.queue.data,model_renewal_queue_data,base.group_user,1,1,1,1

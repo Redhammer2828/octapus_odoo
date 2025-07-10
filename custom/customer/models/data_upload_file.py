@@ -173,7 +173,7 @@ class DataUploadFile(models.Model):
                                     'comment': "*The uploaded expiry date is earlier than the existing expiry date!"
                                 })
 
-                            elif expiry_date == db_expiry_date or expiry_date == db_next_expiry_date:
+                            elif expiry_date == db_expiry_date:
                                 # Duplicate record scenario
                                 member_line.update({
                                     'upload_member_status': 'rejection',
@@ -354,12 +354,60 @@ class DataUploadFile(models.Model):
                         if not package_record:
                             _logger.warning(f"No product.template found for package: {member_line.package}")
 
+                        card_type_record = self.env['card.type'].search([('code', '=', member_line.card_type)], limit=1)
+                        if not card_type_record:
+                            _logger.warning(f"No CARD found for MEMBER: {member_line.card_type}")
+                        else:
+                            # Update card_type with the found record
+                            _logger.info(f"Updating partner {matching_partner.name} with CARD {card_type_record.id} is in renewal queue")
+                        
+                        category_record = self.env['partner.category'].search([
+                            ('name', '=', member_line.sequence_code),
+                            ('partner_id', '=', matching_partner.parent_customer_id.id),
+                            ('member_type', '=', matching_partner.member_type)  # Include this condition to match the specific partner
+                        ], limit=1)
+
+                        if not category_record:
+                            _logger.warning(f"No CATEGORY found for MEMBER: {member_line.sequence_code} with Partner ID: {matching_partner.id}")
+                        else:
+                            # Log successful update information
+                            _logger.info(f"Updating partner {matching_partner.name} with CATEGORY {category_record.id} is in renewal queue")
+
                         matching_partner.write({
                             'next_activation_date': member_line.member_activate_date,
                             'next_expiry_date': member_line.member_expiry_date,
                             'next_product_template_id': package_record.id,
                             'timeline_user_id': self.env.user.id,
+                            'scheduled_on_date': fields.Datetime.now(),
                             'renewal_in_queue': True,
+                            'show_renewal_queue_data_page': True,
+                            'renewal_queue_data_ids':[(5, 0, 0)],
+                        })
+
+                        self.env['renewal.queue.data'].create({
+                            'member_id': matching_partner.id,
+                            'name': member_line.member_name,
+                            'member_expiry_date': member_line.member_expiry_date,
+                            'policy_no': member_line.policy_no,
+                            'member_activate_date': member_line.member_activate_date,
+                            'invoice_ref_date': member_line.invoice_ref_date,
+                            'delivery_ref_date': member_line.delivery_ref_date,
+                            'product_template_id': package_record.id,
+                            'card_type_id' : card_type_record.id,
+                            'member_partner_category_id': category_record.id,
+                            'vehicle_chasis_no': member_line.vehicle_chasis_no,
+                            'vehicle_plate': member_line.vehicle_plate,
+                            'street': member_line.street,
+                            'mobile': member_line.mobile,
+                            'remarks': member_line.remarks,
+                        })
+
+                        self.env['membership.timeline'].create({
+                            'member_id': matching_partner.id,
+                            'user': self.env.user.id,
+                            'time': fields.Datetime.now(),
+                            'status': f'Membership Renewal in Queue - Bulk Upload (Activation Date: {member_line.member_activate_date}, Expiry Date: {member_line.member_expiry_date})',
+                            'timeline_status': 'confirm',
                         })
 
                 # Handle 'renewal' or 'update' status
