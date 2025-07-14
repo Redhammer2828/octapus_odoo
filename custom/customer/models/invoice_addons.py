@@ -129,7 +129,7 @@ class AccountMove(models.Model):
 
                        
 
-                tax = self.env['account.tax'].search([('amount', '=', 5), ('type_tax_use', '=', 'sale')])
+                tax = self.env['account.tax'].search([('amount', '=', 5), ('type_tax_use', '=', 'sale'), ('active', '=', 'True')])
 
                 invoice_lines = [(0, 0, {
                             "name": f"Services Provided for Customer: {record.partner_id.name} from {record.from_date.strftime('%d/%m/%Y')} to {record.to_date.strftime('%d/%m/%Y')} ({service_count} services)",

@@ -66,7 +66,7 @@ class AAAServiceAddons(models.Model):
             'policy_no': 'Policy No',
             'provider_id': 'Provider',
             'driver_name': 'Driver Name',
-            'credit_proforma_number': 'Credit Proforma Number',
+            'credit_proforma_number': 'Trip Sheet Number',
             'driver_id': 'Driver',
         }
         

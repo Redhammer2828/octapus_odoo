@@ -1685,7 +1685,7 @@ class AAAService(models.Model):
             if not service.credit_proforma_number:
                 raise UserError("You must fill the Trip Sheet Number before completing the service.")
             
-            if service.is_afl_application == True:
+            if service.is_afl_application == True and service.service_from_app == False:
                 base_url = os.getenv('BASE_URL')
 
                 base_url = f"{base_url}/carhire-order/order/service/afl-order/check-service-complete-status"
