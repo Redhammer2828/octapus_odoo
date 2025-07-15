@@ -730,6 +730,23 @@ class AAAService(models.Model):
                 "provider_name": record.provider_id.name,
                 "driver_name": record.driver_id.name,
                 "driver_phone": record.driver_num,
+                "service_name": record.product_id.name,
+                "service_based": record.service_based,
+                "location_to": {
+                    "addressId": "",
+                    "addressType": "",
+                    "address": record.selected_to_location.name,
+                    "street": "",
+                    "city": "",
+                    "district": "",
+                    "state": "",
+                    "country": "",
+                    "pinCode": "",
+                    "mobileNumber": "",
+                    "latitude": record.selected_to_location.latitude,
+                    "longitude": record.selected_to_location.longitude,
+                    "landMark": "",
+                },
             }
             headers = {'Content-Type': 'application/json'}
 
