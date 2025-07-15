@@ -632,8 +632,8 @@ class AAAService(models.Model):
                 'service_name': record.product_id.name,
                 'service_based': record.service_based,
                 'to_location_name': record.to_location.name,
-                'to_latitude': record.to_location.latitude,
-                'to_longitude': record.to_location.longitude,
+                # 'to_latitude': record.to_location.latitude,
+                # 'to_longitude': record.to_location.longitude,
             }
             for record in self
             if record.is_afl_application == True
@@ -717,8 +717,8 @@ class AAAService(models.Model):
                     'service_name': record.product_id.name,
                     'service_based': record.service_based,
                     'to_location_name': record.to_location.name,
-                    'to_latitude': record.to_location.latitude,
-                    'to_longitude': record.to_location.longitude,
+                    # 'to_latitude': record.to_location.latitude,
+                    # 'to_longitude': record.to_location.longitude,
                 }
 
                 if any(old_info.get(key) != new_info[key] for key in new_info):
@@ -761,8 +761,8 @@ class AAAService(models.Model):
                     "country": "",
                     "pinCode": "",
                     "mobileNumber": "",
-                    "latitude": record.to_location.latitude,
-                    "longitude": record.to_location.longitude,
+                    "latitude": "",
+                    "longitude": "",
                     "landMark": "",
                 },
             }
