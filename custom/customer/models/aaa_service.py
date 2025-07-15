@@ -623,6 +623,17 @@ class AAAService(models.Model):
                 'vehicle_chasis_no': record.vehicle_chasis_no,
                 'vehicle_plate': record.vehicle_plate,
                 'vehicle_model_name': record.vehicle_model_id.name,
+                'phone_number': record.member_contact_no,
+                'customer_email': record.email,
+                'policy_number': record.policy_no,
+                'provider_name': record.provider_id.name,
+                'driver_name': record.driver_id.name,
+                'driver_phone': record.driver_num,
+                'service_name': record.product_id.name,
+                'service_based': record.service_based,
+                'to_location_name': record.selected_to_location.name,
+                'to_latitude': record.selected_to_location.latitude,
+                'to_longitude': record.selected_to_location.longitude,
             }
             for record in self
             if record.is_afl_application == True
@@ -697,14 +708,21 @@ class AAAService(models.Model):
                     'vehicle_chasis_no': record.vehicle_chasis_no,
                     'vehicle_plate': record.vehicle_plate,
                     'vehicle_model_name': record.vehicle_model_id.name,
+                    'phone_number': record.member_contact_no,
+                    'customer_email': record.email,
+                    'policy_number': record.policy_no,
+                    'provider_name': record.provider_id.name,
+                    'driver_name': record.driver_id.name,
+                    'driver_phone': record.driver_num,
+                    'service_name': record.product_id.name,
+                    'service_based': record.service_based,
+                    'to_location_name': record.selected_to_location.name,
+                    'to_latitude': record.selected_to_location.latitude,
+                    'to_longitude': record.selected_to_location.longitude,
                 }
 
-                if (
-                    old_info.get('vehicle_chasis_no') != new_info['vehicle_chasis_no'] or
-                    old_info.get('vehicle_plate') != new_info['vehicle_plate'] or
-                    old_info.get('vehicle_model_name') != new_info['vehicle_model_name']
-                ):
-                    _logger.info("Vehicle info changed for target customer: %s", record.id)
+                if any(old_info.get(key) != new_info[key] for key in new_info):
+                    _logger.info("Info changed for target customer %s. Triggering API.", record.id)
                     record._trigger_afl_info_update_api()
 
         _logger.info("=== WRITE METHOD COMPLETED ===")
