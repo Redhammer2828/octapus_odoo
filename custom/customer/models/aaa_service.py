@@ -625,7 +625,7 @@ class AAAService(models.Model):
                 'vehicle_model_name': record.vehicle_model_id.name,
             }
             for record in self
-            if record.customer_id.customer_code == 'FULAE'
+            if record.is_afl_application == True
         }
 
         # Track relationship field changes
@@ -685,13 +685,13 @@ class AAAService(models.Model):
                     record.quantity_with_days = "0 Days"
 
             # Check if chassis number changed
-            if record.customer_id.customer_code != 'FULAE':
+            if record.is_afl_application == False:
                 old_chassis = old_chassis_map.get(record.id)
                 if old_chassis != record.vehicle_chasis_no:
                     _logger.info("Chassis changed from %s to %s", old_chassis, record.vehicle_chasis_no)
                     record._trigger_chassis_update_api()
 
-            if record.customer_id.customer_code == 'FULAE':
+            if record.is_afl_application == True:
                 old_info = afl_old_info_map.get(record.id, {})
                 new_info = {
                     'vehicle_chasis_no': record.vehicle_chasis_no,
