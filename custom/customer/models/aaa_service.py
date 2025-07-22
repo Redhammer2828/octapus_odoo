@@ -750,21 +750,7 @@ class AAAService(models.Model):
                 "driver_phone": record.driver_num,
                 "service_name": "",
                 "service_based": "",
-                "location_to": {
-                    "addressId": "",
-                    "addressType": "",
-                    "address": "",
-                    "street": "",
-                    "city": "",
-                    "district": "",
-                    "state": "",
-                    "country": "",
-                    "pinCode": "",
-                    "mobileNumber": "",
-                    "latitude": "",
-                    "longitude": "",
-                    "landMark": "",
-                },
+                "location_to": "",
             }
             headers = {'Content-Type': 'application/json'}
 
