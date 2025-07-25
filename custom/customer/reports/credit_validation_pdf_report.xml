@@ -52,11 +52,11 @@
                       <tr>
                           <t t-if="line.is_rent_a_car">
                               <td style="width: 8%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.service_date"/></td>
-                              <td style="width: 12%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.service_number"/></td>
+                              <td style="width: 12%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.service_number_id.name"/></td>
                               <td style="width: 10%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.trip_sheet_number"/></td>
                               <td style="width: 10%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.vehicle_model"/></td>
                               <td style="width: 10%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.vehicle_plate"/></td>
-                              <td style="width: 8%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.service_product"/></td>
+                              <td style="width: 8%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.service_product_id.name"/></td>
                               <td style="width: 16%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.date_time_from"/></td>
                               <td style="width: 16%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.date_time_to"/></td>
                               <td style="width: 5%; float: left; padding: 3px; text-align: center; box-sizing: border-box;"><t t-esc="rec.quantity"/></td>
@@ -64,13 +64,13 @@
                           </t>
                           <t t-else="">
                               <td style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.service_date"/></td>
-                              <td style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.service_number"/></td>
+                              <td style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.service_number_id.name"/></td>
                               <td style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.trip_sheet_number"/></td>
                               <td style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.vehicle_model"/></td>
                               <td style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.vehicle_plate"/></td>
-                              <td style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.service_product"/></td>
-                              <td style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.from_location"/></td>
-                              <td style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.to_location"/></td>
+                              <td style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.service_product_id.name"/></td>
+                              <td style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.from_location_id.name"/></td>
+                              <td style="width: 11.11%; float: left; padding: 3px; box-sizing: border-box;"><t t-esc="rec.to_location_id.name"/></td>
                               <td style="width: 11.11%; float: left; padding: 3px; text-align: right; box-sizing: border-box;"><t t-esc="rec.price"/></td>
                           </t>
                       </tr>

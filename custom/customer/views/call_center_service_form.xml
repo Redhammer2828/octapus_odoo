@@ -62,6 +62,14 @@
                         <!-- <field name="is_dispatch_user" invisible="1" /> -->
                     </header>
                     <sheet>
+
+                        <field name="invoice_state" invisible="1" />
+                        <div class="oe_button_box" name="button_box">
+                            <label for="invoice_state" string="SERVICE INVOICED"
+                                invisible="invoice_state != 'invoiced'"
+                                style="color: white; padding: 8px; background-color: #28a745; border-radius: 10px; font-weight: bold; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);" />
+                        </div>
+
                         <div class="row mt-2 mb-2" style="font-weight: bold; color: #7c7bad; border: solid 1px #8080805c; margin-left: 1%; margin-right: 1%; background-color: #eee; padding: 8px; border-radius: 10px;">
                             <div style="display: inline-block; width: 20%; padding-right: 15px;">
                                 <span style="display: inline-block; margin-right: 5px;">Number:</span>
@@ -216,6 +224,11 @@
                                 <field name="reach_done_by" invisible="state in ['dispatch', 'start']" readonly="1" />
                                 <field name="done_done_by" invisible="state != 'done'" readonly="1" />
                             </group>
+                            <group string="Invoice Details" invisible="invoice_state == 'not_invoiced'">
+                                <field name="invoice_id" readonly="1" />
+                                <field name="invoiced_date" readonly="1" />
+                                <field name="invoiced_by" readonly="1" />
+                            </group>
                         </group>
                         <notebook>
                             <page string="Comments">
@@ -303,7 +316,26 @@
             </field>
         </record>
 
+        <record id="call_center_invoiced_service_action" model="ir.actions.act_window">
+            <field name="name">Invoiced Services</field>
+            <field name="res_model">aaa.service</field>
+            <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="call_center_all_service_view_search" />
+            <field name="domain">[('invoice_state', '=','invoiced')]</field>
+            <field name="context">{'search_default_invoiced_today_filter': 1}</field>
+            <field name="view_ids"
+                eval="[
+                  (5, 0, 0),
+                  (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
+                  (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
+                ]">
+            </field>
+        </record>
+
         <menuitem id="sub_menu_service_credit_new_member" name="New Member" parent="menu_service_credit" action="action_call_center_credit_service_credit_new" sequence="1" />
         <menuitem id="menu_service_cash_adhoc_new" name="Service - Cash" parent="menu_call_center_root" action="action_call_center_adhoc_service_new" sequence="3" />
+
+        <menuitem id="menu_invoiced_service_root" name="Invoiced Services" parent="menu_call_center_root" 
+        action="call_center_invoiced_service_action" sequence="31" />
     </data>
 </odoo>
