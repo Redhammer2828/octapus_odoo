@@ -32,7 +32,7 @@ class CreditServiceValidation(models.Model):
                 continue
 
             all_services = self.env["aaa.service"].search(
-                    [("customer_id", "=", record.partner_id.id),("sequence_id","=",record.category_id.id),("state","=","done"),("billing_state","=","not_billed")] 
+                    [("customer_id", "=", record.partner_id.id),("sequence_id","=",record.category_id.id),("state","=","done"),("invoice_state","=","not_invoiced")] 
                 )
             
             credit_services = {}
