@@ -64,7 +64,6 @@ class ResPartnerMemberAddons(models.Model):
                     record.invoice_ref_date = record.renewal_queue_data_ids[0].invoice_ref_date
                     record.delivery_ref_date = record.renewal_queue_data_ids[0].delivery_ref_date
                     record.card_type_id = record.renewal_queue_data_ids[0].card_type_id
-                    record.member_partner_category_id = record.renewal_queue_data_ids[0].member_partner_category_id
                     record.vehicle_chasis_no = record.renewal_queue_data_ids[0].vehicle_chasis_no
                     record.vehicle_plate = record.renewal_queue_data_ids[0].vehicle_plate
                     record.street = record.renewal_queue_data_ids[0].street
@@ -81,6 +80,7 @@ class ResPartnerMemberAddons(models.Model):
                 record.timeline_user_id = False
                 record.scheduled_on_date = False
                 record.renewal_in_queue = False
+                record.show_renewal_queue_data_page = False
                 record.renewal_queue_data_ids = [(5, 0, 0)]
 
     def cancel_renewal_in_queue(self):
@@ -102,6 +102,70 @@ class ResPartnerMemberAddons(models.Model):
             record.scheduled_on_date = False
             record.show_renewal_queue_data_page = False
             record.renewal_queue_data_ids = [(5, 0, 0)]
+
+    def manual_renewal_button(self):
+        for record in self:
+            if record.next_activation_date and record.next_expiry_date and record.next_product_template_id and record.timeline_user_id:
+
+                self.env['membership.history'].create({
+                    'name': record.name,  
+                    'parent_customer_id': record.parent_customer_id.id,
+                    'old_membership_number': record.old_membership_number,  
+                    'ref_num': record.ref_num,
+                    'member_partner_category_id': record.member_partner_category_id.id,
+                    'product_template_id': record.product_template_id.id,
+                    'member_type': record.member_type,
+                    'policy_no': record.policy_no,
+                    'vehicle_chasis_no': record.vehicle_chasis_no,
+                    'vehicle_plate': record.vehicle_plate,
+                    'vehicle_type': record.vehicle_type,
+                    'member_activate_date': record.member_activate_date,
+                    'member_expiry_date': record.member_expiry_date,
+                    'invoice_ref_date': record.invoice_ref_date,
+                    'card_type_id': record.card_type_id.id,
+                    'history_id': record.id
+                })
+
+                membership_timeline = {
+                    'member_id': record.id,
+                    'user': record.timeline_user_id.id,
+                    'time': fields.Datetime.now(),
+                    'status': '',
+                    'timeline_status': record.membership_state,
+                }
+
+                agent_group = self.env['res.groups'].search([('name', '=', 'Agent')], limit=1)
+                if agent_group and agent_group in record.timeline_user_id.groups_id:
+                    membership_timeline['status'] = 'Membership Renewed (Handled by Agent)'
+                    self.env['membership.timeline'].create(membership_timeline)
+                else:
+                    membership_timeline['status'] = 'Membership Renewed - Manual'
+                    self.env['membership.timeline'].create(membership_timeline)
+
+                if record.renewal_queue_data_ids:
+                    record.name = record.renewal_queue_data_ids[0].name
+                    record.policy_no = record.renewal_queue_data_ids[0].policy_no
+                    record.invoice_ref_date = record.renewal_queue_data_ids[0].invoice_ref_date
+                    record.delivery_ref_date = record.renewal_queue_data_ids[0].delivery_ref_date
+                    record.card_type_id = record.renewal_queue_data_ids[0].card_type_id
+                    record.vehicle_chasis_no = record.renewal_queue_data_ids[0].vehicle_chasis_no
+                    record.vehicle_plate = record.renewal_queue_data_ids[0].vehicle_plate
+                    record.street = record.renewal_queue_data_ids[0].street
+                    record.mobile = record.renewal_queue_data_ids[0].mobile
+                    record.remarks = record.renewal_queue_data_ids[0].remarks
+
+                record.member_activate_date = record.next_activation_date
+                record.member_expiry_date = record.next_expiry_date
+                record.product_template_id = record.next_product_template_id
+
+                record.next_activation_date = False
+                record.next_expiry_date = False
+                record.next_product_template_id = False 
+                record.timeline_user_id = False
+                record.scheduled_on_date = False
+                record.renewal_in_queue = False
+                record.show_renewal_queue_data_page = False
+                record.renewal_queue_data_ids = [(5, 0, 0)]
 
     def renewal_in_queue_edit_mode_on(self):
         for record in self:
