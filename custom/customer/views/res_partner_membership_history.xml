@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+    
+        <record id="membership_history_form" model="ir.ui.view">
+            <field name="name">membership.history.form</field>
+            <field name="model">membership.history</field>
+            <field name="arch" type="xml">
+                <form edit="false" create="false">
+                    <style>
+                        .o_form_view:not(.o_field_highlight)
+                        .o_field_widget:not(.o_field_invalid):not(.o_field_highlight)
+                        .o_input:not(:hover):not(:focus)
+                        {
+                        border-bottom: 1px solid #71639e2b;
+                        }
+                        .custom_field{
+                        background-color: #d2d2ff8f;
+                        border-radius: 5px;
+                        }
+                        .required_field{
+                        background-color: #b9a4ff29;
+                        }
+                    </style>
+    
+                    <sheet bgcolor="lightblue">
+                        
+                        <div class="oe_title">
+                            <!-- <h4>Name:</h4> -->
+                            <label for="name" string="Name" />
+                            <div>
+                                <field name="name" placeholder="Type.." class="required_field"
+                                    required="1" />
+                            </div>
+                            <!-- <h4>Company:</h4> -->
+                            <label for="parent_customer_id" string="Company" />
+                            <div>
+                                <field name="parent_customer_id" placeholder="select.."
+                                    class="required_field" required="1" style="width: 700px;"
+                                     />
+                            </div>
+                        </div>
+                        <br></br>
+                        <group col="3">
+                            <group>
+                                <!-- is_readonly Flag created when confirm is clicked to make fields
+                                readonly -->
+                                <field name="policy_no" string="Policy No" />
+                                <field name="vehicle_chasis_no" string="Vehicle Chasis No" />
+                                <field name="old_membership_number" />
+                                <field name="member_activate_date" date_format="%d/%m/%Y" />
+                                <field name="member_expiry_date"
+                                    date_format="%d/%m/%Y" widget="date" />
+                                <field name="card_type_id" />
+                                <field name="member_partner_category_id"  />
+                                <field name="member_type" widget="radio" readonly="1" />
+                            </group>
+                            <group>
+                                <field name="vehicle_type" string="Vehicle Type" />
+                                <!-- <field name="vehicle_model" string="Vehicle Model" /> -->
+                                <field name="vehicle_plate" string="Vehicle Plate" />
+                                <field name="invoice_ref_date" string="Invoice Date"
+                                    date_format="%d/%m/%Y" /> 
+                            </group>
+                            <group>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        <record id="membership_history_tree" model="ir.ui.view">
+            <field name="name">membership.history.tree</field>
+            <field name="model">membership.history</field>
+            <field name="arch" type="xml">
+                <tree string="Policy Members" default_order="create_date desc" create="false">
+                    <field name="create_date" string="Created Date" />
+                    <field name="parent_customer_id" />
+                    <field name="name" />
+                    <field name="old_membership_number" />
+                    <field name="ref_num" />
+                    <field name="member_partner_category_id" />
+                    <field name="product_template_id" />
+                    <field name="member_type" />
+                    <field name="vehicle_chasis_no" />
+                    <field name="vehicle_type" />
+                    <field name="vehicle_plate" />
+                    <field name="policy_no" />
+                    <field name="member_activate_date" />
+                    <field name="member_expiry_date" />
+                    <field name="invoice_ref_date" />
+                    <field name="card_type_id"
+                        options="{'no_create_edit':1}" />
+                </tree>
+            </field>
+        </record>
+
+        <record id="view_membership_history_search" model="ir.ui.view">
+            <field name="name">membership.history.search</field>
+            <field name="model">membership.history</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="create_date" string="Created Date" />
+                    <field name="parent_customer_id" />
+                    <field name="name" />
+                    <field name="old_membership_number" />
+                    <field name="ref_num" />
+                    <field name="member_partner_category_id" />
+                    <field name="product_template_id" />
+                    <field name="member_type" />
+                    <field name="vehicle_chasis_no" />
+                    <field name="vehicle_type" />
+                    <field name="vehicle_plate" />
+                    <field name="policy_no" />
+                    <field name="member_activate_date" />
+                    <field name="member_expiry_date" />
+                    <field name="invoice_ref_date" />
+                    <field name="card_type_id" />
+
+                </search>
+            </field>
+        </record>
+
+        <record id="action_membership_history" model="ir.actions.act_window">
+            <field name="name">Membership History</field>
+            <field name="res_model">membership.history</field>
+            <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="view_membership_history_search" />
+            <field name="view_ids"
+                eval="[
+          (5, 0, 0),
+          (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.membership_history_tree')}),
+          (0, 0, {'view_mode': 'form', 'view_id': ref('customer.membership_history_form')})
+        ]">
+            </field>
+        </record>
+
+        <menuitem id="menu_membership_history" name="Membership History" parent="menu_member"
+            action="action_membership_history" sequence="11" />
+
+    </data>
+    
+
+</odoo>
