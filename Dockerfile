@@ -6,7 +6,7 @@ ENV ODOO_VERSION 17.0
 ENV ODOO_HOME /opt/odoo
 ENV ODOO_USER odoo
 
-# Install build dependencies and wkhtmltopdf dependencies
+# Install build dependencies
 RUN apt-get update \
     && apt-get install -y \
         build-essential \
@@ -34,25 +34,19 @@ RUN apt-get update \
         wkhtmltopdf \
     && rm -rf /var/lib/apt/lists/*
 
-# Add Odoo system user
+
+# Create Odoo user
 RUN adduser --system --home=$ODOO_HOME --group $ODOO_USER
 
-# Copy Odoo source code and custom modules
 COPY . $ODOO_HOME
 
-# Copy custom font to system font directory
-COPY custom/customer/static/src/fonts/Roboto-Regular.ttf /usr/share/fonts/truetype/Roboto-Regular.ttf
-
-# Rebuild font cache
-RUN fc-cache -fv
-
-# Switch to Odoo directory
+# Switch to the Odoo directory
 WORKDIR $ODOO_HOME
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Set ownership permissions
+# Set permissions
 RUN chown -R $ODOO_USER:$ODOO_USER $ODOO_HOME
 
 # Expose Odoo port
@@ -63,3 +57,5 @@ USER $ODOO_USER
 
 # Set the entrypoint
 CMD ["python", "odoo-bin", "-c", "odoo.conf"]
+
+
