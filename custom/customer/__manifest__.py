@@ -14,7 +14,7 @@
             '/customer/static/src/js/realtime_updates.js',
         ],
         'web.report_assets_common': [
-            '/customer/static/src/css/fonts.css',
+            # '/customer/static/src/css/fonts.css',
         ],
     },
     'author': 'Sasoft',
