@@ -45,7 +45,7 @@
                         }
                     </style>
                     <div class="dashboard-container">
-                        <div class="dashboard-box purple">Total Services: <span><field name="total_count"/></span></div>
+                        <div class="dashboard-box purple">Today's Services: <span><field name="total_count"/></span></div>
                         <div class="dashboard-box success">Services Completed: <span><field name="done_count"/></span></div>
                         <div class="dashboard-box danger">Services Cancelled: <span><field name="cancelled_count"/></span></div>
                         <div class="dashboard-box warning">Driver Reached and Cancelled: <span><field name="driver_cancel_reach_count"/></span></div>
