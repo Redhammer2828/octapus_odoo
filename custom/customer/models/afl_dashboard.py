@@ -1,4 +1,5 @@
 from odoo import models, fields, api
+from datetime import datetime, time
 
 class AFLServiceDashboard(models.Model):
     _name = 'afl.dashboard'
@@ -27,11 +28,15 @@ class AFLServiceDashboard(models.Model):
     initiate_count = fields.Integer(string="Services Initiated", compute='_compute_service_counts')
     progress_count = fields.Integer(string="Services in Progress", compute='_compute_service_counts')
 
+    start_today = datetime.combine(fields.Date.today(), time.min)
+    end_today = datetime.combine(fields.Date.today(), time.max)
+
     @api.depends('state')
     def _compute_service_counts(self):
         Service = self.env['aaa.service']  # Reference to the 'aaa.service' model
         # Define the additional filter for 'customer_id'
-        customer_filter = [('customer_id', '=', 'AL FUTTAIM LOGISTICS AUTOMOTIVE COMPANY L.L.C')]
+        # customer_filter = [('customer_id', '=', 'AL FUTTAIM LOGISTICS AUTOMOTIVE COMPANY L.L.C')]
+        customer_filter = [('customer_id', '=', 'AL FUTTAIM LOGISTICS AUTOMOTIVE COMPANY L.L.C'), ('service_time', '>=', self.start_today), ('service_time', '<=', self.end_today)]
 
         # Apply the new filter along with existing conditions in search_count
         self.total_count = Service.search_count(customer_filter)
