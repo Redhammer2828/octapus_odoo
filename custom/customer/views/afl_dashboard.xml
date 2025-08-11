@@ -45,13 +45,13 @@
                         }
                     </style>
                     <div class="dashboard-container">
-                        <div class="dashboard-box purple">Today's Services: <span><field name="total_count"/></span></div>
-                        <div class="dashboard-box success">Services Completed: <span><field name="done_count"/></span></div>
-                        <div class="dashboard-box danger">Services Cancelled: <span><field name="cancelled_count"/></span></div>
-                        <div class="dashboard-box warning">Driver Reached and Cancelled: <span><field name="driver_cancel_reach_count"/></span></div>
-                        <div class="dashboard-box purple">Open Services: <span><field name="open_count"/></span></div>
-                        <div class="dashboard-box">Services Initiated: <span><field name="initiate_count"/></span></div>
-                        <div class="dashboard-box purple">Services in Progress: <span><field name="progress_count"/></span></div>
+                        <button name="action_afl_dashboard_total" type="object" class="dashboard-box purple">Today's Services: <span><field name="total_count"/></span></button>
+                        <button name="action_afl_dashboard_completed" type="object" class="dashboard-box success">Services Completed: <span><field name="done_count"/></span></button>
+                        <button name="action_afl_dashboard_cancelled" type="object" class="dashboard-box danger">Services Cancelled: <span><field name="cancelled_count"/></span></button>
+                        <button name="action_afl_dashboard_driver_cancel_reach" type="object" class="dashboard-box warning">Driver Reached and Cancelled: <span><field name="driver_cancel_reach_count"/></span></button>
+                        <!-- <div class="dashboard-box purple">Open Services: <span><field name="open_count"/></span></div> -->
+                        <button name="action_afl_dashboard_initiated" type="object" class="dashboard-box">Services Initiated: <span><field name="initiate_count"/></span></button>
+                        <!-- <div class="dashboard-box purple">Services in Progress: <span><field name="progress_count"/></span></div> -->
                     </div>
                     <group string="Service Details" invisible='1'>
                         <field name="comment_text"/>
