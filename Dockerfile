@@ -1,5 +1,5 @@
 # Use a base image with Python and necessary build tools
-FROM python:3.10-slim AS builder
+FROM python:3.10 AS builder
 
 # Set environment variables
 ENV ODOO_VERSION 17.0
@@ -31,9 +31,7 @@ RUN apt-get update \
         libxext6 \
         libxrender1 \
         zlib1g \
-    && wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_amd64.deb \
-    && apt install -f ./wkhtmltox_0.12.6-1.buster_amd64.deb \
-    && rm wkhtmltox_0.12.6-1.buster_amd64.deb \
+        wkhtmltopdf \
     && rm -rf /var/lib/apt/lists/*
 
 
