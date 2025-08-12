@@ -31,7 +31,9 @@ RUN apt-get update \
         libxext6 \
         libxrender1 \
         zlib1g \
-        wkhtmltopdf \
+    && wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_amd64.deb \
+    && apt install -y ./wkhtmltox_0.12.6-1.buster_amd64.deb \
+    && rm wkhtmltox_0.12.6-1.buster_amd64.deb \
     && rm -rf /var/lib/apt/lists/*
 
 
