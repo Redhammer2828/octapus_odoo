@@ -194,7 +194,7 @@
                     </main>
                 </div>
                 <t t-if="docs.invoice_line_type == 'consolidated' and docs.member_type == 'credit'">
-                    <div style="page-break-before: always; font-family: 'Roboto-Regular';">
+                    <div style="page-break-before: always; font-family: 'Roboto-Regular-Custom';">
                         <div style="text-align: right; margin-bottom: 10px; padding-right: 10px;">
                             <div style="text-align: right; margin-bottom: 5px;">
                                 <img t-attf-src="data:image/*;base64, #{res_company.logo}" alt="Company Logo" style="max-width: 150px; height: auto;"/>
@@ -284,7 +284,7 @@
                 </t>
 
                 <t t-if="docs.invoice_line_type == 'consolidated' and docs.member_type == 'policy'">
-                    <div style="page-break-before: always; font-family: 'Roboto-Regular';">
+                    <div style="page-break-before: always; font-family: 'Roboto-Regular-Custom';">
                         <div style="text-align: right; margin-bottom: 10px; padding-right: 10px;">
                             <div style="text-align: right; margin-bottom: 5px;">
                                 <img t-attf-src="data:image/*;base64, #{res_company.logo}" alt="Company Logo" style="max-width: 150px; height: auto;"/>
