@@ -31,7 +31,6 @@ RUN apt-get update \
         libxext6 \
         libxrender1 \
         zlib1g \
-        wkhtmltopdf \
         fonts-liberation \
         fonts-dejavu \
         fonts-urw-base35 \
@@ -39,6 +38,12 @@ RUN apt-get update \
         xfonts-base \
     && rm -rf /var/lib/apt/lists/*
 
+RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_amd64.deb \
+    && apt install -y ./wkhtmltox_0.12.6-1.buster_amd64.deb \
+    && rm wkhtmltox_0.12.6-1.buster_amd64.deb
+
+# Refresh font cache
+RUN fc-cache -fv
 
 # Create Odoo user
 RUN adduser --system --home=$ODOO_HOME --group $ODOO_USER
