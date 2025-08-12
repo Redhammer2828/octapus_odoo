@@ -38,7 +38,7 @@ RUN apt-get update \
 # Create Odoo user
 RUN adduser --system --home=$ODOO_HOME --group $ODOO_USER
 
-COPY . $ODOO_HOME
+COPY requirements.txt $ODOO_HOME/
 
 # Switch to the Odoo directory
 WORKDIR $ODOO_HOME
@@ -46,6 +46,7 @@ WORKDIR $ODOO_HOME
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+COPY . $ODOO_HOME
 # Set permissions
 RUN chown -R $ODOO_USER:$ODOO_USER $ODOO_HOME
 
