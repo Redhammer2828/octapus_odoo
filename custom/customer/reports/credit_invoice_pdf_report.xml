@@ -17,7 +17,7 @@
     <template id="report_credit_invoice_pdf">
         <t t-name="tax_invoice_template">
             <t t-call="web.basic_layout">
-                <div class="page" style="font-family: 'Roboto';">
+                <div class="page" style="font-family: 'Roboto-Regular-Custom';">
                     <style>
                         .header, .footer {
                             display: none !important;
