@@ -1,5 +1,5 @@
 # Use a base image with Python and necessary build tools
-FROM python:3.10-slim AS builder
+FROM python:3.10-bullseye AS builder
 
 # Set environment variables
 ENV ODOO_VERSION 17.0
@@ -38,9 +38,9 @@ RUN apt-get update \
         xfonts-base \
     && rm -rf /var/lib/apt/lists/*
 
-RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_amd64.deb \
-    && apt install -y ./wkhtmltox_0.12.6-1.buster_amd64.deb \
-    && rm wkhtmltox_0.12.6-1.buster_amd64.deb
+RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-2/wkhtmltox_0.12.6.1-2.bullseye_amd64.deb \
+    && apt install -y ./wkhtmltox_0.12.6.1-2.bullseye_amd64.deb \
+    && rm wkhtmltox_0.12.6.1-2.bullseye_amd64.deb
 
 # Refresh font cache
 RUN fc-cache -fv
