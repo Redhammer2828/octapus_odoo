@@ -32,6 +32,11 @@ RUN apt-get update \
         libxrender1 \
         zlib1g \
         wkhtmltopdf \
+        fonts-liberation \
+        fonts-dejavu \
+        fonts-urw-base35 \
+        xfonts-75dpi \
+        xfonts-base \
     && rm -rf /var/lib/apt/lists/*
 
 
