@@ -1,5 +1,5 @@
 # Use a base image with Python and necessary build tools
-FROM python:3.10 AS builder
+FROM python:3.10-slim AS builder
 
 # Set environment variables
 ENV ODOO_VERSION 17.0
