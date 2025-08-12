@@ -124,13 +124,13 @@ class CreditValidationXlsx(models.AbstractModel):
         for line in lines:
             for rec in line.service_line_ids:
                 sheet.write(row, 0, rec.service_date or '', date_format)
-                sheet.write(row, 1, rec.service_number or '')
+                sheet.write(row, 1, rec.service_number_id.name or '')
                 sheet.write(row, 2, rec.trip_sheet_number or '')
                 sheet.write(row, 3, rec.vehicle_model or '')
                 sheet.write(row, 4, rec.vehicle_plate or '')
-                sheet.write(row, 5, rec.service_product or '')
-                sheet.write(row, 6, rec.from_location or '')
-                sheet.write(row, 7, rec.to_location or '')
+                sheet.write(row, 5, rec.service_product_id.name or '')
+                sheet.write(row, 6, rec.from_location_id.name or '')
+                sheet.write(row, 7, rec.to_location_id.name or '')
                 
                 if has_rental_car:
                     # Add rental car specific columns

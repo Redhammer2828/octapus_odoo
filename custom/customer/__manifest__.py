@@ -27,6 +27,7 @@
         'reports/reports.xml',
         'views/res_partner_customer.xml',
         'views/res_partner_member.xml',
+        'views/res_partner_membership_history.xml',
         'views/res_partner_member_renewal_queue.xml',
         'views/res_partner_member_temp.xml',
         'views/res_partner_member_cancel.xml',
