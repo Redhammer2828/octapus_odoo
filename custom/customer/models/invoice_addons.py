@@ -194,14 +194,14 @@ class AccountMove(models.Model):
                     amount = self.env["product.pricelist.item"].search([('product_tmpl_id','=',product_id), ('pricelist_id','=',record.partner_id.property_product_pricelist_id.id)])
 
                     policy_memberships[rec.id] = {
-                        'membership_no': rec.old_membership_number or rec.ref_num or '',
-                        'name': rec.name or '',
-                        'plate_no': rec.vehicle_plate or '',
-                        'chasis_no': rec.vehicle_chasis_no or '',
-                        'policy_no': rec.policy_no or '',
-                        'start_date': rec.member_activate_date if rec.member_activate_date else '',
-                        'expiry_date': rec.member_expiry_date if rec.member_expiry_date else '',
-                        'car_make': rec.vehicle_type or '',
+                        'membership_no': rec.old_membership_number or rec.ref_num or False,
+                        'name': rec.name or False,
+                        'plate_no': rec.vehicle_plate or False,
+                        'chasis_no': rec.vehicle_chasis_no or False,
+                        'policy_no': rec.policy_no or False,
+                        'start_date': rec.member_activate_date if rec.member_activate_date else False,
+                        'expiry_date': rec.member_expiry_date if rec.member_expiry_date else False,
+                        'car_make': rec.vehicle_type or False,
                         'amount': amount.fixed_price,
                     } 
 
