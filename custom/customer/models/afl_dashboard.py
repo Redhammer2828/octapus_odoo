@@ -28,8 +28,21 @@ class AFLServiceDashboard(models.Model):
     initiate_count = fields.Integer(string="Services Initiated", compute='_compute_service_counts')
     progress_count = fields.Integer(string="Services in Progress", compute='_compute_service_counts')
 
-    start_today = datetime.combine(fields.Date.today(), time.min)
-    end_today = datetime.combine(fields.Date.today(), time.max)
+    #start_today = datetime.combine(fields.Date.today(), time.min)
+    #end_today = datetime.combine(fields.Date.today(), time.max)
+
+    start_today = fields.Datetime(compute='_compute_today_start')
+    end_today = fields.Datetime(compute='_compute_today_end')
+
+    @api.depends()
+    def _compute_today_start(self):
+        for record in self:
+            record.start_today = datetime.combine(fields.Date.today(), time.min)
+
+    @api.depends()
+    def _compute_today_end(self):
+        for record in self:
+            record.end_today = datetime.combine(fields.Date.today(), time.max)
 
     @api.depends('state')
     def _compute_service_counts(self):
