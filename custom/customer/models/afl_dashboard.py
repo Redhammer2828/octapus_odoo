@@ -1,10 +1,13 @@
 from odoo import models, fields, api
 from datetime import datetime, time
+from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
+from pytz import timezone, UTC  # pytz is available in Odoo
 
 class AFLServiceDashboard(models.Model):
     _name = 'afl.dashboard'
     _description = 'AFL Service Dashboard'
 
+    name = fields.Char(string="Name", default="AFL")
     job_ref = fields.Char(string="Job Ref No")
     ser_id = fields.Char(string="Service ID")
     state = fields.Selection([
@@ -28,28 +31,43 @@ class AFLServiceDashboard(models.Model):
     initiate_count = fields.Integer(string="Services Initiated", compute='_compute_service_counts')
     progress_count = fields.Integer(string="Services in Progress", compute='_compute_service_counts')
 
-    #start_today = datetime.combine(fields.Date.today(), time.min)
-    #end_today = datetime.combine(fields.Date.today(), time.max)
+    def today_utc_bounds(self):
+        # Get user's timezone or fallback to UTC
+        tz_name = self.env.user.tz or 'UTC'
+        tz = timezone(tz_name)
 
-    start_today = fields.Datetime(compute='_compute_today_start')
-    end_today = fields.Datetime(compute='_compute_today_end')
+        # Today's date in that timezone
+        today_local_date = datetime.now(tz).date()
 
-    @api.depends()
-    def _compute_today_start(self):
-        for record in self:
-            record.start_today = datetime.combine(fields.Date.today(), time.min)
+        # Start and end of local day
+        start_local = tz.localize(datetime.combine(today_local_date, time.min))
+        end_local = tz.localize(datetime.combine(today_local_date, time(23, 59, 59)))
 
-    @api.depends()
-    def _compute_today_end(self):
-        for record in self:
-            record.end_today = datetime.combine(fields.Date.today(), time.max)
+        # Convert to UTC-aware datetimes
+        start_utc = start_local.astimezone(UTC)
+        end_utc = end_local.astimezone(UTC)
+
+        # If you need strings in server format for search domains:
+        return (
+            start_utc.strftime(DEFAULT_SERVER_DATETIME_FORMAT),
+            end_utc.strftime(DEFAULT_SERVER_DATETIME_FORMAT),
+        )
+
 
     @api.depends('state')
     def _compute_service_counts(self):
         Service = self.env['aaa.service']  # Reference to the 'aaa.service' model
         # Define the additional filter for 'customer_id'
-        # customer_filter = [('customer_id', '=', 'AL FUTTAIM LOGISTICS AUTOMOTIVE COMPANY L.L.C')]
-        customer_filter = [('customer_id', '=', 'AL FUTTAIM LOGISTICS AUTOMOTIVE COMPANY L.L.C'), ('service_time', '>=', self.start_today), ('service_time', '<=', self.end_today)]
+        # customer_filter = [('customer_id', '=', 'AL FUTTAIM LOGISTICS AUTOMOTIVE COMPANY L.L.C')].
+
+        start_utc_str, end_utc_str = self.today_utc_bounds()
+
+        print(f"Start of day {start_utc_str}")
+        print(f"End of day {end_utc_str}")
+
+        # customer_filter = [('customer_id', '=', 'AL FUTTAIM LOGISTICS AUTOMOTIVE COMPANY L.L.C'), ('service_time', '>=', start_utc_str), ('service_time', '<=', end_utc_str)]
+
+        customer_filter = [('is_afl_application', '=', True), ('service_time', '>=', start_utc_str), ('service_time', '<=', end_utc_str)]
 
         # Apply the new filter along with existing conditions in search_count
         self.total_count = Service.search_count(customer_filter)
@@ -69,6 +87,8 @@ class AFLServiceDashboard(models.Model):
 
     def action_afl_dashboard_total(self):
 
+        start_utc_str, end_utc_str = self.today_utc_bounds()
+
         return {
             'type': 'ir.actions.act_window',
             'name': "Today's Services",
@@ -76,9 +96,9 @@ class AFLServiceDashboard(models.Model):
             'view_mode': 'tree',
             'view_id': self.env.ref('customer.view_aaa_service_tree').id,
             'domain': [
-                ('customer_id', '=', 'AL FUTTAIM LOGISTICS AUTOMOTIVE COMPANY L.L.C'),
-                ('service_time', '>=', self.start_today),
-                ('service_time', '<=', self.end_today)
+                ('is_afl_application', '=', True),
+                ('service_time', '>=', start_utc_str),
+                ('service_time', '<=', end_utc_str)
             ],
             'context': {
                 'create': False,
@@ -88,6 +108,8 @@ class AFLServiceDashboard(models.Model):
     
     def action_afl_dashboard_completed(self):
 
+        start_utc_str, end_utc_str = self.today_utc_bounds()
+
         return {
             'type': 'ir.actions.act_window',
             'name': "Today's Services",
@@ -95,9 +117,9 @@ class AFLServiceDashboard(models.Model):
             'view_mode': 'tree',
             'view_id': self.env.ref('customer.view_aaa_service_tree').id,
             'domain': [
-                ('customer_id', '=', 'AL FUTTAIM LOGISTICS AUTOMOTIVE COMPANY L.L.C'),
-                ('service_time', '>=', self.start_today),
-                ('service_time', '<=', self.end_today),
+                ('is_afl_application', '=', True),
+                ('service_time', '>=', start_utc_str),
+                ('service_time', '<=', end_utc_str),
                 ('state', '=', 'done'),
 
             ],
@@ -109,6 +131,8 @@ class AFLServiceDashboard(models.Model):
     
     def action_afl_dashboard_cancelled(self):
 
+        start_utc_str, end_utc_str = self.today_utc_bounds()
+
         return {
             'type': 'ir.actions.act_window',
             'name': "Today's Services",
@@ -116,9 +140,9 @@ class AFLServiceDashboard(models.Model):
             'view_mode': 'tree',
             'view_id': self.env.ref('customer.view_aaa_service_tree').id,
             'domain': [
-                ('customer_id', '=', 'AL FUTTAIM LOGISTICS AUTOMOTIVE COMPANY L.L.C'),
-                ('service_time', '>=', self.start_today),
-                ('service_time', '<=', self.end_today),
+                ('is_afl_application', '=', True),
+                ('service_time', '>=', start_utc_str),
+                ('service_time', '<=', end_utc_str),
                 ('state', '=', 'cancel'),
             ],
             'context': {
@@ -129,6 +153,8 @@ class AFLServiceDashboard(models.Model):
     
     def action_afl_dashboard_driver_cancel_reach(self):
 
+        start_utc_str, end_utc_str = self.today_utc_bounds()
+
         return {
             'type': 'ir.actions.act_window',
             'name': "Today's Services",
@@ -136,9 +162,9 @@ class AFLServiceDashboard(models.Model):
             'view_mode': 'tree',
             'view_id': self.env.ref('customer.view_aaa_service_tree').id,
             'domain': [
-                ('customer_id', '=', 'AL FUTTAIM LOGISTICS AUTOMOTIVE COMPANY L.L.C'),
-                ('service_time', '>=', self.start_today),
-                ('service_time', '<=', self.end_today),
+                ('is_afl_application', '=', True),
+                ('service_time', '>=', start_utc_str),
+                ('service_time', '<=', end_utc_str),
                 ('state', '=', 'driver_cancel_reach'),
             ],
             'context': {
@@ -149,6 +175,8 @@ class AFLServiceDashboard(models.Model):
     
     def action_afl_dashboard_initiated(self):
 
+        start_utc_str, end_utc_str = self.today_utc_bounds()
+
         return {
             'type': 'ir.actions.act_window',
             'name': "Today's Services",
@@ -156,9 +184,9 @@ class AFLServiceDashboard(models.Model):
             'view_mode': 'tree',
             'view_id': self.env.ref('customer.view_aaa_service_tree').id,
             'domain': [
-                ('customer_id', '=', 'AL FUTTAIM LOGISTICS AUTOMOTIVE COMPANY L.L.C'),
-                ('service_time', '>=', self.start_today),
-                ('service_time', '<=', self.end_today),
+                ('is_afl_application', '=', True),
+                ('service_time', '>=', start_utc_str),
+                ('service_time', '<=', end_utc_str),
                 ('state', '=', 'initiate'),
             ],
             'context': {
