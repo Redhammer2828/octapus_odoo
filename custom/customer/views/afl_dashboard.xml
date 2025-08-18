@@ -4,7 +4,7 @@
         <field name="name">afl.dashboard.form</field>
         <field name="model">afl.dashboard</field>
         <field name="arch" type="xml">
-            <form string="AFL Service Dashboard">
+            <form string="AFL Service Dashboard" create="0">
                 <header>
                     <div class="o_form_label" style="font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #71639e;">AFL Service Dashboard</div>
                 </header>
