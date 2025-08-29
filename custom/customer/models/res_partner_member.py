@@ -641,8 +641,8 @@ class ResPartnerMembers(models.Model):
         card_type_name = card_type.name
 
         # Fetch the res.partner record directly by name
-        partner = self.env['res.partner'].search([('name', '=', self.name),('vehicle_chasis_no','=',self.vehicle_chasis_no)], limit=1)
-        print("DEBUG: Partner fetched:", partner)
+        # partner = self.env['res.partner'].search([('name', '=', self.name),('vehicle_chasis_no','=',self.vehicle_chasis_no)], limit=1)
+        # print("DEBUG: Partner fetched:", partner)
 
         # Pre-create the aaa.service record with the fetched partner ID
         service_vals = {
@@ -657,11 +657,13 @@ class ResPartnerMembers(models.Model):
             'policy_no': self.policy_no,
             # 'product_id': self.service_ids.id,
             'member_type': self.member_type,
-            'member_id': partner.id if partner else False,  # Directly assign partner ID here
+            # 'member_id': partner.id if partner else False,  # Directly assign partner ID here
+            'member_id': self.id,
             'member_activate_date': self.member_activate_date,
             'member_expiry_date': self.member_expiry_date,
             'type': 'non_cash',
-            'is_member_from_partner': bool(partner),
+            # 'is_member_from_partner': bool(partner),
+            'is_member_from_partner': True,
             'is_customer_from_partner': bool(self.parent_customer_id),
             'is_sequence_from_partner': bool(self.member_partner_category_id),
             }
@@ -830,6 +832,10 @@ class ResPartnerMembers(models.Model):
         card_type_id = fields.Many2one('card.type', string='Card Type')
         history_id = fields.Many2one('res.partner', string="Replaced Member")
         ref_num = fields.Char(string='Membership Number')
+        invoice_state = fields.Selection([
+        ('not_invoiced', 'Not Invoiced'),
+        ('invoiced', 'Invoiced'),
+        ], string="Invoice Status", readonly=True, default='not_invoiced')
 
     class MembershipTimeline(models.Model):
         _name = 'membership.timeline'
