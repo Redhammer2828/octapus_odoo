@@ -170,10 +170,11 @@ class DataUploadFile(models.Model):
                         member_line.if_conf_match = member.id
                         db_expiry_date = fields.Date.from_string(member.member_expiry_date)
                         db_next_expiry_date = fields.Date.from_string(member.next_expiry_date)
-                        difference = (expiry_date - db_expiry_date).days
 
                         expiry_date = fields.Date.from_string(member_line.member_expiry_date) 
                         activate_date = fields.Date.from_string(member_line.member_activate_date)
+
+                        difference = (expiry_date - db_expiry_date).days
 
                         if expiry_date < activate_date:
                             member_line.update({
