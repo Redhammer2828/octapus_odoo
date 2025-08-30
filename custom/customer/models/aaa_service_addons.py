@@ -50,33 +50,6 @@ class AAAServiceAddons(models.Model):
     location_to_longitude = fields.Char(string="To Longitude")
     emirate_to_location = fields.Char(string="Emirate To")
 
-    # # service_time = fields.Datetime(string="Service Time")
-    # is_today_service_time = fields.Boolean(string="Is Today", compute="_compute_is_today_service_time", store=True)
-
-    # @api.depends('service_time')
-    # def _compute_is_today_service_time(self):
-    #     for rec in self:
-    #         if rec.service_time:
-    #             user_tz = self.env.user.tz or 'UTC'
-    #             service_dt = fields.Datetime.context_timestamp(rec.with_context(tz=user_tz), rec.service_time)
-    #             today = fields.Date.context_today(rec)
-    #             rec.is_today_service_time = (service_dt.date() == today)
-    #         else:
-    #             rec.is_today_service_time = False
-
-
-    @api.depends('location_from_external')
-    def compute_location_suggestion_from(self):
-        for record in self:
-            selected_from_location = self.env['location.suggestion'].create({'name': record.location_from_external})
-            record.selected_from_location = selected_from_location
-
-
-    @api.depends('location_to_external')
-    def compute_location_suggestion_to(self):
-        for record in self:
-            selected_to_location = self.env['location.suggestion'].create({'name': record.location_to_external})
-            record.selected_to_location = selected_to_location
 
 
     def write(self, vals):
