@@ -24,13 +24,6 @@ class AAAServiceAddons(models.Model):
     service_from_app = fields.Boolean(string="Service From App", default=False)
     driver_comment = fields.Text(string="Driver Comment")
     garage_driver_comment = fields.Text(string="Garage Driver Comment")
-    invoice_state = fields.Selection([
-        ('not_invoiced', 'Not Invoiced'),
-        ('invoiced', 'Invoiced'),
-        ], string="Invoice Status", readonly=True, default='not_invoiced')
-    invoiced_by = fields.Many2one('res.users', string="Invoiced By")
-    invoiced_date = fields.Date(string="Invoiced Date")
-    invoice_id = fields.Many2one('account.move', string="Invoice Number")
 
     # # Regular char fields for storing the selected locations
     # location_from = fields.Char(string="Location From")
