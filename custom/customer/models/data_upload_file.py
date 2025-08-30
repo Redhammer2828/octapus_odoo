@@ -146,19 +146,35 @@ class DataUploadFile(models.Model):
             if member_line.customer_code == parent_customer_code:
                 if member.name == member_line.member_name:
                     if member.membership_state == 'temp':
+                        ex_expiry_date = fields.Date.from_string(member_line.member_expiry_date)
+                        ex_activation_date = fields.Date.from_string(member_line.member_activate_date)
+                        db_expiry_date = fields.Date.from_string(member.member_expiry_date)
+                        db_activation_date = fields.Date.from_string(member.member_activate_date) 
+
+                        if ex_expiry_date == db_expiry_date:
+                            member_line.update({
+                            'upload_member_status': 'exist_temp',
+                            'comment': "Name Matched,Exist Under Temp,*Overwrite - Expiry and activation are Same"
+                            })
+                        else:
+                            member_line.update({
+                            'upload_member_status': 'exist_temp',
+                            'comment': "Name Matched,Exist Under Temp,*Overwrite - Expiry and activation are not Equal"
+                            })
                         member_line.update({
                             'upload_member_status': 'exist_temp',
-                            'comment': "Exist Under Temp,*Overwrite"
+                            'comment': "Name Matched,Exist Under Temp,*Overwrite"
                         })
                         member_line.if_temp_match = member.id
                     elif member.membership_state == 'confirm':
                         member_line.if_conf_match = member.id
-                        expiry_date = fields.Date.from_string(member_line.member_expiry_date)
                         db_expiry_date = fields.Date.from_string(member.member_expiry_date)
                         db_next_expiry_date = fields.Date.from_string(member.next_expiry_date)
                         difference = (expiry_date - db_expiry_date).days
 
+                        expiry_date = fields.Date.from_string(member_line.member_expiry_date) 
                         activate_date = fields.Date.from_string(member_line.member_activate_date)
+
                         if expiry_date < activate_date:
                             member_line.update({
                                 'upload_member_status': 'rejection',
@@ -213,21 +229,28 @@ class DataUploadFile(models.Model):
                         if member.membership_state == 'temp':
                             member_line.update({
                                 'upload_member_status': 'exist_temp',
-                                'comment': "Exist Under Temp,*Overwrite"
+                                'comment': "Member Name missmatch ,Policy Number Matched, Exist Under Temp,*Overwrite"
                             })
                             member_line.if_temp_match = member.id
                         else:
                             member_line.update({
                                 'upload_member_status': 'replace',
-                                'comment': "Member Replaced"
-                            })
+                                'comment': "Member name missmatch,Policy no. matched, Exist Under Confirmed, *Cacelling old-Member Replaced"
+                            }) # OVERWRITE
                             member_line.if_rep_match = member.id
                     else:
-                        member_line.update({
-                            'upload_member_status': 'replace',
-                            'comment': "Member Replaced"
-                        })
-                        member_line.if_rep_match = member.id
+                        if member.membership_state == 'temp':
+                            member_line.update({
+                                'upload_member_status': 'exist_temp',
+                                'comment': "Member name & Policy no. not matched, Exist Under Temp,*Overwrite"
+                            })
+                            member_line.if_temp_match = member.id
+                        else:
+                            member_line.update({
+                                'upload_member_status': 'replace',
+                                'comment': "Member name & Policy no. not matched,Exist Under Confirmed, *Cacelling old-Member Replaced"
+                            }) # OVERWRITE
+                            member_line.if_rep_match = member.id
             else:
                 other_partner = self.env['res.partner'].search([
                     ('vehicle_chasis_no', '=', excel_chassis_no),
@@ -258,7 +281,7 @@ class DataUploadFile(models.Model):
             if excel_chassis_no in ['NAN', '']:
                 member_line.update({
                     'upload_member_status': 'rejection',
-                    'comment': "*Vehicle Chasis Number Does Not Exist!"
+                    'comment': "*EMPTY in Vehicle Chasiss Number"
                 })
             else:
                 member_line.update({
@@ -409,6 +432,13 @@ class DataUploadFile(models.Model):
                             'status': f'Membership Renewal in Queue - Bulk Upload (Activation Date: {member_line.member_activate_date}, Expiry Date: {member_line.member_expiry_date})',
                             'timeline_status': 'confirm',
                         })
+                        self.env['membership.timeline'].create({
+                            'member_id': matching_partner.id,
+                            'user': self.env.user.id,
+                            'time': fields.Datetime.now(),
+                            'status': 'Renewal in Que via Upload',
+                            'timeline_status': 'confirm',
+                        })
 
                 # Handle 'renewal' or 'update' status
                 elif member_line.upload_member_status in ['renewal']:
@@ -438,6 +468,7 @@ class DataUploadFile(models.Model):
                             'card_type_id': matching_partner.card_type_id.id,
                             'history_id': matching_partner.id,
                             'product_template_id': matching_partner.product_template_id.id,
+                            
                         })
                         self.env['membership.timeline'].create({
                             'member_id': matching_partner.id,
@@ -460,14 +491,6 @@ class DataUploadFile(models.Model):
                         else:
                             # Update card_type with the found record
                             _logger.info(f"Updating partner {matching_partner.name} with CARD {card_type_record.id}")
-
-                        # category_record = self.env['partner.category'].search([('name', '=', member_line.sequence_code)], limit=1)
-                        # if not category_record:
-                        #     _logger.warning(f"No CATEGORY found for MEMBER: {member_line.sequence_code}")
-                        # else:
-                        #     # Update category with the found record
-                        #     _logger.info(f"Updating partner {matching_partner.name} with CATEGORY {category_record.id}")
-                        # Assuming 'partner_id' is the field name in the 'partner.category' model that refers to 'res.partner'
                         
                         category_record = self.env['partner.category'].search([
                             ('name', '=', member_line.sequence_code),
@@ -492,15 +515,10 @@ class DataUploadFile(models.Model):
                             'product_template_id': package_record.id,
                             'card_type_id' : card_type_record.id,
                             'member_partner_category_id': category_record.id,
-                            # 'vehicle_type': member_line.vehicle_type,
-                            # 'vehicle_model': member_line.vehicle_model,
-                            # 'vehicle_mfg_year': member_line.vehicle_mfg_year,
-                            # 'vehicle_plate': member_line.vehicle_plate,
                             'vehicle_chasis_no': member_line.vehicle_chasis_no,
                             'street': member_line.street,
                             'mobile': member_line.mobile,
-                            'remarks': member_line.remarks,
-                            
+                            'remarks': member_line.remarks,     
                         })
                 elif member_line.upload_member_status in ['update']:
                     matching_partner = self.env['res.partner'].browse(member_line.if_conf_match)
@@ -509,7 +527,6 @@ class DataUploadFile(models.Model):
                             'membership_state': 'cancel',
                             'comment': 'Member Extended the policy',
                         })
-
                         self.env['membership.history'].create({
                             'policy_no': matching_partner.policy_no,
                             'parent_customer_id' : matching_partner.parent_customer_id.id,
@@ -517,11 +534,7 @@ class DataUploadFile(models.Model):
                             'old_membership_number': matching_partner.old_membership_number,
                             'ref_num': matching_partner.ref_num,
                             'member_partner_category_id': matching_partner.member_partner_category_id.id,
-                            'member_type': matching_partner.member_type,
-                            # 'vehicle_plate': matching_partner.vehicle_plate,
                             'vehicle_chasis_no': matching_partner.vehicle_chasis_no,
-                            # 'vehicle_type': matching_partner.vehicle_type,
-                            # 'vehicle_plate': matching_partner.vehicle_plate,
                             'member_activate_date': matching_partner.member_activate_date,
                             'member_expiry_date': matching_partner.member_expiry_date,
                             'invoice_ref_date': matching_partner.invoice_ref_date,
@@ -570,10 +583,6 @@ class DataUploadFile(models.Model):
                             'member_activate_date': member_line.member_activate_date,
                             'invoice_ref_date': member_line.invoice_ref_date,
                             'delivery_ref_date': member_line.delivery_ref_date,
-                            # 'vehicle_type': member_line.vehicle_type,
-                            # 'vehicle_model': member_line.vehicle_model,
-                            # 'vehicle_mfg_year': member_line.vehicle_mfg_year,
-                            # 'vehicle_plate': member_line.vehicle_plate,
                             'product_template_id': package_record.id,
                             'card_type_id' : card_type_record.id,
                             'member_partner_category_id': category_record.id,
@@ -628,11 +637,9 @@ class DataUploadFile(models.Model):
                             'vehicle_model': member_line.vehicle_model,
                             'vehicle_mfg_year': member_line.vehicle_mfg_year,
                             'vehicle_plate': member_line.vehicle_plate,
-                            # 'vehicle_chasis_no': member_line.vehicle_chasis_no,
                             'street': member_line.street,
                             'mobile': member_line.mobile,
                             'remarks': member_line.remarks,
-                            # 'confirmed_by': member_line.self.env.user_id,
                         })
                         self.env['membership.timeline'].create({
                             'member_id': matching_partner.id,
@@ -755,7 +762,6 @@ class DataUploadFile(models.Model):
             self.apply_log += f" in {time_taken:.2f} seconds."
             print(f"State Updated to 'Done' and apply log updated with time taken: {time_taken:.2f} seconds.")
 
-
     def action_cancel(self):
         self.state = 'draft'
 
@@ -806,7 +812,6 @@ class DataUploadFile(models.Model):
             'view_mode': 'tree,form',
             'target': 'current',
         }
-
 
 class UploadMemberLine(models.Model):
     _name = 'upload.member.line'
@@ -877,4 +882,3 @@ class UploadMemberLine(models.Model):
     if_cpm_match = fields.Integer('If Company change Match')
 
     confirmed_by = fields.Many2one('res.users', string="Confirm By")
-
