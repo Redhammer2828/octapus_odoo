@@ -48,25 +48,23 @@
                                 <tree editable="bottom">
                                     <field name="credit_service_id" column_invisible="1" />
                                     <field name="service_date" />
-                                    <field name="service_number_id" />
+                                    <field name="service_number" />
                                     <field name="trip_sheet_number" />
                                     <field name="vehicle_model" />
                                     <field name="vehicle_plate" />
-                                    <field name="service_product_id" />
+                                    <field name="service_product" />
                                     <field name="date_time_from" column_invisible="parent.is_rent_a_car == False" />
                                     <field name="date_time_to" column_invisible="parent.is_rent_a_car == False" />
-                                    <field name="from_location_id" column_invisible="parent.is_rent_a_car == True" />
-                                    <field name="to_location_id" column_invisible="parent.is_rent_a_car == True" />
+                                    <field name="from_location" column_invisible="parent.is_rent_a_car == True" />
+                                    <field name="to_location" column_invisible="parent.is_rent_a_car == True" />
                                     <field name="quantity" column_invisible="parent.is_rent_a_car == False" />
                                     <field name="price" />
-                                    <field name="is_new_location_combination" widget="boolean_toggle" />
                                     <field name="add_to_report" />
                                 </tree>
                             </field>
 
                             <div class="d-flex justify-content-end mt-2 mb-2">
-                                <button name="action_add_location_to_pricelist" type="object" string="Update Locations" class="btn-primary" />
-                                <button name="update_total" type="object" string="Recalculate Total" class="btn-primary ms-2" />
+                                <button name="update_total" type="object" string="Update Total" class="btn-primary" />
                             </div>
                             
                             <group col="12" class="oe_invoice_lines_tab">

@@ -32,7 +32,7 @@ class CreditServiceValidation(models.Model):
                 continue
 
             all_services = self.env["aaa.service"].search(
-                    [("customer_id", "=", record.partner_id.id),("sequence_id","=",record.category_id.id),("state","=","done"),("invoice_state","=","not_invoiced")] 
+                    [("customer_id", "=", record.partner_id.id),("sequence_id","=",record.category_id.id),("state","=","done")] 
                 )
             
             credit_services = {}
@@ -56,13 +56,13 @@ class CreditServiceValidation(models.Model):
                     
                     credit_services[service.id] = {
                             "service_date": service_date,
-                            "service_number_id": service.id,
+                            "service_number": service.name,
                             "trip_sheet_number": service.credit_proforma_number,
                             "vehicle_model": service.vehicle_model,
                             "vehicle_plate": service.vehicle_plate,
-                            "service_product_id": service.product_id.id,
-                            "from_location_id": service.from_location.id,
-                            "to_location_id": service.to_location.id,
+                            "service_product": service.product_id.name,
+                            "from_location": service.from_location.name,
+                            "to_location": service.to_location.name,
                             "date_time_from": service.date_time_from if service.product_id.name == "RENT A CAR" or service.product_id.name == "RENT A CAR - UPGRADE" else False,
                             "date_time_to": service.date_time_to if service.product_id.name == "RENT A CAR" or service.product_id.name == "RENT A CAR - UPGRADE" else False,
                             "quantity": service.quantity if service.product_id.name == "RENT A CAR" or service.product_id.name == "RENT A CAR - UPGRADE" else False,
@@ -95,32 +95,6 @@ class CreditServiceValidation(models.Model):
             record.write({"taxable_amount": taxable_amount,
                           "vat": vat,
                           "total_amount": total_amount})
-            
-    def action_add_location_to_pricelist(self):
-        for record in self:
-            for line in record.service_line_ids:
-
-                if line.is_new_location_combination:
-                    price_list_item = self.env["product.pricelist.item"].search([('product_tmpl_id','=',line.service_product_id.id), ('pricelist_id','=',record.partner_id.property_product_pricelist_id.id),
-                    ('date_start', '<=', line.service_date),
-                    ('date_end', '>=', line.service_date)])
-
-                    location_combination = self.env["service.rate"].search([('product_pricelist_item_id','=',price_list_item.id),
-                                                            ('from_loc_id','=',line.from_location_id.id),
-                                                            ('to_loc_id','=',line.to_location_id.id),])
-                    
-                    if not location_combination:
-                        self.env["service.rate"].create({
-                            'product_pricelist_item_id': price_list_item.id,
-                            'from_loc_id': line.from_location_id.id,
-                            'to_loc_id': line.to_location_id.id,
-                            'price': line.price,
-                            })
-                        
-                line.is_new_location_combination = False
-                    
-
-
 
 
     def action_confirm(self):
@@ -140,20 +114,15 @@ class ServiceStatementLine(models.Model):
 
     credit_service_id = fields.Many2one('credit.service.validation', string="Credit ID")
     service_date = fields.Date(string="Service Date")
-    # service_number = fields.Char(string="Service Number")
-    service_number_id = fields.Many2one('aaa.service', string="Service Number")
+    service_number = fields.Char(string="Service Number")
     trip_sheet_number = fields.Char(string="Trip Sheet No.")
     vehicle_model = fields.Char(string="Vehicle Model")
     vehicle_plate = fields.Char(string="Vehicle Plate")
-    # service_product = fields.Char(string="Product")
-    # from_location = fields.Char(string="From Location")
-    # to_location = fields.Char(string="To Location")
-    service_product_id = fields.Many2one('product.template', string="Service")
-    from_location_id = fields.Many2one('aaa.location', string="From Location")
-    to_location_id = fields.Many2one('aaa.location', string="To Location")
+    service_product = fields.Char(string="Product")
+    from_location = fields.Char(string="From Location")
+    to_location = fields.Char(string="To Location")
     date_time_from = fields.Datetime(string="From Date")
     date_time_to = fields.Datetime(string="To Date")
     quantity = fields.Float(string="Quantity")
     price = fields.Float(string="Price")
     add_to_report = fields.Boolean(string="Add to Report", default=True)
-    is_new_location_combination = fields.Boolean(string="Update Locations", default=False)

@@ -109,7 +109,7 @@
                                 <field name="vehicle_chasis_no" string="Vehicle Chasis No"
                                     class="required_field" required="1" readonly="is_readonly" />
                                 <field name="old_membership_number" readonly="is_readonly" />
-                                <field name="member_activate_date" class="required_field" required="1" date_format="%d/%m/%Y"
+                                <field name="member_activate_date" date_format="%d/%m/%Y"
                                     readonly="is_readonly" />
                                 <field name="member_expiry_date" class="required_field" required="1"
                                     date_format="%d/%m/%Y" widget="date" readonly="is_readonly" />
@@ -179,8 +179,7 @@
                             </group>
                         </group>
                         <div class="d-flex justify-content-end mt-2" invisible="is_it_user == False">
-                            <button name="manual_renewal_button" string="Renew Now" type="object" text-align="right" invisible="renewal_in_queue == False or is_renewal_in_queue_edit_mode == True" class="btn-primary" />
-                            <button name="renewal_in_queue_edit_mode_on" string="Edit" type="object" text-align="right" invisible="renewal_in_queue == False or is_renewal_in_queue_edit_mode == True" class="btn-primary ms-2" />
+                            <button name="renewal_in_queue_edit_mode_on" string="Edit" type="object" text-align="right" invisible="renewal_in_queue == False or is_renewal_in_queue_edit_mode == True" class="btn-primary" />
                             <button name="renewal_in_queue_edit_mode_off" string="Save" type="object" text-align="right" invisible="renewal_in_queue == False or is_renewal_in_queue_edit_mode == False" class="btn-primary" />
                             <button name="cancel_renewal_in_queue" string="Cancel Renewal" type="object" text-align="right" invisible="renewal_in_queue == False or is_renewal_in_queue_edit_mode == True" class="btn btn-secondary ms-2" />
                         </div>
