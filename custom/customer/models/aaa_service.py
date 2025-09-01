@@ -748,9 +748,9 @@ class AAAService(models.Model):
                 "provider_name": record.provider_id.name,
                 "driver_name": record.driver_id.name,
                 "driver_phone": record.driver_num,
-                "service_name": "",
-                "service_based": "",
-                "location_to": "",
+                "service_name": None,
+                "service_based": None,
+                "location_to": None,
             }
             headers = {'Content-Type': 'application/json'}
 
