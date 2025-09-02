@@ -616,28 +616,33 @@ class AAAService(models.Model):
         _logger.info("Records being updated: %s", [(r.id, r.name) for r in self])
 
         # Capture old chassis numbers
-        old_chassis_map = {record.id: record.vehicle_chasis_no for record in self}
+        old_chassis_map = {}
+        afl_old_info_map = {}
+        alf_old_driver_info_map = {}
 
-        afl_old_info_map = {
-            record.id: {
-                'vehicle_chasis_no': record.vehicle_chasis_no,
-                'vehicle_plate': record.vehicle_plate,
-                'vehicle_model_name': record.vehicle_model_id.name,
-                'phone_number': record.member_contact_no,
-                'customer_email': record.email,
-                'policy_number': record.policy_no,
-                'provider_name': record.provider_id.name,
-                'driver_name': record.driver_id.name,
-                'driver_phone': record.driver_num,
-                # 'service_name': record.product_id.name,
-                # 'service_based': record.service_based,
-                # 'to_location_name': record.to_location.name,
-                # 'to_latitude': record.to_location.latitude,
-                # 'to_longitude': record.to_location.longitude,
-            }
-            for record in self
-            if record.is_afl_application == True
-        }
+        for record in self:
+            if record.is_afl_application:
+                afl_old_info_map[record.id] = {
+                    'vehicle_chasis_no': record.vehicle_chasis_no,
+                    'vehicle_plate': record.vehicle_plate,
+                    'vehicle_model_name': record.vehicle_model_id.name,
+                    'phone_number': record.member_contact_no,
+                    'customer_email': record.email,
+                    'policy_number': record.policy_no,
+                    'provider_name': record.provider_id.name,
+                    # 'service_name': record.product_id.name,
+                    # 'service_based': record.service_based,
+                    # 'to_location_name': record.to_location.name,
+                    # 'to_latitude': record.to_location.latitude,
+                    # 'to_longitude': record.to_location.longitude,
+                }
+                alf_old_driver_info_map[record.id] = {
+                    'driver_name': record.driver_id.name,
+                    'driver_phone': record.driver_num,
+                }
+            else:
+                old_chassis_map[record.id] = record.vehicle_chasis_no
+
 
         # Track relationship field changes
         if 'member_id' in vals:
@@ -704,6 +709,7 @@ class AAAService(models.Model):
 
             if record.is_afl_application == True:
                 old_info = afl_old_info_map.get(record.id, {})
+                old_driver_info = alf_old_driver_info_map.get(record.id, {})
                 new_info = {
                     'vehicle_chasis_no': record.vehicle_chasis_no,
                     'vehicle_plate': record.vehicle_plate,
@@ -712,24 +718,32 @@ class AAAService(models.Model):
                     'customer_email': record.email,
                     'policy_number': record.policy_no,
                     'provider_name': record.provider_id.name,
-                    'driver_name': record.driver_id.name,
-                    'driver_phone': record.driver_num,
                     # 'service_name': record.product_id.name,
                     # 'service_based': record.service_based,
                     # 'to_location_name': record.to_location.name,
                     # 'to_latitude': record.to_location.latitude,
                     # 'to_longitude': record.to_location.longitude,
                 }
+                new_driver_info = {
+                    'driver_name': record.driver_id.name,
+                    'driver_phone': record.driver_num,
+                }
 
-                if any(old_info.get(key) != new_info[key] for key in new_info):
+                info_changed = any(old_info.get(key) != new_info[key] for key in new_info)
+                driver_info_changed = any(old_driver_info.get(key) != new_driver_info[key] for key in new_driver_info)
+
+                if info_changed or driver_info_changed:
                     _logger.info("Info changed for target customer %s. Triggering API.", record.id)
-                    record._trigger_afl_info_update_api()
+                    if driver_info_changed:
+                        record._trigger_afl_info_update_api(driver_info_changed=True)
+                    else:
+                        record._trigger_afl_info_update_api()
 
         _logger.info("=== WRITE METHOD COMPLETED ===")
         return res
 # -------------------------------------------------------------------------------------------------------------
 
-    def _trigger_afl_info_update_api(self):
+    def _trigger_afl_info_update_api(self, driver_info_changed=False):
         for record in self:
             base_url = os.getenv('BASE_URL')
             if not record.name or not record.vehicle_chasis_no:
@@ -746,15 +760,15 @@ class AAAService(models.Model):
                 "customer_email": record.email,
                 "policy_number": record.policy_no,
                 "provider_name": record.provider_id.name,
-                "driver_name": record.driver_id.name,
-                "driver_phone": record.driver_num,
+                "driver_name": record.driver_id.name if driver_info_changed else None,
+                "driver_phone": record.driver_num if driver_info_changed else None,
                 "service_name": None,
                 "service_based": None,
                 "location_to": None,
             }
             headers = {'Content-Type': 'application/json'}
 
-            _logger.info("Sending PUT API Request")
+            _logger.info("Sending PUT API Request", params)
             try:
                 response = requests.put(base_url, json=params, headers=headers)
 
