@@ -1,3 +1,5 @@
+from . import mixins
+from . import page_reload_base
 from . import res_partner_customer
 from . import res_partner_member
 from . import product_category
