@@ -30,7 +30,7 @@ base_url = os.getenv("BASE_URL")
 class AAAService(models.Model):
     _name = 'aaa.service'
     _description = 'AAA Service'
-    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _inherit = ['mail.thread', 'mail.activity.mixin', 'page.reload.base']
 
     name = fields.Char(string="Number", readonly=True, default=lambda self:('New'))
     color = fields.Char(string="Color")
@@ -768,7 +768,7 @@ class AAAService(models.Model):
             }
             headers = {'Content-Type': 'application/json'}
 
-            _logger.info("Sending PUT API Request", params)
+            _logger.info("Sending PUT API Request with params:  %s", params)
             try:
                 response = requests.put(base_url, json=params, headers=headers)
 
