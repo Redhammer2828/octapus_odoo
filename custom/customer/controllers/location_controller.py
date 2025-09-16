@@ -17,8 +17,8 @@ class LocationController(http.Controller):
             
         try:
             # Replace with your actual API endpoint and parameters
-            # api_url = "https://nominatim.kirkos.ae/"
-            api_url = "https://nominatim-dev.kirkos.ae/"
+            api_url = "https://nominatim.kirkos.ae/"
+            # api_url = "https://nominatim-dev.kirkos.ae/"
             params = {
                 'q': query,
                 'format': 'geocodejson',
