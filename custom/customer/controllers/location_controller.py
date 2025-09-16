@@ -41,10 +41,20 @@ class LocationController(http.Controller):
                         geocoding = feature.get('properties', {}).get('geocoding', {})
                         place_id = geocoding.get('place_id')
                         label = geocoding.get('label')
+                        name = geocoding.get('name')
                         coordinates = feature.get('geometry', {}).get('coordinates', [None, None])
-
                         # Prefer state, then country, else fallback
                         emirate = geocoding.get('state') or geocoding.get('country') or "UNKNOWN"
+
+                        if name == "Reconcile":
+                            locations.append({
+                                'id': False,
+                                'name': "RECONCILE",
+                                'longitude': False,
+                                'latitude': False,
+                                'emirate': "RECONCILE",
+                            })
+                            return locations
 
                         locations.append({
                             'id': place_id,
