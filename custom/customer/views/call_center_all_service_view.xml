@@ -21,8 +21,8 @@
                     <field name="vehicle_plate" />
                     <field name="vehicle_type" />
                     <field name="product_id" string="Service" />
-                    <field name="selected_from_location" string="Policy From" />
-                    <field name="selected_to_location" string=" Policy To" />
+                    <field name="location_from_external" string="Policy From" />
+                    <field name="location_to_external" string=" Policy To" />
                     <field name="from_location" string="From" />
                     <field name="to_location" string="To" />
                     <field name="provider_id" string="Provider" />

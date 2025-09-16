@@ -131,15 +131,45 @@
                                 <group class="product_field">
                                     <field name="product_id" string="Service" class="required_field" required="state == 'dispatch'" options="{'no_create': True, 'no_open': True}" readonly="state in['start','reach','completed_by_driver','cancel', 'done']" />
                                     <field name="service_based" invisible="1" />
-                                    <field name="search_query" style="background-color: #e6dddd;border-radius: 9px;" placeholder="Type Location name..." readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" invisible="(is_imported == True) or (is_imported == False and member_type == 'credit') or (service_based == 'none')" />
-                                    <field name="search_results" widget="many2many_tags" options="{'no_create': True}" invisible="(is_imported == True) or (member_type == 'credit') or (service_based == 'none')" />
-                                    <field name="selected_from_location" domain="[('id', 'in', search_results)]" options="{'no_create': True, 'no_open': True}" invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'none') or (service_based == 'location_duration') or (member_type == 'credit')" class="required_field" required="state == 'dispatch'" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" />
+                                    <!-- <field name="search_query" style="background-color: #e6dddd;border-radius: 9px;" placeholder="Type Location name..." readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" invisible="(is_imported == True) or (is_imported == False and member_type == 'credit') or (service_based == 'none')" />
+                                    <field name="search_results" widget="many2many_tags" options="{'no_create': True}" invisible="(is_imported == True) or (member_type == 'credit') or (service_based == 'none')" /> -->
+
+                                    <!-- <field name="selected_from_location" options="{'no_create': True, 'no_open': True}" invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'none') or (service_based == 'location_duration') or (member_type == 'credit')" class="required_field" required="state == 'dispatch'" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" /> -->
+
+                                    <field name="selected_from_location" invisible="1" />
+
+                                    <field name="country_from_id" invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'none') or (service_based == 'location_duration') or (member_type == 'credit')" class="required_field" required="state == 'dispatch'" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" options="{'no_create': True, 'no_open': True}" widget="selection" />
+
+                                    <field name="location_from_external" invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'none') or (service_based == 'location_duration') or (member_type == 'credit')" class="required_field" required="state == 'dispatch'" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" widget="location_search" />
+                                        
+
                                     <field name="is_imported" invisible="1" />
                                     <field name="from_location" invisible="not (is_imported or member_type == 'credit') or service_based in ('location', 'location_duration','none')" options="{'no_create': True, 'no_open': True}" required="state == 'dispatch'" class="required_field" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" />
-                                    <field name="from_location_emirate" style="font-weight: 500;color: #28a745;" invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'none') or (service_based == 'location_duration') or (member_type == 'credit')" />
-                                    <field name="selected_to_location" domain="[('id', 'in', search_results)]" options="{'no_create': True, 'no_open': True}" class="required_field" required="state == 'dispatch'" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" invisible="(is_imported == True) or (service_based == 'none') or (member_type == 'credit')" />
+
+                                    <field name="from_location_emirate" style="font-weight: 500;color: #28a745;" invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'none') or (service_based == 'location_duration') or (member_type == 'credit')" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" />
+
+                                    <!-- <field name="emirate_from_location" style="font-weight: 500;color: #28a745;" invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'none') or (service_based == 'location_duration') or (member_type == 'credit')" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" /> -->
+                                    <field name="location_from_id" invisible="1"/>
+                                    <field name="location_from_latitude" invisible="1"/>
+                                    <field name="location_from_longitude" invisible="1"/>
+
+                                    <!-- <field name="selected_to_location" options="{'no_create': True, 'no_open': True}" class="required_field" required="state == 'dispatch'" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" invisible="(is_imported == True) or (service_based == 'none') or (member_type == 'credit')" /> -->
+
+                                    <field name="selected_to_location" invisible="1" />
+
+                                    <field name="country_to_id" class="required_field" required="state == 'dispatch'" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" invisible="(is_imported == True) or (service_based == 'none') or (member_type == 'credit')" options="{'no_create': True, 'no_open': True}" />
+
+                                    <field name="location_to_external" class="required_field" required="state == 'dispatch'" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" invisible="(is_imported == True) or (service_based == 'none') or (member_type == 'credit')" widget="location_search" />
+
                                     <field name="to_location" invisible="not (is_imported or member_type == 'credit') or service_based == 'none'" options="{'no_create': True, 'no_open': True}" required="state == 'dispatch'" class="required_field" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" />
-                                    <field name="to_location_emirate" style="font-weight: 500;color: #28a745;" invisible="(is_imported == True) or (member_type == 'credit') or (service_based == 'none')" />
+
+                                    <field name="to_location_emirate" style="font-weight: 500;color: #28a745;" invisible="(is_imported == True) or (member_type == 'credit') or (service_based == 'none')" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" />
+
+                                    <!-- <field name="emirate_to_location" style="font-weight: 500;color: #28a745;" invisible="(is_imported == True) or (member_type == 'credit') or (service_based == 'none')" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" /> -->
+                                    <field name="location_to_id" invisible="1"/>
+                                    <field name="location_to_latitude" invisible="1"/>
+                                    <field name="location_to_longitude" invisible="1"/>
+
                                     <field name="cash_collected" invisible="member_type != 'adhoc'" readonly="state in['start','reach','completed_by_driver','cancel', 'done']" />
                                     <field name="amount" string="Cash to be Collected" invisible="member_type in ['adhoc', 'credit'] or service_based == 'none'" readonly="state in['cancel', 'done']" />
                                     <field name="credit_cash" invisible="member_type != 'credit'"/>
@@ -148,17 +178,6 @@
                                     <!-- DRIVER PICKUP & DROP OFF LOCATION -->
                                     <field name="driver_pickup" readonly="1" />
                                     <field name="driver_dropoff" readonly="1" />
-<!-- 
-                                    <field name="location_from" widget="location_search"/>
-                                    <field name="location_from_id" invisible="1"/>
-                                    <field name="location_from_latitude" invisible="1"/>
-                                    <field name="location_from_longitude" invisible="1"/>
-                                    
-                                    <field name="location_to" widget="location_search"/>
-                                    <field name="location_to_id" invisible="1"/>
-                                    <field name="location_to_latitude" invisible="1"/>
-                                    <field name="location_to_longitude" invisible="1"/>
- -->
                                     <field name="date_time_from" string="From Date time" invisible="service_based != 'location_duration'" class="required_field" required="1" readonly="state in['cancel', 'done']" />
                                     <field name="date_time_to" string="To Date time" invisible="service_based != 'location_duration'" class="required_field" required="1" readonly="state in['cancel', 'done']" />
                                     <field name="quantity" string="Quantity (Days)" invisible="service_based != 'location_duration'" class="required_field" readonly="1" />
