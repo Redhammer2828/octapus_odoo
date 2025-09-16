@@ -30,7 +30,7 @@ base_url = os.getenv("BASE_URL")
 class AAAService(models.Model):
     _name = 'aaa.service'
     _description = 'AAA Service'
-    _inherit = ['mail.thread', 'mail.activity.mixin', 'page.reload.base']
+    _inherit = ['mail.thread', 'mail.activity.mixin']
 
     name = fields.Char(string="Number", readonly=True, default=lambda self:('New'))
     color = fields.Char(string="Color")
