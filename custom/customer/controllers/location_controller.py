@@ -38,16 +38,13 @@ class LocationController(http.Controller):
 
                 if 'features' in data:
                     for feature in data['features']:
-                        place_id = feature['properties']['geocoding']['place_id']
-                        label = feature['properties']['geocoding']['label']
-                        coordinates = feature['geometry']['coordinates']
+                        geocoding = feature.get('properties', {}).get('geocoding', {})
+                        place_id = geocoding.get('place_id')
+                        label = geocoding.get('label')
+                        coordinates = feature.get('geometry', {}).get('coordinates', [None, None])
 
-                        if feature['properties']['geocoding']['state']:
-                            emirate = feature['properties']['geocoding']['state']
-                        
-                        else:
-                            emirate = feature['properties']['geocoding']['country']
-
+                        # Prefer state, then country, else fallback
+                        emirate = geocoding.get('state') or geocoding.get('country') or "UNKNOWN"
 
                         locations.append({
                             'id': place_id,
