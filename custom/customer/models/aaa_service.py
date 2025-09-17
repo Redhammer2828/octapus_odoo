@@ -290,7 +290,10 @@ class AAAService(models.Model):
     dispatch_done_by = fields.Many2one('res.users', string="Dispatch Completed By")
     reach_done_by = fields.Many2one('res.users', string="Reach Completed By")
     done_done_by = fields.Many2one('res.users', string="Done Completed By")
-
+    
+    # WhastApp Service
+    is_whatsapp_service = fields.Boolean(string="Is WhatsApp Service", default=False)
+# ----------------------------------FIELDS END-------------------------------------------------------------
     def _target_model_on_change(self):
         return ["afl.dashboard", "aaa.service"]
  
