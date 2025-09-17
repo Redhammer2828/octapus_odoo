@@ -8,7 +8,6 @@
                 <sheet>
                     <!-- Hide the name field -->
                     <field name="name" invisible="1"/>
-                    
                     <!-- Custom Styling -->
                     <style>
                         .main-dashboard-container {
@@ -104,7 +103,6 @@
                                 flex: 1 1 calc(50% - 10px);
                             }
                         }
-                        
                         @media (max-width: 800px) {
                             .dashboard-box {
                                 flex: 1 1 100%;
