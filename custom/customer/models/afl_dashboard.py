@@ -87,7 +87,7 @@ class AFLServiceDashboard(models.Model):
         customer_filter = [('is_whatsapp_service', '=', True), ('service_time', '>=', start_utc_str), ('service_time', '<=', end_utc_str)]
         self.today_whatsapp_count = Service.search_count(customer_filter)
         self.whatsapp_done_count = Service.search_count(customer_filter + [('state', '=', 'done')])
-        self.whatsapp_cancel_count = Service.search_count(customer_filter + [('state', '=', 'cancel')])
+        self.whatsapp_cancel_count = Service.search_count(customer_filter + [('state', 'in',['cancel','done_cancel'] )])
 
     @api.depends('job_ref', 'ser_id', 'state')
     def _compute_comment_text(self):
