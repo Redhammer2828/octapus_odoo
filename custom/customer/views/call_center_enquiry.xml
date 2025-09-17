@@ -336,7 +336,7 @@
 
 
         <menuitem id="menu_enquiry_root" name="Enquiry" parent="menu_call_center_root" sequence="10" />
-        <menuitem id="menu_enquiry_complaint_wizard" name="New Enquiry" parent="menu_enquiry_root"
+        <menuitem id="menu_enquiry_complaint_wizard" name="New Enquiry 🆕" parent="menu_enquiry_root"
             action="action_enquiry_complaint_wizard" sequence="10" />
         <menuitem id="menu_enquiry_list" name="Enquiry List" parent="menu_enquiry_root"
             action="action_call_center_enquiry" sequence="10" />
