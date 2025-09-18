@@ -1,188 +1,188 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
     <data>
         <record id="credit_member_search_view_form" model="ir.ui.view">
             <field name="name">credit.member.search.view.form</field>
             <field name="model">member.search</field>
             <field name="arch" type="xml">
                 <form string="Credit Member Search" create="false" delete="false" edit="false"
-                    copy="false">
+                    copy="false" class="credit_member_search_form">
                     <style>
-                        /* Hide default Save and Discard buttons */
-                        .o_cp_buttons {
-                        display: none !important;
+                        /* Scope all styles to only apply to this specific form */
+                        .credit_member_search_form .o_cp_buttons {
+                            display: none !important;
                         }
-                        .o_form_button_save,
-                        .o_form_button_cancel {
-                        display: none !important;
+                        
+                        .credit_member_search_form .o_form_button_save,
+                        .credit_member_search_form .o_form_button_cancel {
+                            display: none !important;
                         }
 
                         /* Form Content Card - Remove min-height to fix pagination */
-                        .o_form_sheet {
-                        background: rgba(255, 255, 255, 0.95);
-                        backdrop-filter: blur(10px);
-                        border-radius: 20px;
-                        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                        padding: 30px;
-                        margin: 15px auto;
-                        max-width: 1200px;
-                        border: 1px solid rgba(255,255,255,0.2);
+                        .credit_member_search_form .o_form_sheet {
+                            background: rgba(255, 255, 255, 0.95);
+                            backdrop-filter: blur(10px);
+                            border-radius: 20px;
+                            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                            padding: 30px;
+                            margin: 15px auto;
+                            max-width: 1200px;
+                            border: 1px solid rgba(255,255,255,0.2);
                         }
 
                         /* Header Styling */
-                        .o_group_col_12 > .o_horizontal_separator {
-                        background: linear-gradient(90deg, #667eea, #764ba2);
-                        height: 3px;
-                        border-radius: 2px;
-                        margin: 15px 0;
-                        border: none;
+                        .credit_member_search_form .o_group_col_12 > .o_horizontal_separator {
+                            background: linear-gradient(90deg, #667eea, #764ba2);
+                            height: 3px;
+                            border-radius: 2px;
+                            margin: 15px 0;
+                            border: none;
                         }
 
                         /* Group Headers */
-                        .o_group > tbody > tr > td.o_td_label {
-                        background: linear-gradient(135deg, #667eea, #764ba2);
-                        color: white;
-                        font-weight: 600;
-                        font-size: 16px;
-                        padding: 12px 20px;
-                        border-radius: 12px 12px 0 0;
-                        text-transform: uppercase;
-                        letter-spacing: 1px;
-                        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+                        .credit_member_search_form .o_group > tbody > tr > td.o_td_label {
+                            background: linear-gradient(135deg, #667eea, #764ba2);
+                            color: white;
+                            font-weight: 600;
+                            font-size: 16px;
+                            padding: 12px 20px;
+                            border-radius: 12px 12px 0 0;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
                         }
 
                         /* Form Fields Container */
-                        .o_group {
-                        background: rgba(255, 255, 255, 0.8);
-                        border-radius: 15px;
-                        padding: 20px;
-                        margin: 15px 0;
-                        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-                        border: 1px solid rgba(102, 126, 234, 0.1);
+                        .credit_member_search_form .o_group {
+                            background: rgba(255, 255, 255, 0.8);
+                            border-radius: 15px;
+                            padding: 20px;
+                            margin: 15px 0;
+                            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+                            border: 1px solid rgba(102, 126, 234, 0.1);
                         }
 
                         /* Input Field Styling */
-                        .o_field_widget input,
-                        .o_field_widget .o_input {
-                        background: rgba(255, 255, 255, 0.9);
-                        border: 2px solid #e1e8f0;
-                        border-radius: 10px;
-                        padding: 12px 16px;
-                        font-size: 14px;
-                        font-weight: 400;
-                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+                        .credit_member_search_form .o_field_widget input,
+                        .credit_member_search_form .o_field_widget .o_input {
+                            background: rgba(255, 255, 255, 0.9);
+                            border: 2px solid #e1e8f0;
+                            border-radius: 10px;
+                            padding: 12px 16px;
+                            font-size: 14px;
+                            font-weight: 400;
+                            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
                         }
 
-                        .o_field_widget input:hover,
-                        .o_field_widget .o_input:hover {
-                        border-color: #667eea;
-                        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-                        transform: translateY(-1px);
+                        .credit_member_search_form .o_field_widget input:hover,
+                        .credit_member_search_form .o_field_widget .o_input:hover {
+                            border-color: #667eea;
+                            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+                            transform: translateY(-1px);
                         }
 
-                        .o_field_widget input:focus,
-                        .o_field_widget .o_input:focus {
-                        border-color: #667eea;
-                        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-                        outline: none;
-                        background: white;
+                        .credit_member_search_form .o_field_widget input:focus,
+                        .credit_member_search_form .o_field_widget .o_input:focus {
+                            border-color: #667eea;
+                            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+                            outline: none;
+                            background: white;
                         }
 
                         /* Field Labels */
-                        .o_form_label {
-                        color: #4a5568;
-                        font-weight: 500;
-                        font-size: 13px;
-                        text-transform: uppercase;
-                        letter-spacing: 0.5px;
-                        margin-bottom: 8px;
+                        .credit_member_search_form .o_form_label {
+                            color: #4a5568;
+                            font-weight: 500;
+                            font-size: 13px;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                            margin-bottom: 8px;
                         }
 
                         /* Many2one Fields */
-                        .o_field_many2one .o_external_button {
-                        background: linear-gradient(135deg, #667eea, #764ba2);
-                        color: white;
-                        border: none;
-                        border-radius: 8px;
-                        padding: 8px 12px;
-                        transition: all 0.3s ease;
+                        .credit_member_search_form .o_field_many2one .o_external_button {
+                            background: linear-gradient(135deg, #667eea, #764ba2);
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            padding: 8px 12px;
+                            transition: all 0.3s ease;
                         }
 
-                        .o_field_many2one .o_external_button:hover {
-                        transform: scale(1.05);
-                        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                        .credit_member_search_form .o_field_many2one .o_external_button:hover {
+                            transform: scale(1.05);
+                            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
                         }
 
                         /* Search Button */
-                        .btn-success {
-                        background: linear-gradient(135deg, #48bb78, #38a169);
-                        color: white;
-                        box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+                        .credit_member_search_form .btn-success {
+                            background: linear-gradient(135deg, #48bb78, #38a169);
+                            color: white;
+                            box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
                         }
 
-                        .btn-success:hover {
-                        background: linear-gradient(135deg, #38a169, #2f855a);
-                        transform: translateY(-3px) scale(1.05);
-                        box-shadow: 0 15px 35px rgba(72, 187, 120, 0.6);
+                        .credit_member_search_form .btn-success:hover {
+                            background: linear-gradient(135deg, #38a169, #2f855a);
+                            transform: translateY(-3px) scale(1.05);
+                            box-shadow: 0 15px 35px rgba(72, 187, 120, 0.6);
                         }
 
-                        .btn-success:active {
-                        transform: translateY(-1px) scale(1.02);
+                        .credit_member_search_form .btn-success:active {
+                            transform: translateY(-1px) scale(1.02);
                         }
 
                         /* Cancel Button */
-                        .btn-danger {
-                        background: linear-gradient(135deg, #f56565, #e53e3e);
-                        color: white;
-                        box-shadow: 0 8px 25px rgba(245, 101, 101, 0.4);
+                        .credit_member_search_form .btn-danger {
+                            background: linear-gradient(135deg, #f56565, #e53e3e);
+                            color: white;
+                            box-shadow: 0 8px 25px rgba(245, 101, 101, 0.4);
                         }
 
-                        .btn-danger:hover {
-                        background: linear-gradient(135deg, #e53e3e, #c53030);
-                        transform: translateY(-3px) scale(1.05);
-                        box-shadow: 0 15px 35px rgba(245, 101, 101, 0.6);
+                        .credit_member_search_form .btn-danger:hover {
+                            background: linear-gradient(135deg, #e53e3e, #c53030);
+                            transform: translateY(-3px) scale(1.05);
+                            box-shadow: 0 15px 35px rgba(245, 101, 101, 0.6);
                         }
 
-                        .btn-danger:active {
-                        transform: translateY(-1px) scale(1.02);
+                        .credit_member_search_form .btn-danger:active {
+                            transform: translateY(-1px) scale(1.02);
                         }
 
                         /* Button Ripple Effect */
-                        button::before {
-                        content: '';
-                        position: absolute;
-                        top: 50%;
-                        left: 50%;
-                        width: 0;
-                        height: 0;
-                        border-radius: 50%;
-                        background: rgba(255,255,255,0.3);
-                        transition: all 0.6s ease;
-                        transform: translate(-50%, -50%);
+                        .credit_member_search_form button::before {
+                            content: '';
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            width: 0;
+                            height: 0;
+                            border-radius: 50%;
+                            background: rgba(255,255,255,0.3);
+                            transition: all 0.6s ease;
+                            transform: translate(-50%, -50%);
                         }
 
-                        button:active::before {
-                        width: 300px;
-                        height: 300px;
+                        .credit_member_search_form button:active::before {
+                            width: 300px;
+                            height: 300px;
                         }
 
                         /* Responsive Design */
                         @media (max-width: 768px) {
-                        .o_form_sheet {
-                        padding: 15px;
-                        margin: 10px;
-                        }
+                            .credit_member_search_form .o_form_sheet {
+                                padding: 15px;
+                                margin: 10px;
+                            }
 
-                        .o_group {
-                        padding: 15px;
-                        }
+                            .credit_member_search_form .o_group {
+                                padding: 15px;
+                            }
 
-                        button {
-                        padding: 10px 20px;
-                        font-size: 12px;
-                        }
+                            .credit_member_search_form button {
+                                padding: 10px 20px;
+                                font-size: 12px;
+                            }
                         }
                     </style>
                     <group string="CREDIT MEMBER SEARCH">
@@ -202,10 +202,10 @@
                         </group>
                     </group>
                     <!-- Buttons -->
-                        <div class = "pt-3">
-                    <button name="search_credit_member"  class="btn-success" string="🔍 SEARCH MEMBERS" type="object" />
-                    <span style="display:inline-block; width:25px;"></span>
-                    <button string="✕ CANCEL" class="btn-danger" special="cancel" />
+                    <div class = "pt-3">
+                        <button name="search_credit_member"  class="btn-success" string="🔍 SEARCH MEMBERS" type="object" />
+                        <span style="display:inline-block; width:25px;"></span>
+                        <button string="✕ CANCEL" class="btn-danger" special="cancel" />
                     </div>
                 </form>
             </field>
@@ -216,7 +216,6 @@
             <field name="model">member.search</field>
             <field name="arch" type="xml">
                 <tree string="">
-
                 </tree>
             </field>
         </record>
@@ -234,6 +233,7 @@
               ]">
             </field>
         </record>
+        
         <!-- Menu Items -->
         <menuitem
             id="menu_credit_member_search"
