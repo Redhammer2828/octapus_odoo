@@ -25,18 +25,23 @@ class AAAServiceAddons(models.Model):
     driver_comment = fields.Text(string="Driver Comment")
     garage_driver_comment = fields.Text(string="Garage Driver Comment")
 
-    # # Regular char fields for storing the selected locations
-    # location_from = fields.Char(string="Location From")
-    # location_to = fields.Char(string="Location To")
+    country_from_id = fields.Many2one('country.code', string="Country From")
+    country_to_id = fields.Many2one('country.code', string="Country To")
+
+    # Regular char fields for storing the selected locations
+    location_from_external = fields.Char(string="Location From")
+    location_to_external = fields.Char(string="Location To")
     
-    # # Additional fields to store location details after selection
-    # location_from_id = fields.Char(string="From Location ID", readonly=True)
-    # location_from_latitude = fields.Char(string="From Latitude", readonly=True)
-    # location_from_longitude = fields.Char(string="From Longitude", readonly=True)
+    # Additional fields to store location details after selection
+    location_from_id = fields.Char(string="From Location ID")
+    location_from_latitude = fields.Char(string="From Latitude")
+    location_from_longitude = fields.Char(string="From Longitude")
+    emirate_from_location = fields.Char(string="Emirate From")
     
-    # location_to_id = fields.Char(string="To Location ID", readonly=True)
-    # location_to_latitude = fields.Char(string="To Latitude", readonly=True)
-    # location_to_longitude = fields.Char(string="To Longitude", readonly=True)
+    location_to_id = fields.Char(string="To Location ID")
+    location_to_latitude = fields.Char(string="To Latitude")
+    location_to_longitude = fields.Char(string="To Longitude")
+    emirate_to_location = fields.Char(string="Emirate To")
 
     # # service_time = fields.Datetime(string="Service Time")
     # is_today_service_time = fields.Boolean(string="Is Today", compute="_compute_is_today_service_time", store=True)
@@ -51,6 +56,20 @@ class AAAServiceAddons(models.Model):
     #             rec.is_today_service_time = (service_dt.date() == today)
     #         else:
     #             rec.is_today_service_time = False
+
+
+    @api.depends('location_from_external')
+    def compute_location_suggestion_from(self):
+        for record in self:
+            selected_from_location = self.env['location.suggestion'].create({'name': record.location_from_external})
+            record.selected_from_location = selected_from_location
+
+
+    @api.depends('location_to_external')
+    def compute_location_suggestion_to(self):
+        for record in self:
+            selected_to_location = self.env['location.suggestion'].create({'name': record.location_to_external})
+            record.selected_to_location = selected_to_location
 
 
     def write(self, vals):
@@ -177,20 +196,20 @@ class AAAServiceAddons(models.Model):
                     'timeline_status': record.state,
                 })
         
-            record.sudo().reload()
+            # record.sudo().reload()
 
         return result
     
 
-    @api.model
-    def create(self, vals):
-        record = super().create(vals)
-        record.sudo().reload()
-        return record
+    # @api.model
+    # def create(self, vals):
+    #     record = super().create(vals)
+    #     record.sudo().reload()
+    #     return record
     
 
 
-    def reload(self):
-        self.env["bus.bus"].sudo()._sendone(
-            "broadcast", "page_refresh", {"model_name": self._name}
-        )
+    # def reload(self):
+    #     self.env["bus.bus"].sudo()._sendone(
+    #         "broadcast", "page_refresh", {"model_name": self._name}
+    #     )

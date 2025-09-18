@@ -8,9 +8,9 @@
              '/customer/static/src/css/my_custom_style.css',
              '/customer/static/src/css/aaa_service.css',
              '/customer/static/src/css/custom_menu.css',
-            #  '/customer/static/src/css/location_field.css',
-            #  '/customer/static/src/js/location_field.js',
-            #  '/customer/static/src/xml/location_field.xml',
+             '/customer/static/src/css/location_field.css',
+             '/customer/static/src/js/location_field.js',
+             '/customer/static/src/xml/location_field.xml',
             '/customer/static/src/js/realtime_updates.js',
         ],
         'web.report_assets_common': [

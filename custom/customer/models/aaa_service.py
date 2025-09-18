@@ -230,16 +230,16 @@ class AAAService(models.Model):
 
     search_query = fields.Char(string='Search Locations')
     search_results = fields.Many2many('location.suggestion', string='Search Results', compute='_fetch_location_suggestions')
-    selected_from_location = fields.Many2one('location.suggestion', string='From Location')
-    selected_to_location = fields.Many2one('location.suggestion', string='To Location')
+    selected_from_location = fields.Many2one('location.suggestion', string='From Location', compute='compute_location_suggestion_from', store=True)
+    selected_to_location = fields.Many2one('location.suggestion', string='To Location', compute='compute_location_suggestion_to', store=True)
     from_location = fields.Many2one('aaa.location', string='From Location') #For Data IMPORT as well as CREDIT SERVICE PRICE LIST
     to_location = fields.Many2one('aaa.location', string='To Location') #For Data IMPORT as well as CREDIT SERVICE PRICE LIST
     is_imported = fields.Boolean('Is Imported', default=False)
     amount = fields.Integer(string='Amount', compute='_compute_amount', store=True)  # Dynamically computed amount
     credit_cash = fields.Integer(string="Credit cash")
 
-    from_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
-    to_location_emirate = fields.Char(string='Emirate', compute='_compute_emirates', store=True)
+    from_location_emirate = fields.Char(string='Emirate')
+    to_location_emirate = fields.Char(string='Emirate')
     # quantity_with_days = fields.Char(string='Quantity with Days')
     orgin_no = fields.Text('Orgin')
     origin_no = fields.Many2one('aaa.service', string='Origin Service', help='References the original service before changes were made.', readonly=True)
@@ -290,14 +290,17 @@ class AAAService(models.Model):
     dispatch_done_by = fields.Many2one('res.users', string="Dispatch Completed By")
     reach_done_by = fields.Many2one('res.users', string="Reach Completed By")
     done_done_by = fields.Many2one('res.users', string="Done Completed By")
+
+    def _target_model_on_change(self):
+        return ["afl.dashboard", "aaa.service"]
  
-    @api.depends('state', 'product_id', 'selected_from_location', 'selected_to_location', 'from_location', 'to_location')
+    @api.depends('state', 'product_id', 'location_from_external', 'location_to_external', 'from_location', 'to_location')
     def _compute_show_new_change_button(self):
         for record in self:
             # Check if any of the fields have changed by comparing with the previous values
             has_changed = any(
                 record._origin[field] != record[field]
-                for field in ['product_id', 'selected_from_location', 'selected_to_location', 'from_location', 'to_location']
+                for field in ['product_id', 'location_from_external', 'location_to_external', 'from_location', 'to_location']
             )
             # Make the button visible if state is 'change' AND any tracked field has changed
             record.show_new_change_button = record.state == 'change' and has_changed
@@ -517,6 +520,7 @@ class AAAService(models.Model):
                     params = {
                         'q': record.search_query,
                         'format': 'geocodejson',
+                        'addressdetails': 1,
                     }
                     headers = {
                         'Accept-Language': 'en'
@@ -821,18 +825,18 @@ class AAAService(models.Model):
     def _compute_amount(self):
         pass
 
-    @api.depends('selected_from_location', 'selected_to_location')
-    def _compute_emirates(self):
-        for record in self:
-            if record.selected_from_location:
-                record.from_location_emirate = self._extract_emirate_from_feature_data(record.selected_from_location.feature_data)
-            else:
-                record.from_location_emirate = ''
+    # @api.depends('selected_from_location', 'selected_to_location')
+    # def _compute_emirates(self):
+    #     for record in self:
+    #         if record.selected_from_location:
+    #             record.from_location_emirate = self._extract_emirate_from_feature_data(record.selected_from_location.feature_data)
+    #         else:
+    #             record.from_location_emirate = ''
 
-            if record.selected_to_location:
-                record.to_location_emirate = self._extract_emirate_from_feature_data(record.selected_to_location.feature_data)
-            else:
-                record.to_location_emirate = ''
+    #         if record.selected_to_location:
+    #             record.to_location_emirate = self._extract_emirate_from_feature_data(record.selected_to_location.feature_data)
+    #         else:
+    #             record.to_location_emirate = ''
 
     def _extract_emirate_from_feature_data(self, feature_data):
         """
@@ -1128,8 +1132,9 @@ class AAAService(models.Model):
         # Adjust field visibility based on member_type
         if self.member_type in ['policy', 'adhoc']:
             # Use `selected_from_location` and `selected_to_location`
-            from_location_field = self.selected_from_location
-            to_location_field = self.selected_to_location
+            from_location_field = self.location_from_external
+            to_location_field = self.location_to_external
+            print(self.location_from_external, self.location_to_external)
         elif self.member_type == 'credit':
             # Use `from_location` and `to_location`
             from_location_field = self.from_location
@@ -1507,8 +1512,8 @@ class AAAService(models.Model):
         # Adjust field visibility based on member_type
         if self.member_type in ['policy', 'adhoc']:
             # Use `selected_from_location` and `selected_to_location`
-            from_location_field = self.selected_from_location
-            to_location_field = self.selected_to_location
+            from_location_field = self.location_from_external
+            to_location_field = self.location_to_external
         elif self.member_type == 'credit':
             # Use `from_location` and `to_location`
             from_location_field = self.from_location
@@ -1875,8 +1880,8 @@ class AAAService(models.Model):
             elif service.member_type in ['policy', 'adhoc']:
                 origin_info = (
                     f"Service: {service.product_id.name if service.product_id else 'N/A'}\n"
-                    f"From location: {service.selected_from_location.name if service.selected_from_location else 'N/A'}\n"
-                    f"To location: {service.selected_to_location.name if service.selected_to_location else 'N/A'}"
+                    f"From location: {service.location_from_external if service.location_from_external else 'N/A'}\n"
+                    f"To location: {service.location_to_external if service.location_to_external else 'N/A'}"
                 )
             else:
                 origin_info = "Not applicable"
@@ -2009,8 +2014,8 @@ class AAAService(models.Model):
                     'type': service.type,
                     'card_type': service.card_type,
                     'product_id': service.product_id.id,
-                    'selected_from_location': service.selected_from_location.id,
-                    'selected_to_location': service.selected_to_location.id,
+                    'location_from_external': service.location_from_external,
+                    'location_to_external': service.location_to_external,
                     'from_location': service.from_location.id,
                     'to_location': service.to_location.id,
                 })
