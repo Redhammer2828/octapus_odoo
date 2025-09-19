@@ -775,7 +775,7 @@ class AAAService(models.Model):
             }
             headers = {'Content-Type': 'application/json'}
 
-            _logger.info("Sending PUT API Request", params)
+            _logger.info("Sending PUT API Request with params:  %s", params)
             try:
                 response = requests.put(base_url, json=params, headers=headers)
 
@@ -2021,6 +2021,7 @@ class AAAService(models.Model):
                     'selected_to_location': service.selected_to_location,
                     'from_location': service.from_location.id,
                     'to_location': service.to_location.id,
+                    'requested_date': False,
                 })
                 print("SERVICE UPDATED, NEW STATE:", service.state)
             except Exception as e:

@@ -1,25 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
   <data>
     <!-- Form View for Policy Member Search -->
     <record id="policy_member_search_view_form" model="ir.ui.view">
       <field name="name">policy.member.search.view.form</field>
       <field name="model">member.search</field>
       <field name="arch" type="xml">
-        <form string="Search Member" create="false" delete="false" copy="false">
+        <form string="Search Member" create="false" delete="false" copy="false" class="policy_member_search_form">
           <style>
-            /* Hide default Save and Discard buttons */
-            .o_cp_buttons {
+            /* Scope all styles to only apply to this specific form */
+            .policy_member_search_form {
+              /* Hide default Save and Discard buttons only for this form */
+            }
+            
+            .policy_member_search_form .o_cp_buttons {
               display: none !important;
             }
-            .o_form_button_save,
-            .o_form_button_cancel {
+            
+            .policy_member_search_form .o_form_button_save,
+            .policy_member_search_form .o_form_button_cancel {
               display: none !important;
             }
             
             /* Form Content Card - Remove min-height to fix pagination */
-            .o_form_sheet {
+            .policy_member_search_form .o_form_sheet {
               background: rgba(255, 255, 255, 0.95);
               backdrop-filter: blur(10px);
               border-radius: 20px;
@@ -31,7 +35,7 @@
             }
             
             /* Header Styling */
-            .o_group_col_12 > .o_horizontal_separator {
+            .policy_member_search_form .o_group_col_12 > .o_horizontal_separator {
               background: linear-gradient(90deg, #667eea, #764ba2);
               height: 3px;
               border-radius: 2px;
@@ -40,7 +44,7 @@
             }
             
             /* Group Headers */
-            .o_group > tbody > tr > td.o_td_label {
+            .policy_member_search_form .o_group > tbody > tr > td.o_td_label {
               background: linear-gradient(135deg, #667eea, #764ba2);
               color: white;
               font-weight: 600;
@@ -53,7 +57,7 @@
             }
             
             /* Form Fields Container */
-            .o_group {
+            .policy_member_search_form .o_group {
               background: rgba(255, 255, 255, 0.8);
               border-radius: 15px;
               padding: 20px;
@@ -63,8 +67,8 @@
             }
             
             /* Input Field Styling */
-            .o_field_widget input,
-            .o_field_widget .o_input {
+            .policy_member_search_form .o_field_widget input,
+            .policy_member_search_form .o_field_widget .o_input {
               background: rgba(255, 255, 255, 0.9);
               border: 2px solid #e1e8f0;
               border-radius: 10px;
@@ -75,15 +79,15 @@
               box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             }
             
-            .o_field_widget input:hover,
-            .o_field_widget .o_input:hover {
+            .policy_member_search_form .o_field_widget input:hover,
+            .policy_member_search_form .o_field_widget .o_input:hover {
               border-color: #667eea;
               box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
               transform: translateY(-1px);
             }
             
-            .o_field_widget input:focus,
-            .o_field_widget .o_input:focus {
+            .policy_member_search_form .o_field_widget input:focus,
+            .policy_member_search_form .o_field_widget .o_input:focus {
               border-color: #667eea;
               box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
               outline: none;
@@ -91,7 +95,7 @@
             }
             
             /* Field Labels */
-            .o_form_label {
+            .policy_member_search_form .o_form_label {
               color: #4a5568;
               font-weight: 500;
               font-size: 13px;
@@ -101,7 +105,7 @@
             }
             
             /* Many2one Fields */
-            .o_field_many2one .o_external_button {
+            .policy_member_search_form .o_field_many2one .o_external_button {
               background: linear-gradient(135deg, #667eea, #764ba2);
               color: white;
               border: none;
@@ -110,47 +114,47 @@
               transition: all 0.3s ease;
             }
             
-            .o_field_many2one .o_external_button:hover {
+            .policy_member_search_form .o_field_many2one .o_external_button:hover {
               transform: scale(1.05);
               box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
             }
             
             /* Search Button */
-            .btn-success {
+            .policy_member_search_form .btn-success {
               background: linear-gradient(135deg, #48bb78, #38a169);
               color: white;
               box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
             }
             
-            .btn-success:hover {
+            .policy_member_search_form .btn-success:hover {
               background: linear-gradient(135deg, #38a169, #2f855a);
               transform: translateY(-3px) scale(1.05);
               box-shadow: 0 15px 35px rgba(72, 187, 120, 0.6);
             }
             
-            .btn-success:active {
+            .policy_member_search_form .btn-success:active {
               transform: translateY(-1px) scale(1.02);
             }
             
             /* Cancel Button */
-            .btn-danger {
+            .policy_member_search_form .btn-danger {
               background: linear-gradient(135deg, #f56565, #e53e3e);
               color: white;
               box-shadow: 0 8px 25px rgba(245, 101, 101, 0.4);
             }
             
-            .btn-danger:hover {
+            .policy_member_search_form .btn-danger:hover {
               background: linear-gradient(135deg, #e53e3e, #c53030);
               transform: translateY(-3px) scale(1.05);
               box-shadow: 0 15px 35px rgba(245, 101, 101, 0.6);
             }
             
-            .btn-danger:active {
+            .policy_member_search_form .btn-danger:active {
               transform: translateY(-1px) scale(1.02);
             }
             
             /* Button Ripple Effect */
-            button::before {
+            .policy_member_search_form button::before {
               content: '';
               position: absolute;
               top: 50%;
@@ -163,23 +167,23 @@
               transform: translate(-50%, -50%);
             }
             
-            button:active::before {
+            .policy_member_search_form button:active::before {
               width: 300px;
               height: 300px;
             }
             
             /* Responsive Design */
             @media (max-width: 768px) {
-              .o_form_sheet {
+              .policy_member_search_form .o_form_sheet {
                 padding: 15px;
                 margin: 10px;
               }
               
-              .o_group {
+              .policy_member_search_form .o_group {
                 padding: 15px;
               }
               
-              button {
+              .policy_member_search_form button {
                 padding: 10px 20px;
                 font-size: 12px;
               }
@@ -209,12 +213,11 @@
               <button string="✕ CANCEL" class="btn-danger" special="cancel" />
             </div>
           </group>
-          <!-- Action Buttons -->
         </form>
       </field>
     </record>
 
-    <!-- Tree View for displaying search results -->
+    <!-- Rest of your records remain the same -->
     <record id="policy_member_search_view_tree" model="ir.ui.view">
       <field name="name">policy.member.search.view.tree</field>
       <field name="model">res.partner</field>
@@ -232,7 +235,6 @@
       </field>
     </record>
 
-    <!-- Action for Policy Member Search -->
     <record id="policy_member_search_action" model="ir.actions.act_window">
       <field name="name">Policy Member Search</field>
       <field name="res_model">member.search</field>
@@ -247,7 +249,6 @@
       </field>
     </record>
 
-    <!-- Menu Items -->
     <menuitem
       id="menu_member_search"
       name="Member Search"
@@ -262,5 +263,4 @@
       sequence="10" />
 
   </data>
-
 </odoo>
