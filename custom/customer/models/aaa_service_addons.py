@@ -175,21 +175,33 @@ class AAAServiceAddons(models.Model):
                     'status': change_comment,
                     'timeline_status': record.state,
                 })
-        
-            # record.sudo().reload()
+
+            uid = self.env.context.get('uid')
+
+            self.env["bus.bus"].sudo()._sendone(
+                "broadcast",
+                "page_refresh", 
+                {
+                    "record_id": self.id,
+                    "model_name": self._name,
+                    "uid": uid,
+                    })
+            print(f"Request ID: {uid}")
 
         return result
     
 
-    # @api.model
-    # def create(self, vals):
-    #     record = super().create(vals)
-    #     record.sudo().reload()
-    #     return record
     
-
-
-    # def reload(self):
-    #     self.env["bus.bus"].sudo()._sendone(
-    #         "broadcast", "page_refresh", {"model_name": self._name}
-    #     )
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        
+        self.env["bus.bus"].sudo()._sendone(
+                "broadcast",
+                "page_refresh", 
+                {
+                    "record_id": self.id,
+                    "model_name": self._name,
+                    "is_create_mode": True,
+                    })
+        
+        return recs
