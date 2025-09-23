@@ -7,168 +7,185 @@
             <form string="AFL Service Dashboard" create="0" edit="0" delete="0">
                 <sheet>
                     <!-- Hide the name field -->
-                    <field name="name" invisible="1"/>
+                    <field name="name" invisible="1" />
                     <!-- Custom Styling -->
                     <style>
                         .main-dashboard-container {
-                            display: flex;
-                            flex-direction: column;
-                            gap: 30px;
-                            padding: 20px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 30px;
+                        padding: 20px;
                         }
                         .dashboard-section {
-                            background: #f8f9fa;
-                            border: 2px solid #dee2e6;
-                            border-radius: 15px;
-                            padding: 25px;
-                            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-                            transition: box-shadow 0.3s ease;
+                        background: #f8f9fa;
+                        border: 2px solid #dee2e6;
+                        border-radius: 15px;
+                        padding: 25px;
+                        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+                        transition: box-shadow 0.3s ease;
                         }
                         .dashboard-section:hover {
-                            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+                        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
                         }
                         .afl-section {
-                            border-color: #71639e;
-                            background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+                        border-color: #71639e;
+                        background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
                         }
                         .whatsapp-section {
-                            border-color: #25d366;
-                            background: linear-gradient(145deg, #f0fff4 0%, #e6ffed 100%);
+                        border-color: #25d366;
+                        background: linear-gradient(145deg, #f0fff4 0%, #e6ffed 100%);
                         }
                         .section-header {
-                            font-size: 26px;
-                            font-weight: bold;
-                            margin-bottom: 20px;
-                            display: flex;
-                            align-items: center;
-                            padding-bottom: 15px;
-                            border-bottom: 3px solid;
-                            text-align: center;
-                            justify-content: center;
+                        font-size: 26px;
+                        font-weight: bold;
+                        margin-bottom: 20px;
+                        display: flex;
+                        align-items: center;
+                        padding-bottom: 15px;
+                        border-bottom: 3px solid;
+                        text-align: center;
+                        justify-content: center;
                         }
                         .afl-header {
-                            color: #71639e !important;
-                            border-bottom-color: #71639e !important;
+                        color: #71639e !important;
+                        border-bottom-color: #71639e !important;
                         }
                         .whatsapp-header {
-                            color: #25d366 !important;
-                            border-bottom-color: #25d366 !important;
+                        color: #25d366 !important;
+                        border-bottom-color: #25d366 !important;
                         }
                         .whatsapp-icon {
-                            font-size: 28px;
-                            margin-right: 12px;
-                            color: #25d366;
+                        font-size: 28px;
+                        margin-right: 12px;
+                        color: #25d366;
                         }
                         .dashboard-container {
-                            display: flex;
-                            flex-wrap: wrap;
-                            gap: 15px;
-                            justify-content: space-between;
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 15px;
+                        justify-content: space-between;
                         }
                         .dashboard-box {
-                            flex: 1 1 calc(33.33% - 10px);
-                            min-width: 200px;
-                            max-width: calc(50% - 10px);
-                            padding: 20px;
-                            background: #007bff;
-                            color: white;
-                            text-align: center;
-                            font-size: 14px;
-                            font-weight: 500;
-                            border-radius: 10px;
-                            box-shadow: 3px 3px 15px rgba(0, 0, 0, 0.15);
-                            transition: transform 0.3s ease-in-out;
-                            border: none;
-                            cursor: pointer;
+                        flex: 1 1 calc(33.33% - 10px);
+                        min-width: 200px;
+                        max-width: calc(50% - 10px);
+                        padding: 20px;
+                        background: #0150a5ff;
+                        color: white;
+                        text-align: center;
+                        font-size: 14px;
+                        font-weight: 500;
+                        border-radius: 10px;
+                        box-shadow: 3px 3px 15px rgba(0, 0, 0, 0.15);
+                        transition: transform 0.3s ease-in-out;
+                        border: none;
+                        cursor: pointer;
                         }
                         .dashboard-box:hover {
-                            transform: scale(1.05);
-                            box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.25);
+                        transform: scale(1.05);
+                        box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.25);
                         }
-                        .dashboard-box.success { background: #28a745; }
+                        .dashboard-box.success { background: #28a745; color: white;}
+                        .dashboard-box.blue { background: #0150a5ff; color: white;}
                         .dashboard-box.warning { background: #ffc107; color: black; }
-                        .dashboard-box.danger { background: #dc3545; }
-                        .dashboard-box.purple { background: #71639e; }
-                        .dashboard-box.whatsapp { background: #25d366; }
+                        .dashboard-box.danger { background: #dc3545; color: white; }
+                        .dashboard-box.purple { background: #71639e; color: white;}
+                        .dashboard-box.brown { background: #964B00; color: white;}
+                        .dashboard-box.violet { background: #4e02c0ff; color: white;}
+                        .dashboard-box.whatsapp { background: #25d366; color: white;}
                         .dashboard-box span {
-                            display: block;
-                            font-size: 22px;
-                            font-weight: bold;
-                            margin-top: 8px;
+                        display: block;
+                        font-size: 22px;
+                        font-weight: bold;
+                        margin-top: 8px;
                         }
-                        
+
                         /* Responsive adjustments */
                         @media (max-width: 1200px) {
-                            .dashboard-box {
-                                flex: 1 1 calc(50% - 10px);
-                            }
+                        .dashboard-box {
+                        flex: 1 1 calc(50% - 10px);
+                        }
                         }
                         @media (max-width: 800px) {
-                            .dashboard-box {
-                                flex: 1 1 100%;
-                                max-width: 100%;
-                            }
+                        .dashboard-box {
+                        flex: 1 1 100%;
+                        max-width: 100%;
+                        }
                         }
                     </style>
-                    
+
                     <div class="main-dashboard-container">
                         <!-- AFL Dashboard Container -->
                         <div class="dashboard-section afl-section">
                             <div class="section-header afl-header">
-                                <span style="font-size:28px;margin-right:12px;">🚚</span>
-                                AFL Service Dashboard
-                            </div>
+                                <span style="font-size:28px;margin-right:12px;">🚚</span> AFL
+                                Service Dashboard </div>
                             <div class="dashboard-container">
-                                <button name="action_afl_dashboard_total" type="object"
-                                    class="dashboard-box purple">Today's Services: <span>
-                                        <field name="total_count" />
+                                <button name="action_afl_dashboard_initiated" type="object"
+                                    class="dashboard-box brown">Services Initiated: <span>
+                                        <field name="initiate_count" />
                                     </span></button>
+
+                                <button name="action_afl_dashboard_inprogress" type="object"
+                                    class="dashboard-box blue">Services In Progress: <span>
+                                        <field name="progress_count" />
+                                    </span></button>
+
                                 <button name="action_afl_dashboard_completed" type="object"
                                     class="dashboard-box success">Services Completed: <span>
                                         <field name="done_count" />
                                     </span></button>
+
+                                <button name="action_afl_dashboard_driver_cancel_reach"
+                                    type="object"
+                                    class="dashboard-box warning">Driver Reached and Cancelled: <span>
+                                        <field name="driver_cancel_reach_count" />
+                                    </span></button>
+
                                 <button name="action_afl_dashboard_cancelled" type="object"
                                     class="dashboard-box danger">Services Cancelled: <span>
                                         <field name="cancelled_count" />
                                     </span></button>
-                                <button name="action_afl_dashboard_driver_cancel_reach" type="object"
-                                    class="dashboard-box warning">Driver Reached and Cancelled: <span>
-                                        <field name="driver_cancel_reach_count" />
+
+                                <button name="action_afl_dashboard_total" type="object"
+                                    class="dashboard-box purple">Today's Services: <span>
+                                        <field name="total_count" />
                                     </span></button>
-                                <button name="action_afl_dashboard_initiated" type="object"
-                                    class="dashboard-box">Services Initiated: <span>
-                                        <field name="initiate_count" />
+
+                                <!-- NUMBER OF ASSIGNED SLA -->
+                                <button name="action_afl_dashboard_assigned_sla" type="object"
+                                    class="dashboard-box violet" style="background-color: #6f42c1;">Assigned SLA: <span>
+                                        <field name="assigned_sla_count" />%
                                     </span></button>
-                                <button name="action_afl_dashboard_inprogress" type="object"
-                                    class="dashboard-box">Services In Progress: <span>
-                                        <field name="progress_count" />
+                                <!-- NUMBER OF reached SLA -->
+                                <button name="action_afl_dashboard_reached_sla" type="object"
+                                    class="dashboard-box blue" style="background-color: #6f42c1;">Reach SLA: <span>
+                                        <field name="reached_sla_count" />%
                                     </span></button>
                             </div>
                         </div>
-                        
+
                         <!-- WhatsApp Dashboard Container -->
                         <div class="dashboard-section whatsapp-section">
                             <div class="section-header whatsapp-header">
-                                <span class="whatsapp-icon">📱</span>
-                                WhatsApp Service Dashboard
-                            </div>
+                                <span class="whatsapp-icon">📱</span> WhatsApp Service Dashboard </div>
                             <div class="dashboard-container">
                                 <button name="action_dashboard_todays_whatsapp" type="object"
                                     class="dashboard-box whatsapp">Today's Services:<span>
                                         <field name="today_whatsapp_count" />
-                                </span></button>
+                                    </span></button>
                                 <button name="action_whatsaspp_service_completed" type="object"
                                     class="dashboard-box success">Services Completed:<span>
                                         <field name="whatsapp_done_count" />
-                                </span></button>
+                                    </span></button>
                                 <button name="action_whatsapp_cancelled" type="object"
                                     class="dashboard-box danger">Services Cancelled:<span>
                                         <field name="whatsapp_cancel_count" />
-                                </span></button>
+                                    </span></button>
                             </div>
                         </div>
                     </div>
-                    
+
                     <group string="Service Details" invisible='1'>
                         <field name="comment_text" />
                         <tree string="AFL Services" editable="false">
