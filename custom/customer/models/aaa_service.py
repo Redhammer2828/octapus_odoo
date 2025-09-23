@@ -341,6 +341,7 @@ class AAAService(models.Model):
             _logger.error("API Request Failed: %s", str(e))
             raise UserError(f"API request failed: {str(e)}")
         # Change state after API call
+        self.state = 'cancel'
         self.env['service.history'].create({
                 'service_id': self.id,  # Assuming service_id is a Many2one field
                 'user': self.env.user.id,
@@ -348,7 +349,7 @@ class AAAService(models.Model):
                 'status': 'Driver Cancel Request Approved',
                 'timeline_status': self.state,
         })
-        self.state = 'cancel'
+        
 
     @api.depends('service_time')
     def _compute_current_time(self):

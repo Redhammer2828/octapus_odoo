@@ -50,6 +50,11 @@ class AAAServiceAddons(models.Model):
     location_to_longitude = fields.Char(string="To Longitude")
     emirate_to_location = fields.Char(string="Emirate To")
 
+    state = fields.Selection(
+        selection_add=[
+            ('whatsapp_cancel', 'Whatsapp Cancelled'),
+        ])
+
 
 
     def write(self, vals):
