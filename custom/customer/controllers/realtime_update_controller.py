@@ -10,11 +10,11 @@ class RealtimeUpdateController(http.Controller):
             data = json.loads(request.httprequest.data.decode())  # raw JSON body
             service_number = data.get('service_number')
             if not service_number:
-                return request.make_json_response({"status": "error", "message": "Missing Service Number"}, 400)
+                return request.make_json_response({"status": "error", "message": "Missing Service Number"}, status=400)
 
             record = request.env['aaa.service'].sudo().search([('name', '=', service_number)], limit=1)
             if not record:
-                return request.make_json_response({"status": "error", "message": "Service not found"}, 404)
+                return request.make_json_response({"status": "error", "message": "Service not found"}, status=404)
 
             # Broadcast bus event
             request.env["bus.bus"].sudo()._sendone(
