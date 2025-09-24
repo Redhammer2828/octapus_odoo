@@ -118,7 +118,7 @@ class AFLServiceDashboard(models.Model):
                     met_service_count += 1
 
         # Calculate SLA percentage using existing total_count field
-        if self.total_count > 0 and total_services_count > 0:
+        if self.total_count > 0:
             self.assigned_sla_count = (met_service_count / total_services_count) * 100
         else:
             self.assigned_sla_count = 0.0
