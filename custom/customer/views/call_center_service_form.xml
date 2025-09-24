@@ -227,6 +227,11 @@
                                 <field name="reach_done_by" invisible="state in ['dispatch', 'start']" readonly="1" />
                                 <field name="done_done_by" invisible="state != 'done'" readonly="1" />
                             </group>
+                            <group string="Timeline" invisible="state in ['draft', 'initiate']">
+                                <field name="dispatched_time" readonly="1" />
+                                <field name="reached_time" readonly="1" />
+
+                            </group>
                             <group string="Invoice Details" invisible="invoice_state == 'not_invoiced'">
                                 <field name="invoice_id" readonly="1" />
                                 <field name="invoiced_date" readonly="1" />
