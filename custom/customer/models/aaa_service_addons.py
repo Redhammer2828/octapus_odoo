@@ -50,6 +50,11 @@ class AAAServiceAddons(models.Model):
     location_to_longitude = fields.Char(string="To Longitude")
     emirate_to_location = fields.Char(string="Emirate To")
 
+    state = fields.Selection(
+        selection_add=[
+            ('whatsapp_cancel', 'Whatsapp Cancelled'),
+        ])
+
 
 
     def write(self, vals):
@@ -205,3 +210,25 @@ class AAAServiceAddons(models.Model):
                     })
         
         return recs
+    
+    def action_approve_whatsapp_cancel_service(self):
+
+        self.state = 'cancel'
+        self.env['service.history'].create({
+                'service_id': self.id,  # Assuming service_id is a Many2one field
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': 'Whatsapp Service Cancel Request Approved',
+                'timeline_status': self.state,
+        })
+
+
+
+
+class ServiceHistory(models.Model):
+    _inherit = 'service.history'
+
+    timeline_status = fields.Selection(
+        selection_add=[
+            ('whatsapp_cancel', 'Whatsapp Cancelled'),
+        ])

@@ -293,6 +293,9 @@ class AAAService(models.Model):
     
     # WhastApp Service
     is_whatsapp_service = fields.Boolean(string="Is WhatsApp Service", default=False)
+    #for afl dashboard
+    dispatched_time = fields.Datetime(string="Dispatched Time")
+    reached_time = fields.Datetime(string="Reached Time")
 # ----------------------------------FIELDS END-------------------------------------------------------------
     def _target_model_on_change(self):
         return ["afl.dashboard", "aaa.service"]
@@ -326,6 +329,7 @@ class AAAService(models.Model):
             _logger.error("API Request Failed: %s", str(e))
             raise UserError(f"API request failed: {str(e)}")
         # Change state after API call
+        self.state = 'cancel'
         self.env['service.history'].create({
                 'service_id': self.id,  # Assuming service_id is a Many2one field
                 'user': self.env.user.id,
@@ -333,7 +337,7 @@ class AAAService(models.Model):
                 'status': 'Driver Cancel Request Approved',
                 'timeline_status': self.state,
         })
-        self.state = 'cancel'
+        
 
     @api.depends('service_time')
     def _compute_current_time(self):
@@ -1119,6 +1123,8 @@ class AAAService(models.Model):
         print('checking the service create dispatch')
         self.ensure_one()
         # self._generate_service_name()
+        # saving TIme of Dispatch
+        self.dispatched_time = fields.Datetime.now()
 
         if not self.product_id:
             raise UserError(_("Provide the service details."))
@@ -1658,6 +1664,7 @@ class AAAService(models.Model):
 
     def action_reach_service(self):
         self.state = 'reach'
+        self.reached_time = fields.Datetime.now()
         for service in self:
             if not service.credit_proforma_number:
                 raise UserError("You must fill the Trip Sheet Number before completing the service.")
