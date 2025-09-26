@@ -24,8 +24,8 @@
                 <header>
                     <button name="get_services" type="object" string="Get Services" class="btn-primary" invisible="state == 'confirm'" />
                     <button name="action_confirm" type="object" string="Confirm" class="btn-primary" invisible="state == 'confirm'" />
-                    <button name="customer.credit_validation_xlsx_report" type="action" string="Export Report" invisible="state == 'draft'" class="btn-primary" />
-                    <button name="customer.credit_validation_pdf_report" type="action" string="Print Report" invisible="state == 'draft'" class="btn-primary" />
+                    <!-- <button name="customer.credit_validation_xlsx_report" type="action" string="Export Report" invisible="state == 'draft'" class="btn-primary" />
+                    <button name="customer.credit_validation_pdf_report" type="action" string="Print Report" invisible="state == 'draft'" class="btn-primary" /> -->
                     <button name="action_draft" type="object" string="Reset to Draft" invisible="state == 'draft'" />
                     <field name="state" widget="statusbar" options="{'clickale':0}" />
                 </header>
