@@ -176,32 +176,54 @@ class AAAServiceAddons(models.Model):
                     'timeline_status': record.state,
                 })
 
-            uid = self.env.context.get('uid')
+            # uid = self.env.context.get('uid')
 
-            self.env["bus.bus"].sudo()._sendone(
-                "broadcast",
-                "page_refresh", 
-                {
-                    "record_id": self.id,
-                    "model_name": self._name,
-                    "uid": uid,
-                    })
-            print(f"Request ID: {uid}")
+            # self.env["bus.bus"].sudo()._sendone(
+            #     "broadcast",
+            #     "page_refresh", 
+            #     {
+            #         "record_id": self.id,
+            #         "model_name": self._name,
+            #         "uid": uid,
+            #         })
+            # print(f"Request ID: {uid}")
 
         return result
     
 
     
-    def create(self, vals_list):
-        recs = super().create(vals_list)
+    # def create(self, vals_list):
+    #     recs = super().create(vals_list)
         
-        self.env["bus.bus"].sudo()._sendone(
-                "broadcast",
-                "page_refresh", 
-                {
-                    "record_id": self.id,
-                    "model_name": self._name,
-                    "is_create_mode": True,
-                    })
+    #     self.env["bus.bus"].sudo()._sendone(
+    #             "broadcast",
+    #             "page_refresh", 
+    #             {
+    #                 "record_id": self.id,
+    #                 "model_name": self._name,
+    #                 "is_create_mode": True,
+    #                 })
         
-        return recs
+    #     return recs
+    
+    def action_approve_whatsapp_cancel_service(self):
+
+        self.state = 'cancel'
+        self.env['service.history'].create({
+                'service_id': self.id,  # Assuming service_id is a Many2one field
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': 'Whatsapp Service Cancel Request Approved',
+                'timeline_status': self.state,
+        })
+
+
+
+
+class ServiceHistory(models.Model):
+    _inherit = 'service.history'
+
+    timeline_status = fields.Selection(
+        selection_add=[
+            ('whatsapp_cancel', 'Whatsapp Cancelled'),
+        ])
