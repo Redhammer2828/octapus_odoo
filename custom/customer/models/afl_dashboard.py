@@ -78,7 +78,7 @@ class AFLServiceDashboard(models.Model):
         self.driver_cancel_reach_count = Service.search_count(customer_filter + [('state', '=', 'driver_cancel_reach')])
         self.open_count = Service.search_count(customer_filter + [('state', '=', 'open')])
         self.initiate_count = Service.search_count(customer_filter + [('state', '=', 'initiate')])
-        self.progress_count = Service.search_count(customer_filter + [('state', '=', 'start')])
+        self.progress_count = Service.search_count(customer_filter + [('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver'])])
 
 
     @api.depends('state')
@@ -269,7 +269,7 @@ class AFLServiceDashboard(models.Model):
                 ('is_afl_application', '=', True),
                 ('service_time', '>=', start_utc_str),
                 ('service_time', '<=', end_utc_str),
-                ('state', '=', 'start'),
+                ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver']),
             ],
             'context': {
                 'create': False,
