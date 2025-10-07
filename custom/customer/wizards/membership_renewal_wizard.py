@@ -97,11 +97,25 @@ class MembershipRenewalWizard(models.TransientModel):
     #             partner.membership_state = 'temp'  # Only update if user is actually in the group
 
     def action_renew(self):
+
+        partner_id = self._context.get('active_id')
+       
         if self.expiry_date <= self.activation_date:
             raise UserError("Expiry Date must be greater than Activation Date.")
-        partner = self.env['res.partner'].browse(self._context.get('active_id'))
+        partner = self.env['res.partner'].browse(partner_id)
         if not partner:
             raise UserError("No active partner found for renewal.")
+        
+        if self.env.user.partner_id.is_agent_user == True:
+            services = self.env['aaa.service'].search([('member_id', '=', partner_id), ('vehicle_chasis_no', '=', self.vehicle_chasis_no), ('customer_id', '=', self.parent_customer_id.id), ('state', 'not in', ['cancel', 'done_cancel'])])
+
+            for service in services:
+                service_date = service.service_time.date()
+                if service_date >= self.activation_date:
+                    formatted_date = self.activation_date.strftime("%d-%m-%Y")
+                    raise UserError(f"Cannot renew membership. There are active services on or after the activation date {formatted_date}.")
+                
+
         # Log the values before the update
         logger.info("Updating Membership for Partner ID: %s", partner.id)
         logger.info("Card Type ID in Wizard: %s", self.card_type_id.id)
