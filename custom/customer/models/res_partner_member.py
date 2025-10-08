@@ -631,6 +631,11 @@ class ResPartnerMembers(models.Model):
         }
 
     def action_create_service(self):
+        if self.member_activate_date > fields.Date.today():
+            raise UserError(_("Membership is not active yet. Please check the activation date."))
+        if self.member_expiry_date < fields.Date.today():
+            raise UserError(_("Membership has expired. Please renew the membership to create a service."))
+        
         view_id = self.env.ref('customer.call_center_service_form').id
 
         vehicle_model = self.env['member.vehicle.type'].search([('name', '=', self.vehicle_model)], limit=1)
