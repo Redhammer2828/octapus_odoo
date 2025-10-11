@@ -136,6 +136,7 @@ class AAAService(models.Model):
     claim_number = fields.Char(string="Claim Number")
     smarto = fields.Boolean(string="Order ID")
     smarto_id = fields.Char(string="Order ID")
+    show_rac_amount = fields.Boolean(string="Show RAC Amount", default=False)
     rac_amount = fields.Float(string="RAC Amount")
     comments = fields.Text(string="Comments")
     import_comments = fields.Text('import_comments')
@@ -298,6 +299,16 @@ class AAAService(models.Model):
     dispatched_time = fields.Datetime(string="Dispatched Time")
     reached_time = fields.Datetime(string="Reached Time")
 # ----------------------------------FIELDS END-------------------------------------------------------------
+
+    @api.onchange('product_id')
+    def show_rac_amount_for_rac_upgrade(self):
+        for record in self:
+            if record.product_id and 'RENT A CAR - UPGRADE' in record.product_id.name:
+                record.show_rac_amount = True
+            else:
+                record.show_rac_amount = False
+
+
     def _target_model_on_change(self):
         return ["afl.dashboard", "aaa.service"]
  
@@ -1734,6 +1745,10 @@ class AAAService(models.Model):
             # Ensure credit_proforma_number is filled
             if not service.credit_proforma_number:
                 raise UserError("You must fill the Trip Sheet Number before completing the service.")
+            
+            if service.show_rac_amount:
+                if service.rac_amount == 0.0 or service.rac_amount is False:
+                    raise UserError("You must fill the RAC Amount before completing the service.")
             
             if service.is_afl_application == True and service.service_from_app == False:
                 base_url = os.getenv('BASE_URL')

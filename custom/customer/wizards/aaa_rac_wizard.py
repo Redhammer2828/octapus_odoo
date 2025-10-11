@@ -127,7 +127,7 @@ class AaaTimelineWizard(models.TransientModel):
         })
 
         # Title Row
-        worksheet.merge_range('A1:AG1', 'RAC REPORT', title_format)
+        worksheet.merge_range('A1:AH1', 'RAC REPORT', title_format)
 
         # Metadata Fields
         date_range = f"{self.from_date.strftime('%d/%m/%Y')} - {self.to_date.strftime('%d/%m/%Y')}" if self.from_date and self.to_date else ''
@@ -152,7 +152,7 @@ class AaaTimelineWizard(models.TransientModel):
         headers = [
             'Service Number', 'Member', 'Customer', 'Category', 'Member Type', 'Type', 'Customer C/O', 'Claim No', 'Trip Sheet No', 'Vehicle Type', 'Vehicle Model', 'Vehicle Plate', 'To Location', 'To Emirate', 'From date & time', 'To date & time', 'Total Rental Days',  'Provider', 'Driver Name',
             'Service', 'Service Date', 'Status', 'Request Completed On', 'Driver Start Time', 'Driver Arrival Time',
-            'Service Started Time', 'Service Completed Time', 'Cancellation Time', 'Cash Collected', 'Dispatch Center Notes', 'RAC Amount'
+            'Service Started Time', 'Service Completed Time', 'Cancellation Time', 'Cash Collected', 'Dispatch Center Notes', 'Order ID', 'RAC Amount'
         ]
 
         # headers = [
@@ -396,6 +396,9 @@ class AaaTimelineWizard(models.TransientModel):
                     ], order="create_date desc", limit=1)  # Fetch the latest comment
  
                     field_value = service_comment.comment if service_comment and service_comment.comment else record.import_comments
+
+                elif header == 'Order ID':
+                    field_value = record.smarto_id or ''
 
                 elif header == 'RAC Amount':
                     field_value = record.rac_amount or ''
