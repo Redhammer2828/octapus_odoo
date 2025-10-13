@@ -109,6 +109,7 @@
                                 <field name="membership_num" readonly="1" invisible="member_type in ['credit','adhoc']" />
                                 <field name="member_contact_no" string="Mobile Number" readonly="state not in ['draft', 'initiate', 'dispatch']" />
                                 <field name="email" string="Email" readonly="state not in ['draft', 'initiate', 'dispatch']" />
+                                <field name="rac_amount" />
                                 <field name="claim_membership" invisible="type != 'cash'" readonly="state not in ['initiate', 'dispatch']" />
                                 <field name="deposit_amount" invisible="1" />
                                 <field name="schedule_service_check" readonly="1" invisible="1" />
