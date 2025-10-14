@@ -47,6 +47,7 @@
                     <field name="create_uid" string="Created By" />
                     <field name="member_id" />
                     <field name="customer_id" />
+                    <field name="smarto_id" />
                     <field name="membership_num" />
                     <field name="old_membership_number" />
                     <field name="member_contact_no" />
