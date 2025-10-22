@@ -250,10 +250,15 @@ class MembershipRenewalWizard(models.TransientModel):
                         'name': self.name,
                         'card_type_id': self.card_type_id.id,
                         'policy_no': self.policy_no,
+                        'ref_num': partner.ref_num,
+                        'member_partner_category_id': partner.member_partner_category_id.id,
                         'vehicle_plate': self.vehicle_plate,
+                        'vehicle_type': partner.vehicle_type,
                         'vehicle_chasis_no': self.vehicle_chasis_no,
                         'invoice_ref_date': self.invoice_ref_date,
                         'delivery_ref_date': self.delivery_ref_date,
+                        'member_activate_date': self.activation_date,
+                        'member_expiry_date': self.expiry_date,
                     }
 
                     partner.write({

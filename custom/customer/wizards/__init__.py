@@ -18,3 +18,5 @@ from . import vendors_report_wizard
 from . import aaa_rac_wizard
 from . import rac_bulk_upload
 from . import aaa_cancel_report
+from . import account_credit_note_inherit
+from . import account_debit_note_inherit

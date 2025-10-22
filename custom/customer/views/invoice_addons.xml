@@ -5,16 +5,27 @@
         <field name="model">account.move</field>
         <field name="inherit_id" ref="account.view_move_form" />
         <field name="arch" type="xml">
-            <!-- <xpath expr="//header/button[@name='action_invoice_sent']" position="before">
+            <xpath expr="//header/button[@name='action_invoice_sent']" position="before">
 
                 <button name="customer.credit_invoice_pdf_report" type="action" string="Generate Invoice" invisible="state == 'draft'" class="btn-primary" />
-            </xpath> -->
+                <button name="customer.invoice_xlsx_report" type="action" string="Export" invisible="state == 'draft' or (invoice_line_type == 'separate' and member_type == 'credit')" />
+            </xpath>
             <xpath expr="//header/button[@name='action_invoice_sent']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
+            
             <xpath expr="//header/button[@name='preview_invoice']" position="attributes">
-                <attribute name="invisible">1</attribute>
+                <attribute name="class">btn-primary</attribute>
             </xpath>
+
+            <xpath expr="//header/button[@name='action_reverse']" position="after">
+                <button name="action_debit_note" type="object" string="Debit Note" invisible="state == 'draft' or move_type == 'out_refund'" />
+            </xpath>
+
+            <xpath expr="//form/header/button[@name='action_debit_note']" position="after">
+                <xpath expr="//form/header/button[@name='action_register_payment']" position="move"/>
+            </xpath>
+
             <!-- Add domain to partner_id field and remove create option -->
             <field name="partner_id" position="attributes">
                 <attribute name="domain">[('is_company', '=', True)]</attribute>
@@ -54,15 +65,23 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='category_id']" position="after">
 
-                <field name="from_date" required="1" readonly="state != 'draft'" />
-                <field name="to_date" required="1" readonly="state != 'draft'" />
-                <field name="invoice_line_type" widget="radio" readonly="state != 'draft'" />
+                <field name="product_domain_char" invisible="1"/>
+                <field name="service_domain_char" invisible="1"/>
+                <field name="from_date" required="1" readonly="state != 'draft'" invisible="move_type == 'out_refund' or debit_origin_id != False" />
+                <field name="to_date" required="1" readonly="state != 'draft'" invisible="move_type == 'out_refund' or debit_origin_id != False" />
+                <field name="invoice_line_type" widget="radio" readonly="state != 'draft'" invisible="move_type == 'out_refund' or debit_origin_id != False" />
                 <field name="product_ids" invisible="1" />
                 <field name="product_id" invisible="invoice_line_type == 'consolidated' or member_type == 'credit'" options="{'no_create': True, 'no_quick_create': True}" readonly="state != 'draft'" />
                 <field name="service_ids" invisible="1" />
                 <field name="service_id" invisible="invoice_line_type == 'consolidated' or member_type == 'policy'" options="{'no_create': True, 'no_quick_create': True}" readonly="state != 'draft'" />
                 <field name="is_rent_a_car" invisible="1" />
 
+            </xpath>
+
+            <xpath expr="//group[@id='header_right_group']/field[@name='currency_id']" position="after">
+                <field name="reference_invoice_ids" widget="many2many_tags" invisible="not reference_invoice_ids or move_type != 'out_refund'" />
+                <!-- <field name="debit_note_number" invisible="state == 'draft' or move_type == 'out_refund'" /> -->
+                <field name="original_invoice_number" invisible="move_type == 'out_invoice' and debit_origin_id == False" />
             </xpath>
 
             <xpath expr="//notebook" position="before">
@@ -118,19 +137,21 @@
                     </div>
                 </page>
 
-                <page id="policy_memberships_tab" name="policy_memberships_tab" string="Membership Details" invisible="invoice_line_type == 'separate' or member_type == 'credit'">
+                <page id="policy_memberships_tab" name="policy_memberships_tab" string="Membership Details" invisible="invoice_line_type == 'separate' and member_type == 'credit'">
                     <field name="policy_membership_line_ids" widget="section_and_note_one2many" mode="tree" readonly="state != 'draft'">
                         <tree editable="bottom" create="false" delete="false">
                             <field name="policy_invoice_id" column_invisible="1" />
-                            <field name="membership_no" />
+                            <!-- <field name="membership_no" /> -->
                             <field name="name" />
                             <field name="plate_no" />
                             <field name="chasis_no" />
                             <field name="policy_no" />
                             <field name="start_date" />
                             <field name="expiry_date" />
+                            <field name="invoice_ref_date" />
                             <field name="car_make" />
                             <field name="amount" />
+                            <field name="invoice_reference_id" column_invisible="parent.move_type != 'out_refund'" />
                         </tree>
                     </field>
                 </page>
@@ -141,6 +162,18 @@
 
     <record id="om_account_asset.view_invoice_asset_category" model="ir.ui.view">
         <field name="active" eval="False"/>
+    </record>
+
+    <record id="view_out_credit_note_tree_no_create" model="ir.ui.view">
+        <field name="name">account.out.invoice.tree.no.create</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_out_credit_note_tree"/>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <xpath expr="//tree" position="attributes">
+            <attribute name="create">false</attribute>
+            </xpath>
+        </field>
     </record>
 
 

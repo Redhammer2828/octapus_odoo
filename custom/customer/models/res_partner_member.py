@@ -841,6 +841,8 @@ class ResPartnerMembers(models.Model):
         ('not_invoiced', 'Not Invoiced'),
         ('invoiced', 'Invoiced'),
         ], string="Invoice Status", readonly=True, default='not_invoiced')
+        invoiced_by = fields.Many2one('res.users', string="Invoiced By")
+        invoice_id = fields.Many2one('account.move', string="Invoice Number")
 
     class MembershipTimeline(models.Model):
         _name = 'membership.timeline'

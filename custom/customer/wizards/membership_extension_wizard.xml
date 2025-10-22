@@ -13,6 +13,9 @@
                         <field name="new_expiry_date" on_change="1" required="1" />
                     </group>
                 </group>
+                <group>
+                    <field name="issue_debit_note" />
+                </group>
                 <footer>
                     <button name="action_extension" string="Extend" type="object"
                         class="btn-primary" />

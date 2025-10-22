@@ -573,6 +573,7 @@ class DataUploadFile(models.Model):
                             'member_partner_category_id': category_record.id,
                             'vehicle_chasis_no': member_line.vehicle_chasis_no,
                             'vehicle_plate': member_line.vehicle_plate,
+                            'vehicle_type': member_line.vehicle_type,
                             'street': member_line.street,
                             'mobile': member_line.mobile,
                             'remarks': member_line.remarks,

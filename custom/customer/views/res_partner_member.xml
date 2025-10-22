@@ -138,6 +138,13 @@
                                 <field name="vehicle_reg_code" string="Vehicle Reg. Code" />
                                 <field name="vehicle_plate" string="Vehicle Plate" />
                                 <field name="vehicle_mfg_year" string="Vehicle Mfg Year" />
+
+                                <separator string="Invoice Detaials" />
+                                <field name="invoice_state" readonly="1" widget="badge" />
+                                <field name="invoiced_by" readonly="1" invisible="invoice_state == 'not_invoiced'" />
+                                <field name="invoice_id" readonly="1" invisible="invoice_state == 'not_invoiced'" />
+                                <field name="issue_credit_note" invisible="invoice_state == 'not_invoiced' and membership_state != 'cancel'" />
+                                <field name="issue_debit_note" invisible="invoice_state == 'not_invoiced'" />
                             </group>
                             <group>
                                 <field name="phone" widget="phone" />
@@ -223,6 +230,9 @@
                                         <field name="invoice_ref_date" />
                                         <field name="card_type_id"
                                             options="{'no_create_edit':1}" />
+                                        <field name="invoice_state" widget="badge" />
+                                        <field name="invoiced_by" />
+                                        <field name="invoice_id" />
                                     </tree>
                                 </field>
                             </page>
@@ -262,6 +272,9 @@
                                         <field name="vehicle_plate" />
                                         <field name="invoice_ref_date" />
                                         <field name="delivery_ref_date" />
+                                        <field name="invoice_state" widget="badge" />
+                                        <field name="invoiced_by" />
+                                        <field name="invoice_id" />
                                         <!-- <field name="street" /> -->
                                         <!-- <field name="mobile" /> -->
                                         <!-- <field name="remarks" /> -->
