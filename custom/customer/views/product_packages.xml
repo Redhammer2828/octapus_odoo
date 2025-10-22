@@ -101,6 +101,10 @@
                                         <field name="is_intercity"/>
                                         <field name="intercity_limit_period" />
                                         <field name="intercity_limit"/>
+                                        <field name="allowed_intercity_emirates" widget="many2many_tags" 
+                                               domain="[('country_id.code', '=', 'AE')]"
+                                               placeholder="Select emirates allowed for intercity services when is_intercity=false"
+                                               invisible="is_intercity"/>
                                         <field name="quantity" />
                                     </tree>
                                 </field>
