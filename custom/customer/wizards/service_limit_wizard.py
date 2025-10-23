@@ -1,0 +1,58 @@
+from odoo import api, fields, models, _
+from odoo.exceptions import ValidationError
+
+
+class ServiceLimitWizard(models.TransientModel):
+    _name = 'service.limit.wizard'
+    _description = 'Service Limit Wizard'
+
+    service_id = fields.Many2one('aaa.service', string='Service', required=True)
+    message = fields.Text(string='Message', readonly=True)
+    existing_service_count = fields.Integer(string='Services Used', readonly=True)
+    service_limit = fields.Integer(string='Service Limit', readonly=True)
+    service_type = fields.Char(string='Service Type', readonly=True)
+    limit_period = fields.Char(string='Limit Period', readonly=True)
+    period_description = fields.Char(string='Period Description', readonly=True)
+
+    def action_proceed(self):
+        """Allow dispatch to proceed and record in service history"""
+        # Add service history entry for proceed action
+        self.service_id.service_history_ids.create({
+            'service_id': self.service_id.id,
+            'user': self.env.user.id,
+            'time': fields.Datetime.now(),
+            'status': f'Service limit exceeded - Proceeded with dispatch ({self.existing_service_count}/{self.service_limit} {self.service_type} services used in {self.limit_period} period)',
+            'timeline_status': 'dispatch'
+        })
+        
+        # Continue with normal dispatch logic
+        self.service_id._dispatch_service()
+        
+        return {'type': 'ir.actions.act_window_close'}
+
+    def action_restrict(self):
+        """Restrict dispatch and record in service history"""
+        # Add service history entry for restrict action
+        self.service_id.service_history_ids.create({
+            'service_id': self.service_id.id,
+            'user': self.env.user.id,
+            'time': fields.Datetime.now(),
+            'status': f'Service limit exceeded - Dispatch restricted ({self.existing_service_count}/{self.service_limit} {self.service_type} services used in {self.limit_period} period)',
+            'timeline_status': 'initiate'  # Keep in initiate state
+        })
+        
+        # Show restriction message and close wizard
+        message = _('Service dispatch has been restricted due to service limit being reached.')
+        
+        # Display notification and close wizard
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Service Restricted'),
+                'message': message,
+                'type': 'info',
+                'sticky': False,
+                'next': {'type': 'ir.actions.act_window_close'}
+            }
+        }

@@ -1207,7 +1207,11 @@ class AAAService(models.Model):
 
         # Intercity validation for policy members only
         if self.member_id.member_type == 'policy':
-            if not self._validate_intercity_service(product_template_id):
+            validation_result = self._validate_intercity_service(product_template_id)
+            if isinstance(validation_result, dict):
+                # If validation returns a wizard action, return it
+                return validation_result
+            elif not validation_result:
                 print("INTERCITY SERVICE VALIDATION FAILED - TRIGGERING CASH WIZARD")
                 return self._trigger_cash_service_wizard()
 
@@ -1501,6 +1505,79 @@ class AAAService(models.Model):
             # No restriction on emirates - allow travel between different cities/emirates
             print("DEBUG: Service allows intercity travel (is_intercity='true')")
             pass
+        elif package_service.is_intercity == 'same_city':
+            # Package is for same city with 40km radius limit
+            print("DEBUG: Service restricted to same city with 40km radius (is_intercity='same_city')")
+            if package_service.intercity_limit_period == 'allow_around_40km':
+                # Validate 40km radius between from_location and to_location
+                if self.from_location and self.to_location:
+                    from_lat = self.from_location.latitude
+                    from_lng = self.from_location.longitude
+                    to_lat = self.to_location.latitude
+                    to_lng = self.to_location.longitude
+                    
+                    if from_lat and from_lng and to_lat and to_lng:
+                        try:
+                            # Convert string coordinates to float
+                            from_lat_f = float(from_lat)
+                            from_lng_f = float(from_lng)
+                            to_lat_f = float(to_lat)
+                            to_lng_f = float(to_lng)
+                            
+                            # Calculate distance using Haversine formula
+                            import math
+                            
+                            # Convert latitude and longitude from degrees to radians
+                            lat1_rad = math.radians(from_lat_f)
+                            lng1_rad = math.radians(from_lng_f)
+                            lat2_rad = math.radians(to_lat_f)
+                            lng2_rad = math.radians(to_lng_f)
+                            
+                            # Haversine formula
+                            dlat = lat2_rad - lat1_rad
+                            dlng = lng2_rad - lng1_rad
+                            a = math.sin(dlat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlng/2)**2
+                            c = 2 * math.asin(math.sqrt(a))
+                            
+                            # Radius of earth in kilometers
+                            earth_radius_km = 6371
+                            distance_km = earth_radius_km * c
+                            
+                            print(f"DEBUG: Distance calculated: {distance_km:.2f} km")
+                            
+                            if distance_km > 40:
+                                raise ValidationError(_(
+                                    "⚠️ DISTANCE LIMIT EXCEEDED!\n\n"
+                                    "Your package (%s) allows same city services within 40km radius only.\n\n"
+                                    "📍 Distance between selected locations: %.2f km\n"
+                                    "🚫 Maximum allowed distance: 40 km\n\n"
+                                    "✅ Please select locations within 40km radius or upgrade your package."
+                                ) % (package_service.name, distance_km))
+                            else:
+                                print(f"DEBUG: Distance validation passed: {distance_km:.2f} km <= 40 km")
+                                
+                        except (ValueError, TypeError) as e:
+                            print(f"DEBUG: Error calculating distance: {e}")
+                            raise ValidationError(_(
+                                "⚠️ LOCATION VALIDATION ERROR!\n\n"
+                                "Unable to validate distance between selected locations.\n"
+                                "Please ensure both locations have valid coordinates."
+                            ))
+                    else:
+                        raise ValidationError(_(
+                            "⚠️ MISSING LOCATION COORDINATES!\n\n"
+                            "One or both selected locations are missing coordinate information.\n"
+                            "Please select locations with valid GPS coordinates."
+                        ))
+                else:
+                    raise ValidationError(_(
+                        "⚠️ LOCATIONS NOT SELECTED!\n\n"
+                        "Please select both from and to locations for distance validation."
+                    ))
+        elif package_service.is_intercity == 'no_validation':
+            # No validation required
+            print("DEBUG: No validation required for this package (is_intercity='no_validation')")
+            return True
         else:
             # intercity = False: Can travel within same emirate only
             print("DEBUG: Service restricted to same emirate only (is_intercity='false')")
@@ -1635,8 +1712,8 @@ class AAAService(models.Model):
             existing_service_count = 0
             
             if is_current_service_intercity:
-                # DIFFERENT EMIRATE SERVICE: Check if package has intercity=true
-                if package_service.is_intercity:
+                 # DIFFERENT EMIRATE SERVICE: Check if package has intercity=true
+                if package_service.is_intercity == 'true':
                     # Count only DIFFERENT EMIRATE completed services against the limit
                     different_emirate_services = [s for s in all_member_services if s.from_location_emirate != s.to_location_emirate]
                     existing_service_count = len(different_emirate_services)
@@ -1653,7 +1730,7 @@ class AAAService(models.Model):
                     print(f"DEBUG: Counting different emirate services: {existing_service_count} out of {len(all_member_services)} total")
             else:
                 # SAME EMIRATE SERVICE: Check if package has intercity=false
-                if not package_service.is_intercity:
+                if package_service.is_intercity == 'false':
                     # Count only SAME EMIRATE completed services against the limit
                     same_emirate_services = [s for s in all_member_services if s.from_location_emirate == s.to_location_emirate]
                     existing_service_count = len(same_emirate_services)
@@ -1674,23 +1751,43 @@ class AAAService(models.Model):
             if should_check_limit:
                 print(f"DEBUG: Checking if {existing_service_count} >= {package_service.intercity_limit}")
                 if existing_service_count >= package_service.intercity_limit:
-                    print("DEBUG: LIMIT REACHED! About to raise ValidationError")
-                    raise ValidationError(_(
-                        "⚠️ SERVICE LIMIT REACHED!\n\n"
-                        "You have already used %d out of %d allowed %s services within your %s limit.\n\n"
-                        "📅 Period: %s\n"
-                        "🚫 No more %s services can be booked until:\n"
-                        "   • The %s period resets, OR\n"
-                        "   • The service limit is reset by administrator"
-                    ) % (
-                        existing_service_count, 
-                        package_service.intercity_limit,
-                        service_type,
-                        limit_period,
-                        period_description,
-                        service_type,
-                        limit_period
-                    ))
+                    print("DEBUG: LIMIT REACHED! Showing wizard dialog")
+                    # Create wizard with service limit information
+                    wizard = self.env['service.limit.wizard'].create({
+                        'service_id': self.id,
+                        'message': _(
+                            "⚠️ SERVICE LIMIT REACHED!\n\n"
+                            "You have already used %d out of %d allowed %s services within your %s limit.\n\n"
+                            "📅 Period: %s\n"
+                            "🚫 No more %s services can be booked until:\n"
+                            "   • The %s period resets, OR\n"
+                            "   • The service limit is reset by administrator"
+                        ) % (
+                            existing_service_count, 
+                            package_service.intercity_limit,
+                            service_type,
+                            limit_period,
+                            period_description,
+                            service_type,
+                            limit_period
+                        ),
+                        'existing_service_count': existing_service_count,
+                        'service_limit': package_service.intercity_limit,
+                        'service_type': service_type,
+                        'limit_period': limit_period,
+                        'period_description': period_description,
+                    })
+                    
+                    # Return wizard action instead of raising error
+                    return {
+                        'name': _('Service Limit Reached'),
+                        'type': 'ir.actions.act_window',
+                        'res_model': 'service.limit.wizard',
+                        'res_id': wizard.id,
+                        'view_mode': 'form',
+                        'target': 'new',
+                        'context': self.env.context,
+                    }
                 else:
                     print(f"DEBUG: Limit check passed - {existing_service_count} < {package_service.intercity_limit}")
             else:

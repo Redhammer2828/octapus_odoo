@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="service_limit_wizard_view_form" model="ir.ui.view">
+        <field name="name">service.limit.wizard.form</field>
+        <field name="model">service.limit.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Service Limit Reached">
+                <div class="alert alert-warning" role="alert">
+                    <h4>⚠️ SERVICE LIMIT REACHED!</h4>
+                </div>
+                
+                <group>
+                    <field name="service_id" invisible="1"/>
+                    <field name="message" widget="text" nolabel="1" readonly="1"/>
+                </group>
+                
+                <group col="4">
+                    <field name="existing_service_count" string="Services Used"/>
+                    <field name="service_limit" string="Limit"/>
+                    <field name="service_type" string="Service Type"/>
+                    <field name="limit_period" string="Period"/>
+                </group>
+                
+                <group>
+                    <field name="period_description" nolabel="1" readonly="1"/>
+                </group>
+                
+                <footer>
+                    <button name="action_proceed" 
+                            string="Proceed" 
+                            type="object" 
+                            class="btn-primary"
+                            confirm="Are you sure you want to proceed despite the limit being reached?"/>
+                    <button name="action_restrict" 
+                            string="Restrict" 
+                            type="object" 
+                            class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
