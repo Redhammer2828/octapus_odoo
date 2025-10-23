@@ -22,7 +22,10 @@ class ProductPackagesService(models.Model):
     # product_template_id = fields.Many2one('product.template', string='Product Services', domain="[('type', '=', 'service'), ('detailed_type', '=', 'service')]")
     product_template_id = fields.Many2one('product.template', string='Product Services')
 
-    is_intercity = fields.Boolean('Intercity')
+    is_intercity = fields.Selection([
+        ('false', 'Same Emirate'),
+        ('true', 'Intercity')
+    ], string='Service Type', default='false', help='Specify if this service allows intercity travel')
     intercity_limit = fields.Float('Intercity Limit', help='Maximum limit for intercity services')
     intercity_limit_period = fields.Selection([
         ('daily', 'Daily'),

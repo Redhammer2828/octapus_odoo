@@ -1494,14 +1494,14 @@ class AAAService(models.Model):
             
         # Apply intercity logic based on is_intercity field
         print(f"DEBUG: Checking intercity logic - package_service.is_intercity = {package_service.is_intercity}")
-        if package_service.is_intercity:
+        if package_service.is_intercity == 'true':
             # intercity = True: Can travel between cities (different emirates allowed)
             # No restriction on emirates - allow travel between different cities/emirates
-            print("DEBUG: Service allows intercity travel (is_intercity=True)")
+            print("DEBUG: Service allows intercity travel (is_intercity='true')")
             pass
         else:
             # intercity = False: Can travel within same emirate only
-            print("DEBUG: Service restricted to same emirate only (is_intercity=False)")
+            print("DEBUG: Service restricted to same emirate only (is_intercity='false')")
             if self.from_location_emirate != self.to_location_emirate:
                 # Check if emirates are in allowed list before raising ValidationError
                 allowed_emirates = package_service.allowed_intercity_emirates
