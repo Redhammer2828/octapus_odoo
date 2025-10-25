@@ -25,8 +25,7 @@ class ProductPackagesService(models.Model):
     is_intercity = fields.Selection([
         ('false', 'Same Emirate'),
         ('true', 'Intercity'),
-        ('no_validation', 'No Validation'),
-        ('same_city', 'Same City')
+        ('no_validation', 'No Validation')
     ], string='Service Type', default='no_validation', help='Specify if this service allows intercity travel')
     intercity_limit = fields.Float('Intercity Limit', help='Maximum limit for intercity services')
     intercity_limit_period = fields.Selection([
@@ -34,8 +33,15 @@ class ProductPackagesService(models.Model):
         ('monthly', 'Monthly'),
         ('yearly', 'Yearly'),
         ('no_check', 'No intercity check'),
-        ('allow_around_40km', 'Allow Around 40km')
+        ('allow_around_provided_km', 'Allow Around Provided KM')
     ], string='Limit Period', default='no_check', help='Period for intercity limit calculation')
+    
+    # New field for user to enter kilometer value
+    distance_limit_km = fields.Float(
+        string='Distance Limit (KM)', 
+        default=0,
+        help='Maximum distance allowed in kilometers when "Allow Around Provided KM" is selected'
+    )
     allowed_intercity_emirates = fields.Many2many(
         'res.country.state', 
         string='Allowed Intercity Emirates',
@@ -48,13 +54,17 @@ class ProductPackagesService(models.Model):
     @api.onchange('is_intercity')
     def _onchange_is_intercity(self):
         """Auto-select appropriate settings based on service type"""
-        if self.is_intercity == 'same_city':
-            # Auto-select allow_around_40km when same_city is chosen
-            self.intercity_limit_period = 'allow_around_40km'
+        if self.is_intercity == 'false':
+            # Auto-select daily when same_emirate is chosen
+            self.intercity_limit_period = 'daily'
         elif self.is_intercity == 'no_validation':
             # Auto-select no intercity check and set intercity limit to 0
             self.intercity_limit_period = 'no_check'
             self.intercity_limit = 0
+        elif self.is_intercity == 'true':
+            # Hide allow_around_provided_km option when intercity is selected
+            if self.intercity_limit_period == 'allow_around_provided_km':
+                self.intercity_limit_period = 'no_check'
 
 class  CategoryLimit(models.Model):
     _name = "product.category.limit"

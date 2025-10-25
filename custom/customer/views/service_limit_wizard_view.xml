@@ -32,10 +32,9 @@
                             class="btn-primary"
                             confirm="Are you sure you want to proceed despite the limit being reached?"/>
                     <button name="action_restrict" 
-                            string="Restrict" 
+                            string="Not Proceed" 
                             type="object" 
                             class="btn-secondary"/>
-                    <button string="Cancel" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>
         </field>

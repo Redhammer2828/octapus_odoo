@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Distance Validation Wizard Form View -->
+    <record id="view_distance_validation_wizard_form" model="ir.ui.view">
+        <field name="name">distance.validation.wizard.form</field>
+        <field name="model">distance.validation.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Distance Validation">
+                <header>
+                    <div class="alert alert-warning" role="alert" style="margin: 0;">
+                        <h4 class="alert-heading">
+                            <i class="fa fa-exclamation-triangle"/> Distance Validation Required
+                        </h4>
+                        <p class="mb-0">The calculated distance exceeds the allowed limit for same emirate services.</p>
+                    </div>
+                </header>
+                
+                <sheet>
+                    <group>
+                        <group string="Service Details">
+                            <field name="from_location" readonly="1" string="From Location"/>
+                            <field name="to_location" readonly="1" string="To Location"/>
+                        </group>
+                        <group string="Distance Information">
+                            <field name="calculated_distance" readonly="1" string="Calculated Distance (km)"/>
+                            <field name="distance_limit" readonly="1" string="Allowed Limit (km)"/>
+                        </group>
+                    </group>
+                    
+                    <separator string="Additional Information"/>
+                    <field name="message" nolabel="1" readonly="1"/>
+                    
+                    <div class="alert alert-info mt16" role="alert">
+                        <strong>What would you like to do?</strong>
+                        <ul class="mb-0 mt8">
+                            <li><strong>Proceed Anyway:</strong> Continue with the service despite exceeding the distance limit</li>
+                            <li><strong>Not Proceed:</strong> Cancel the service due to distance restrictions</li>
+                        </ul>
+                    </div>
+                </sheet>
+                
+                <footer>
+                    <button name="action_proceed" 
+                            type="object" 
+                            string="Proceed Anyway" 
+                            class="btn-warning"/>
+                    <button name="action_restrict" 
+                            type="object" 
+                            string="Not Proceed" 
+                            class="btn-danger"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Distance Validation Wizard Action -->
+    <record id="action_distance_validation_wizard" model="ir.actions.act_window">
+        <field name="name">Distance Validation</field>
+        <field name="res_model">distance.validation.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="view_distance_validation_wizard_form"/>
+    </record>
+</odoo>

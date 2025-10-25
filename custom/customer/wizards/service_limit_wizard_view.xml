@@ -21,8 +21,7 @@
                     </group>
                     <footer>
                         <button name="action_proceed" string="Proceed" type="object" class="btn-primary"/>
-                        <button name="action_restrict" string="Restrict" type="object" class="btn-secondary"/>
-                        <button string="Cancel" class="btn-secondary" special="cancel"/>
+                        <button name="action_restrict" string="Not Proceed" type="object" class="btn-secondary"/>
                     </footer>
                 </form>
             </field>

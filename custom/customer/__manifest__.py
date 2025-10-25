@@ -89,6 +89,7 @@
         'wizards/aaa_cancel_report.xml',
         'wizards/account_debit_note_inherit.xml',
         'wizards/service_limit_wizard_view.xml',
+        'wizards/distance_validation_wizard.xml',
         'data/scheduled_action.xml',
         'data/sequence_data.xml',
         'data/server_action.xml',

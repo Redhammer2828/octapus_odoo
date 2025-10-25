@@ -100,6 +100,9 @@
                                         <field name="product_id" domain="[('bundle_product', '=', False)]" />
                                         <field name="is_intercity"/>
                                         <field name="intercity_limit_period" />
+                                        <field name="distance_limit_km" 
+                                               invisible="intercity_limit_period != 'allow_around_provided_km'"
+                                               string="Distance Limit (KM)"/>
                                         <field name="intercity_limit"/>
                                         <field name="allowed_intercity_emirates" widget="many2many_tags" 
                                                domain="[('country_id.code', '=', 'AE')]"
