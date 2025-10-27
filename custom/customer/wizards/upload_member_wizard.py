@@ -33,6 +33,11 @@ class UploadMemberWizard(models.TransientModel):
         if 'vehicle_chasis_no' not in excel_data.columns:
             raise UserError('The Excel file must contain the "vehicle_chasis_no" column.')
 
+        # Clean and uppercase vehicle_chasis_no before duplicate check
+        excel_data['vehicle_chasis_no'] = excel_data['vehicle_chasis_no'].apply(
+            lambda x: str(x).strip().upper() if pd.notna(x) and x != '' else x
+        )
+
         duplicated = excel_data['vehicle_chasis_no'].duplicated(keep=False)
         if duplicated.any():
             duplicate_rows = excel_data[duplicated]
@@ -121,6 +126,12 @@ class UploadMemberWizard(models.TransientModel):
                         row_errors.append(f'Member activate date is required. Row: {index + 2}.')
 
                 row[date_field] = date_value
+
+            # Clean and uppercase vehicle_chasis_no
+            vehicle_chasis_no = row.get('vehicle_chasis_no')
+            if vehicle_chasis_no and isinstance(vehicle_chasis_no, str):
+                vehicle_chasis_no = vehicle_chasis_no.strip().upper()
+                row['vehicle_chasis_no'] = vehicle_chasis_no
 
             # Optionally, check for duplicates in the database
             # Uncomment the following lines if you want to check duplicates against existing records
