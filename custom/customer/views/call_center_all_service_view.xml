@@ -237,6 +237,22 @@
             </field>
         </record>
 
+        <record id="call_center_whatsapp_cancel_action" model="ir.actions.act_window">
+            <field name="name">Whatsapp Cancel Request</field>
+            <field name="res_model">aaa.service</field>
+            <field name="view_mode">tree</field>
+            <field name="search_view_id" ref="call_center_all_service_view_search" />
+            <field name="domain">[('state', '=','whatsapp_cancel')]</field>
+            <field name="context">{'default_created_by': uid, 'search_default_todays_record_filter': 1}</field>
+            <field name="view_ids"
+                eval="[ 
+                    (5, 0, 0),
+                    (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_scheduled_service_view_tree')}),
+                    (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
+                ]">
+            </field>
+        </record>
+
         <record id="action_download_zip" model="ir.actions.server">
             <field name="name">Download Attachments</field>
             <field name="model_id" ref="model_aaa_service"/>
@@ -272,5 +288,8 @@
             sequence="7" />
         <menuitem id="menu_scheduled_service" name="Scheduled" parent="menu_all_service_root"
             action="call_center_initiate_service_action" sequence="4" />
+        <menuitem id="menu_whatsapp_cancel_service" name="Whatsapp Cancel Request"
+            parent="menu_all_service_root" action="call_center_whatsapp_cancel_action"
+            sequence="10" />
     </data>
 </odoo>
