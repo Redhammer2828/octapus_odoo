@@ -150,7 +150,7 @@
                                         
 
                                     <field name="is_imported" invisible="1" />
-                                    <field name="from_location" invisible="not (is_imported or member_type == 'credit') or service_based in ('location', 'location_duration','none')" options="{'no_create': True, 'no_open': True}" required="state == 'dispatch'" class="required_field" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" />
+                                    <field name="from_location" invisible="not (is_imported or member_type == 'credit') or service_based in ('location', 'location_duration','none')" options="{'no_create': True, 'no_open': True}" required="state == 'dispatch'" class="required_field" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" domain="[('type', '=', 'internal')]" />
 
                                     <field name="from_location_emirate" style="font-weight: 500;color: #28a745;" invisible="(is_imported == True) or (service_based == 'location') or (service_based == 'none') or (service_based == 'location_duration') or (member_type == 'credit')" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" />
 
@@ -159,7 +159,7 @@
                                     <field name="selected_to_location" class="required_field" required="state == 'dispatch'" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" invisible="(is_imported == True) or (service_based == 'none') or (member_type == 'credit')" widget="location_search" />
 
 
-                                    <field name="to_location" invisible="not (is_imported or member_type == 'credit') or service_based == 'none'" options="{'no_create': True, 'no_open': True}" required="state == 'dispatch'" class="required_field" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" />
+                                    <field name="to_location" invisible="not (is_imported or member_type == 'credit') or service_based == 'none'" options="{'no_create': True, 'no_open': True}" required="state == 'dispatch'" class="required_field" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" domain="[('type', '=', 'internal')]" />
 
                                     <field name="to_location_emirate" style="font-weight: 500;color: #28a745;" invisible="(is_imported == True) or (member_type == 'credit') or (service_based == 'none')" readonly="state in['dispatch','start','reach','completed_by_driver','cancel', 'done']" />
 
