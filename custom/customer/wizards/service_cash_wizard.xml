@@ -9,9 +9,11 @@
             <sheet>
                 <group>
                     <field name="service_id" invisible="1" />
-                    <label for="service_id" string="Service already provided within allowed time gap. Proceed with Cash Service?"/>
+                    <!-- <label for="service_id" string="Service already provided within allowed time gap. Proceed with Cash Service?"/> -->
+                    
                     
                 </group>
+                <field name="message" readonly="1" nolabel="1" />
                 <footer>
                     <button string="Proceed" class="btn-success" type="object" name="action_cash_service"/>
                     <button type="object" special="cancel" string="Cancel"/>

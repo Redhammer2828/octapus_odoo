@@ -1207,7 +1207,8 @@ class AAAService(models.Model):
 
         if not self._validate_service_limits(product_template_id):
             print("SERVICE VALIDITY REACHED THE CATEGORY LIMITS - TRIGGERING CASH WIZARD")
-            return self._trigger_cash_service_wizard()
+            message = _("Service already provided within allowed time gap. Proceed with Cash Service?")
+            return self._trigger_cash_service_wizard(message)
 
         # Intercity validation for policy members only - moved to last after dispatching logic checks pass
         if self.member_id.member_type == 'policy':
@@ -1217,7 +1218,8 @@ class AAAService(models.Model):
                 return validation_result
             elif not validation_result:
                 print("INTERCITY SERVICE VALIDATION FAILED - TRIGGERING CASH WIZARD")
-                return self._trigger_cash_service_wizard()
+                message = _("Intercity service validation failed. Proceed with Cash Service?")
+                return self._trigger_cash_service_wizard(message)
 
         self._dispatch_service()
         # self._generate_service_name()
@@ -1822,7 +1824,7 @@ class AAAService(models.Model):
             },
         }
 
-    def _trigger_cash_service_wizard(self):
+    def _trigger_cash_service_wizard(self, message=None):
         return {
             'name': _('Convert to Cash'),
             'type': 'ir.actions.act_window',
@@ -1832,6 +1834,7 @@ class AAAService(models.Model):
             'target': 'new',
             'context': {
                 'default_service_id': self.id,
+                'default_message': message,
             },
         }
 
