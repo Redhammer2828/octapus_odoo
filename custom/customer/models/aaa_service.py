@@ -1635,189 +1635,211 @@ class AAAService(models.Model):
             else:
                 print(f"DEBUG: Same emirate validation passed: {self.from_location_emirate} == {self.to_location_emirate}")
             
-        # Check intercity limit if specified (applies to both intercity=True and intercity=False)
-        print(f"DEBUG: Checking intercity limit - limit: {package_service.intercity_limit}")
-        if package_service.intercity_limit and package_service.intercity_limit > 0:
-            # Determine date range based on limit period setting
-            today = fields.Date.today()
-            print(f"DEBUG: today = {today}")
-            print(f"DEBUG: intercity_limit_period = {package_service.intercity_limit_period}")
-            
-            # Initialize variables for all paths
-            activate_date = None
-            date_from = None
-            date_to = None
-            
-            if package_service.intercity_limit_period == 'daily':
-                # Daily limit: count services from today only
-                date_from = today
-                date_to = today
-                date_domain = [
-                    ('service_time', '>=', fields.Datetime.to_datetime(date_from)),
-                    ('service_time', '<', fields.Datetime.to_datetime(date_to + timedelta(days=1)))
-                ]
-                period_description = f"today ({today.strftime('%d/%m/%Y')})"
-            elif package_service.intercity_limit_period == 'monthly':
-                # Monthly limit: count services from current month
-                date_from = today.replace(day=1)
-                # Get last day of current month
-                if today.month == 12:
-                    date_to = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
-                else:
-                    date_to = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
-                date_domain = [
-                    ('service_time', '>=', fields.Datetime.to_datetime(date_from)),
-                    ('service_time', '<', fields.Datetime.to_datetime(date_to + timedelta(days=1)))
-                ]
-                period_description = f"current month ({date_from.strftime('%d/%m/%Y')} to {date_to.strftime('%d/%m/%Y')})"
-            elif package_service.intercity_limit_period == 'yearly':
-                # Yearly limit: count services from current year
-                date_from = today.replace(month=1, day=1)
-                date_to = today.replace(month=12, day=31)
-                date_domain = [
-                    ('service_time', '>=', fields.Datetime.to_datetime(date_from)),
-                    ('service_time', '<', fields.Datetime.to_datetime(date_to + timedelta(days=1)))
-                ]
-                period_description = f"calendar year {today.year}"
+        # Check intercity limit (applies to both intercity=True and intercity=False)
+        print(f"DEBUG: Checking intercity limit - limit: {package_service.intercity_limit}, period: {package_service.intercity_limit_period}")
+        # Bypass only if explicitly set to 'no_check'
+        if package_service.intercity_limit_period == 'no_check':
+            print("DEBUG: intercity_limit_period is 'no_check' — skipping limit checks")
+            print("DEBUG: Validation passed, returning True")
+            print(f"=== DEBUG: End _validate_intercity_service ===\n")
+            return True
+
+        # Determine date range based on limit period setting
+        today = fields.Date.today()
+        print(f"DEBUG: today = {today}")
+
+        # Initialize variables for all paths
+        activate_date = None
+        date_from = None
+        date_to = None
+
+        if package_service.intercity_limit_period == 'daily':
+            # Daily limit: count services from today only
+            date_from = today
+            date_to = today
+            date_domain = [
+                ('service_time', '>=', fields.Datetime.to_datetime(date_from)),
+                ('service_time', '<', fields.Datetime.to_datetime(date_to + timedelta(days=1)))
+            ]
+            period_description = f"today ({today.strftime('%d/%m/%Y')})"
+        elif package_service.intercity_limit_period == 'monthly':
+            # Monthly limit: count services from current month
+            date_from = today.replace(day=1)
+            # Get last day of current month
+            if today.month == 12:
+                date_to = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
             else:
-                # Default to membership period if no period specified
-                if self.member_activate_date:
-                    activate_date = self.member_activate_date
-                else:
-                    # Default to 395 days before the member_expiry_date if activate_date is null
-                    activate_date = self.member_expiry_date - timedelta(days=395)
-                
-                date_from = activate_date
-                date_to = self.member_expiry_date
-                date_domain = [
-                    ('service_time', '>=', fields.Datetime.to_datetime(activate_date)),
-                    ('service_time', '<=', fields.Datetime.to_datetime(self.member_expiry_date))
-                ]
-                period_description = f"membership period ({activate_date.strftime('%d/%m/%Y')} to {self.member_expiry_date.strftime('%d/%m/%Y')})"
-            
-            print(f"DEBUG: date_from = {date_from}")
-            print(f"DEBUG: date_to = {date_to}")
-            print(f"DEBUG: activate_date = {activate_date}")
-            print(f"DEBUG: member_expiry_date = {self.member_expiry_date}")
-            print(f"DEBUG: period_description = {period_description}")
-            print(f"DEBUG: date_domain = {date_domain}")
-            
-            # Get ALL services by this member within the determined period
-            search_domain = [
-                ('member_id', '=', self.member_id.id),
-                ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-                ('id', '!=', self.id),  # Exclude current service
-                # NEW: only count services for the same product template
-                ('product_id', '=', self.product_id.id)
-            ] + date_domain
-            print(f"DEBUG: search_domain = {search_domain}")
-            
-            all_member_services = self.env['aaa.service'].search(search_domain)
-            print(f"DEBUG: Found {len(all_member_services)} existing services")
-            
-            # Print details of each found service
-            for i, service in enumerate(all_member_services):
-                print(f"DEBUG: Service {i+1}: ID={service.id}, from_emirate={service.from_location_emirate}, to_emirate={service.to_location_emirate}, service_time={service.service_time}")
-            
-            # Determine current service type based on actual emirates
-            is_current_service_intercity = self.from_location_emirate != self.to_location_emirate
-            service_type = "intercity (between cities)" if is_current_service_intercity else "same emirate"
-            limit_period = package_service.intercity_limit_period or "membership period"
-            
-            print(f"DEBUG: is_current_service_intercity = {is_current_service_intercity}")
-            print(f"DEBUG: service_type = {service_type}")
-            print(f"DEBUG: limit_period = {limit_period}")
-            print(f"DEBUG: package_service.intercity_limit = {package_service.intercity_limit}")
-            
-            # CORRECTED LOGIC based on user clarification:
-            # is_intercity = true means package allows different emirate services, so limit different emirate services
-            # is_intercity = false means package is for same emirate only, so limit same emirate services
-            should_check_limit = False
-            existing_service_count = 0
-            
-            if is_current_service_intercity:
-                 # DIFFERENT EMIRATE SERVICE: Check if package has intercity=true
-                if package_service.is_intercity == 'true':
-                    # Count only DIFFERENT EMIRATE completed services against the limit
-                    different_emirate_services = [s for s in all_member_services if s.from_location_emirate != s.to_location_emirate]
-                    existing_service_count = len(different_emirate_services)
-                    should_check_limit = True
-                    print(f"DEBUG: Different emirate service with intercity=true package")
-                    print(f"DEBUG: Counting different emirate services: {existing_service_count} out of {len(all_member_services)} total")
-                else:
-                    # Package is same-emirate only but user picked different emirates.
-                    # We already allowed it via the emirates-exception list above.
-                    # DO NOT count it against any limit — just allow it.
-                    should_check_limit = False
-                    existing_service_count = 0
-                    print(f"DEBUG: Different emirate service with intercity=false package - allowed by emirates exception, no limit check")
-            else:
-                # SAME EMIRATE SERVICE: Check if package has intercity=false
-                if package_service.is_intercity == 'false':
-                    # Count only SAME EMIRATE completed services against the limit
-                    same_emirate_services = [s for s in all_member_services if s.from_location_emirate == s.to_location_emirate]
-                    existing_service_count = len(same_emirate_services)
-                    should_check_limit = True
-                    print(f"DEBUG: Same emirate service with intercity=false package")
-                    print(f"DEBUG: Counting same emirate services: {existing_service_count} out of {len(all_member_services)} total")
-                else:
-                    # Package allows intercity, so same emirate services are always allowed
-                    should_check_limit = False
-                    print(f"DEBUG: Same emirate service with intercity=true package - no limit check needed")
-            
-            print(f"DEBUG: existing_service_count = {existing_service_count}")
-            print(f"DEBUG: should_check_limit = {should_check_limit}")
-            
-            _logger.info(f"INTERCITY LIMIT VALIDATION - Member: {self.member_id.name}, Service type: {service_type}, Limit period: {limit_period}, Services used: {existing_service_count}, Limit: {package_service.intercity_limit}, Should check: {should_check_limit}")
-            
-            # Check if limit is reached or exceeded (only if needed)
-            if should_check_limit:
-                print(f"DEBUG: Checking if {existing_service_count} >= {package_service.intercity_limit}")
-                if existing_service_count >= package_service.intercity_limit:
-                    print("DEBUG: LIMIT REACHED! Showing wizard dialog")
-                    # Create wizard with service limit information
-                    wizard = self.env['service.limit.wizard'].create({
-                        'service_id': self.id,
-                        'message': _(
-                            "⚠️ SERVICE LIMIT REACHED!\n\n"
-                            "You have already used %d out of %d allowed %s services within your %s limit.\n\n"
-                            "📅 Period: %s\n"
-                            "🚫 No more %s services can be booked until:\n"
-                            "   • The %s period resets, OR\n"
-                            "   • The service limit is reset by administrator"
-                        ) % (
-                            existing_service_count, 
-                            package_service.intercity_limit,
-                            service_type,
-                            limit_period,
-                            period_description,
-                            service_type,
-                            limit_period
-                        ),
-                        'existing_service_count': existing_service_count,
-                        'service_limit': package_service.intercity_limit,
-                        'service_type': service_type,
-                        'limit_period': limit_period,
-                        'period_description': period_description,
-                    })
-                    
-                    # Return wizard action instead of raising error
-                    return {
-                        'name': _('Service Limit Reached'),
-                        'type': 'ir.actions.act_window',
-                        'res_model': 'service.limit.wizard',
-                        'res_id': wizard.id,
-                        'view_mode': 'form',
-                        'target': 'new',
-                        'context': self.env.context,
-                    }
-                else:
-                    print(f"DEBUG: Limit check passed - {existing_service_count} < {package_service.intercity_limit}")
-            else:
-                print("DEBUG: Limit check skipped - same-emirate service with intercity package")
+                date_to = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+            date_domain = [
+                ('service_time', '>=', fields.Datetime.to_datetime(date_from)),
+                ('service_time', '<', fields.Datetime.to_datetime(date_to + timedelta(days=1)))
+            ]
+            period_description = f"current month ({date_from.strftime('%d/%m/%Y')} to {date_to.strftime('%d/%m/%Y')})"
+        elif package_service.intercity_limit_period == 'yearly':
+            # Yearly limit: count services from current year
+            date_from = today.replace(month=1, day=1)
+            date_to = today.replace(month=12, day=31)
+            date_domain = [
+                ('service_time', '>=', fields.Datetime.to_datetime(date_from)),
+                ('service_time', '<', fields.Datetime.to_datetime(date_to + timedelta(days=1)))
+            ]
+            period_description = f"calendar year {today.year}"
         else:
-            print("DEBUG: No intercity limit set or limit is 0, skipping limit check")
-            
+            # Default to membership period if no standard period specified
+            if self.member_activate_date:
+                activate_date = self.member_activate_date
+            else:
+                # Default to 395 days before the member_expiry_date if activate_date is null
+                activate_date = self.member_expiry_date - timedelta(days=395)
+
+            date_from = activate_date
+            date_to = self.member_expiry_date
+            date_domain = [
+                ('service_time', '>=', fields.Datetime.to_datetime(activate_date)),
+                ('service_time', '<=', fields.Datetime.to_datetime(self.member_expiry_date))
+            ]
+            period_description = f"membership period ({activate_date.strftime('%d/%m/%Y')} to {self.member_expiry_date.strftime('%d/%m/%Y')})"
+
+        print(f"DEBUG: date_from = {date_from}")
+        print(f"DEBUG: date_to = {date_to}")
+        print(f"DEBUG: activate_date = {activate_date}")
+        print(f"DEBUG: member_expiry_date = {self.member_expiry_date}")
+        print(f"DEBUG: period_description = {period_description}")
+        print(f"DEBUG: date_domain = {date_domain}")
+
+        # Get ALL services by this member within the determined period
+        search_domain = [
+            ('member_id', '=', self.member_id.id),
+            ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+            ('id', '!=', self.id),  # Exclude current service
+            # Count services for the same product
+            ('product_id', '=', self.product_id.id)
+        ] + date_domain
+        print(f"DEBUG: search_domain = {search_domain}")
+
+        all_member_services = self.env['aaa.service'].search(search_domain)
+        print(f"DEBUG: Found {len(all_member_services)} existing services")
+
+        # Determine current service type based on actual emirates
+        is_current_service_intercity = self.from_location_emirate != self.to_location_emirate
+        service_type = "intercity (between cities)" if is_current_service_intercity else "same emirate"
+        limit_period = package_service.intercity_limit_period or "membership period"
+
+        print(f"DEBUG: is_current_service_intercity = {is_current_service_intercity}")
+        print(f"DEBUG: service_type = {service_type}")
+        print(f"DEBUG: limit_period = {limit_period}")
+        print(f"DEBUG: package_service.intercity_limit = {package_service.intercity_limit}")
+
+        # Decide which services count towards the limit
+        should_check_limit = False
+        existing_service_count = 0
+
+        if is_current_service_intercity:
+            # DIFFERENT EMIRATE SERVICE: Check only if package allows intercity
+            if package_service.is_intercity == 'true':
+                different_emirate_services = [s for s in all_member_services if s.from_location_emirate != s.to_location_emirate]
+                existing_service_count = len(different_emirate_services)
+                should_check_limit = True
+                print(f"DEBUG: Different emirate service with intercity=true package")
+                print(f"DEBUG: Counting different emirate services: {existing_service_count} out of {len(all_member_services)} total")
+            else:
+                # Same-emirate package but different emirates chosen — allowed via exception above; do not count
+                should_check_limit = False
+                existing_service_count = 0
+                print(f"DEBUG: Different emirate service with intercity=false package - allowed by emirates exception, no limit check")
+        else:
+            # SAME EMIRATE SERVICE: Check only if package is same-emirate
+            if package_service.is_intercity == 'false':
+                same_emirate_services = [s for s in all_member_services if s.from_location_emirate == s.to_location_emirate]
+                existing_service_count = len(same_emirate_services)
+                should_check_limit = True
+                print(f"DEBUG: Same emirate service with intercity=false package")
+                print(f"DEBUG: Counting same emirate services: {existing_service_count} out of {len(all_member_services)} total")
+            else:
+                # Intercity-allowed package; same emirate services not limited
+                should_check_limit = False
+                print(f"DEBUG: Same emirate service with intercity=true package - no limit check needed")
+
+        print(f"DEBUG: existing_service_count = {existing_service_count}")
+        print(f"DEBUG: should_check_limit = {should_check_limit}")
+
+        _logger.info(f"INTERCITY LIMIT VALIDATION - Member: {self.member_id.name}, Service type: {service_type}, Limit period: {limit_period}, Services used: {existing_service_count}, Limit: {package_service.intercity_limit}, Should check: {should_check_limit}")
+
+        # USER REQUEST: When intercity_limit == 0, treat as ZERO ALLOWED and block
+        if should_check_limit and package_service.intercity_limit == 0:
+            print("DEBUG: LIMIT IS 0 — showing zero-allowed wizard")
+            wizard = self.env['service.limit.wizard'].create({
+                'service_id': self.id,
+                'message': _(
+                    "🚫 ZERO LIMIT!\n\n"
+                    "You have 0 allowed %s services within your %s limit.\n\n"
+                    "📅 Period: %s\n"
+                    "No %s services can be booked in this period."
+                ) % (
+                    service_type,
+                    limit_period,
+                    period_description,
+                    service_type
+                ),
+                'existing_service_count': existing_service_count,
+                'service_limit': 0,
+                'service_type': service_type,
+                'limit_period': limit_period,
+                'period_description': period_description,
+            })
+            return {
+                'name': _('Service Limit Reached'),
+                'type': 'ir.actions.act_window',
+                'res_model': 'service.limit.wizard',
+                'res_id': wizard.id,
+                'view_mode': 'form',
+                'target': 'new',
+                'context': self.env.context,
+            }
+
+        # Check if limit is reached or exceeded (only if needed and limit > 0)
+        if should_check_limit and package_service.intercity_limit and package_service.intercity_limit > 0:
+            print(f"DEBUG: Checking if {existing_service_count} >= {package_service.intercity_limit}")
+            if existing_service_count >= package_service.intercity_limit:
+                print("DEBUG: LIMIT REACHED! Showing wizard dialog")
+                wizard = self.env['service.limit.wizard'].create({
+                    'service_id': self.id,
+                    'message': _(
+                        "⚠️ SERVICE LIMIT REACHED!\n\n"
+                        "You have already used %d out of %d allowed %s services within your %s limit.\n\n"
+                        "📅 Period: %s\n"
+                        "🚫 No more %s services can be booked until:\n"
+                        "   • The %s period resets, OR\n"
+                        "   • The service limit is reset by administrator"
+                    ) % (
+                        existing_service_count,
+                        package_service.intercity_limit,
+                        service_type,
+                        limit_period,
+                        period_description,
+                        service_type,
+                        limit_period
+                    ),
+                    'existing_service_count': existing_service_count,
+                    'service_limit': package_service.intercity_limit,
+                    'service_type': service_type,
+                    'limit_period': limit_period,
+                    'period_description': period_description,
+                })
+                return {
+                    'name': _('Service Limit Reached'),
+                    'type': 'ir.actions.act_window',
+                    'res_model': 'service.limit.wizard',
+                    'res_id': wizard.id,
+                    'view_mode': 'form',
+                    'target': 'new',
+                    'context': self.env.context,
+                }
+            else:
+                print(f"DEBUG: Limit check passed - {existing_service_count} < {package_service.intercity_limit}")
+        else:
+            print("DEBUG: Limit check skipped or no positive limit configured for this service type")
+
         print("DEBUG: Validation passed, returning True")
         print(f"=== DEBUG: End _validate_intercity_service ===\n")
         return True

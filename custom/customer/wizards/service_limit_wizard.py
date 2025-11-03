@@ -14,6 +14,17 @@ class ServiceLimitWizard(models.TransientModel):
     limit_period = fields.Char(string='Limit Period', readonly=True)
     period_description = fields.Char(string='Period Description', readonly=True)
 
+    def action_restrict(self):
+        """Record that user chose not to proceed and close the wizard."""
+        self.service_id.service_history_ids.create({
+            'service_id': self.service_id.id,
+            'user': self.env.user.id,
+            'time': fields.Datetime.now(),
+            'status': f'Service restricted due to limit (0/{self.service_limit} {self.service_type} allowed in {self.limit_period})',
+            'timeline_status': 'initiate'
+        })
+        return {'type': 'ir.actions.act_window_close'}
+
     def action_proceed(self):
         """Allow dispatch to proceed and record in service history"""
         # Add service history entry for proceed action
