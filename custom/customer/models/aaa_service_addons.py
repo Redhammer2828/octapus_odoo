@@ -54,7 +54,22 @@ class AAAServiceAddons(models.Model):
         selection_add=[
             ('whatsapp_cancel', 'Whatsapp Cancelled'),
         ])
-
+    
+    state_before_driver_cancel = fields.Selection([
+        ('draft', 'Draft'),
+        ('initiate', 'Initiate'),
+        ('dispatch', 'Dispatch'),
+        ('start', 'Start'),
+        ('reach', 'Reach'),
+        ('completed_by_driver', 'Completed by driver'),
+        ('done', 'Done'),
+        ('cancel', 'Cancelled'),
+        ('driver_cancel', 'Driver Cancelled'),
+        ('change', 'Change' ),
+        ('approved','Approved'),
+        ('requested','Requested'),
+        ('done_cancel', 'Done Cancelled')
+    ], string="Previous State", readonly=True)
 
     driver_assigned_by = fields.Char(string="Driver Assigned By")
     is_transferred_service = fields.Boolean(string="Is Transferred Service", default=False, index=True)
@@ -315,11 +330,11 @@ class AAAServiceAddons(models.Model):
         _logger.info("Cancel rejected SERVICE NUMBER: %s", order_number)
         api_url = f"{base_url}/carhire-order/order/service/consumers/orders/update/order-service-change"
         # Define query parameters
-        body = {
+        body = json.dumps({
             "status": "REJECTED",
             "erp_order_number": order_number,
             "type": "cancel",
-        }
+        })
         headers = {'Content-Type': 'application/json'}
         try:
             # Send request with query parameters
@@ -327,7 +342,6 @@ class AAAServiceAddons(models.Model):
             _logger.info("API Response: %s - %s", response.status_code, response.text)
         except requests.exceptions.RequestException as e:
             _logger.error("API Request Failed: %s", str(e))
-            raise UserError(f"API request failed: {str(e)}")
         
         self.state = self.state_before_driver_cancel
         self.env['service.history'].create({

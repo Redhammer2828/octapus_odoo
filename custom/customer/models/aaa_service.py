@@ -440,19 +440,21 @@ class AAAService(models.Model):
         order_number = self.name
         # base_url = "https://gioapi-gy-dev.kirkos.ae"  # Ensure this is correct
         _logger.info("SERVICE NUMBER: %s", order_number)
-        api_url = f"{base_url}/carhire-order/order/service/consumers/orders/cancel/order"
+        api_url = f"{base_url}/carhire-order/order/service/consumers/orders/update/order-service-change"
         # Define query parameters
         body = json.dumps({
             "status": "APPROVED",
             "erp_order_number": order_number,
             "type": "cancel",
         })
+        headers = {'Content-Type': 'application/json'}
         try:
             # Send request with query parameters
-            requests.put(api_url, data=body, timeout=10)
+            response = requests.put(api_url, data=body, headers=headers, timeout=10)
+            _logger.info("API Response: %s - %s", response.status_code, response.text)
         except requests.exceptions.RequestException as e:
             _logger.error("API Request Failed: %s", str(e))
-            raise UserError(f"API request failed: {str(e)}")
+
         # Change state after API call
         self.state = 'cancel'
         self.env['service.history'].create({
