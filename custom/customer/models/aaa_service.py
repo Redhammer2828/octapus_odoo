@@ -1494,8 +1494,37 @@ class AAAService(models.Model):
             
         # Check if we have emirate data for intercity validation
         if not self.from_location_emirate or not self.to_location_emirate:
-            print("DEBUG: Missing emirate data, raising ValidationError")
-            raise ValidationError(_("From and To location emirates are required for intercity validation."))
+            print("DEBUG: Missing emirate data — showing proceed-only wizard instead of validation error")
+            missing = []
+            if not self.from_location_emirate:
+                missing.append('From emirate')
+            if not self.to_location_emirate:
+                missing.append('To emirate')
+            missing_str = ', '.join(missing) if missing else 'Emirate data'
+
+            wizard = self.env['service.limit.wizard'].create({
+                'service_id': self.id,
+                'message': _(
+                    "From and To location emirates are required for intercity validation.\n\n"
+                    "Missing: %s.\n\n"
+                    "You may proceed without intercity validation, or provide both emirates for proper checks."
+                ) % (missing_str),
+                'existing_service_count': 0,
+                'service_limit': 0,
+                'service_type': 'intercity validation',
+                'limit_period': 'N/A',
+                'period_description': _("Emirate information is incomplete for validation."),
+                'show_proceed_only': True,
+            })
+            return {
+                'name': _('Service Limit Reached'),
+                'type': 'ir.actions.act_window',
+                'res_model': 'service.limit.wizard',
+                'res_id': wizard.id,
+                'view_mode': 'form',
+                'target': 'new',
+                'context': self.env.context,
+            }
             
         # Apply intercity logic based on is_intercity field
         print(f"DEBUG: Checking intercity logic - package_service.is_intercity = {package_service.is_intercity}")
@@ -1571,22 +1600,132 @@ class AAAService(models.Model):
                                 
                         except (ValueError, TypeError) as e:
                             print(f"DEBUG: Error calculating distance: {e}")
-                            raise ValidationError(_(
-                                "⚠️ LOCATION VALIDATION ERROR!\n\n"
-                                "Unable to validate distance between selected locations.\n"
-                                "Please ensure both locations have valid coordinates."
-                            ))
+                            # Show proceed-only wizard instead of validation error
+                            wizard = self.env['service.limit.wizard'].create({
+                                'service_id': self.id,
+                                'message': _(
+                                    "Unable to validate distance between selected locations due to a data issue.\n\n"
+                                    "Please ensure both locations have valid coordinates, or proceed without distance validation."
+                                ),
+                                'existing_service_count': 0,
+                                'service_limit': 0,
+                                'service_type': 'distance validation',
+                                'limit_period': 'N/A',
+                                'period_description': _("Distance calculation failed."),
+                                'show_proceed_only': True,
+                            })
+                            return {
+                                'name': _('Service Limit Reached'),
+                                'type': 'ir.actions.act_window',
+                                'res_model': 'service.limit.wizard',
+                                'res_id': wizard.id,
+                                'view_mode': 'form',
+                                'target': 'new',
+                                'context': self.env.context,
+                            }
                     else:
-                        raise ValidationError(_(
-                            "⚠️ MISSING LOCATION COORDINATES!\n\n"
-                            "One or both selected locations are missing coordinate information.\n"
-                            "Please select locations with valid GPS coordinates."
-                        ))
+                        # Show proceed-only wizard instead of validation error
+                        wizard = self.env['service.limit.wizard'].create({
+                            'service_id': self.id,
+                            'message': _(
+                                "One or both selected locations are missing GPS coordinates.\n\n"
+                                "Please select locations with valid coordinates, or proceed without distance validation."
+                            ),
+                            'existing_service_count': 0,
+                            'service_limit': 0,
+                            'service_type': 'distance validation',
+                            'limit_period': 'N/A',
+                            'period_description': _("Location coordinates missing."),
+                            'show_proceed_only': True,
+                        })
+                        return {
+                            'name': _('Service Limit Reached'),
+                            'type': 'ir.actions.act_window',
+                            'res_model': 'service.limit.wizard',
+                            'res_id': wizard.id,
+                            'view_mode': 'form',
+                            'target': 'new',
+                            'context': self.env.context,
+                        }
                 else:
-                    raise ValidationError(_(
-                        "⚠️ LOCATIONS NOT SELECTED!\n\n"
-                        "Please select both from and to locations for distance validation."
-                    ))
+                    # Show proceed-only wizard instead of validation error
+                    wizard = self.env['service.limit.wizard'].create({
+                        'service_id': self.id,
+                        'message': _(
+                            "Please select both From and To locations to validate distance.\n\n"
+                            "You can also proceed without distance validation if needed."
+                        ),
+                        'existing_service_count': 0,
+                        'service_limit': 0,
+                        'service_type': 'distance validation',
+                        'limit_period': 'N/A',
+                        'period_description': _("Locations not fully selected for validation."),
+                        'show_proceed_only': True,
+                    })
+                    return {
+                        'name': _('Service Limit Reached'),
+                        'type': 'ir.actions.act_window',
+                        'res_model': 'service.limit.wizard',
+                        'res_id': wizard.id,
+                        'view_mode': 'form',
+                        'target': 'new',
+                        'context': self.env.context,
+                    }
+            else:
+                # Default same-emirate restriction: block cross-emirate unless both emirates are allowed exceptions
+                print("DEBUG: Enforcing same-emirate rule without distance radius (is_intercity='false')")
+                if self.from_location_emirate != self.to_location_emirate:
+                    allowed_emirates = package_service.allowed_intercity_emirates
+
+                    def normalize_emirate_name(emirate_name):
+                        if not emirate_name:
+                            return ""
+                        return emirate_name.replace(" Emirate", "").strip()
+
+                    from_emirate_normalized = normalize_emirate_name(self.from_location_emirate)
+                    to_emirate_normalized = normalize_emirate_name(self.to_location_emirate)
+
+                    from_emirate_allowed = any(
+                        normalize_emirate_name(state.name) == from_emirate_normalized
+                        for state in allowed_emirates
+                    )
+                    to_emirate_allowed = any(
+                        normalize_emirate_name(state.name) == to_emirate_normalized
+                        for state in allowed_emirates
+                    )
+
+                    print(f"DEBUG: Normalized from_emirate: '{from_emirate_normalized}', to_emirate: '{to_emirate_normalized}'")
+                    print(f"DEBUG: Allowed emirates: {[normalize_emirate_name(state.name) for state in allowed_emirates]}")
+                    print(f"DEBUG: from_emirate_allowed: {from_emirate_allowed}, to_emirate_allowed: {to_emirate_allowed}")
+
+                    if from_emirate_allowed and to_emirate_allowed:
+                        print("DEBUG: Different emirate service allowed by emirates exception (both ends allowed)")
+                    else:
+                        print("DEBUG: Cross-emirate blocked for same-emirate package (exception not matched) — showing limit wizard")
+                        wizard = self.env['service.limit.wizard'].create({
+                            'service_id': self.id,
+                            'message': _(
+                                "This service is restricted to same emirate travel only.\n\n"
+                                "Current request is from %s to %s.\n\n"
+                                "Please select locations within the same emirate or ensure both emirates are listed as allowed exceptions in the package."
+                            ) % (self.from_location_emirate, self.to_location_emirate),
+                            'existing_service_count': 0,
+                            'service_limit': 0,
+                            'service_type': 'same emirate only',
+                            'limit_period': package_service.intercity_limit_period or 'membership period',
+                            'period_description': _("Restriction: cross-emirate not permitted for this package."),
+                        })
+                        return {
+                            'name': _('Service Limit Reached'),
+                            'type': 'ir.actions.act_window',
+                            'res_model': 'service.limit.wizard',
+                            'res_id': wizard.id,
+                            'view_mode': 'form',
+                            'target': 'new',
+                            'context': self.env.context,
+                        }
+                else:
+                    print(f"DEBUG: Same emirate validation passed: {self.from_location_emirate} == {self.to_location_emirate}")
         elif package_service.is_intercity == 'no_validation':
             # No validation required
             print("DEBUG: No validation required for this package (is_intercity='no_validation')")
@@ -1628,10 +1767,31 @@ class AAAService(models.Model):
                     print(f"DEBUG: Different emirate service with intercity=false package - allowed by emirates exception")
                     print(f"DEBUG: From emirate '{self.from_location_emirate}' and to emirate '{self.to_location_emirate}' are both in allowed list")
                 else:
-                    # Emirates not in allowed list, so different emirate services are blocked
-                    print(f"DEBUG: Different emirate service with intercity=false package - service not allowed")
+                    # Emirates not in allowed list, so different emirate services are blocked — show wizard
+                    print(f"DEBUG: Different emirate service with intercity=false package - service not allowed; showing limit wizard")
                     print(f"DEBUG: From emirate '{self.from_location_emirate}' allowed: {from_emirate_allowed}, To emirate '{self.to_location_emirate}' allowed: {to_emirate_allowed}")
-                    raise ValidationError(_("This service is restricted to same emirate travel only. Current request is from %s to %s. Please select locations within the same emirate.") % (self.from_location_emirate, self.to_location_emirate))
+                    wizard = self.env['service.limit.wizard'].create({
+                        'service_id': self.id,
+                        'message': _(
+                            "This service is restricted to same emirate travel only.\n\n"
+                            "Current request is from %s to %s.\n\n"
+                            "Please select locations within the same emirate or ensure both emirates are listed as allowed exceptions in the package."
+                        ) % (self.from_location_emirate, self.to_location_emirate),
+                        'existing_service_count': 0,
+                        'service_limit': 0,
+                        'service_type': 'same emirate only',
+                        'limit_period': package_service.intercity_limit_period or 'membership period',
+                        'period_description': _("Restriction: cross-emirate not permitted for this package."),
+                    })
+                    return {
+                        'name': _('Service Limit Reached'),
+                        'type': 'ir.actions.act_window',
+                        'res_model': 'service.limit.wizard',
+                        'res_id': wizard.id,
+                        'view_mode': 'form',
+                        'target': 'new',
+                        'context': self.env.context,
+                    }
             else:
                 print(f"DEBUG: Same emirate validation passed: {self.from_location_emirate} == {self.to_location_emirate}")
             
@@ -1735,7 +1895,7 @@ class AAAService(models.Model):
         existing_service_count = 0
 
         if is_current_service_intercity:
-            # DIFFERENT EMIRATE SERVICE: Check only if package allows intercity
+            # DIFFERENT EMIRATE SERVICE
             if package_service.is_intercity == 'true':
                 different_emirate_services = [s for s in all_member_services if s.from_location_emirate != s.to_location_emirate]
                 existing_service_count = len(different_emirate_services)
@@ -1743,18 +1903,94 @@ class AAAService(models.Model):
                 print(f"DEBUG: Different emirate service with intercity=true package")
                 print(f"DEBUG: Counting different emirate services: {existing_service_count} out of {len(all_member_services)} total")
             else:
-                # Same-emirate package but different emirates chosen — allowed via exception above; do not count
-                should_check_limit = False
-                existing_service_count = 0
-                print(f"DEBUG: Different emirate service with intercity=false package - allowed by emirates exception, no limit check")
+                # Same-emirate package with exception-allowed emirates.
+                # These exception-allowed intercity services should COUNT towards the same-emirate limit pool.
+                allowed_states = package_service.allowed_intercity_emirates or self.env['res.country.state']
+
+                def normalize_emirate_name(name):
+                    if not name:
+                        return ''
+                    name = name.strip().lower()
+                    mapping = {
+                        'abu dhabi': ['abu dhabi', 'abudhabi', 'abu-dhabi'],
+                        'dubai': ['dubai'],
+                        'sharjah': ['sharjah', 'sharjah emirate'],
+                        'ajman': ['ajman'],
+                        'umm al quwain': ['umm al quwain', 'umm al-quwain', 'uaq'],
+                        'ras al khaimah': ['ras al khaimah', 'ras-al-khaimah', 'rak'],
+                        'fujairah': ['fujairah']
+                    }
+                    for normalized, variants in mapping.items():
+                        if name in variants:
+                            return normalized
+                    return name
+
+                allowed_names = {normalize_emirate_name(state.name) for state in allowed_states}
+                print(f"DEBUG: Allowed emirates for exception count: {sorted(list(allowed_names))}")
+
+                def is_exception_allowed_pair(fr, to):
+                    fr_n = normalize_emirate_name(fr)
+                    to_n = normalize_emirate_name(to)
+                    # Count an intercity service as exception-allowed if either side
+                    # (from or to) matches the configured allowed emirates.
+                    return (fr_n in allowed_names) or (to_n in allowed_names)
+
+                same_or_exception_services = [
+                    s for s in all_member_services
+                    if (s.from_location_emirate and s.to_location_emirate) and (
+                        s.from_location_emirate == s.to_location_emirate or
+                        (s.from_location_emirate != s.to_location_emirate and is_exception_allowed_pair(s.from_location_emirate, s.to_location_emirate))
+                    )
+                ]
+                existing_service_count = len(same_or_exception_services)
+                should_check_limit = True
+                print(f"DEBUG: Different emirate service with intercity=false package - counting same-or-exception services")
+                print(f"DEBUG: Counting same-or-exception services: {existing_service_count} out of {len(all_member_services)} total")
         else:
             # SAME EMIRATE SERVICE: Check only if package is same-emirate
             if package_service.is_intercity == 'false':
-                same_emirate_services = [s for s in all_member_services if s.from_location_emirate == s.to_location_emirate]
-                existing_service_count = len(same_emirate_services)
+                allowed_states = package_service.allowed_intercity_emirates or self.env['res.country.state']
+
+                def normalize_emirate_name(name):
+                    if not name:
+                        return ''
+                    name = name.strip().lower()
+                    mapping = {
+                        'abu dhabi': ['abu dhabi', 'abudhabi', 'abu-dhabi'],
+                        'dubai': ['dubai'],
+                        'sharjah': ['sharjah', 'sharjah emirate'],
+                        'ajman': ['ajman'],
+                        'umm al quwain': ['umm al quwain', 'umm al-quwain', 'uaq'],
+                        'ras al khaimah': ['ras al khaimah', 'ras-al-khaimah', 'rak'],
+                        'fujairah': ['fujairah']
+                    }
+                    for normalized, variants in mapping.items():
+                        if name in variants:
+                            return normalized
+                    return name
+
+                allowed_names = {normalize_emirate_name(state.name) for state in allowed_states}
+                print(f"DEBUG: Allowed emirates for exception count: {sorted(list(allowed_names))}")
+
+                def is_exception_allowed_pair(fr, to):
+                    fr_n = normalize_emirate_name(fr)
+                    to_n = normalize_emirate_name(to)
+                    # Count an intercity service as exception-allowed if either side
+                    # (from or to) matches the configured allowed emirates.
+                    return (fr_n in allowed_names) or (to_n in allowed_names)
+
+                # Count SAME EMIRATE and EXCEPTION-ALLOWED INTERCITY services against the limit
+                same_or_exception_services = [
+                    s for s in all_member_services
+                    if (s.from_location_emirate and s.to_location_emirate) and (
+                        s.from_location_emirate == s.to_location_emirate or
+                        (s.from_location_emirate != s.to_location_emirate and is_exception_allowed_pair(s.from_location_emirate, s.to_location_emirate))
+                    )
+                ]
+                existing_service_count = len(same_or_exception_services)
                 should_check_limit = True
                 print(f"DEBUG: Same emirate service with intercity=false package")
-                print(f"DEBUG: Counting same emirate services: {existing_service_count} out of {len(all_member_services)} total")
+                print(f"DEBUG: Counting same-or-exception services: {existing_service_count} out of {len(all_member_services)} total")
             else:
                 # Intercity-allowed package; same emirate services not limited
                 should_check_limit = False

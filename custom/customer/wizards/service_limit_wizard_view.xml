@@ -16,12 +16,14 @@
                         </div>
                     </header>
                     
-                    <sheet>
-                        <group>
-                            <group string="Service Information">
-                                <field name="service_type" readonly="1" string="Service Type"/>
-                                <field name="limit_period" readonly="1" string="Limit Period"/>
-                            </group>
+                <sheet>
+                    <!-- Hidden technical field required by Odoo 17 for dynamic modifiers -->
+                    <field name="show_proceed_only" invisible="1"/>
+                    <group>
+                        <group string="Service Information">
+                            <field name="service_type" readonly="1" string="Service Type"/>
+                            <field name="limit_period" readonly="1" string="Limit Period"/>
+                        </group>
                             <group string="Usage Statistics">
                                 <field name="existing_service_count" readonly="1" string="Services Used"/>
                                 <field name="service_limit" readonly="1" string="Allowed Limit"/>
@@ -51,7 +53,8 @@
                         <button name="action_restrict" 
                                 type="object" 
                                 string="Not Proceed" 
-                                class="btn-danger"/>
+                                class="btn-danger"
+                                invisible="show_proceed_only"/>
                     </footer>
                 </form>
             </field>
