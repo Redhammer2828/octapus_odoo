@@ -30,6 +30,12 @@ class ProductPackagesService(models.Model):
         ('yearly', 'Yearly'),
         ('no_check', 'No intercity check')
     ], string='Limit Period', default='no_check', help='Period for intercity limit calculation')
+    allowed_intercity_emirates = fields.Many2many(
+        'res.country.state', 
+        string='Allowed Intercity Emirates',
+        domain="[('country_id.code', '=', 'AE')]",
+        help='Emirates that are allowed for intercity services even when is_intercity=False'
+    )
     product_id = fields.Many2one('product.product', string='Product')
     quantity = fields.Float('quantity')
 
