@@ -13,6 +13,7 @@ class ServiceLimitWizard(models.TransientModel):
     service_type = fields.Char(string='Service Type', readonly=True)
     limit_period = fields.Char(string='Limit Period', readonly=True)
     period_description = fields.Char(string='Period Description', readonly=True)
+    show_proceed_only = fields.Boolean(string='Show Proceed Only', default=False, help='If true, only show the Proceed button in the wizard.')
 
     def action_restrict(self):
         """Record that user chose not to proceed and close the wizard."""
