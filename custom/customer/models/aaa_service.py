@@ -1203,6 +1203,12 @@ class AAAService(models.Model):
             print("SERVICE NOT IN PACKAGE - TRIGGERING CASH/CREDIT WIZARD")
             return self._trigger_cash_or_credit_service_wizard()
 
+        # Intercity validation for policy members only
+        if self.member_id.member_type == 'policy':
+            if not self._validate_intercity_service(product_template_id):
+                print("INTERCITY SERVICE VALIDATION FAILED - TRIGGERING CASH WIZARD")
+                return self._trigger_cash_service_wizard()
+
         if not self._validate_service_limits(product_template_id):
             print("SERVICE VALIDITY REACHED THE CATEGORY LIMITS - TRIGGERING CASH WIZARD")
             return self._trigger_cash_service_wizard()
@@ -1438,6 +1444,152 @@ class AAAService(models.Model):
             ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
         ])
         return count
+
+    def _validate_intercity_service(self, product_template_id):
+        """
+        Validate intercity service for policy members based on emirate fields and intercity limits.
+        NEW LOGIC:
+        - intercity = True: Can travel between cities (different emirates allowed)
+        - intercity = False: Can travel within same emirate only
+        - intercity_limit applies to both cases (number of times allowed)
+        Returns True if service is allowed, raises ValidationError otherwise.
+        """
+        if self.member_type != 'policy':
+            return True
+            
+        # Get the service from the package
+        package_service = self.env['product.package.service'].search([
+            ('product_template_id', '=', product_template_id),
+            ('product_id.product_tmpl_id', '=', self.product_id.id)
+        ], limit=1)
+        
+        if not package_service:
+            # If no package service found, allow it (non-intercity service)
+            return True
+            
+        # BYPASS ALL CHECKS if 'no_check' is selected
+        if package_service.intercity_limit_period == 'no_check':
+            return True
+            
+        # Check if we have emirate data for intercity validation
+        if not self.from_location_emirate or not self.to_location_emirate:
+            raise ValidationError(_("From and To location emirates are required for intercity validation."))
+            
+        # Apply intercity logic based on is_intercity field
+        if package_service.is_intercity:
+            # intercity = True: Can travel between cities (different emirates allowed)
+            # No restriction on emirates - allow travel between different cities/emirates
+            pass
+        else:
+            # intercity = False: Can travel within same emirate only
+            if self.from_location_emirate != self.to_location_emirate:
+                raise ValidationError(_("This service is restricted to same emirate travel only. Current request is from %s to %s. Please select locations within the same emirate.") % (self.from_location_emirate, self.to_location_emirate))
+            
+        # Check intercity limit if specified (applies to both intercity=True and intercity=False)
+        if package_service.intercity_limit and package_service.intercity_limit > 0:
+            # Determine date range based on limit period setting
+            today = fields.Date.today()
+            
+            if package_service.intercity_limit_period == 'daily':
+                # Daily limit: count services from today only
+                date_from = today
+                date_to = today
+                date_domain = [
+                    ('service_time', '>=', fields.Datetime.to_datetime(date_from)),
+                    ('service_time', '<', fields.Datetime.to_datetime(date_to + timedelta(days=1)))
+                ]
+                period_description = f"today ({today.strftime('%d/%m/%Y')})"
+            elif package_service.intercity_limit_period == 'monthly':
+                # Monthly limit: count services from current month
+                date_from = today.replace(day=1)
+                # Get last day of current month
+                if today.month == 12:
+                    date_to = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+                else:
+                    date_to = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+                date_domain = [
+                    ('service_time', '>=', fields.Datetime.to_datetime(date_from)),
+                    ('service_time', '<', fields.Datetime.to_datetime(date_to + timedelta(days=1)))
+                ]
+                period_description = f"current month ({date_from.strftime('%d/%m/%Y')} to {date_to.strftime('%d/%m/%Y')})"
+            elif package_service.intercity_limit_period == 'yearly':
+                # Yearly limit: count services from current year
+                date_from = today.replace(month=1, day=1)
+                date_to = today.replace(month=12, day=31)
+                date_domain = [
+                    ('service_time', '>=', fields.Datetime.to_datetime(date_from)),
+                    ('service_time', '<', fields.Datetime.to_datetime(date_to + timedelta(days=1)))
+                ]
+                period_description = f"calendar year {today.year}"
+            else:
+                # Default to membership period if no period specified
+                if self.member_activate_date:
+                    activate_date = self.member_activate_date
+                else:
+                    # Default to 395 days before the member_expiry_date if activate_date is null
+                    activate_date = self.member_expiry_date - timedelta(days=395)
+                
+                date_domain = [
+                    ('service_time', '>=', fields.Datetime.to_datetime(activate_date)),
+                    ('service_time', '<=', fields.Datetime.to_datetime(self.member_expiry_date))
+                ]
+                period_description = f"membership period ({activate_date.strftime('%d/%m/%Y')} to {self.member_expiry_date.strftime('%d/%m/%Y')})"
+            
+            # Get ALL services by this member within the determined period
+            all_member_services = self.env['aaa.service'].search([
+                ('member_id', '=', self.member_id.id),
+                ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+                ('id', '!=', self.id)  # Exclude current service
+            ] + date_domain)
+            
+            # NEW LOGIC: Count based on intercity setting and current service type
+            existing_service_count = 0
+            
+            if package_service.is_intercity:
+                # For intercity=True services: count only intercity services (between different emirates)
+                for service in all_member_services:
+                    service_package = self.env['product.package.service'].search([
+                        ('product_id.product_tmpl_id', '=', service.product_id.id),
+                        ('product_template_id', '=', product_template_id)
+                    ], limit=1)
+                    # Count only if it's an intercity service (is_intercity=True)
+                    if service_package and service_package.is_intercity:
+                        existing_service_count += 1
+            else:
+                # For intercity=False services: count only same-emirate services
+                for service in all_member_services:
+                    service_package = self.env['product.package.service'].search([
+                        ('product_id.product_tmpl_id', '=', service.product_id.id),
+                        ('product_template_id', '=', product_template_id)
+                    ], limit=1)
+                    # Count only if it's a same-emirate service (is_intercity=False)
+                    if service_package and not service_package.is_intercity:
+                        existing_service_count += 1
+            
+            service_type = "intercity (between cities)" if package_service.is_intercity else "same emirate"
+            limit_period = package_service.intercity_limit_period or "membership period"
+            _logger.info(f"INTERCITY LIMIT VALIDATION - Member: {self.member_id.name}, Service type: {service_type}, Limit period: {limit_period}, Services used: {existing_service_count}, Limit: {package_service.intercity_limit}")
+            
+            # Check if limit is reached or exceeded
+            if existing_service_count >= package_service.intercity_limit:
+                raise ValidationError(_(
+                    "⚠️ SERVICE LIMIT REACHED!\n\n"
+                    "You have already used %d out of %d allowed %s services within your %s limit.\n\n"
+                    "📅 Period: %s\n"
+                    "🚫 No more %s services can be booked until:\n"
+                    "   • The %s period resets, OR\n"
+                    "   • The service limit is reset by administrator"
+                ) % (
+                    existing_service_count, 
+                    package_service.intercity_limit,
+                    service_type,
+                    limit_period,
+                    period_description,
+                    service_type,
+                    limit_period
+                ))
+            
+        return True
 
     def _trigger_cash_or_credit_service_wizard(self):
         return {

@@ -23,6 +23,13 @@ class ProductPackagesService(models.Model):
     product_template_id = fields.Many2one('product.template', string='Product Services')
 
     is_intercity = fields.Boolean('Intercity')
+    intercity_limit = fields.Float('Intercity Limit', help='Maximum limit for intercity services')
+    intercity_limit_period = fields.Selection([
+        ('daily', 'Daily'),
+        ('monthly', 'Monthly'),
+        ('yearly', 'Yearly'),
+        ('no_check', 'No intercity check')
+    ], string='Limit Period', default='no_check', help='Period for intercity limit calculation')
     product_id = fields.Many2one('product.product', string='Product')
     quantity = fields.Float('quantity')
 

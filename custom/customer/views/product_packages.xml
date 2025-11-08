@@ -99,6 +99,8 @@
                                     <tree editable="bottom">
                                         <field name="product_id" domain="[('bundle_product', '=', False)]" />
                                         <field name="is_intercity"/>
+                                        <field name="intercity_limit_period" />
+                                        <field name="intercity_limit"/>
                                         <field name="quantity" />
                                     </tree>
                                 </field>
