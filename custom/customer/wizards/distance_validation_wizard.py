@@ -1,4 +1,4 @@
-from odoo import models, fields, api
+from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 
 
@@ -50,33 +50,58 @@ class DistanceValidationWizard(models.TransientModel):
         """Allow the service to proceed despite distance limit"""
         if self.service_id:
             # Mark service as having distance override
-            self.service_id.write({
-                'comments': (self.service_id.comments or '') + 
-                           f"\n[Distance Override] Proceeded with {self.calculated_distance:.2f}KM (Limit: {self.distance_limit:.2f}KM)"
-            })
+            # self.service_id.write({
+            #     'comments': (self.service_id.comments or '') + 
+            #                f"\n[Distance Override] Proceeded with {self.calculated_distance:.2f}KM (Limit: {self.distance_limit:.2f}KM)"
+            # })
+
+            message = _((self.service_id.comments or '') + 
+                        f"\nProceeded with {self.calculated_distance:.2f}KM (Limit: {self.distance_limit:.2f}KM)")
+            
             
             # Continue with the dispatch process by calling _dispatch_service directly
             self.service_id._dispatch_service()
             
             # Return action to close wizard and refresh the service form
             return {
-                'type': 'ir.actions.act_window',
-                'res_model': 'aaa.service',
-                'res_id': self.service_id.id,
-                'view_mode': 'form',
-                'target': 'current',
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Distance Override'),
+                    'message': message,
+                    'type': 'info',
+                    'sticky': False,
+                    'next': {'type': 'ir.actions.act_window_close'}
+                }
             }
         
         return {'type': 'ir.actions.act_window_close'}
 
     def action_restrict(self):
         """Restrict the service due to distance limit"""
-        if self.service_id:
-            # Add comment about restriction
-            self.service_id.write({
-                'comments': (self.service_id.comments or '') + 
-                           f"\n[Distance Restriction] Service restricted due to {self.calculated_distance:.2f}KM exceeding limit of {self.distance_limit:.2f}KM"
-            })
+
+        message = _((self.service_id.comments or '') + 
+                    f"\nService restricted due to {self.calculated_distance:.2f}KM exceeding limit of {self.distance_limit:.2f}KM")
+        
+        # Display notification and close wizard
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Distance Restriction'),
+                'message': message,
+                'type': 'info',
+                'sticky': False,
+                'next': {'type': 'ir.actions.act_window_close'}
+            }
+        }
+    
+        # if self.service_id:
+        #     # Add comment about restriction
+        #     self.service_id.write({
+        #         'comments': (self.service_id.comments or '') + 
+        #                    f"\n[Distance Restriction] Service restricted due to {self.calculated_distance:.2f}KM exceeding limit of {self.distance_limit:.2f}KM"
+        #     })
         
         # Close wizard and show error
-        raise UserError(f"Service restricted: Distance {self.calculated_distance:.2f}KM exceeds the allowed limit of {self.distance_limit:.2f}KM for same emirate services.")
+        # raise UserError(f"Service restricted: Distance {self.calculated_distance:.2f}KM exceeds the allowed limit of {self.distance_limit:.2f}KM for same emirate services.")
