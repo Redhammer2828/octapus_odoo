@@ -9,16 +9,19 @@ class ServiceCashWizard(models.TransientModel):
     message = fields.Text(string="Message", default="Service already provided within allowed time gap. Proceed with Cash Service?")
 
     def action_cash_service(self):
+        
+        self.service_id.write({
+            'type': 'cash',
+            # 'state': 'dispatch'
+        })
+
         member = self.service_id.member_id
         product_template_id = member.product_template_id.id
         validation_result = self.service_id._validate_intercity_service(product_template_id)
         if isinstance(validation_result, dict):
             # If validation returns a wizard action, return it
             return validation_result
-        self.service_id.write({
-            'type': 'cash',
-            # 'state': 'dispatch'
-        })
+
         # self.service_id.message_post(body=_("Service dispatched as cash service."))
         self.create_service_history()
         self.service_id._dispatch_service()

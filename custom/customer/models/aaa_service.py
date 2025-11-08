@@ -1299,7 +1299,18 @@ class AAAService(models.Model):
 
             print(f"CAT_DURATION (validity in hours or days): {validity_period_days}")
 
-            # --- NEW: Always restrict to only one service in any 24-hour window ---
+            # --- Define exception categories ---
+            double_category_names = [
+                "AIRPORT PICK UP AND DROP OFF",
+                "SERVICE PICKUP AND DROP OFF -  ACCIDENT",
+                "SERVICE PICKUP AND DROP OFF - GENERAL"
+            ]
+
+            # Determine the maximum allowed in 24h
+            category_name = self.product_id.categ_id.name if self.product_id.categ_id else ""
+            limit_24h = 2 if category_name in double_category_names else 1
+
+            # --- Always restrict to only N service(s) in any 24-hour window ---
             last_24h = fields.Datetime.now() - timedelta(hours=24)
             used_in_24h = self.env['aaa.service'].search_count([
                 ('member_id', '=', self.member_id.id),
@@ -1310,8 +1321,8 @@ class AAAService(models.Model):
                 ('id', '!=', self.id)
             ])
             print("USED IN LAST 24 HOURS:", used_in_24h)
-            if used_in_24h > 0:
-                print("CATEGORY ALREADY USED IN LAST 24 HOURS - TRIGGERING CASH WIZARD")
+            if used_in_24h >= limit_24h:
+                print("CATEGORY EXCEEDED ALLOWED WITHIN 24 HOURS - TRIGGERING CASH WIZARD")
                 # self._trigger_cash_service_wizard()
                 return False
 
