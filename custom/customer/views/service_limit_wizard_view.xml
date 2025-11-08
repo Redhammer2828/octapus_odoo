@@ -5,36 +5,52 @@
         <field name="model">service.limit.wizard</field>
         <field name="arch" type="xml">
             <form string="Service Limit Reached">
-                <div class="alert alert-warning" role="alert">
-                    <h4>⚠️ SERVICE LIMIT REACHED!</h4>
-                </div>
+                <header>
+                    <div class="alert alert-warning" role="alert" style="margin: 0;">
+                        <h4 class="alert-heading">
+                            <i class="fa fa-exclamation-triangle"/> Service Limit Reached
+                        </h4>
+                        <p class="mb-0">You have reached the maximum allowed services for your package within the current period.</p>
+                    </div>
+                </header>
                 
-                <group>
-                    <field name="service_id" invisible="1"/>
-                    <field name="message" widget="text" nolabel="1" readonly="1"/>
-                </group>
-                
-                <group col="4">
-                    <field name="existing_service_count" string="Services Used"/>
-                    <field name="service_limit" string="Limit"/>
-                    <field name="service_type" string="Service Type"/>
-                    <field name="limit_period" string="Period"/>
-                </group>
-                
-                <group>
+                <sheet>
+                    <group>
+                        <group string="Service Information">
+                            <field name="service_type" readonly="1" string="Service Type"/>
+                            <field name="limit_period" readonly="1" string="Limit Period"/>
+                        </group>
+                        <group string="Usage Statistics">
+                            <field name="existing_service_count" readonly="1" string="Services Used"/>
+                            <field name="service_limit" readonly="1" string="Allowed Limit"/>
+                        </group>
+                    </group>
+                    
+                    <separator string="Additional Information"/>
+                    <field name="message" nolabel="1" readonly="1"/>
+                    
+                    <separator string="Period Details"/>
                     <field name="period_description" nolabel="1" readonly="1"/>
-                </group>
+                    
+                    <div class="alert alert-info mt16" role="alert">
+                        <strong>What would you like to do?</strong>
+                        <ul class="mb-0 mt8">
+                            <li><strong>Proceed:</strong> Continue with the service despite reaching the limit (may require approval)</li>
+                            <li><strong>Not Proceed:</strong> Cancel the service due to limit restrictions</li>
+                        </ul>
+                    </div>
+                </sheet>
                 
                 <footer>
                     <button name="action_proceed" 
                             string="Proceed" 
                             type="object" 
-                            class="btn-primary"
+                            class="btn-warning"
                             confirm="Are you sure you want to proceed despite the limit being reached?"/>
                     <button name="action_restrict" 
                             string="Not Proceed" 
                             type="object" 
-                            class="btn-secondary"/>
+                            class="btn-danger"/>
                 </footer>
             </form>
         </field>

@@ -1205,7 +1205,11 @@ class AAAService(models.Model):
             print("SERVICE NOT IN PACKAGE - TRIGGERING CASH/CREDIT WIZARD")
             return self._trigger_cash_or_credit_service_wizard()
 
-        # Intercity validation for policy members only
+        if not self._validate_service_limits(product_template_id):
+            print("SERVICE VALIDITY REACHED THE CATEGORY LIMITS - TRIGGERING CASH WIZARD")
+            return self._trigger_cash_service_wizard()
+
+        # Intercity validation for policy members only - moved to last after dispatching logic checks pass
         if self.member_id.member_type == 'policy':
             validation_result = self._validate_intercity_service(product_template_id)
             if isinstance(validation_result, dict):
@@ -1214,10 +1218,6 @@ class AAAService(models.Model):
             elif not validation_result:
                 print("INTERCITY SERVICE VALIDATION FAILED - TRIGGERING CASH WIZARD")
                 return self._trigger_cash_service_wizard()
-
-        if not self._validate_service_limits(product_template_id):
-            print("SERVICE VALIDITY REACHED THE CATEGORY LIMITS - TRIGGERING CASH WIZARD")
-            return self._trigger_cash_service_wizard()
 
         self._dispatch_service()
         # self._generate_service_name()
