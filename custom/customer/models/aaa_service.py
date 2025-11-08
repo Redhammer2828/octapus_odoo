@@ -1693,7 +1693,9 @@ class AAAService(models.Model):
             search_domain = [
                 ('member_id', '=', self.member_id.id),
                 ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-                ('id', '!=', self.id)  # Exclude current service
+                ('id', '!=', self.id),  # Exclude current service
+                # NEW: only count services for the same product template
+                ('product_id', '=', self.product_id.id)
             ] + date_domain
             print(f"DEBUG: search_domain = {search_domain}")
             
@@ -1730,13 +1732,12 @@ class AAAService(models.Model):
                     print(f"DEBUG: Different emirate service with intercity=true package")
                     print(f"DEBUG: Counting different emirate services: {existing_service_count} out of {len(all_member_services)} total")
                 else:
-                    # Package doesn't allow intercity - this case should not be reached 
-                    # because the emirates exception logic earlier should have handled it
-                    different_emirate_services = [s for s in all_member_services if s.from_location_emirate != s.to_location_emirate]
-                    existing_service_count = len(different_emirate_services)
-                    should_check_limit = True
-                    print(f"DEBUG: Different emirate service with intercity=false package - allowed by emirates exception")
-                    print(f"DEBUG: Counting different emirate services: {existing_service_count} out of {len(all_member_services)} total")
+                    # Package is same-emirate only but user picked different emirates.
+                    # We already allowed it via the emirates-exception list above.
+                    # DO NOT count it against any limit — just allow it.
+                    should_check_limit = False
+                    existing_service_count = 0
+                    print(f"DEBUG: Different emirate service with intercity=false package - allowed by emirates exception, no limit check")
             else:
                 # SAME EMIRATE SERVICE: Check if package has intercity=false
                 if package_service.is_intercity == 'false':
