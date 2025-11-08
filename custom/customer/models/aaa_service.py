@@ -1505,16 +1505,21 @@ class AAAService(models.Model):
             # No restriction on emirates - allow travel between different cities/emirates
             print("DEBUG: Service allows intercity travel (is_intercity='true')")
             pass
-        elif package_service.is_intercity == 'same_city':
-            # Package is for same city with 40km radius limit
-            print("DEBUG: Service restricted to same city with 40km radius (is_intercity='same_city')")
-            if package_service.intercity_limit_period == 'allow_around_40km':
-                # Validate 40km radius between from_location and to_location
-                if self.from_location and self.to_location:
-                    from_lat = self.from_location.latitude
-                    from_lng = self.from_location.longitude
-                    to_lat = self.to_location.latitude
-                    to_lng = self.to_location.longitude
+        elif package_service.is_intercity == 'false':
+            # Package is for same emirate with user-defined km radius limit
+            distance_limit = package_service.distance_limit_km if package_service.distance_limit_km is not None else 0
+            print(f"DEBUG: Service restricted to same emirate with {distance_limit}km radius (is_intercity='false')")
+            if package_service.intercity_limit_period == 'allow_around_provided_km':
+                # Validate user-defined km radius between locations
+                # Check both from_location/to_location and selected_from_location/selected_to_location
+                from_loc = self.from_location or self.selected_from_location
+                to_loc = self.to_location or self.selected_to_location
+                
+                if from_loc and to_loc:
+                    from_lat = from_loc.latitude
+                    from_lng = from_loc.longitude
+                    to_lat = to_loc.latitude
+                    to_lng = to_loc.longitude
                     
                     if from_lat and from_lng and to_lat and to_lng:
                         try:
@@ -1545,16 +1550,25 @@ class AAAService(models.Model):
                             
                             print(f"DEBUG: Distance calculated: {distance_km:.2f} km")
                             
-                            if distance_km > 40:
-                                raise ValidationError(_(
-                                    "⚠️ DISTANCE LIMIT EXCEEDED!\n\n"
-                                    "Your package (%s) allows same city services within 40km radius only.\n\n"
-                                    "📍 Distance between selected locations: %.2f km\n"
-                                    "🚫 Maximum allowed distance: 40 km\n\n"
-                                    "✅ Please select locations within 40km radius or upgrade your package."
-                                ) % (package_service.name, distance_km))
+                            if distance_km > distance_limit:
+                                # Trigger distance validation wizard instead of raising error
+                                return {
+                                    'type': 'ir.actions.act_window',
+                                    'name': 'Distance Validation',
+                                    'res_model': 'distance.validation.wizard',
+                                    'view_mode': 'form',
+                                    'target': 'new',
+                                    'context': {
+                                        'default_service_id': self.id,
+                                        'default_calculated_distance': distance_km,
+                                        'default_distance_limit': distance_limit,
+                                        'default_from_location': self.selected_from_location.name if self.selected_from_location else '',
+                                        'default_to_location': self.selected_to_location.name if self.selected_to_location else '',
+                                        'default_package_name': package_service.product_template_id.name,
+                                    }
+                                }
                             else:
-                                print(f"DEBUG: Distance validation passed: {distance_km:.2f} km <= 40 km")
+                                print(f"DEBUG: Distance validation passed: {distance_km:.2f} km <= {distance_limit} km")
                                 
                         except (ValueError, TypeError) as e:
                             print(f"DEBUG: Error calculating distance: {e}")
@@ -1630,6 +1644,11 @@ class AAAService(models.Model):
             print(f"DEBUG: today = {today}")
             print(f"DEBUG: intercity_limit_period = {package_service.intercity_limit_period}")
             
+            # Initialize variables for all paths
+            activate_date = None
+            date_from = None
+            date_to = None
+            
             if package_service.intercity_limit_period == 'daily':
                 # Daily limit: count services from today only
                 date_from = today
@@ -1669,6 +1688,8 @@ class AAAService(models.Model):
                     # Default to 395 days before the member_expiry_date if activate_date is null
                     activate_date = self.member_expiry_date - timedelta(days=395)
                 
+                date_from = activate_date
+                date_to = self.member_expiry_date
                 date_domain = [
                     ('service_time', '>=', fields.Datetime.to_datetime(activate_date)),
                     ('service_time', '<=', fields.Datetime.to_datetime(self.member_expiry_date))
@@ -1677,6 +1698,8 @@ class AAAService(models.Model):
             
             print(f"DEBUG: date_from = {date_from}")
             print(f"DEBUG: date_to = {date_to}")
+            print(f"DEBUG: activate_date = {activate_date}")
+            print(f"DEBUG: member_expiry_date = {self.member_expiry_date}")
             print(f"DEBUG: period_description = {period_description}")
             print(f"DEBUG: date_domain = {date_domain}")
             
