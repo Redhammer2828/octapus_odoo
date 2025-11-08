@@ -1288,73 +1288,59 @@ class AAAService(models.Model):
         for limit in category_limits:
             quantity_limit = float(limit.quantity)
             print(f"NO OF SERVICE ACCESS IN CAT_DURATION: {quantity_limit}")
-            # Fix: Correct handling of hours vs. days
-            validity_period_days = (
-                limit.hours if limit.uom_id.name == 'Days' else limit.hours )
+
+            # Parse the time period from UOM
+            if limit.uom_id.name == 'Days':
+                validity_period_days = int(limit.hours)
+            else:
+                validity_period_days = int(limit.hours / 24)  # Convert hours to days if needed
+
             print(f"CAT_DURATION (validity in hours or days): {validity_period_days}")
-        # Logic for 24-hour validation
-            if validity_period_days == 24:
-                if self.member_activate_date:
-                    activate_date = self.member_activate_date
-                else:
-                 # Default to 395 days before the member_expiry_date if activate_date is null
-                    activate_date = self.member_expiry_date - timedelta(days=395)
-                # Fetch the last service in the same category
-                # Fetch the last service in the same category within the valid date range
-                last_service = self.env['aaa.service'].search([
-                    ('member_id', '=', self.member_id.id),
-                    ('product_id.categ_id', '=', parent_category_id),
-                    ('service_time', '>=', activate_date),
-                    ('service_time', '<=', self.member_expiry_date),
-                    ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-                ], order='service_time desc', limit=1)
 
-                print(f"LAST SERVICEL:{last_service}")
-                print("PRODUCT CATEGORY ID CHOOSES:",self.product_id.categ_id)
-                print("MEMBER ACTIVATION DATE",self.member_id.member_expiry_date)
-                if last_service and last_service.service_time:
+            # --- NEW: Always restrict to only one service in any 24-hour window ---
+            last_24h = fields.Datetime.now() - timedelta(hours=24)
+            used_in_24h = self.env['aaa.service'].search_count([
+                ('member_id', '=', self.member_id.id),
+                ('product_id.categ_id', '=', parent_category_id),
+                ('service_time', '>=', last_24h),
+                ('service_time', '<=', fields.Datetime.now()),
+                ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+                ('id', '!=', self.id)
+            ])
+            print("USED IN LAST 24 HOURS:", used_in_24h)
+            if used_in_24h > 0:
+                print("CATEGORY ALREADY USED IN LAST 24 HOURS - TRIGGERING CASH WIZARD")
+                # self._trigger_cash_service_wizard()
+                return False
 
-                    time_since_last_service = fields.Datetime.now() - last_service.service_time
-                    hours_since_last_service = time_since_last_service.total_seconds() / 3600
-                    print(f"HOURS SINCE LAST SERVICE: {hours_since_last_service}")
-
-                    # If less than 24 hours, calculate remaining quantity
-                    if hours_since_last_service < 24:
-                        remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
-                        print(f"REMAINING SERVICE ACCESS IN THE CAT_DURATION (24 hours): {remaining_quantity}")
-
-                        if remaining_quantity > 0:
-                            print("SERVICE WITHIN 24 HOURS - TRIGGERING CASH WIZARD")
-                            self._trigger_cash_service_wizard()
-
-                            raise ValidationError(
-                                _("You can only access a new service 24 hours after the last one. Remaining quantity: %d") % remaining_quantity
-                            )
-                        elif remaining_quantity <= 0:
-                            print("NO REMAINING SERVICE ACCESS - TRIGGERING CASH WIZARD")
-                            self._trigger_cash_service_wizard()
-                            return False
-                else:
-                    print("No last service found or missing service_time")
-            else:  # Logic for validity_period_days = 365 or other cases
-                remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
-                print("COUNT AT 365 days ---------------------------",self._count_services_in_category(parent_category_id))
-                print(f"REMAINING SERVICE ACCESS IN THE CAT_DURATION ({validity_period_days} days): {remaining_quantity}")
-
-                if remaining_quantity <= 0:
-                    print("REMAINING SERVICE ACCESS REACHED ZERO - TRIGGERING CASH WIZARD")
-                    self._trigger_cash_service_wizard()
-                    return False
-                elif remaining_quantity > 0:
-                    print(f"Remaining quantity is still available: {remaining_quantity}")
-
-        else:  # Logic for validity_period_days = 365 or other cases
-            remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
+            # --- Quantity limit for the configured cycle (e.g., 100 in 365 days) ---
+            period_start = fields.Datetime.now() - timedelta(days=validity_period_days)
+            used_count = self.env['aaa.service'].search_count([
+                ('member_id', '=', self.member_id.id),
+                ('product_id.categ_id', '=', parent_category_id),
+                ('service_time', '>=', period_start),
+                ('service_time', '<=', fields.Datetime.now()),
+                ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+                ('id', '!=', self.id)
+            ])
+            print("COUNT IN PERIOD:", used_count)
+            remaining_quantity = quantity_limit - used_count
             print(f"REMAINING SERVICE ACCESS IN THE CAT_DURATION ({validity_period_days} days): {remaining_quantity}")
+
             if remaining_quantity <= 0:
                 print("REMAINING SERVICE ACCESS REACHED ZERO - TRIGGERING CASH WIZARD")
-                self._trigger_cash_service_wizard()
+                # self._trigger_cash_service_wizard()
                 return False
+            elif remaining_quantity > 0:
+                print(f"Remaining quantity is still available: {remaining_quantity}")
+
+        # else:  # Logic for validity_period_days = 365 or other cases
+        #     remaining_quantity = quantity_limit - self._count_services_in_category(parent_category_id)
+        #     print(f"REMAINING SERVICE ACCESS IN THE CAT_DURATION ({validity_period_days} days): {remaining_quantity}")
+        #     if remaining_quantity <= 0:
+        #         print("REMAINING SERVICE ACCESS REACHED ZERO - TRIGGERING CASH WIZARD")
+        #         # self._trigger_cash_service_wizard()
+        #         return False
 
         if self.service_based == 'location_duration':
             period_start = fields.Datetime.now() - timedelta(days=validity_period_days)
