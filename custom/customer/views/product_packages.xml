@@ -104,8 +104,8 @@
                                         <field name="allowed_intercity_emirates" widget="many2many_tags" 
                                                domain="[('country_id.code', '=', 'AE')]"
                                                placeholder="Select emirates allowed for intercity services when is_intercity=false"
-                                               invisible="is_intercity"/>
-                                        <field name="quantity" />
+                                               invisible="is_intercity == 'true'"/>
+                                        <!-- <field name="quantity" /> -->
                                     </tree>
                                 </field>
                             </page>
