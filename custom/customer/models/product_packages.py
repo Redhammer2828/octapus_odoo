@@ -24,14 +24,17 @@ class ProductPackagesService(models.Model):
 
     is_intercity = fields.Selection([
         ('false', 'Same Emirate'),
-        ('true', 'Intercity')
-    ], string='Service Type', default='false', help='Specify if this service allows intercity travel')
+        ('true', 'Intercity'),
+        ('no_validation', 'No Validation'),
+        ('same_city', 'Same City')
+    ], string='Service Type', default='no_validation', help='Specify if this service allows intercity travel')
     intercity_limit = fields.Float('Intercity Limit', help='Maximum limit for intercity services')
     intercity_limit_period = fields.Selection([
         ('daily', 'Daily'),
         ('monthly', 'Monthly'),
         ('yearly', 'Yearly'),
-        ('no_check', 'No intercity check')
+        ('no_check', 'No intercity check'),
+        ('allow_around_40km', 'Allow Around 40km')
     ], string='Limit Period', default='no_check', help='Period for intercity limit calculation')
     allowed_intercity_emirates = fields.Many2many(
         'res.country.state', 
@@ -41,6 +44,17 @@ class ProductPackagesService(models.Model):
     )
     product_id = fields.Many2one('product.product', string='Product')
     quantity = fields.Float('quantity')
+
+    @api.onchange('is_intercity')
+    def _onchange_is_intercity(self):
+        """Auto-select appropriate settings based on service type"""
+        if self.is_intercity == 'same_city':
+            # Auto-select allow_around_40km when same_city is chosen
+            self.intercity_limit_period = 'allow_around_40km'
+        elif self.is_intercity == 'no_validation':
+            # Auto-select no intercity check and set intercity limit to 0
+            self.intercity_limit_period = 'no_check'
+            self.intercity_limit = 0
 
 class  CategoryLimit(models.Model):
     _name = "product.category.limit"

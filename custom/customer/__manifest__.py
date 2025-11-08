@@ -2,7 +2,7 @@
 {
     'name': 'Customer',
     'version': '1.0',
-    'depends': ['web','base','product','hr','mail','account','report_xlsx','bus'],
+    'depends': ['web','base','product','hr','mail','account','report_xlsx','bus','account_debit_note'],
     'assets': {
         'web.assets_backend': [
              '/customer/static/src/css/my_custom_style.css',
@@ -88,6 +88,7 @@
         'wizards/rac_bulk_upload.xml',
         'wizards/aaa_cancel_report.xml',
         'wizards/account_debit_note_inherit.xml',
+        'wizards/service_limit_wizard_view.xml',
         'data/scheduled_action.xml',
         'data/sequence_data.xml',
         'data/server_action.xml',
