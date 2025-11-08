@@ -31,6 +31,31 @@
                         @page {
                             margin: 0mm;
                         }
+
+                        /* Outer cells (layout unchanged) */
+                        .trn-outer, .ref-outer { position: relative; padding: 0; vertical-align: top; }  /* anchors for overlays */
+                        .trn-outer { border: 1pt solid #000; border-right: 0; }
+                        .ref-outer { border: 1pt solid #000; border-left: 0; }
+
+                        /* LEFT HALF (TRN): inner label/value separator at 25% and middle divider at the right edge */
+                        .trn-outer::before, .trn-outer::after {
+                            content: ""; position: absolute; top: 0; bottom: 0; width: 0; z-index: 2;
+                            border-right: 1pt solid #000;
+                        }
+                        .trn-outer::before { left: 25%; }   /* TRN label/value separator */
+                        .trn-outer::after  { right: 0; }    /* middle divider between halves */
+
+                        /* RIGHT HALF (REF): inner label/value separator at 30% */
+                        .ref-outer::before {
+                            content: ""; position: absolute; top: 0; bottom: 0; left: 30%; width: 0; z-index: 2;
+                            border-right: 1pt solid #000;     /* REF label/value separator */
+                        }
+
+                        /* Inner tables keep content only (no vertical borders) */
+                        .inner { width: 100%; border-collapse: separate; border-spacing: 0; }
+                        .inner td { padding: 10px; vertical-align: top; }
+                        .inner .label { font-weight: bold; }
+
                     </style>
                     
                     <main>
@@ -43,8 +68,10 @@
                         
                         <table style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
                             <tr>
-                                <td colspan="7" style="text-align: center; border: 1px solid black; padding: 8px; font-weight: bold; font-size: 20px;">
-                                    TAX INVOICE
+                                <td colspan="7" style="text-align:center; border:1px solid black; padding:8px; font-weight:bold; font-size:20px;">
+                                    <t t-if="docs.move_type == 'out_refund'">CREDIT NOTE</t>
+                                    <t t-elif="docs.move_type == 'out_invoice' and docs.debit_origin_id">DEBIT NOTE</t>
+                                    <t t-else="">TAX INVOICE</t>
                                 </td>
                             </tr>
                             
@@ -56,17 +83,12 @@
                                         <div style="padding: 2px; font-weight: normal;"><span t-field="docs.partner_id.country_id.name"/></div>
                                         <div style="padding: 2px; font-weight: normal;"><span t-field="docs.partner_id.phone"/></div>
                                     </div>
-                                    <table style="width: 100%;">
-                                        <tr>
-                                            <td style="width: 40%; border-right: 1px solid black; border-top: 1px solid black; padding: 10px; font-weight: bold;">TRN :</td>
-                                            <td style="width: 60%; border-top: 1px solid black; padding: 10px;"><span t-field="docs.partner_id.trn_number"/></td>
-                                        </tr>
-                                    </table>
+                                    
                                 </td>
                                 <td colspan="4" style="width: 50%; border: 1px solid black; vertical-align: top; margin-bottom:0;">
                                     <table style="width: 100%;">
                                         <tr>
-                                            <td style="width: 30%; border-right: 1px solid black; border-bottom: 1px solid black; padding: 10px; font-weight: bold;">Invoice No :</td>
+                                            <td style="width: 30%; border-right: 1px solid black; border-bottom: 1px solid black; padding: 10px; font-weight: bold;">Number:</td>
                                             <td style="width: 70%; border-bottom: 1px solid black; padding: 10px;"><span t-field="docs.name"/></td>
                                         </tr>
                                         <tr>
@@ -74,13 +96,55 @@
                                             <td style="width: 70%; border-bottom: 1px solid black; padding: 10px;"><span t-field="docs.invoice_date"/></td>
                                         </tr>
                                         <tr>
-                                            <td style="width: 30%; border-right: 1px solid black; border-bottom: 1px solid black; padding: 10px; font-weight: bold;">TRN :</td>
-                                            <td style="width: 70%; border-bottom: 1px solid black; padding: 10px;"><span t-field="res_company.vat"/></td>
+                                            <td style="width: 30%; border-right: 1px solid black; border-bottom: 1px solid white; padding: 10px; font-weight: bold;">TRN :</td>
+                                            <td style="width: 70%; border-bottom: 1px solid white; padding: 10px;"><span t-field="res_company.vat"/></td>
                                         </tr>
+                                        
+                                    </table>
+                                </td>
+                            </tr>
+                                
+                            <!-- <tr>
+                                <td colspan="3" style="border:1px solid black; border-bottom:none; padding:0;">
+                                    <table style="width:100%; border-collapse:collapse; height:100%;">
                                         <tr>
-                                            <td style="width: 30%; border-right: 1px solid black; padding: 10px; font-weight: bold;">REF :</td>
-                                            <td style="width: 70%; padding: 10px;"><span t-field="docs.partner_id.name"/></td>
+                                            <td style="width:25%; border-right:1px solid black; padding:10px; font-weight:bold; border-bottom:none;">TRN :</td>
+                                            <td style="width:75%; padding:10px; border-bottom:none;">
+                                                <span t-field="docs.partner_id.trn_number"/>
+                                            </td>
                                         </tr>
+                                    </table>
+                                </td>
+                                <td colspan="4" style="border:1px solid black; padding:0;">
+                                    <table style="width:100%; border-collapse:collapse;">
+                                        <tr>
+                                            <td style="width:30%; border-right:1px solid black; padding:10px; font-weight:bold;">REF :</td>
+                                            <td style="width:70%; padding:10px;">
+                                            <span t-esc="docs.ref or docs.partner_id.name or ''"/>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr> -->
+
+                            <tr>
+                                <!-- Left half (TRN) -->
+                                <td colspan="3" class="trn-outer">
+                                    <table class="inner">
+                                    <tr>
+                                        <td class="label" style="width:25%;">TRN :</td>
+                                        <td class=""      style="width:75%;"><span t-field="docs.partner_id.trn_number"/></td>
+                                    </tr>
+                                    </table>
+                                </td>
+
+                                <!-- Right half (REF) -->
+                                <td colspan="4" class="ref-outer">
+                                    <table class="inner">
+                                    <tr>
+                                        <td class="label" style="width:30%;">REF :</td>
+                                        <td class=""      style="width:70%;"><span t-esc="docs.ref or docs.partner_id.name or ''"/></td>
+                                    </tr>
                                     </table>
                                 </td>
                             </tr>
@@ -193,7 +257,7 @@
                         </table>
                     </main>
                 </div>
-                <t t-if="docs.invoice_line_type == 'consolidated' and docs.member_type == 'credit'">
+                <!-- <t t-if="docs.invoice_line_type == 'consolidated' and docs.member_type == 'credit'">
                     <div style="page-break-before: always; font-family: 'Roboto-Regular-Custom';">
                         <div style="text-align: right; margin-bottom: 10px; padding-right: 10px;">
                             <div style="text-align: right; margin-bottom: 5px;">
@@ -324,7 +388,7 @@
                             </div>
                         </t>
                     </div>
-                </t>
+                </t> -->
             </t>
         </t>
     </template>

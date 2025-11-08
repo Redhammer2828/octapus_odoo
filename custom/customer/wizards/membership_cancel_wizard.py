@@ -6,6 +6,7 @@ class MembershipCancelWizard(models.TransientModel):
 
     cancel_date = fields.Date('Cancel Date')
     comment = fields.Text('comment')
+    issue_credit_note = fields.Boolean('Issue Credit Note')
 
     def action_cancel(self):
         partner = self.env['res.partner'].browse(self._context.get('active_id'))
@@ -20,4 +21,5 @@ class MembershipCancelWizard(models.TransientModel):
             'membership_state': 'cancel',
             'membership_cancel_date': self.cancel_date,
             'cancellation_comment': self.comment,
+            'issue_credit_note': self.issue_credit_note,
         })

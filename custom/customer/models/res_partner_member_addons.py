@@ -14,6 +14,14 @@ class ResPartnerMemberAddons(models.Model):
     renewal_queue_data_ids = fields.One2many('renewal.queue.data','member_id',"Renewal Queue Data")
     is_renewal_in_queue_edit_mode = fields.Boolean(string="Renewal in queue Edit Mode", default=False)
     show_renewal_queue_data_page = fields.Boolean(string="Show renewal in queue page", default=False)
+    invoice_state = fields.Selection([
+        ('not_invoiced', 'Not Invoiced'),
+        ('invoiced', 'Invoiced'),
+        ], string="Invoice Status", readonly=True, default='not_invoiced')
+    invoiced_by = fields.Many2one('res.users', string="Invoiced By")
+    invoice_id = fields.Many2one('account.move', string="Invoice Number")
+    issue_credit_note = fields.Boolean(string="Issue Credit Note", default=False)
+    issue_debit_note = fields.Boolean(string="Issue Debit Note", default=False)
 
     def action_membership_renewal_scheduler(self):
 
@@ -69,6 +77,9 @@ class ResPartnerMemberAddons(models.Model):
                     record.street = record.renewal_queue_data_ids[0].street
                     record.mobile = record.renewal_queue_data_ids[0].mobile
                     record.remarks = record.renewal_queue_data_ids[0].remarks
+                    record.invoice_state = record.renewal_queue_data_ids[0].invoice_state
+                    record.invoiced_by = record.renewal_queue_data_ids[0].invoiced_by
+                    record.invoice_id = record.renewal_queue_data_ids[0].invoice_id
 
                 record.member_activate_date = record.next_activation_date
                 record.member_expiry_date = record.next_expiry_date
@@ -81,7 +92,10 @@ class ResPartnerMemberAddons(models.Model):
                 record.scheduled_on_date = False
                 record.renewal_in_queue = False
                 record.show_renewal_queue_data_page = False
-                record.renewal_queue_data_ids = [(5, 0, 0)]
+                # record.renewal_queue_data_ids = [(5, 0, 0)]
+
+                for rec in record.renewal_queue_data_ids:
+                    rec.unlink()
 
     def cancel_renewal_in_queue(self):
         for record in self:
@@ -101,7 +115,10 @@ class ResPartnerMemberAddons(models.Model):
             record.timeline_user_id = False
             record.scheduled_on_date = False
             record.show_renewal_queue_data_page = False
-            record.renewal_queue_data_ids = [(5, 0, 0)]
+            # record.renewal_queue_data_ids = [(5, 0, 0)]
+
+            for rec in record.renewal_queue_data_ids:
+                    rec.unlink()
 
     def manual_renewal_button(self):
         for record in self:
@@ -153,6 +170,9 @@ class ResPartnerMemberAddons(models.Model):
                     record.street = record.renewal_queue_data_ids[0].street
                     record.mobile = record.renewal_queue_data_ids[0].mobile
                     record.remarks = record.renewal_queue_data_ids[0].remarks
+                    record.invoice_state = record.renewal_queue_data_ids[0].invoice_state
+                    record.invoiced_by = record.renewal_queue_data_ids[0].invoiced_by
+                    record.invoice_id = record.renewal_queue_data_ids[0].invoice_id
 
                 record.member_activate_date = record.next_activation_date
                 record.member_expiry_date = record.next_expiry_date
@@ -165,7 +185,10 @@ class ResPartnerMemberAddons(models.Model):
                 record.scheduled_on_date = False
                 record.renewal_in_queue = False
                 record.show_renewal_queue_data_page = False
-                record.renewal_queue_data_ids = [(5, 0, 0)]
+                # record.renewal_queue_data_ids = [(5, 0, 0)]
+
+                for rec in record.renewal_queue_data_ids:
+                    rec.unlink()
 
     def renewal_in_queue_edit_mode_on(self):
         for record in self:
@@ -182,6 +205,8 @@ class RenewalQueueData(models.Model):
         _description = 'Renewal Queue Data'
 
         member_id = fields.Many2one('res.partner', string="Member ID")
+        ref_num = fields.Char(string="Membership Number")
+        old_membership_number = fields.Char(string='Old Membership Number')
         name = fields.Char(string="Name")
         member_expiry_date = fields.Date(string='Member Expiry Date')
         policy_no = fields.Char(string='Policy Number')
@@ -193,7 +218,14 @@ class RenewalQueueData(models.Model):
         member_partner_category_id = fields.Many2one('partner.category',string='Category')
         vehicle_chasis_no = fields.Char(string='Vehicle Chasis No')
         vehicle_plate = fields.Char(string='Vehicle Plate')
+        vehicle_type = fields.Char(string='Vehicle Type')
         street = fields.Char(string='Street')
         mobile = fields.Char(string='Mobile', widget='phone')
         remarks = fields.Text(string="Remarks")
+        invoice_state = fields.Selection([
+        ('not_invoiced', 'Not Invoiced'),
+        ('invoiced', 'Invoiced'),
+        ], string="Invoice Status", readonly=True, default='not_invoiced')
+        invoiced_by = fields.Many2one('res.users', string="Invoiced By")
+        invoice_id = fields.Many2one('account.move', string="Invoice Number")
 

@@ -12,7 +12,7 @@
     </record>
 
     <record id="credit_validation_pdf_report" model="ir.actions.report">
-        <field name="name">Membership Details Report Pdf</field>
+        <field name="name">Credit Service Details Report Pdf</field>
         <field name="model">credit.service.validation</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">customer.report_credit_validation_pdf</field>
@@ -22,13 +22,29 @@
     </record>
 
     <record id="credit_invoice_pdf_report" model="ir.actions.report">
-        <field name="name">Credit Invoice Report Pdf</field>
+        <field name="name">Invoice</field>
         <field name="model">account.move</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">customer.report_credit_invoice_pdf</field>
         <field name="report_file">customer.report_credit_invoice_pdf</field>
         <field name="binding_model_id" ref="model_account_move"/>
         <field name="paperformat_id" ref="paperformat_tax_invoice_no_margin"/>
+        <field name="print_report_name">
+        (object.move_type == 'out_refund') and ('Credit Note - %s' % (object.name or '')) or ((object.move_type == 'out_invoice' and object.debit_origin_id) and ('Debit Note - %s' % (object.name or '')) or ('Invoice - %s' % (object.name or '')))
+        </field>
+    </record>
+
+    <record id="invoice_xlsx_report" model="ir.actions.report">
+        <field name="name">Invoice</field>
+        <field name="model">account.move</field>
+        <field name="report_type">xlsx</field>
+        <field name="report_name">customer.invoice_xlsx_report</field>
+        <field name="report_file">customer.invoice_xlsx_report</field>
+        <field name="binding_model_id" ref="model_account_move"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">
+        (object.move_type == 'out_refund') and ('Credit Note - %s' % (object.name or '')) or ((object.move_type == 'out_invoice' and object.debit_origin_id) and ('Debit Note - %s' % (object.name or '')) or ('Invoice - %s' % (object.name or '')))
+        </field>
     </record>
 
 </odoo>

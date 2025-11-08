@@ -676,8 +676,10 @@ class AAAService(models.Model):
             vals['is_sequence_from_partner'] = bool(vals['sequence_id'])
 
         # Set created_by if in dispatch state and not explicitly set
-        if self.state == 'dispatch' and not vals.get('created_by'):
-            vals['created_by'] = self.env.user.id
+        for record in self:
+            if record.state == 'dispatch' and not vals.get('created_by'):
+                vals['created_by'] = self.env.user.id
+                break
 
         # Handle comment logic
         if 'comments' in vals and vals['comments']:

@@ -1,0 +1,48 @@
+<odoo>
+    <data>
+
+        <!-- Tree View -->
+        <record id="view_account_move_tree_debit_note" model="ir.ui.view">
+            <field name="name">account.move.tree.debit</field>
+            <field name="model">account.move</field>
+            <field name="arch" type="xml">
+                <tree string="Customer Debit Notes" create="false">
+                    <field name="name"/>
+                    <field name="partner_id"/>
+                    <field name="invoice_date"/>
+                    <field name="invoice_date_due"/>
+                    <field name="amount_total"/>
+                    <field name="state"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Action -->
+        <record id="action_move_out_debit_type" model="ir.actions.act_window">
+            <field name="name">Debit Notes</field>
+            <field name="res_model">account.move</field>
+            <field name="view_mode">tree,kanban,form,activity</field>
+            <field name="view_id" ref="view_account_move_tree_debit_note"/>
+            <field name="search_view_id" ref="account.view_account_invoice_filter"/>
+            <field name="domain">[('move_type', '=', 'out_invoice'), ('debit_origin_id', '!=', False)]</field>
+            <field name="context">{'default_move_type': 'out_invoice', 'display_account_trust': True}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create a debit note
+                </p>
+                <p>
+                    Note that the easiest way to create a debit note is to do it directly
+                    from the customer invoice.
+                </p>
+            </field>
+        </record>
+
+        <!-- Menu Item -->
+        <menuitem id="menu_account_debit_notes_root"
+                  name="Debit Notes"
+                  parent="account.menu_finance_receivables"
+                  sequence="4"
+                  action="action_move_out_debit_type"/>
+
+    </data>
+</odoo>

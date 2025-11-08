@@ -1,0 +1,14 @@
+<odoo>
+  <data>
+    <record id="view_account_debit_note_inherit_hide_copy_lines" model="ir.ui.view">
+      <field name="name">account.debit.note.form.inherit.hide.copy.lines</field>
+      <field name="model">account.debit.note</field>
+      <field name="inherit_id" ref="account_debit_note.view_account_debit_note"/>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='copy_lines']" position="attributes">
+          <attribute name="invisible">1</attribute>
+        </xpath>
+      </field>
+    </record>
+  </data>
+</odoo>

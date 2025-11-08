@@ -6,6 +6,7 @@ class MembershipExtensionWizard(models.TransientModel):
 
     expiry_date = fields.Date('Expiry Date')
     new_expiry_date = fields.Date('New Expiry Date')
+    issue_debit_note = fields.Boolean('Issue Debit Note')
 
     # def action_extension(self):
     #     partner = self.env['res.partner'].browse(self._context.get('active_id'))
@@ -98,3 +99,4 @@ class MembershipExtensionWizard(models.TransientModel):
             })
         # Update the partner's expiry date with the new value
         partner.member_expiry_date = self.new_expiry_date
+        partner.issue_debit_note = self.issue_debit_note
