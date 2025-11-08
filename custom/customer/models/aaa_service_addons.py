@@ -56,6 +56,8 @@ class AAAServiceAddons(models.Model):
         ])
 
 
+    driver_assigned_by = fields.Char(string="Driver Assigned By")
+
 
     def write(self, vals):
         # Fields to track for changes
