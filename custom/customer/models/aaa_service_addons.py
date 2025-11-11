@@ -197,6 +197,75 @@ class AAAServiceAddons(models.Model):
 
         return result
     
+    def trigger_reload_service_page(self):
+        # uid = self.env.uid
+        uid = self.env.context.get('uid')
+
+        try:
+            self.env["bus.bus"].sudo()._sendone(
+                    "broadcast",
+                    "page_refresh", 
+                    {
+                        "record_id": self.id,
+                        "model_name": self._name,
+                        "uid": uid,
+                        })
+            _logger.info(f"Page refresh broadcast: {self._name} ID {self.id} by user {uid}")
+        
+        except Exception as e:
+            # Don't crash the main action if bus fails
+            _logger.error(f"Failed to broadcast page refresh: {e}")
+            # Optionally: Return a warning to user
+            return {'warning': {'message': 'Could not notify other users'}}
+
+
+    def _dispatch_service(self):
+        res = super()._dispatch_service()
+        
+        self.trigger_reload_service_page()
+        return res
+    
+    def action_start_service(self):
+        res = super().action_start_service()
+        
+        self.trigger_reload_service_page()
+        return res
+    
+    def action_reach_service(self):
+        res = super().action_reach_service()
+        
+        self.trigger_reload_service_page()
+        return res
+    
+    def action_done_service(self):
+        res = super().action_done_service()
+        
+        self.trigger_reload_service_page()
+        return res
+    
+    def action_cancel_service(self):
+        res = super().action_cancel_service()
+        
+        self.trigger_reload_service_page()
+        return res
+    
+    def action_new_change(self):
+        res = super().action_new_change()
+        
+        self.trigger_reload_service_page()
+        return res
+    
+    def action_completed_rac(self):
+        res = super().action_completed_rac()
+        
+        self.trigger_reload_service_page()
+        return res
+    
+    def action_cancel_done_service(self):
+        res = super().action_cancel_done_service()
+        
+        self.trigger_reload_service_page()
+        return res
 
     
     # def create(self, vals_list):
