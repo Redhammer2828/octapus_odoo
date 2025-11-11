@@ -240,8 +240,109 @@ class AAAService(models.Model):
     amount = fields.Integer(string='Amount', compute='_compute_amount', store=True)  # Dynamically computed amount
     credit_cash = fields.Integer(string="Credit cash")
 
-    from_location_emirate = fields.Char(string='Emirate')
-    to_location_emirate = fields.Char(string='Emirate')
+    from_location_emirate = fields.Char(string='Emirate', index=True)
+    to_location_emirate = fields.Char(string='Emirate', index=True)
+
+    # Computed flag to identify services that are allowed cross-emirate EXCEPTIONS
+    # for packages restricted to same emirate (is_intercity='false').
+    # This enables filtering a list view to show only those exception-allowed intercity services.
+    is_intercity_exception_allowed = fields.Boolean(
+        string='Intercity Exception Allowed',
+        compute='_compute_intercity_exception_allowed',
+        search='_search_intercity_exception_allowed'
+    )
+
+    @api.depends('product_id', 'member_id', 'from_location_emirate', 'to_location_emirate', 'member_type')
+    def _compute_intercity_exception_allowed(self):
+        def _norm(name):
+            return (name or '').replace(' Emirate', '').strip()
+
+        for service in self:
+            allowed = False
+            try:
+                # Only relevant for policy members with both emirates provided and cross-emirate
+                if (
+                    service.member_type == 'policy'
+                    and service.product_id
+                    and service.member_id
+                    and service.from_location_emirate
+                    and service.to_location_emirate
+                    and service.from_location_emirate != service.to_location_emirate
+                ):
+                    # Use the member's package (product_template_id) and the specific service product
+                    member_package_id = service.member_id.product_template_id.id
+                    package_service = self.env['product.package.service'].search([
+                        ('product_template_id', '=', member_package_id),
+                        ('product_id.product_tmpl_id', '=', service.product_id.id),
+                    ], limit=1)
+
+                    if package_service and package_service.is_intercity == 'false':
+                        from_norm = _norm(service.from_location_emirate)
+                        to_norm = _norm(service.to_location_emirate)
+                        allowed_names = {_norm(state.name) for state in package_service.allowed_intercity_emirates}
+                        allowed = from_norm in allowed_names and to_norm in allowed_names
+            except Exception:
+                allowed = False
+            service.is_intercity_exception_allowed = allowed
+
+    @api.model
+    def _search_intercity_exception_allowed(self, operator, value):
+        # Supports domains on this computed flag.
+        # Returns services where cross-emirate is allowed by exceptions when package is same-emirate.
+        if operator not in ('=', '!='):
+            return []
+
+        def _norm(name):
+            return (name or '').replace(' Emirate', '').strip()
+
+        candidate_domain = [
+            ('member_type', '=', 'policy'),
+            ('member_id', '!=', False),
+            ('product_id', '!=', False),
+            ('from_location_emirate', '!=', False),
+            ('to_location_emirate', '!=', False),
+        ]
+        # Respect common default search filters to narrow the candidate set (dramatically speeds up)
+        if self.env.context.get('search_default_today'):
+            candidate_domain.append(('is_today', '=', True))
+
+        candidates = self.search(candidate_domain)
+        matched_ids = []
+
+        # Prefetch package services for all (member_package, product) pairs to avoid N+1 queries
+        member_pkg_ids = {s.member_id.product_template_id.id for s in candidates if s.member_id and s.member_id.product_template_id}
+        prod_tmpl_ids = {s.product_id.id for s in candidates if s.product_id}
+        pps_domain = [
+            ('product_template_id', 'in', list(member_pkg_ids) or [0]),
+            ('product_id.product_tmpl_id', 'in', list(prod_tmpl_ids) or [0]),
+        ]
+        pps_list = self.env['product.package.service'].search(pps_domain)
+        pps_map = {}
+        for ps in pps_list:
+            key = (ps.product_template_id.id, ps.product_id.product_tmpl_id.id)
+            pps_map[key] = ps
+
+        for s in candidates:
+            try:
+                if s.from_location_emirate == s.to_location_emirate:
+                    continue
+                member_package_id = s.member_id.product_template_id.id if s.member_id and s.member_id.product_template_id else False
+                key = (member_package_id, s.product_id.id)
+                ps = pps_map.get(key)
+                if not ps or ps.is_intercity != 'false':
+                    continue
+                from_norm = _norm(s.from_location_emirate)
+                to_norm = _norm(s.to_location_emirate)
+                allowed_names = {_norm(state.name) for state in ps.allowed_intercity_emirates}
+                if from_norm in allowed_names and to_norm in allowed_names:
+                    matched_ids.append(s.id)
+            except Exception:
+                continue
+
+        if (operator == '=' and bool(value)) or (operator == '!=' and not bool(value)):
+            return [('id', 'in', matched_ids)]
+        else:
+            return [('id', 'not in', matched_ids)]
     # quantity_with_days = fields.Char(string='Quantity with Days')
     orgin_no = fields.Text('Orgin')
     origin_no = fields.Many2one('aaa.service', string='Origin Service', help='References the original service before changes were made.', readonly=True)
@@ -1450,6 +1551,20 @@ class AAAService(models.Model):
         ])
         return count
 
+    def _log_intercity_timeline(self, message):
+        """Record an intercity-related action in the service timeline without impacting flow."""
+        try:
+            self.env['service.history'].create({
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': message,
+                'timeline_status': self.state,
+                'service_id': self.id,
+            })
+        except Exception:
+            # Do not raise if logging fails
+            pass
+
     def _validate_intercity_service(self, product_template_id):
         """
         Validate intercity service for policy members based on emirate fields and intercity limits.
@@ -1465,9 +1580,11 @@ class AAAService(models.Model):
         print(f"DEBUG: self.member_id = {self.member_id}")
         print(f"DEBUG: self.from_location_emirate = {self.from_location_emirate}")
         print(f"DEBUG: self.to_location_emirate = {self.to_location_emirate}")
+        self._log_intercity_timeline("Intercity validation started")
         
         if self.member_type != 'policy':
             print("DEBUG: Member type is not 'policy', returning True")
+            self._log_intercity_timeline("Intercity validation not applicable (non-policy member)")
             return True
             
         # Get the service from the package
@@ -1485,11 +1602,13 @@ class AAAService(models.Model):
         if not package_service:
             # If no package service found, allow it (non-intercity service)
             print("DEBUG: No package service found, returning True")
+            self._log_intercity_timeline("Intercity validation: no package service found (allowed)")
             return True
             
         # BYPASS ALL CHECKS if 'no_check' is selected
         if package_service.intercity_limit_period == 'no_check':
             print("DEBUG: intercity_limit_period is 'no_check', bypassing all checks")
+            self._log_intercity_timeline("Intercity validation bypassed (no_check)")
             return True
             
         # Check if we have emirate data for intercity validation
@@ -1501,6 +1620,8 @@ class AAAService(models.Model):
             if not self.to_location_emirate:
                 missing.append('To emirate')
             missing_str = ', '.join(missing) if missing else 'Emirate data'
+
+            self._log_intercity_timeline(f"Intercity validation skipped: missing {missing_str}")
 
             wizard = self.env['service.limit.wizard'].create({
                 'service_id': self.id,
@@ -1532,6 +1653,7 @@ class AAAService(models.Model):
             # intercity = True: Can travel between cities (different emirates allowed)
             # No restriction on emirates - allow travel between different cities/emirates
             print("DEBUG: Service allows intercity travel (is_intercity='true')")
+            self._log_intercity_timeline("Intercity allowed: package allows intercity travel")
             pass
         elif package_service.is_intercity == 'false':
             # Package is for same emirate with user-defined km radius limit
@@ -1580,6 +1702,9 @@ class AAAService(models.Model):
                             
                             if distance_km > distance_limit:
                                 # Trigger distance validation wizard instead of raising error
+                                self._log_intercity_timeline(
+                                    f"Intercity km rule exceeded: {distance_km:.2f} > limit {distance_limit}"
+                                )
                                 return {
                                     'type': 'ir.actions.act_window',
                                     'name': 'Distance Validation',
@@ -1597,10 +1722,14 @@ class AAAService(models.Model):
                                 }
                             else:
                                 print(f"DEBUG: Distance validation passed: {distance_km:.2f} km <= {distance_limit} km")
+                                self._log_intercity_timeline(
+                                    f"Intercity km validation passed: {distance_km:.2f} <= {distance_limit}"
+                                )
                                 
                         except (ValueError, TypeError) as e:
                             print(f"DEBUG: Error calculating distance: {e}")
                             # Show proceed-only wizard instead of validation error
+                            self._log_intercity_timeline("Intercity km validation failed due to data issue")
                             wizard = self.env['service.limit.wizard'].create({
                                 'service_id': self.id,
                                 'message': _(
@@ -1625,6 +1754,7 @@ class AAAService(models.Model):
                             }
                     else:
                         # Show proceed-only wizard instead of validation error
+                        self._log_intercity_timeline("Intercity km validation skipped: missing coordinates")
                         wizard = self.env['service.limit.wizard'].create({
                             'service_id': self.id,
                             'message': _(
@@ -1649,6 +1779,7 @@ class AAAService(models.Model):
                         }
                 else:
                     # Show proceed-only wizard instead of validation error
+                    self._log_intercity_timeline("Intercity km validation skipped: locations not selected")
                     wizard = self.env['service.limit.wizard'].create({
                         'service_id': self.id,
                         'message': _(
@@ -1700,8 +1831,14 @@ class AAAService(models.Model):
 
                     if from_emirate_allowed and to_emirate_allowed:
                         print("DEBUG: Different emirate service allowed by emirates exception (both ends allowed)")
+                        self._log_intercity_timeline(
+                            f"Intercity allowed by emirate exception: {self.from_location_emirate} → {self.to_location_emirate}"
+                        )
                     else:
                         print("DEBUG: Cross-emirate blocked for same-emirate package (exception not matched) — showing limit wizard")
+                        self._log_intercity_timeline(
+                            f"Intercity blocked: cross-emirate not permitted ({self.from_location_emirate} → {self.to_location_emirate})"
+                        )
                         wizard = self.env['service.limit.wizard'].create({
                             'service_id': self.id,
                             'message': _(
@@ -1726,9 +1863,13 @@ class AAAService(models.Model):
                         }
                 else:
                     print(f"DEBUG: Same emirate validation passed: {self.from_location_emirate} == {self.to_location_emirate}")
+                    self._log_intercity_timeline(
+                        f"Intercity same-emirate validation passed: {self.from_location_emirate}"
+                    )
         elif package_service.is_intercity == 'no_validation':
             # No validation required
             print("DEBUG: No validation required for this package (is_intercity='no_validation')")
+            self._log_intercity_timeline("Intercity validation disabled for package (no_validation)")
             return True
         else:
             # intercity = False: Can travel within same emirate only
@@ -1766,10 +1907,16 @@ class AAAService(models.Model):
                     # Both emirates are in the allowed list, so service is permitted
                     print(f"DEBUG: Different emirate service with intercity=false package - allowed by emirates exception")
                     print(f"DEBUG: From emirate '{self.from_location_emirate}' and to emirate '{self.to_location_emirate}' are both in allowed list")
+                    self._log_intercity_timeline(
+                        f"Intercity allowed by emirate exception: {self.from_location_emirate} → {self.to_location_emirate}"
+                    )
                 else:
                     # Emirates not in allowed list, so different emirate services are blocked — show wizard
                     print(f"DEBUG: Different emirate service with intercity=false package - service not allowed; showing limit wizard")
                     print(f"DEBUG: From emirate '{self.from_location_emirate}' allowed: {from_emirate_allowed}, To emirate '{self.to_location_emirate}' allowed: {to_emirate_allowed}")
+                    self._log_intercity_timeline(
+                        f"Intercity blocked: cross-emirate not permitted ({self.from_location_emirate} → {self.to_location_emirate})"
+                    )
                     wizard = self.env['service.limit.wizard'].create({
                         'service_id': self.id,
                         'message': _(
@@ -1794,6 +1941,9 @@ class AAAService(models.Model):
                     }
             else:
                 print(f"DEBUG: Same emirate validation passed: {self.from_location_emirate} == {self.to_location_emirate}")
+                self._log_intercity_timeline(
+                    f"Intercity same-emirate validation passed: {self.from_location_emirate}"
+                )
             
         # Check intercity limit (applies to both intercity=True and intercity=False)
         print(f"DEBUG: Checking intercity limit - limit: {package_service.intercity_limit}, period: {package_service.intercity_limit_period}")
