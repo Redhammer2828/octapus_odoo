@@ -207,7 +207,7 @@ class AAAServiceAddons(models.Model):
                     "page_refresh", 
                     {
                         "record_id": self.id,
-                        "model_name": self._name,
+                        # "model_name": self._name,
                         "uid": uid,
                         })
             _logger.info(f"Page refresh broadcast: {self._name} ID {self.id} by user {uid}")
