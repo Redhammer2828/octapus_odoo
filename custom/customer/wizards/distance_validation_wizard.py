@@ -49,6 +49,8 @@ class DistanceValidationWizard(models.TransientModel):
     def action_proceed(self):
         """Allow the service to proceed despite distance limit"""
         if self.service_id:
+            # Mark service as proceeded out-of-limit
+            self.service_id.write({'is_out_of_limit_proceeded': True})
             # Mark service as having distance override
             # self.service_id.write({
             #     'comments': (self.service_id.comments or '') + 
@@ -66,7 +68,6 @@ class DistanceValidationWizard(models.TransientModel):
                 'status': _(f"Distance override: proceeded with {self.calculated_distance:.2f}KM (Limit: {self.distance_limit:.2f}KM)"),
                 'timeline_status': 'dispatch'
             })
-            
             
             # Continue with the dispatch process by calling _dispatch_service directly
             self.service_id._dispatch_service()
@@ -115,12 +116,3 @@ class DistanceValidationWizard(models.TransientModel):
             }
         }
     
-        # if self.service_id:
-        #     # Add comment about restriction
-        #     self.service_id.write({
-        #         'comments': (self.service_id.comments or '') + 
-        #                    f"\n[Distance Restriction] Service restricted due to {self.calculated_distance:.2f}KM exceeding limit of {self.distance_limit:.2f}KM"
-        #     })
-        
-        # Close wizard and show error
-        # raise UserError(f"Service restricted: Distance {self.calculated_distance:.2f}KM exceeds the allowed limit of {self.distance_limit:.2f}KM for same emirate services.")

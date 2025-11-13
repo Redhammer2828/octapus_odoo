@@ -28,6 +28,8 @@ class ServiceLimitWizard(models.TransientModel):
 
     def action_proceed(self):
         """Allow dispatch to proceed and record in service history"""
+        # Mark service as proceeded out-of-limit
+        self.service_id.write({'is_out_of_limit_proceeded': True})
         # Add service history entry for proceed action
         self.service_id.service_history_ids.create({
             'service_id': self.service_id.id,
