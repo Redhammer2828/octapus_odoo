@@ -270,6 +270,22 @@
             </field>
         </record>
 
+        <record id="call_center_transferred_services_action" model="ir.actions.act_window">
+            <field name="name">Transferred Services</field>
+            <field name="res_model">aaa.service</field>
+            <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="call_center_all_service_view_search" />
+            <field name="domain">[("is_transferred_service", "=", True)]</field>
+            <field name="context">{'search_default_todays_record_filter': 1}</field>
+            <field name="view_ids"
+                eval="[
+                  (5, 0, 0),
+                  (0, 0, {'view_mode': 'tree', 'view_id': ref('customer.call_center_all_service_view_tree')}),
+                  (0, 0, {'view_mode': 'form', 'view_id': ref('customer.call_center_service_form')})
+                ]">
+            </field>
+        </record>
+
         <record id="action_download_zip" model="ir.actions.server">
             <field name="name">Download Attachments</field>
             <field name="model_id" ref="model_aaa_service"/>
@@ -312,5 +328,8 @@
         <menuitem id="menu_intercity_exceptions_list" name="Out-of-Limit Services"
             parent="menu_all_service_root" action="call_center_intercity_exceptions_action"
             sequence="8" />
+        <menuitem id="menu_transferred_services_list" name="Transferred Services"
+            parent="menu_all_service_root" action="call_center_transferred_services_action"
+            sequence="9" />
     </data>
 </odoo>
