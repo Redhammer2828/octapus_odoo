@@ -252,6 +252,14 @@ class AAAService(models.Model):
         search='_search_intercity_exception_allowed'
     )
 
+    # Flag to indicate the service was dispatched after exceeding a limit and user chose to proceed
+    # via an intercity/distance validation wizard. Used to list "Out-of-Limit" proceeded services.
+    is_out_of_limit_proceeded = fields.Boolean(
+        string='Out-of-Limit Proceeded',
+        default=False,
+        help='Set to True when a dispatch proceeds after a limit-exceeded wizard.'
+    )
+
     @api.depends('product_id', 'member_id', 'from_location_emirate', 'to_location_emirate', 'member_type')
     def _compute_intercity_exception_allowed(self):
         def _norm(name):
