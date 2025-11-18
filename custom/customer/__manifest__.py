@@ -1,7 +1,7 @@
 # customer/__manifest__.py
 {
     'name': 'Customer',
-    'version': '1.0',
+    'version': '1.0.1',
     'depends': ['web','base','product','hr','mail','account','report_xlsx','bus','account_debit_note'],
     'assets': {
         'web.assets_backend': [
