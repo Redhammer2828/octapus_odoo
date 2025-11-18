@@ -353,7 +353,7 @@ class DataUploadFile(models.Model):
                             elif expiry_date > db_expiry_date:
                                 # Membership renewal or extension
                                 today = date.today()
-                                if difference >= 365:
+                                if difference >= 364:
                                     if today < activate_date:
                                         member_line.update({
                                         'upload_member_status': 'renewal_in_queue',
