@@ -57,6 +57,15 @@ class DistanceValidationWizard(models.TransientModel):
 
             message = _((self.service_id.comments or '') + 
                         f"\nProceeded with {self.calculated_distance:.2f}KM (Limit: {self.distance_limit:.2f}KM)")
+
+            # Log proceed action to service history timeline
+            self.service_id.service_history_ids.create({
+                'service_id': self.service_id.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': _(f"Distance override: proceeded with {self.calculated_distance:.2f}KM (Limit: {self.distance_limit:.2f}KM)"),
+                'timeline_status': 'dispatch'
+            })
             
             
             # Continue with the dispatch process by calling _dispatch_service directly
@@ -82,6 +91,16 @@ class DistanceValidationWizard(models.TransientModel):
 
         message = _((self.service_id.comments or '') + 
                     f"\nService restricted due to {self.calculated_distance:.2f}KM exceeding limit of {self.distance_limit:.2f}KM")
+
+        # Log restrict action to service history timeline
+        if self.service_id:
+            self.service_id.service_history_ids.create({
+                'service_id': self.service_id.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': _(f"Distance restriction: {self.calculated_distance:.2f}KM exceeds limit of {self.distance_limit:.2f}KM"),
+                'timeline_status': 'initiate'
+            })
         
         # Display notification and close wizard
         return {
