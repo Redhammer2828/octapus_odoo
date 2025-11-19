@@ -260,6 +260,9 @@ class AAAService(models.Model):
         help='Set to True when a dispatch proceeds after a limit-exceeded wizard.'
     )
 
+    phone = fields.Char(string="Phone")
+
+
     @api.depends('product_id', 'member_id', 'from_location_emirate', 'to_location_emirate', 'member_type')
     def _compute_intercity_exception_allowed(self):
         def _norm(name):
