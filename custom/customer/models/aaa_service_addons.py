@@ -57,7 +57,6 @@ class AAAServiceAddons(models.Model):
 
 
     driver_assigned_by = fields.Char(string="Driver Assigned By")
-    is_transferred_service = fields.Boolean(string="Is Transferred Service", default=False, index=True)
 
 
     def write(self, vals):
