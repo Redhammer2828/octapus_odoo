@@ -284,7 +284,23 @@ class AAAServiceAddons(models.Model):
     #     return recs
     
     def action_approve_whatsapp_cancel_service(self):
-
+        order_number = self.name
+        _logger.info("SERVICE NUMBER: %s", order_number)
+        api_url = f"{base_url}/carhire-order/order/service/consumers/orders/update/order-service-change"
+        # Define query parameters
+        body = json.dumps({
+            "status": "APPROVED",
+            "erp_order_number": order_number,
+            "type": "cancel",
+        })
+        headers = {'Content-Type': 'application/json'}
+        try:
+            # Send request with query parameters
+            response = requests.put(api_url, data=body, headers=headers, timeout=10)
+            _logger.info("API Response: %s - %s", response.status_code, response.text)
+        except requests.exceptions.RequestException as e:
+            _logger.error("API Request Failed: %s", str(e))
+        
         self.state = 'cancel'
         self.env['service.history'].create({
                 'service_id': self.id,  # Assuming service_id is a Many2one field
@@ -294,6 +310,34 @@ class AAAServiceAddons(models.Model):
                 'timeline_status': self.state,
         })
 
+    def action_reject_driver_cancel_service(self):
+        order_number = self.name
+        _logger.info("Cancel rejected SERVICE NUMBER: %s", order_number)
+        api_url = f"{base_url}/carhire-order/order/service/consumers/orders/update/order-service-change"
+        # Define query parameters
+        body = {
+            "status": "REJECTED",
+            "erp_order_number": order_number,
+            "type": "cancel",
+        }
+        headers = {'Content-Type': 'application/json'}
+        try:
+            # Send request with query parameters
+            response = requests.put(api_url, data=body, headers=headers, timeout=10)
+            _logger.info("API Response: %s - %s", response.status_code, response.text)
+        except requests.exceptions.RequestException as e:
+            _logger.error("API Request Failed: %s", str(e))
+            raise UserError(f"API request failed: {str(e)}")
+        
+        self.state = self.state_before_driver_cancel
+        self.env['service.history'].create({
+                'service_id': self.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': 'Driver Cancel Request Rejected',
+                'timeline_status': self.state,
+        })
+        self.state_before_driver_cancel = False
 
 
 

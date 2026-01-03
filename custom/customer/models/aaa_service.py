@@ -442,13 +442,14 @@ class AAAService(models.Model):
         _logger.info("SERVICE NUMBER: %s", order_number)
         api_url = f"{base_url}/carhire-order/order/service/consumers/orders/cancel/order"
         # Define query parameters
-        params = {
+        body = json.dumps({
             "status": "APPROVED",
-            "serviceNumber": order_number
-        }
+            "erp_order_number": order_number,
+            "type": "cancel",
+        })
         try:
             # Send request with query parameters
-            requests.put(api_url, params=params, timeout=10)
+            requests.put(api_url, data=body, timeout=10)
         except requests.exceptions.RequestException as e:
             _logger.error("API Request Failed: %s", str(e))
             raise UserError(f"API request failed: {str(e)}")
