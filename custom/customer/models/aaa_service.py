@@ -1,7 +1,7 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError , UserError
 import datetime
-from datetime import timedelta,datetime
+from datetime import timedelta,datetime, time
 import requests
 import json
 import re
@@ -1442,15 +1442,29 @@ class AAAService(models.Model):
                 return False
 
             # --- Quantity limit for the configured cycle (e.g., 100 in 365 days) ---
-            period_start = fields.Datetime.now() - timedelta(days=validity_period_days)
-            used_count = self.env['aaa.service'].search_count([
-                ('member_id', '=', self.member_id.id),
-                ('product_id.categ_id', '=', parent_category_id),
-                ('service_time', '>=', period_start),
-                ('service_time', '<=', fields.Datetime.now()),
-                ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
-                ('id', '!=', self.id)
-            ])
+            activate_datetime = datetime.combine(
+                self.member_activate_date,
+                time.min
+            )
+            if activate_datetime - fields.Datetime.now() < timedelta(days=validity_period_days):
+                used_count = self.env['aaa.service'].search_count([
+                    ('member_id', '=', self.member_id.id),
+                    ('product_id.categ_id', '=', parent_category_id),
+                    ('service_time', '>=', self.member_activate_date),
+                    ('service_time', '<=', fields.Datetime.now()),
+                    ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+                    ('id', '!=', self.id)
+                ])
+            else:
+                period_start = fields.Datetime.now() - timedelta(days=validity_period_days)
+                used_count = self.env['aaa.service'].search_count([
+                    ('member_id', '=', self.member_id.id),
+                    ('product_id.categ_id', '=', parent_category_id),
+                    ('service_time', '>=', period_start),
+                    ('service_time', '<=', fields.Datetime.now()),
+                    ('state', 'in', ['dispatch', 'start', 'reach', 'completed_by_driver', 'done']),
+                    ('id', '!=', self.id)
+                ])
             print("COUNT IN PERIOD:", used_count)
             remaining_quantity = quantity_limit - used_count
             print(f"REMAINING SERVICE ACCESS IN THE CAT_DURATION ({validity_period_days} days): {remaining_quantity}")
