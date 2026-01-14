@@ -38,6 +38,7 @@ class AFLServiceDashboard(models.Model):
     today_whatsapp_count = fields.Integer(string="Today's WhatsApp Services", compute='_compute_whatsapp_service_counts')
     whatsapp_done_count = fields.Integer(string="Whatsapp Services Completed", compute='_compute_whatsapp_service_counts')
     whatsapp_cancel_count = fields.Integer(string="Whatsapp Services Completed", compute='_compute_whatsapp_service_counts')
+    whatsapp_initiate_count = fields.Integer(string="Whatsapp Services Initiated", compute='_compute_whatsapp_service_counts')
 
     
     def today_utc_bounds(self):
@@ -93,6 +94,7 @@ class AFLServiceDashboard(models.Model):
         self.today_whatsapp_count = Service.search_count(customer_filter)
         self.whatsapp_done_count = Service.search_count(customer_filter + [('state', '=', 'done')])
         self.whatsapp_cancel_count = Service.search_count(customer_filter + [('state', 'in',['cancel','done_cancel'] )])
+        self.whatsapp_initiate_count = Service.search_count(customer_filter + [('state', '=', 'initiate')])
 
     @api.depends('state')
     def _compute_assigned_sla_count(self):
@@ -290,6 +292,26 @@ class AFLServiceDashboard(models.Model):
                 ('is_whatsapp_service', '=', True),
                 ('service_time', '>=', start_utc_str),
                 ('service_time', '<=', end_utc_str)
+            ],
+            'context': {
+                'create': False,
+                'edit': False
+            }
+        }
+
+    def action_whatsapp_initiated(self):
+        start_utc_str, end_utc_str = self.today_utc_bounds()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': "Today's Whatsapp Initiated",
+            'res_model': 'aaa.service',
+            'view_mode': 'tree',
+            'view_id': self.env.ref('customer.view_aaa_service_tree').id,
+            'domain': [
+                ('is_whatsapp_service', '=', True),
+                ('service_time', '>=', start_utc_str),
+                ('service_time', '<=', end_utc_str),
+                ('state', '=', 'initiate'),
             ],
             'context': {
                 'create': False,
