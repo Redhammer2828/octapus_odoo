@@ -892,14 +892,14 @@ class AAAService(models.Model):
 
             base_url = f"{base_url}/carhire-order/order/service/afl-order/update/order-details"
             params = {
-                'erp_order_number': record.name,
-                'chassis_number': record.vehicle_chasis_no,
-                "plate_number": record.vehicle_plate,
-                "vehicle_model" : record.vehicle_model_id.name,
-                "phone_number": record.member_contact_no,
-                "customer_email": record.email,
-                "policy_number": record.policy_no,
-                "provider_name": record.provider_id.name,
+                'erp_order_number': record.name if record.name else None,
+                'chassis_number': record.vehicle_chasis_no if record.vehicle_chasis_no else None,
+                "plate_number": record.vehicle_plate if record.vehicle_plate else None,
+                "vehicle_model" : record.vehicle_model_id.name if record.vehicle_model_id else None,
+                "phone_number": record.member_contact_no if record.member_contact_no else None,
+                "customer_email": record.email if record.email else None,
+                "policy_number": record.policy_no if record.policy_no else None,
+                "provider_name": record.provider_id.name if record.provider_id else None,
                 "driver_name": record.driver_id.name if driver_info_changed else None,
                 "driver_phone": record.driver_num if driver_info_changed else None,
                 "service_name": None,
