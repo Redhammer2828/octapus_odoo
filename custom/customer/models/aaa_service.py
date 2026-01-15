@@ -2258,7 +2258,7 @@ class AAAService(models.Model):
         print(f"=== DEBUG: End _validate_intercity_service ===\n")
         return True
 
-    def _trigger_cash_or_credit_service_wizard(self):
+    def _trigger_cash_or_credit_service_wizard(self, is_schedule_service=False):
         return {
             'name': _('Convert to Cash '),
             'type': 'ir.actions.act_window',
@@ -2268,6 +2268,7 @@ class AAAService(models.Model):
             'target': 'new',
             'context': {
                 'default_service_id': self.id,
+                'default_is_schedule_service': is_schedule_service,
             },
         }
 
@@ -2370,6 +2371,48 @@ class AAAService(models.Model):
                 raise UserError(_("Please provide the From Location detail."))
         elif to_location_visible and not to_location_field:
             raise UserError(_("Please provide the To Location detail."))
+
+        # Check for Credit
+        if self.member_id.member_type in ['credit', 'adhoc']:
+             # Calculate quantity and quantity_with_days without validation
+            if self.date_time_from and self.date_time_to:
+                delta = self.date_time_to - self.date_time_from
+                self.quantity = delta.days
+                self.quantity_with_days = f"{self.quantity} Days" if self.quantity else "0 Days"
+
+            # Save the updated values to the database
+            self.write({
+                'quantity': self.quantity,
+                'quantity_with_days': self.quantity_with_days,
+            })
+            # Directly schedule service without any validation
+            return {
+                'name': _('Schedule Service'),
+                'type': 'ir.actions.act_window',
+                'res_model': 'schedule.service.wizard',
+                'view_mode': 'form',
+                'view_id': self.env.ref('customer.schedule_service_wizard_view_form').id,
+                'target': 'new',
+                'context': {
+                    'default_service_id': self.id,
+                },
+            }
+            
+        if not self.member_id:
+            raise ValidationError(_("Member not found in the service record."))
+
+        member = self.member_id
+        print("POLICY MEMBER = res_partner id =", member.id)
+        product_template_id = member.product_template_id.id
+        print("PACKAGE ID OF POLICY MEMBER = product.package.service", product_template_id)
+
+        if not product_template_id:
+            raise ValidationError(_("Package not found for the member."))
+
+        if not self._is_service_in_package(product_template_id):
+            print("SERVICE NOT IN PACKAGE - TRIGGERING CASH/CREDIT WIZARD")
+            return self._trigger_cash_or_credit_service_wizard(is_schedule_service=True)
+
  
         return {
             'name': _('Schedule Service'),
@@ -2406,7 +2449,8 @@ class AAAService(models.Model):
             else:
                 _logger.warning("No order number found for service: %s", service.name)
             
-            service.write({'state': 'dispatch'})
+            service.write({'state': 'dispatch',
+                           'schedule_service_check': False})
             _logger.info("Service %s dispatched", service.name)
             
             # Create history entry
