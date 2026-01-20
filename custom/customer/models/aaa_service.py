@@ -2055,7 +2055,17 @@ class AAAService(models.Model):
         ] + date_domain
         print(f"DEBUG: search_domain = {search_domain}")
 
-        all_member_services = self.env['aaa.service'].search(search_domain)
+        scheduled_services_search_domain = [
+            ('member_id', '=', self.member_id.id),
+            ('state', 'in', ['initiate']),
+            ('schedule_service_check', '=', True),
+            ('id', '!=', self.id),  # Exclude current service
+            # Count services for the same product
+            ('product_id', '=', self.product_id.id)
+        ] + date_domain
+
+        all_member_services = (self.env['aaa.service'].search(search_domain) | self.env['aaa.service'].search(scheduled_services_search_domain))
+        
         print(f"DEBUG: Found {len(all_member_services)} existing services")
 
         # Determine current service type based on actual emirates
@@ -2412,6 +2422,16 @@ class AAAService(models.Model):
         if not self._is_service_in_package(product_template_id):
             print("SERVICE NOT IN PACKAGE - TRIGGERING CASH/CREDIT WIZARD")
             return self._trigger_cash_or_credit_service_wizard(is_schedule_service=True)
+
+        if self.member_id.member_type == 'policy':
+            validation_result = self._validate_intercity_service(product_template_id)
+            if isinstance(validation_result, dict):
+                # If validation returns a wizard action, return it
+                return validation_result
+            elif not validation_result:
+                print("INTERCITY SERVICE VALIDATION FAILED - TRIGGERING CASH WIZARD")
+                message = _("Intercity service validation failed. Proceed with Cash Service?")
+                return self._trigger_cash_service_wizard(message)
 
  
         return {
