@@ -14,6 +14,7 @@ class ServiceLimitWizard(models.TransientModel):
     limit_period = fields.Char(string='Limit Period', readonly=True)
     period_description = fields.Char(string='Period Description', readonly=True)
     show_proceed_only = fields.Boolean(string='Show Proceed Only', default=False, help='If true, only show the Proceed button in the wizard.')
+    is_schedule_service = fields.Boolean(string='Is Schedule Service', default=False)
 
     def action_restrict(self):
         """Record that user chose not to proceed and close the wizard."""
@@ -30,6 +31,28 @@ class ServiceLimitWizard(models.TransientModel):
         """Allow dispatch to proceed and record in service history"""
         # Mark service as proceeded out-of-limit
         self.service_id.write({'is_out_of_limit_proceeded': True})
+
+        if self.is_schedule_service:
+            self.service_id.service_history_ids.create({
+                'service_id': self.service_id.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': f'Service limit exceeded - Proceeded to schedule service for dispatch ({self.existing_service_count}/{self.service_limit} {self.service_type} services used in {self.limit_period} period)',
+                'timeline_status': 'initiate'
+            })
+            
+            return {
+                'name': _('Schedule Service'),
+                'type': 'ir.actions.act_window',
+                'res_model': 'schedule.service.wizard',
+                'view_mode': 'form',
+                'view_id': self.env.ref('customer.schedule_service_wizard_view_form').id,
+                'target': 'new',
+                'context': {
+                    'default_service_id': self.service_id.id,
+                },
+            }
+        
         # Add service history entry for proceed action
         self.service_id.service_history_ids.create({
             'service_id': self.service_id.id,
