@@ -74,22 +74,11 @@ class MembershipExtensionWizard(models.TransientModel):
             'history_id': partner.id
         })
         # Check if the logged-in user is in the "Agent" group
-        agent_group = self.env['res.groups'].search([('name', '=', 'Agent')], limit=1)
-        if agent_group and agent_group in self.env.user.groups_id:
+        # agent_group = self.env['res.groups'].search([('name', '=', 'Agent')], limit=1)
+        data_manager_group = self.env['res.groups'].search([('name', '=', 'Data Manager')], limit=1)
+        if data_manager_group and data_manager_group in self.env.user.groups_id:
 
-            partner = self.env['res.partner'].browse(self._context.get('active_id'))
-            # If user is in the "Agent" group, change membership_state and create a different timeline
-            partner.membership_state = 'temp'
-            
-            self.env['membership.timeline'].create({
-                'member_id': partner.id,
-                'user': self.env.user.id,
-                'time': fields.Datetime.now(),
-                'status': 'Membership Extended by Agent',
-                'timeline_status': 'temp',
-            })
-        else:
-            # Default timeline entry for non-agent users
+            # Default timeline entry for data manager users
             self.env['membership.timeline'].create({
                 'member_id': partner.id,
                 'user': self.env.user.id,
@@ -97,6 +86,20 @@ class MembershipExtensionWizard(models.TransientModel):
                 'status': 'Membership Extended - Manual',
                 'timeline_status': partner.membership_state,
             })
+            
+        else:
+            partner = self.env['res.partner'].browse(self._context.get('active_id'))
+            # If user is not in the "Data Manager" group, change membership_state and create a different timeline
+            partner.membership_state = 'temp'
+            
+            self.env['membership.timeline'].create({
+                'member_id': partner.id,
+                'user': self.env.user.id,
+                'time': fields.Datetime.now(),
+                'status': 'Membership Extended by non Data Manager',
+                'timeline_status': 'temp',
+            })
+
         # Update the partner's expiry date with the new value
         partner.member_expiry_date = self.new_expiry_date
         partner.issue_debit_note = self.issue_debit_note
