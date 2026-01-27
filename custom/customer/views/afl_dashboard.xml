@@ -62,57 +62,56 @@
                             align-items: center;
                             gap: 10px;
                             padding: 20px 18px;
-                            background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%) !important;
+                            background: linear-gradient(180deg, #ffffff 0%, #d1d5db 100%) !important;
                             color: var(--text) !important;
                             text-align: center;
                             font-size: 15px;
                             font-weight: 600;
                             border-radius: 16px;
                             border: 1px solid var(--border) !important;
-                            transition: border-color 0.2s ease-in-out, box-shadow 0.15s ease;
+                            transition: border-color 0.2s ease-in-out;
                             cursor: pointer;
                             border-top: 3px solid var(--primary); /* default accent */
                             min-height: 0;
                             height: 100%;
                             user-select: none;
-                            box-shadow: 0 4px 12px rgba(17, 24, 39, 0.12);
                         }
-                        .dashboard-box:hover { border-color: #cbd5e1; box-shadow: 0 8px 20px rgba(17, 24, 39, 0.16); }
+                        .dashboard-box:hover { border-color: #cbd5e1; }
                         .dashboard-box:focus-visible { outline: none; box-shadow: var(--hover-shadow), var(--focus-ring); }
 
                         /* Accent mapping: border accent colors stay, text is black */
-                        .dashboard-box.success { border-top-color: var(--success) !important; }
+                        .dashboard-box.success { border-top-color: var(--success) !important; background: linear-gradient(180deg, #ffffff 0%, #d1d5db 100%) !important; }
                         .dashboard-box.success .label { color: #000000; }
                         .dashboard-box.success .dot { background: var(--success); }
                         
-                        .dashboard-box.danger  { border-top-color: var(--danger) !important; }
+                        .dashboard-box.danger  { border-top-color: var(--danger) !important; background: linear-gradient(180deg, #ffffff 0%, #d1d5db 100%) !important; }
                         .dashboard-box.danger .label { color: #000000; }
                         .dashboard-box.danger .dot { background: var(--danger); }
                         
-                        .dashboard-box.warning { border-top-color: var(--warning) !important; }
+                        .dashboard-box.warning { border-top-color: var(--warning) !important; background: linear-gradient(180deg, #ffffff 0%, #d1d5db 100%) !important; }
                         .dashboard-box.warning .label { color: #000000; }
                         .dashboard-box.warning .dot { background: var(--warning); }
                         
                         /* Brown: dark yellow for Services In Progress */
-                        .dashboard-box.brown { border-top-color: #ca8a04 !important; }
+                        .dashboard-box.brown { border-top-color: #ca8a04 !important; background: linear-gradient(180deg, #ffffff 0%, #d1d5db 100%) !important; }
                         .dashboard-box.brown .label { color: #000000; }
                         .dashboard-box.brown .dot { background: #ca8a04; }
                         
                         /* Blue: primary blue for New Services */
-                        .dashboard-box.blue { border-top-color: var(--primary) !important; }
+                        .dashboard-box.blue { border-top-color: var(--primary) !important; background: linear-gradient(180deg, #ffffff 0%, #d1d5db 100%) !important; }
                         .dashboard-box.blue .label { color: #000000; }
                         
                         /* Purple: turquoise for Today's Services (will be overridden by whatsapp class) */
-                        .dashboard-box.purple { border-top-color: var(--primary) !important; }
+                        .dashboard-box.purple { border-top-color: var(--primary) !important; background: linear-gradient(180deg, #ffffff 0%, #d1d5db 100%) !important; }
                         .dashboard-box.purple .label { color: #000000; }
                         
                         /* Violet: light violet for Assigned SLA and Reach SLA */
-                        .dashboard-box.violet { border-top-color: #8e56c5 !important; }
+                        .dashboard-box.violet { border-top-color: #8e56c5 !important; background: linear-gradient(180deg, #ffffff 0%, #d1d5db 100%) !important; }
                         .dashboard-box.violet .label { color: #000000; }
                         .dashboard-box.violet .dot { background: #8e56c5; }
                         
                         /* WhatsApp: turquoise for Today's Services */
-                        .dashboard-box.whatsapp { border-top-color: #14b8a6 !important; }
+                        .dashboard-box.whatsapp { border-top-color: #14b8a6 !important; background: linear-gradient(180deg, #ffffff 0%, #d1d5db 100%) !important; }
                         .dashboard-box.whatsapp .label { color: #000000; }
                         .dashboard-box.whatsapp .icon { background: var(--whatsapp-bg); color: #14b8a6; }
                         .dashboard-box.whatsapp .dot { background: #14b8a6; }
