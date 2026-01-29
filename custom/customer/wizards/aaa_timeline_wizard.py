@@ -144,7 +144,8 @@ class AaaTimelineWizard(models.TransientModel):
         headers = [
             'Service Number', 'Member', 'Vehicle Type', 'User Location', 'Provider', 'Driver Name',
             'Service', 'Status', 'Service Date','Dispatch', 'Driver Assigned', 'Driver Start Time', 'Driver Arrival Time',
-            'Service Started Time', 'Service End Time', 'Service Completed Time', 'Request Completed On', 'Cancellation Time', 'Dispatch Center Notes', 'Driver Assigned By'
+            'Service Started Time', 'Service End Time', 'Service Completed Time', 'Request Completed On', 'Cancellation Time', 'Dispatch Center Notes', 'Driver Assigned By',
+            'Done Completed By', 'Done Time', 'Cancelled By', 'Cancelled Time'
         ]
 
         # headers = [
@@ -489,6 +490,34 @@ class AaaTimelineWizard(models.TransientModel):
                 elif header == 'Driver Assigned By':
                     # Use the field on the service record (added in custom addon)
                     field_value = record.driver_assigned_by or ''
+
+                elif header == 'Done Completed By':
+                    # Get the user who completed the service
+                    field_value = record.done_done_by.name if record.done_done_by else ''
+
+                elif header == 'Done Time':
+                    # Get the time when service was completed
+                    if record.done_time:
+                        utc_time = record.done_time
+                        target_timezone = timezone('Asia/Dubai')
+                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
+                    else:
+                        field_value = ''
+
+                elif header == 'Cancelled By':
+                    # Get the user who cancelled the service
+                    field_value = record.cancelled_by.name if record.cancelled_by else ''
+
+                elif header == 'Cancelled Time':
+                    # Get the time when service was cancelled
+                    if record.cancelled_time:
+                        utc_time = record.cancelled_time
+                        target_timezone = timezone('Asia/Dubai')
+                        local_time = UTC.localize(utc_time).astimezone(target_timezone)
+                        field_value = local_time.strftime('%d/%m/%Y %H:%M:%S')
+                    else:
+                        field_value = ''
 
                 # elif header == 'Dispatch Center Notes':
                 #     service_comment = self.env['service.comment'].search([

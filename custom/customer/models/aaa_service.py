@@ -404,12 +404,16 @@ class AAAService(models.Model):
     dispatch_done_by = fields.Many2one('res.users', string="Dispatch Completed By")
     reach_done_by = fields.Many2one('res.users', string="Reach Completed By")
     done_done_by = fields.Many2one('res.users', string="Done Completed By")
+    cancelled_by = fields.Many2one('res.users', string="Cancelled By")
     
     # WhastApp Service
     is_whatsapp_service = fields.Boolean(string="Is WhatsApp Service", default=False)
     #for afl dashboard
     dispatched_time = fields.Datetime(string="Dispatched Time")
     reached_time = fields.Datetime(string="Reached Time")
+    started_time = fields.Datetime(string="Started Time")
+    done_time = fields.Datetime(string="Done Time")
+    cancelled_time = fields.Datetime(string="Cancelled Time")
 # ----------------------------------FIELDS END-------------------------------------------------------------
 
     @api.onchange('product_id')
@@ -2517,8 +2521,9 @@ class AAAService(models.Model):
                 raise UserError("You must fill the PROVIDER before starting the service.")
             if service.provider_id.name == "ARABIAN AUTOMOBILE ASSOCIATION" and not service.driver_id:
                 raise UserError("You must fill the driver before completing the service when the provider is ARABIAN AUTOMOBILE ASSOCIATION.")
-            # Proceed with setting the state to 'start'
+            # Proceed with setting the state to 'start' and record started_time
             service.state = 'start'
+            service.started_time = fields.Datetime.now()
 
             # Create the service.history record
             self.env['service.history'].create({
@@ -2665,6 +2670,7 @@ class AAAService(models.Model):
 
                         if is_ready == True:
                             service.state = 'done'
+                            service.done_time = fields.Datetime.now()
 
                             # Create the service.history record
                             self.env['service.history'].create({
@@ -2712,8 +2718,9 @@ class AAAService(models.Model):
                     _logger.exception("API request failed for record ID %s", service.id)
 
             else:
-            # Proceed with setting the state to 'done'
+            # Proceed with setting the state to 'done' and record done_time
                 service.state = 'done'
+                service.done_time = fields.Datetime.now()
 
                 # Create the service.history record
                 self.env['service.history'].create({
@@ -2754,8 +2761,8 @@ class AAAService(models.Model):
 
     def action_cancel_service(self):
         for service in self:
-            # Force setting the state to 'cancel'
-            service.sudo().write({'state': 'cancel'})
+            # Force setting the state to 'cancel' and set cancelled_by and cancelled_time
+            service.sudo().write({'state': 'cancel', 'cancelled_by': self.env.user.id, 'cancelled_time': fields.Datetime.now()})
             # Create a service history record
             self.env['service.history'].sudo().create({
                 'service_id': service.id,
