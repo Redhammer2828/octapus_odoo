@@ -154,17 +154,17 @@ class MembershipRenewalWizard(models.TransientModel):
 
         
             # Check if the logged-in user is in the "Agent" group
-            agent_group = self.env['res.groups'].search([('name', '=', 'Agent')], limit=1)
-            if agent_group and agent_group in self.env.user.groups_id:
-                # If user is in the "Agent" group, change membership_state and create a different timeline
+            data_manager_group = self.env['res.groups'].search([('name', '=', 'Data Manager')], limit=1)
+            if data_manager_group and data_manager_group in self.env.user.groups_id:
+                # Default timeline entry for data manager users
+                membership_timeline['status'] = 'Membership Renewed - Manual'
+                membership_timeline['timeline_status'] = partner.membership_state
+                self.env['membership.timeline'].create(membership_timeline)
+            else:
+                # Default timeline entry for non-data manager users
                 partner.membership_state = 'temp'
                 membership_timeline['status'] = 'Membership Renewed - Handled by Agent'
                 membership_timeline['timeline_status'] = 'temp'
-                self.env['membership.timeline'].create(membership_timeline)
-            else:
-                # Default timeline entry for non-agent users
-                membership_timeline['status'] = 'Membership Renewed - Manual'
-                membership_timeline['timeline_status'] = partner.membership_state
                 self.env['membership.timeline'].create(membership_timeline)
 
             # Update the partner record with the new membership values
@@ -191,57 +191,16 @@ class MembershipRenewalWizard(models.TransientModel):
                 raise UserError(f"Membership renewal already initiated. Will be automatically renewed on {partner.next_activation_date}")
             
             elif partner.membership_state == 'temp':
-                raise UserError(f"Membership already renewed temporarily by AGENT.")
+                raise UserError(f"Membership already renewed temporarily by Non-Data Manager.")
             
             else:
                 # Check if the logged-in user is in the "Agent" group
-                agent_group = self.env['res.groups'].search([('name', '=', 'Agent')], limit=1)
-                it_group = self.env['res.groups'].search([('name', '=', 'IT Group')], limit=1)
-                if agent_group and agent_group in self.env.user.groups_id:
-                    # If user is in the "Agent" group, change membership_state and create a different timeline
+                # agent_group = self.env['res.groups'].search([('name', '=', 'Agent')], limit=1)
+                # it_group = self.env['res.groups'].search([('name', '=', 'IT Group')], limit=1)
+                data_manager_group = self.env['res.groups'].search([('name', '=', 'Data Manager')], limit=1)
 
-                    self.env['membership.history'].create({
-                        'name': partner.name,  
-                        'parent_customer_id': partner.parent_customer_id.id,
-                        'old_membership_number': partner.old_membership_number,  
-                        'ref_num': partner.ref_num,
-                        'member_partner_category_id': partner.member_partner_category_id.id,
-                        'product_template_id': partner.product_template_id.id,
-                        'member_type': partner.member_type,
-                        'policy_no': partner.policy_no,
-                        'vehicle_chasis_no': partner.vehicle_chasis_no,
-                        'vehicle_plate': partner.vehicle_plate,
-                        'vehicle_type': partner.vehicle_type,
-                        'member_activate_date': partner.member_activate_date,
-                        'member_expiry_date': partner.member_expiry_date,
-                        'invoice_ref_date': partner.invoice_ref_date,
-                        'card_type_id': partner.card_type_id.id,
-                        'history_id': partner.id
-                    })
-
-                    partner.membership_state = 'temp'
-                    membership_timeline['status'] = 'Membership Renewed - Handled by Agent'
-                    membership_timeline['timeline_status'] = 'temp'
-                    self.env['membership.timeline'].create(membership_timeline)
-
-                    partner.write({
-                        'name': self.name,
-                        'parent_customer_id': self.parent_customer_id.id,
-                        'member_activate_date': self.activation_date,
-                        'card_type_id': self.card_type_id.id,
-                        'member_expiry_date': self.expiry_date,
-                        'vehicle_chasis_no': self.vehicle_chasis_no,
-                        'product_template_id': self.product_template_id.id,
-                        'policy_no': self.policy_no,
-                        'vehicle_plate': self.vehicle_plate,
-                        'invoice_ref_date': self.invoice_ref_date,
-                        'delivery_ref_date': self.delivery_ref_date,
-                    })
-
-                    logger.info("Membership renewed for Partner ID: %s", partner.id)
-
-                elif it_group and it_group in self.env.user.groups_id:
-                    # Default timeline entry for non-agent users
+                if data_manager_group and data_manager_group in self.env.user.groups_id:
+                    # Default timeline entry for data manager users
                     membership_timeline['status'] = f'Membership Renewal in Queue - Manual (Activation Date: {self.activation_date}, Expiry Date: {self.expiry_date})'
                     membership_timeline['timeline_status'] = partner.membership_state
                     self.env['membership.timeline'].create(membership_timeline)
@@ -273,3 +232,47 @@ class MembershipRenewalWizard(models.TransientModel):
                     })
 
                     logger.info(f"Membership for Partner ID: {partner.id} will be renewed on {self.activation_date}")
+
+                else:
+                    # If user is in any group rather than "Data Manager" group, change membership_state and create a different timeline
+
+                    self.env['membership.history'].create({
+                        'name': partner.name,  
+                        'parent_customer_id': partner.parent_customer_id.id,
+                        'old_membership_number': partner.old_membership_number,  
+                        'ref_num': partner.ref_num,
+                        'member_partner_category_id': partner.member_partner_category_id.id,
+                        'product_template_id': partner.product_template_id.id,
+                        'member_type': partner.member_type,
+                        'policy_no': partner.policy_no,
+                        'vehicle_chasis_no': partner.vehicle_chasis_no,
+                        'vehicle_plate': partner.vehicle_plate,
+                        'vehicle_type': partner.vehicle_type,
+                        'member_activate_date': partner.member_activate_date,
+                        'member_expiry_date': partner.member_expiry_date,
+                        'invoice_ref_date': partner.invoice_ref_date,
+                        'card_type_id': partner.card_type_id.id,
+                        'history_id': partner.id
+                    })
+
+                    partner.membership_state = 'temp'
+                    membership_timeline['status'] = 'Membership Renewed - Handled by non Data Manager'
+                    membership_timeline['timeline_status'] = 'temp'
+                    self.env['membership.timeline'].create(membership_timeline)
+
+                    partner.write({
+                        'name': self.name,
+                        'parent_customer_id': self.parent_customer_id.id,
+                        'member_activate_date': self.activation_date,
+                        'card_type_id': self.card_type_id.id,
+                        'member_expiry_date': self.expiry_date,
+                        'vehicle_chasis_no': self.vehicle_chasis_no,
+                        'product_template_id': self.product_template_id.id,
+                        'policy_no': self.policy_no,
+                        'vehicle_plate': self.vehicle_plate,
+                        'invoice_ref_date': self.invoice_ref_date,
+                        'delivery_ref_date': self.delivery_ref_date,
+                    })
+
+                    logger.info("Membership renewed for Partner ID: %s", partner.id)
+

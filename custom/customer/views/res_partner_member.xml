@@ -24,7 +24,7 @@
                     <header>
                         <button name="action_confirm_membership" string="Confirm" type="object"
                             class="oe_highlight"
-                            invisible="membership_state == 'cancel' or membership_state != 'temp' or not is_it_user " />
+                            invisible="membership_state == 'cancel' or membership_state != 'temp' or not is_data_manager_user " />
                         <!-- CREATE SERVICE -->
                         <button name="action_create_service" string="Create Service" type="object"
                             icon="fa-wrench o_button_icon"
@@ -53,6 +53,7 @@
                         <field name="is_agent_user" invisible="1" />
                         <field name="is_dispatch_user" invisible="1" />
                         <field name="is_it_user" invisible="1" />
+                        <field name="is_data_manager_user" invisible="1" />
 
                         <field name="membership_state" widget="statusbar" nolabel="1"
                             statusbar_visible="temp,confirm,cancel" />

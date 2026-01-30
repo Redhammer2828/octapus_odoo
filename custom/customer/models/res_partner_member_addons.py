@@ -23,6 +23,19 @@ class ResPartnerMemberAddons(models.Model):
     issue_credit_note = fields.Boolean(string="Issue Credit Note", default=False)
     issue_debit_note = fields.Boolean(string="Issue Debit Note", default=False)
 
+    is_data_manager_user = fields.Boolean(string='Is Data Manager User', compute='_compute_is_data_manager_user', store=False)
+
+    @api.depends('create_user')
+    def _compute_is_data_manager_user(self):
+        """Compute is_data_manager_user based on the ccreate_uid user's group membership."""
+        for record in self:
+            # Default to False if no `created_by` is set
+            record.is_data_manager_user = False
+            if record.create_user:
+                # Check if `created_by` belongs to the 'new_agents' group
+                user_groups = record.create_user.groups_id
+                record.is_data_manager_user = any(group.name == 'Data Manager' for group in user_groups)
+
     def action_membership_renewal_scheduler(self):
 
         memberships = self.search([('renewal_in_queue', '=', True)])
