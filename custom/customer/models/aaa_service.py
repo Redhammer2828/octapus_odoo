@@ -1593,7 +1593,7 @@ class AAAService(models.Model):
             # Do not raise if logging fails
             pass
 
-    def _validate_intercity_service(self, product_template_id):
+    def _validate_intercity_service(self, product_template_id, is_schedule_service=False):
         """
         Validate intercity service for policy members based on emirate fields and intercity limits.
         NEW LOGIC:
@@ -1664,6 +1664,7 @@ class AAAService(models.Model):
                 'limit_period': 'N/A',
                 'period_description': _("Emirate information is incomplete for validation."),
                 'show_proceed_only': True,
+                'is_schedule_service': is_schedule_service,
             })
             return {
                 'name': _('Service Limit Reached'),
@@ -1770,6 +1771,7 @@ class AAAService(models.Model):
                                 'limit_period': 'N/A',
                                 'period_description': _("Distance calculation failed."),
                                 'show_proceed_only': True,
+                                'is_schedule_service': is_schedule_service,
                             })
                             return {
                                 'name': _('Service Limit Reached'),
@@ -1795,6 +1797,7 @@ class AAAService(models.Model):
                             'limit_period': 'N/A',
                             'period_description': _("Location coordinates missing."),
                             'show_proceed_only': True,
+                            'is_schedule_service': is_schedule_service,
                         })
                         return {
                             'name': _('Service Limit Reached'),
@@ -1820,6 +1823,7 @@ class AAAService(models.Model):
                         'limit_period': 'N/A',
                         'period_description': _("Locations not fully selected for validation."),
                         'show_proceed_only': True,
+                        'is_schedule_service': is_schedule_service,
                     })
                     return {
                         'name': _('Service Limit Reached'),
@@ -1879,6 +1883,7 @@ class AAAService(models.Model):
                             'service_type': 'same emirate only',
                             'limit_period': package_service.intercity_limit_period or 'membership period',
                             'period_description': _("Restriction: cross-emirate not permitted for this package."),
+                            'is_schedule_service': is_schedule_service,
                         })
                         return {
                             'name': _('Service Limit Reached'),
@@ -1957,6 +1962,7 @@ class AAAService(models.Model):
                         'service_type': 'same emirate only',
                         'limit_period': package_service.intercity_limit_period or 'membership period',
                         'period_description': _("Restriction: cross-emirate not permitted for this package."),
+                        'is_schedule_service': is_schedule_service,
                     })
                     return {
                         'name': _('Service Limit Reached'),
@@ -2210,6 +2216,7 @@ class AAAService(models.Model):
                 'service_type': service_type,
                 'limit_period': limit_period,
                 'period_description': period_description,
+                'is_schedule_service': is_schedule_service,
             })
             return {
                 'name': _('Service Limit Reached'),
@@ -2249,6 +2256,7 @@ class AAAService(models.Model):
                     'service_type': service_type,
                     'limit_period': limit_period,
                     'period_description': period_description,
+                    'is_schedule_service': is_schedule_service,
                 })
                 return {
                     'name': _('Service Limit Reached'),
@@ -2424,7 +2432,7 @@ class AAAService(models.Model):
             return self._trigger_cash_or_credit_service_wizard(is_schedule_service=True)
 
         if self.member_id.member_type == 'policy':
-            validation_result = self._validate_intercity_service(product_template_id)
+            validation_result = self._validate_intercity_service(product_template_id, is_schedule_service=True)
             if isinstance(validation_result, dict):
                 # If validation returns a wizard action, return it
                 return validation_result
