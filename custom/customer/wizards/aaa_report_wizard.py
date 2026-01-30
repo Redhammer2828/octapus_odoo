@@ -68,7 +68,7 @@ class AaaReportWizard(models.TransientModel):
             'from_location_emirate', 'selected_to_location', 'to_location',
             'to_location_emirate', 'date_time_from', 'date_time_to', 'smarto_id',
             'state', 'credit_proforma_number', 'cash_collected', 'vendor_rating',
-            'rating_user_id', 'create_uid', 'dispatcher_from_history'
+            'rating_user_id', 'create_uid', 'dispatcher_from_history', 'dispatch_done_by'
         ]
  
         #return self.env['aaa.service'].search_read(domain, fields_to_fetch)
@@ -226,14 +226,10 @@ class AaaReportWizard(models.TransientModel):
             'Member Type', 'Service Type', 'Vehicle Type', 'Vehicle Plate', 'Vehicle Chasis No.', 'In Progress Date and Time',
             'Service', 'Provider', 'Driver', 'Driver Mobile Number', 'Jafza Driver', 'After Duty', 'From - Location',
             'To - Location',
-            'From Emirate', 'To Emirate'  # Always include these columns now
-        ]
-
-        # Add remaining headers
-        base_headers.extend([
+            'From Emirate', 'To Emirate',
             'From - Date', 'To - Date', 'Smart Tow ID', 'Status',
-            'Agent', 'Dispatcher', 'Comments', 'Trip Sheet Number', 'Amount Collected', 'Rating', 'Rating Added By'
-        ])
+            'Agent', 'Comments', 'Trip Sheet Number', 'Amount Collected', 'Rating', 'Rating Added By', 'Dispatched By'
+        ]
 
  
         # worksheet.write_row(7, 0, headers, header_format)
@@ -366,12 +362,13 @@ class AaaReportWizard(models.TransientModel):
                 record.get('smarto_id', ''),
                 record.get('state', ''),
                 record.get('create_uid')[1] if record.get('create_uid') else '',
-                record.get('dispatcher_from_history')[1] if record.get('dispatcher_from_history') else '',
+                # record.get('dispatcher_from_history')[1] if record.get('dispatcher_from_history') else '',  # Dispatcher
                 record.get('Comments', ''),  # ✅ Fetch and write Comments here
                 record.get('credit_proforma_number', ''),
                 record.get('cash_collected', 0.00),
                 record.get('vendor_rating', 0),
-                record.get('rating_user_id')[1] if record.get('rating_user_id') else ''
+                record.get('rating_user_id')[1] if record.get('rating_user_id') else '',
+                record.get('dispatch_done_by')[1] if record.get('dispatch_done_by') else ''
             ])
  
         #     worksheet.write_row(row_num, 0, data, data_format)
