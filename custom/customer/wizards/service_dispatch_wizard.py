@@ -6,7 +6,7 @@ class ServiceDispatchWizard(models.TransientModel):
     _description = 'Service Dispatch Wizard'
 
     service_id = fields.Many2one('aaa.service', string="Service")
-    is_schedule_service = fields.Boolean(string="Is Schedule Service", default=False)
+    is_schedule_service = fields.Boolean(string="Is Schedule Service")
     # message = fields.Text(string="Message", default="Service not in package, proceed with cash/credit service?")
 
     def action_cash_service(self):
