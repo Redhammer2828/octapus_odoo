@@ -144,7 +144,7 @@ class AaaTimelineWizard(models.TransientModel):
         headers = [
             'Service Number', 'Member', 'Vehicle Type', 'User Location', 'Provider', 'Driver Name',
             'Service', 'Status', 'Service Date','Dispatch', 'Driver Assigned', 'Driver Start Time', 'Driver Arrival Time',
-            'Service Started Time', 'Service End Time', 'Service Completed Time', 'Request Completed On', 'Dispatch Center Notes', 'Driver Assigned By',
+            'Service Started Time', 'Service End Time', 'Service Completed Time', 'Request Completed On', 'Dispatch Center Notes', 'Dispatched By', 'Driver Assigned By',
             'Done Completed By', 'Done Time', 'Cancelled By', 'Cancelled Time'
         ]
 
@@ -486,6 +486,10 @@ class AaaTimelineWizard(models.TransientModel):
                     ], order="create_date desc", limit=1)  # Fetch the latest comment
  
                     field_value = service_comment.comment if service_comment and service_comment.comment else record.import_comments
+
+                elif header == 'Dispatched By':
+                    # Get the user who dispatched the service
+                    field_value = record.dispatch_done_by.name if record.dispatch_done_by else ''
 
                 elif header == 'Driver Assigned By':
                     # Use the field on the service record (added in custom addon)
