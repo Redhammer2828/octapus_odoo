@@ -2769,6 +2769,7 @@ class AAAService(models.Model):
                 'user': self.env.user.id,
                 'time': fields.Datetime.now(),
                 'status': 'Cancelled',  # Explicitly set the status
+                'timeline_status': 'cancel',
             })
 
             # Use a default comment if no comment exists
