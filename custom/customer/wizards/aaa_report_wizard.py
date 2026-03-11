@@ -20,6 +20,7 @@ class AaaReportWizard(models.TransientModel):
     sequence_id = fields.Many2one('partner.category', string="Customer Category", domain="[('partner_id','=', customer_id), ('member_type', '=', member_type)]")
     type = fields.Selection([('cash', 'Cash'), ('non_cash', 'Non-Cash')], string="Service Type")
     provider_id = fields.Many2one('res.partner', string="Provider", domain="[('is_vendor', '=', True)]")
+    product_id = fields.Many2one('product.template', string='Service', domain="[('bundle_product', '=', False)]")
  
     # def _fetch_service_records(self):
     #     domain = [('service_time', '>=', self.from_date), ('service_time', '<=', self.to_date)]
@@ -58,6 +59,8 @@ class AaaReportWizard(models.TransientModel):
             domain.append(('sequence_id', '=', self.sequence_id.id))
         if self.provider_id:
             domain.append(('provider_id', '=', self.provider_id.id))
+        if self.product_id:
+            domain.append(('product_id', '=', self.product_id.id))
  
         fields_to_fetch = [
             'name', 'service_time', 'create_date', 'customer_id', 'sequence_id',
