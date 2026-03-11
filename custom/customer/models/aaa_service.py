@@ -3157,6 +3157,7 @@ class ServiceHistory(models.Model):
         ('dispatch', 'Dispatch'),
         ('start', 'Start'),
         ('reach', 'Reach'),
+        ('driver_assigned', 'Driver Assigned'),
         ('completed_by_driver', 'Completed by driver'),
         ('done', 'Done'),
         ('cancel', 'Cancelled'),

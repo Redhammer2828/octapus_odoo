@@ -66,6 +66,9 @@ class AAACancelReport(models.TransientModel):
             domain.append(('sequence_id', '=', self.sequence_id.id))
         if self.provider_id:
             domain.append(('provider_id', '=', self.provider_id.id))
+        if self.product_id:
+            # product_id on service is a template, so this matches directly
+            domain.append(('product_id', '=', self.product_id.id))
 
                # Filter by Service Time (Date Range)
         domain.append(('service_time', '>=', self.from_date))
