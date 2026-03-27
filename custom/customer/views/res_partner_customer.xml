@@ -329,8 +329,25 @@
                                 </tree>
                             </field>
                         </page>
+                        <page string="Timeline" name="customer_timeline">
+                            <field name="customer_timeline_ids" readonly="1">
+                                <tree>
+                                    <field name="user" />
+                                    <field name="time" />
+                                    <field name="status" />
+                                </tree>
+                                <form>
+                                    <group>
+                                        <field name="user" />
+                                        <field name="time" />
+                                        <field name="status" />
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
                     </notebook>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>
