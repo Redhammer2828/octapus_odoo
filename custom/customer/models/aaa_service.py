@@ -51,7 +51,7 @@ class AAAService(models.Model):
         ('approved','Approved'),
         ('requested','Requested'),
         ('done_cancel', 'Done Cancelled')
-    ], string="Status", readonly=True, default='initiate', tracking=True)
+    ], string="Status", readonly=True, default='initiate', tracking=True, index=True)
     #MANY2ONE-------------------------------------------------------------------------------------------------------
     customer_id = fields.Many2one('res.partner', string="Customer", domain="[('is_company', '=', True) ]")
     credit_customer_co = fields.Char('Customer C/O')
@@ -508,9 +508,17 @@ class AAAService(models.Model):
 
     @api.depends('state')
     def _compute_comment_text(self):
+        if not self:
+            return
+        # Batch fetch comments for all records in one query
+        all_comments = self.env['service.comment'].search([
+            ('service_id', 'in', self.ids),
+        ])
+        comments_by_service = {}
+        for comment in all_comments:
+            comments_by_service.setdefault(comment.service_id.id, []).append(comment.comment or '')
         for record in self:
-            comments = self.env['service.comment'].search([('comment_status', '=', record.state)])
-            record.comment_text = "\n".join(comments.mapped('comment'))  # Assuming 'content' is the field with comment text
+            record.comment_text = "\n".join(comments_by_service.get(record.id, []))
 # -----------------------------------------------------------------------------------------------------------------
     @api.model
     def _get_timezone_start_end_times(self):
@@ -753,6 +761,10 @@ class AAAService(models.Model):
 # -----------------------------------------------------------------------------------------------------------
 # ---------------API Added Write function---------------------------------------------------------------------
     def write(self, vals):
+        # Fast path for scheduler: skip all side-effect logic
+        if self.env.context.get('from_scheduler'):
+            return super(AAAService, self).write(vals)
+
         _logger.info("=== WRITE METHOD ENTERED ===")
         _logger.info("Input values: %s", vals)
         _logger.info("Records being updated: %s", [(r.id, r.name) for r in self])
@@ -2460,52 +2472,90 @@ class AAAService(models.Model):
 
     @api.model
     def check_and_update_state(self):
+        BATCH_LIMIT = 50
         current_minute = fields.Datetime.now().replace(second=0, microsecond=0)
         _logger.info("Running check_and_update_state at %s", current_minute)
-        
-        # Find records scheduled for the current minute or earlier
+
         domain = [
             ('state', '=', 'initiate'),
-            ('next_check_time', '<=', current_minute),  # Include services scheduled before the current time
-            ('requested_date', '<=', fields.Datetime.now())
+            ('schedule_service_check', '=', True),
+            ('next_check_time', '<=', current_minute),
+            ('requested_date', '<=', fields.Datetime.now()),
         ]
-        services = self.search(domain)
+        services = self.search(domain, limit=BATCH_LIMIT, order='next_check_time asc')
         _logger.info("Found %d services to update", len(services))
-        
+
+        if not services:
+            return True
+
+        # Disable mail.thread tracking and custom write side effects
+        services = services.with_context(
+            tracking_disable=True,
+            mail_notrack=True,
+            mail_create_nolog=True,
+            from_scheduler=True,
+        )
+
+        # Phase 1: HTTP calls with timeout, collect failures
+        failed_ids = []
         for service in services:
-            _logger.info("Processing service: %s", service.name)
-            order_number = service.name
-            if order_number:
-                _logger.info("Creating order for service: %s", order_number)
-                self.action_order_create(order_number)
+            if service.name:
+                try:
+                    self._scheduler_create_order(service.name, service)
+                except Exception as e:
+                    _logger.error("Order creation failed for %s: %s", service.name, e)
+                    failed_ids.append(service.id)
             else:
-                _logger.warning("No order number found for service: %s", service.name)
-            
-            service.write({'state': 'dispatch',
-                           'schedule_service_check': False})
-            _logger.info("Service %s dispatched", service.name)
-            
-            # Create history entry
-            self.env['service.history'].create({
-                'service_id': service.id,
-                'user': self.env.user.id,
-                'time': service.requested_date,  # Use the original requested time
-                'status': 'Dispatched by bot',
-                'timeline_status': 'dispatch',
-            })
-            _logger.info("History entry created for service: %s", service.name)
-            
-            # Create comment entry
-            self.env['service.comment'].create({
-                'service_id': service.id,
-                'comment': service.comments or 'Scheduled to dispatch',
-                'comment_date_and_time': service.requested_date,  # Use the original requested time
-                'comment_user': self.env.user.id,
-                'comment_status': 'dispatch'
-            })
-            _logger.info("Comment entry created for service: %s", service.name)
-        
+                _logger.warning("No order number found for service ID: %s", service.id)
+
+        # Phase 2: Filter to successful records
+        success_services = services.filtered(lambda s: s.id not in failed_ids)
+        if not success_services:
+            _logger.warning("All %d services failed HTTP call", len(services))
+            return True
+
+        # Phase 3: Single batch write for all successful records
+        success_services.write({
+            'state': 'dispatch',
+            'schedule_service_check': False,
+        })
+
+        # Phase 4: Batch create history records
+        now = fields.Datetime.now()
+        uid = self.env.user.id
+        self.env['service.history'].create([{
+            'service_id': s.id,
+            'user': uid,
+            'time': s.requested_date or now,
+            'status': 'Dispatched by bot',
+            'timeline_status': 'dispatch',
+        } for s in success_services])
+
+        # Phase 5: Batch create comment records
+        self.env['service.comment'].create([{
+            'service_id': s.id,
+            'comment': s.comments or 'Scheduled to dispatch',
+            'comment_date_and_time': s.requested_date or now,
+            'comment_user': uid,
+            'comment_status': 'dispatch',
+        } for s in success_services])
+
+        _logger.info("Successfully dispatched %d services (%d failed)",
+                     len(success_services), len(failed_ids))
         return True
+
+    def _scheduler_create_order(self, order_number, service):
+        """HTTP POST with timeout for scheduler use."""
+        url = f"{base_url}/aaa-customer/consumers/create/road_side_service"
+        payload = json.dumps({
+            "erp_order_number": order_number,
+            "is_jafza_service": service.is_jafza_service,
+            "is_after_duty": service.is_aditional_duty,
+        })
+        headers = {'content-type': 'application/json'}
+        response = requests.post(url, data=payload, headers=headers, timeout=15)
+        response.raise_for_status()
+        _logger.info("Order created for %s: %s", order_number, response.status_code)
 
     @api.onchange('member_id')
     def _onchange_member_id(self):
