@@ -6,6 +6,7 @@ _build/
 !.gitignore
 !.github
 !.mailmap
+!.env.example
 # compiled python files
 *.py[co]
 __pycache__/

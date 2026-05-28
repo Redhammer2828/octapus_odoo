@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-odoo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  odoo:
+    build:
+      context: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-odoo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      ODOO_ADMIN_PASSWORD: ${ODOO_ADMIN_PASSWORD:-change-me}
+    ports:
+      - "${ODOO_HTTP_PORT:-8086}:8069"
+      - "${ODOO_GEVENT_PORT:-8072}:8072"
+    volumes:
+      - odoo-data:/var/lib/odoo
+      - ./odoo.deploy.conf:/etc/odoo/odoo.conf:ro
+    command: ["python", "odoo-bin", "-c", "/etc/odoo/odoo.conf"]
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  odoo-data:

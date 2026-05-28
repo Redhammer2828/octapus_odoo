@@ -47,6 +47,7 @@ RUN fc-cache -fv
 
 # Create Odoo user
 RUN adduser --system --home=$ODOO_HOME --group $ODOO_USER
+RUN mkdir -p /var/lib/odoo && chown -R $ODOO_USER:$ODOO_USER /var/lib/odoo
 
 COPY requirements.txt $ODOO_HOME/
 
@@ -60,8 +61,8 @@ COPY . $ODOO_HOME
 # Set permissions
 RUN chown -R $ODOO_USER:$ODOO_USER $ODOO_HOME
 
-# Expose Odoo port
-EXPOSE 8070
+# Expose Odoo HTTP and gevent ports
+EXPOSE 8069 8072
 
 # Switch to non-root user
 USER $ODOO_USER
