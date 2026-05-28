@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" role="img" aria-labelledby="title">
+  <title>Octapus</title>
+  <rect width="300" height="300" rx="18" fill="#050505"/>
+  <g fill="#fff">
+    <path d="M57 176a93 93 0 1 1 186 0h-42a51 51 0 1 0-102 0z"/>
+    <circle cx="150" cy="170" r="40" fill="#050505"/>
+    <path d="M92 189c-6 31-24 52-57 59 31 19 67 6 84-28z"/>
+    <path d="M208 189c6 31 24 52 57 59-31 19-67 6-84-28z"/>
+    <path d="M150 201l-38 68h76z"/>
+    <path d="M141 188c-4 45-18 71-49 88 41 9 70-15 82-71z"/>
+    <path d="M159 188c4 45 18 71 49 88-41 9-70-15-82-71z"/>
+  </g>
+</svg>
